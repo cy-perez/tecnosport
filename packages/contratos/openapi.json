@@ -2521,6 +2521,25 @@
         },
         "type" : "object"
       },
+      "Item" : {
+        "properties" : {
+          "nombreProducto" : {
+            "type" : "string"
+          },
+          "productoId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "sku" : {
+            "type" : "string"
+          },
+          "varianteId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "Linea" : {
         "properties" : {
           "cantidad" : {
@@ -5215,6 +5234,21 @@
           },
           "objectKey" : {
             "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "VariantesSinMargenRespuesta" : {
+        "properties" : {
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/Item"
+            },
+            "type" : "array"
+          },
+          "total" : {
+            "format" : "int32",
+            "type" : "integer"
           }
         },
         "type" : "object"
@@ -9769,6 +9803,26 @@
         },
         "tags" : [
           "admin-variante-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/variantes/sin-margen" : {
+      "get" : {
+        "operationId" : "sinMargen",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/VariantesSinMargenRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-variantes-sin-margen-controlador"
         ]
       }
     },

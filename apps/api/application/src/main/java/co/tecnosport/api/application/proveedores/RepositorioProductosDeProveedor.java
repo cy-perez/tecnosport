@@ -55,6 +55,33 @@ public interface RepositorioProductosDeProveedor {
   void marcarDisponibilidadesPorConfirmar(Map<UUID, Boolean> porConfirmarPorVariante);
 
   /**
+   * Si el precio de contado de cada variante, por id, deja el margen mínimo sobre el costo nuevo
+   * del proveedor (27 de octubre de 2026). La que no lo deja queda agotada por el proveedor y
+   * marcada como agotada <b>por el margen</b>; la que lo deja vuelve a la venta solo si fue el
+   * margen el que la agotó —una prenda que el proveedor agotó por su SKU sigue agotada—.
+   *
+   * <p>Y al revés: {@link #cambiarDisponibilidadDeVariantes} con {@code aLaVenta} no devuelve a la
+   * venta una variante agotada por el margen, porque volver a anunciar el SKU no cambia el costo.
+   */
+  void marcarMargenDeVariantes(Map<UUID, Boolean> alcanzaPorVariante);
+
+  /**
+   * Las variantes que siguen agotadas porque el costo del proveedor les quitó el margen: el aviso
+   * del panel. Ordenadas por producto.
+   */
+  List<VarianteSinMargen> variantesSinMargen();
+
+  /** Una variante agotada por el margen, con lo que el panel necesita para nombrarla. */
+  record VarianteSinMargen(UUID productoId, String producto, UUID varianteId, String sku) {
+    public VarianteSinMargen {
+      Objects.requireNonNull(productoId);
+      Objects.requireNonNull(producto);
+      Objects.requireNonNull(varianteId);
+      Objects.requireNonNull(sku);
+    }
+  }
+
+  /**
    * Las variantes de un producto que llevan un mismo SKU del proveedor: una por talla.
    *
    * @param retirada todas están agotadas por el proveedor

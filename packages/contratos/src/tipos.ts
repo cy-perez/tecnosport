@@ -1684,6 +1684,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/variantes/sin-margen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["sinMargen"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/variantes/sin-medir": {
         parameters: {
             query?: never;
@@ -3230,6 +3246,14 @@ export interface components {
             referencia?: string;
             urlRedireccion?: string;
         };
+        Item: {
+            nombreProducto?: string;
+            /** Format: uuid */
+            productoId?: string;
+            sku?: string;
+            /** Format: uuid */
+            varianteId?: string;
+        };
         Linea: {
             /** Format: int32 */
             cantidad: number;
@@ -4155,6 +4179,11 @@ export interface components {
             /** Format: int32 */
             ancho?: number;
             objectKey?: string;
+        };
+        VariantesSinMargenRespuesta: {
+            items?: components["schemas"]["Item"][];
+            /** Format: int32 */
+            total?: number;
         };
         VariantesSinMedirRespuesta: {
             items?: components["schemas"]["VarianteSinMedirRespuesta"][];
@@ -7274,6 +7303,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["MedidasRespuesta"];
+                };
+            };
+        };
+    };
+    sinMargen: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["VariantesSinMargenRespuesta"];
                 };
             };
         };

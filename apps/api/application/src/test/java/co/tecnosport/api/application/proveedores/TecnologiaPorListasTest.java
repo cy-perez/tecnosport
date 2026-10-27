@@ -1,6 +1,7 @@
 package co.tecnosport.api.application.proveedores;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -842,6 +843,39 @@ class TecnologiaPorListasTest {
     assertEquals(2, resultado.sinMargen().size());
     assertTrue(
         resultado.sinMargen().getFirst().startsWith("Samsung Galaxy A17 5G 8GB RAM 256GB 1 SIM"));
+  }
+
+  /**
+   * Revisión adversarial del 27 de octubre de 2026: un costo que deja menos del 10 % sobre el
+   * contado reponía la existencia y solo dejaba una nota. Ahora la variante queda agotada por el
+   * proveedor, sin existencia libre y en el aviso del panel, y vuelve con la lista que le devuelve
+   * el margen.
+   */
+  @Test
+  void unCostoQueQuitaElMargenMinimoAgotaLaVarianteHastaQueVuelva() {
+    Producto producto = unA17QueYaSeVende();
+    List<UUID> variantes = producto.variantes().stream().map(Variante::id).toList();
+
+    // Contado 849.900 sobre 780.000: un 9 %.
+    ImportarListaDeTecnologia.Resultado sinMargen =
+        importar(lista(JUEVES, List.of(config(UNA_SIM, 780_000, "1 SIM")), List.of(), List.of()));
+
+    assertEquals(2, sinMargen.sinMargen().size());
+    for (UUID id : variantes) {
+      assertTrue(productosDeProveedor.retiradas.contains(id), "agotada por el proveedor");
+      assertEquals(0, disponible(id), "no se repone");
+    }
+    assertEquals(2, productosDeProveedor.variantesSinMargen().size(), "el panel lo avisa");
+
+    importar(
+        lista(
+            JUEVES.plusDays(1), List.of(config(UNA_SIM, 760_000, "1 SIM")), List.of(), List.of()));
+
+    for (UUID id : variantes) {
+      assertFalse(productosDeProveedor.retiradas.contains(id), "el margen volvió");
+      assertEquals(EXISTENCIA, disponible(id));
+    }
+    assertTrue(productosDeProveedor.variantesSinMargen().isEmpty());
   }
 
   @Test

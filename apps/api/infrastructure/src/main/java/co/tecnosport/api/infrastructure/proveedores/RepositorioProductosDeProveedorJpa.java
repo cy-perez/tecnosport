@@ -102,8 +102,38 @@ public class RepositorioProductosDeProveedorJpa implements RepositorioProductosD
     List<VarianteJpaEntity> cambiadas = new ArrayList<>();
     variantes
         .findAllById(varianteIds)
-        .forEach(v -> cambiadas.add(v.conAgotadaPorProveedor(!aLaVenta)));
+        // La agotada por el margen no vuelve con el SKU: volver a anunciarlo no cambia el costo.
+        .forEach(v -> cambiadas.add(v.conAgotadaPorProveedor(!aLaVenta || v.isAgotadaPorMargen())));
     variantes.saveAll(cambiadas);
+  }
+
+  @Override
+  public void marcarMargenDeVariantes(Map<UUID, Boolean> alcanzaPorVariante) {
+    if (alcanzaPorVariante.isEmpty()) {
+      return;
+    }
+    List<VarianteJpaEntity> cambiadas = new ArrayList<>();
+    for (VarianteJpaEntity v : variantes.findAllById(alcanzaPorVariante.keySet())) {
+      boolean alcanza = alcanzaPorVariante.get(v.getId());
+      if (alcanza && v.isAgotadaPorMargen()) {
+        cambiadas.add(v.conAgotadaPorProveedor(false).conAgotadaPorMargen(false));
+      } else if (!alcanza && !v.isAgotadaPorProveedor()) {
+        // La que ya estaba agotada por su SKU se queda como está: si se marcara por el margen, el
+        // margen que vuelve la devolvería a la venta sin que el proveedor la haya vuelto a ofrecer.
+        cambiadas.add(v.conAgotadaPorProveedor(true).conAgotadaPorMargen(true));
+      }
+    }
+    variantes.saveAll(cambiadas);
+  }
+
+  @Override
+  public List<VarianteSinMargen> variantesSinMargen() {
+    return variantes.agotadasPorMargen().stream()
+        .map(
+            fila ->
+                new VarianteSinMargen(
+                    (UUID) fila[0], (String) fila[1], (UUID) fila[2], (String) fila[3]))
+        .toList();
   }
 
   @Override

@@ -260,10 +260,40 @@ final class ApoyoDeCatalogoParaIngesta {
     @Override
     public void cambiarDisponibilidadDeVariantes(List<UUID> varianteIds, boolean aLaVenta) {
       if (aLaVenta) {
-        varianteIds.forEach(retiradas::remove);
+        varianteIds.stream().filter(id -> !sinMargen.contains(id)).forEach(retiradas::remove);
       } else {
         retiradas.addAll(varianteIds);
       }
+    }
+
+    /** Las agotadas por el margen, como la columna {@code agotada_por_margen}. */
+    final Set<UUID> sinMargen = new java.util.HashSet<>();
+
+    @Override
+    public void marcarMargenDeVariantes(Map<UUID, Boolean> alcanzaPorVariante) {
+      alcanzaPorVariante.forEach(
+          (id, alcanza) -> {
+            if (alcanza && sinMargen.remove(id)) {
+              retiradas.remove(id);
+            } else if (!alcanza && !retiradas.contains(id)) {
+              retiradas.add(id);
+              sinMargen.add(id);
+            }
+          });
+    }
+
+    @Override
+    public List<VarianteSinMargen> variantesSinMargen() {
+      List<VarianteSinMargen> todas = new ArrayList<>();
+      for (Producto producto : productos.porId.values()) {
+        for (Variante v : producto.variantes()) {
+          if (sinMargen.contains(v.id())) {
+            todas.add(
+                new VarianteSinMargen(producto.id(), producto.nombre(), v.id(), v.sku().valor()));
+          }
+        }
+      }
+      return todas;
     }
 
     /** Lo último que se dijo del color de cada variante: por confirmar o sabido. */

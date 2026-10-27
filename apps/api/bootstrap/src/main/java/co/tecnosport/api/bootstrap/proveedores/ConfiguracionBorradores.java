@@ -18,6 +18,7 @@ import co.tecnosport.api.application.proveedores.EliminarBorrador;
 import co.tecnosport.api.application.proveedores.EliminarBorradoresSinAprobar;
 import co.tecnosport.api.application.proveedores.ExistenciaBajoConfirmacion;
 import co.tecnosport.api.application.proveedores.ExpirarDisponibilidadDeProductos;
+import co.tecnosport.api.application.proveedores.ListarVariantesSinMargen;
 import co.tecnosport.api.application.proveedores.MoverFotoDeBorrador;
 import co.tecnosport.api.application.proveedores.PartirBorrador;
 import co.tecnosport.api.application.proveedores.ProcesadorDeImagenes;
@@ -144,6 +145,12 @@ public class ConfiguracionBorradores {
         reloj,
         propiedades.ventanaDisponibilidad(),
         propiedades.tecnologia().ventanaDisponibilidad());
+  }
+
+  @Bean
+  public ListarVariantesSinMargen listarVariantesSinMargen(
+      RepositorioProductosDeProveedor productosDeProveedor) {
+    return new ListarVariantesSinMargen(productosDeProveedor);
   }
 
   @Bean

@@ -24,5 +24,15 @@ public interface VarianteJpaRepository extends JpaRepository<VarianteJpaEntity, 
   List<VarianteJpaEntity> buscarPorReferenciaDeProveedor(
       @Param("proveedorId") UUID proveedorId, @Param("referencia") String referencia);
 
+  /**
+   * Las activas agotadas porque el costo del proveedor les quitó el margen (V125): producto, su
+   * nombre, variante y SKU.
+   */
+  @Query(
+      "select p.id, p.nombre, v.id, v.sku from VarianteJpaEntity v, ProductoJpaEntity p"
+          + " where p.id = v.productoId and v.agotadaPorMargen = true and v.estado = 'ACTIVA'"
+          + " order by p.nombre, v.sku")
+  List<Object[]> agotadasPorMargen();
+
   long countByProductoIdAndEstadoAndAgotadaPorProveedorFalse(UUID productoId, String estado);
 }
