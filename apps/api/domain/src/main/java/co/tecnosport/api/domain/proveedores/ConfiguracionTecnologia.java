@@ -26,7 +26,10 @@ import java.util.Objects;
  *     elección; vacío si la lista no los dice
  * @param coloresElegidos los que quien revisa marcó: cada uno será una variante. Vacío es «esta
  *     configuración no se vende»
- * @param precioVenta el que fija quien revisa; nulo hasta entonces
+ * @param precioMercado el que investigó la skill en el mercado colombiano; nulo si no lo encontró.
+ *     Es la base del precio de contado sugerido ({@link SugerenciaDePrecioTecnologia})
+ * @param precioVenta el <b>precio de contado</b> que fija quien revisa (ADR-0095); nulo hasta
+ *     entonces. El publicado no se guarda aquí: lo calcula el catálogo al aprobar
  */
 public record ConfiguracionTecnologia(
     String sku,

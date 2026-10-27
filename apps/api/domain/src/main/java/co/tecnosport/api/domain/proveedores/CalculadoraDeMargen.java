@@ -10,6 +10,12 @@ import java.math.RoundingMode;
  * se sube a la <b>unidad de mil siguiente</b> —72.500 es 73.000, 78.900 es 79.000 y 79.000 se queda
  * en 79.000—. Es una sugerencia: quien aprueba pone el precio final.
  *
+ * <p><b>Lo que sugiere es el precio de contado</b> (ADR-0095, decisión 2): el que el negocio quiere
+ * recibir neto. El cálculo es el mismo de antes del 26 de octubre de 2026 —factor, topes y redondeo
+ * no cambiaron—, pero el precio que se anuncia es el publicado, que sale de este sumándole la
+ * comisión de la pasarela ({@code ComisionDePasarela}). Los topes de ganancia se miden contra el
+ * contado: la comisión va encima y no se come la ganancia.
+ *
  * <p>Hasta el 12 de octubre de 2026 redondeaba a la centena con {@code HALF_UP}, y el panel sugería
  * precios como 71.600 que nadie publicaba así: quien aprobaba los subía a mano, uno por uno. El
  * precio de vitrina del negocio va en miles redondos, y la sugerencia ahora también.

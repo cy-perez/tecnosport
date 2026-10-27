@@ -41,7 +41,14 @@ public final class BorradorProducto {
   private LineaCatalogo linea;
   private TipoProductoProveedor tipo;
   private Dinero precioProveedor;
+
+  /**
+   * El <b>precio de contado</b> sugerido (ADR-0095): lo que calcula {@link CalculadoraDeMargen}, o
+   * lo que quien revisa escribió encima. El publicado no se guarda: sale de este con la comisión de
+   * la pasarela cuando se muestra, y al aprobar lo calcula el catálogo.
+   */
   private Dinero precioVentaSugerido;
+
   private Tallas tallas;
   private Integer cantidadTonos;
   private List<String> tonosNombrados;
@@ -1107,6 +1114,7 @@ public final class BorradorProducto {
     return Optional.ofNullable(precioProveedor);
   }
 
+  /** El precio de contado sugerido; ver el campo. */
   public Optional<Dinero> precioVentaSugerido() {
     return Optional.ofNullable(precioVentaSugerido);
   }

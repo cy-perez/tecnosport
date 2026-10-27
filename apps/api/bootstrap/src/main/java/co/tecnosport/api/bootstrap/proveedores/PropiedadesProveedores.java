@@ -3,6 +3,7 @@ package co.tecnosport.api.bootstrap.proveedores;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.proveedores.Proveedor;
+import co.tecnosport.api.domain.proveedores.SugerenciaDePrecioTecnologia;
 import co.tecnosport.api.domain.proveedores.TopesDeGanancia;
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -41,8 +42,12 @@ public record PropiedadesProveedores(
    *     (decisión del negocio, 8 de octubre de 2026)
    * @param ventanaDisponibilidad cuánto vale una lista: pasado eso sin otra, lo que trajo se
    *     oculta. Distinta de la de los mensajes porque las listas llegan cada varios días
+   * @param gananciaMaxima lo más que el precio de contado sugerido le gana al costo, en pesos
+   *     enteros: 400.000 (decisión del negocio del 26 de octubre de 2026, ADR-0095 decisión 8). Por
+   *     lo menos mil, porque la sugerencia con tope se baja a la unidad de mil
    */
-  public record Tecnologia(int existenciaPorVariante, Duration ventanaDisponibilidad) {
+  public record Tecnologia(
+      int existenciaPorVariante, Duration ventanaDisponibilidad, long gananciaMaxima) {
     public Tecnologia {
       if (existenciaPorVariante < 1) {
         throw new IllegalStateException(
@@ -55,6 +60,17 @@ public record PropiedadesProveedores(
             "tecnosport.proveedores.tecnologia.ventana-disponibilidad debe ser una duración"
                 + " positiva.");
       }
+      // 0 es lo que deja el enlace si la propiedad falta: también se rechaza aquí.
+      if (gananciaMaxima < 1000) {
+        throw new IllegalStateException(
+            "tecnosport.proveedores.tecnologia.ganancia-maxima (PROVEEDORES_TECNOLOGIA_GANANCIA_MAXIMA)"
+                + " es de por lo menos 1000 pesos: "
+                + gananciaMaxima);
+      }
+    }
+
+    public SugerenciaDePrecioTecnologia aSugerencia() {
+      return new SugerenciaDePrecioTecnologia(Dinero.deCop(gananciaMaxima));
     }
   }
 

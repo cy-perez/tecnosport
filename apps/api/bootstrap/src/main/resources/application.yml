@@ -332,6 +332,10 @@ tecnosport:
       # Cuanto vale una lista de precios antes de ocultar lo que trajo. Siete dias: la vigencia
       # que el negocio le dio al precio de mercado de la lista (8 de octubre de 2026).
       ventana-disponibilidad: ${PROVEEDORES_TECNOLOGIA_VENTANA_DISPONIBILIDAD:P7D}
+      # Lo mas que el precio de contado sugerido le gana al costo, en pesos: el de mercado, sin
+      # pasarse de costo + esto. Decision del negocio del 26 de octubre de 2026 (ADR-0095,
+      # decision 8). Ajusta la sugerencia; quien revisa puede poner otro precio.
+      ganancia-maxima: ${PROVEEDORES_TECNOLOGIA_GANANCIA_MAXIMA:400000}
     cola-de-tareas:
       # La cola de ingestas en Cloud Tasks (ADR-0080): cada tramo de un lote es una tarea que llama
       # al endpoint interno. VACIA, la ingesta corre en un hilo con la cola en memoria, que es lo de

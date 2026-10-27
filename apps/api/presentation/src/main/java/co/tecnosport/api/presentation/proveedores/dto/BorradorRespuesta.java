@@ -1,5 +1,6 @@
 package co.tecnosport.api.presentation.proveedores.dto;
 
+import co.tecnosport.api.domain.catalogo.ComisionDePasarela;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
@@ -12,6 +13,10 @@ import java.util.UUID;
 /**
  * Un borrador como lo lista y lo edita el panel. Los dineros van como entero de pesos.
  *
+ * @param precioVentaSugerido el <b>precio de contado</b> sugerido (ADR-0095), que es el que el
+ *     panel edita y manda al aprobar; nulo si el borrador no tiene precio del proveedor
+ * @param precioPublicadoSugerido el que se anunciaría con ese contado: le suma la comisión de la
+ *     pasarela. Solo para mirar, nunca se manda de vuelta; nulo si no hay contado sugerido
  * @param tallasPorTono las tallas de cada tono cuando el mensaje no las tiene todas en todos; vacía
  *     si las tiene
  * @param preciosAdicionales los del anuncio que no son de este producto: la gorra, el combo, la
@@ -28,6 +33,7 @@ public record BorradorRespuesta(
     String tipo,
     Long precioProveedor,
     Long precioVentaSugerido,
+    Long precioPublicadoSugerido,
     TallasRespuesta tallas,
     Integer cantidadTonos,
     List<String> tonosNombrados,
@@ -63,7 +69,7 @@ public record BorradorRespuesta(
   public record TallaPedidaRespuesta(
       @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String talla, String delProveedor) {}
 
-  public static BorradorRespuesta de(BorradorProducto b) {
+  public static BorradorRespuesta de(BorradorProducto b, ComisionDePasarela comision) {
     return new BorradorRespuesta(
         b.id(),
         b.publicacionId(),
@@ -73,6 +79,10 @@ public record BorradorRespuesta(
         b.tipo().name(),
         b.precioProveedor().map(BorradorRespuesta::entero).orElse(null),
         b.precioVentaSugerido().map(BorradorRespuesta::entero).orElse(null),
+        b.precioVentaSugerido()
+            .map(comision::publicadoDesde)
+            .map(BorradorRespuesta::entero)
+            .orElse(null),
         new TallasRespuesta(
             b.tallas().tipo().name(), b.tallas().sirveHasta(), b.tallas().valores()),
         b.cantidadTonos().orElse(null),

@@ -1,6 +1,7 @@
 package co.tecnosport.api.presentation.proveedores.dto;
 
 import co.tecnosport.api.application.proveedores.VerBorrador;
+import co.tecnosport.api.domain.catalogo.ComisionDePasarela;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.UUID;
@@ -20,9 +21,10 @@ public record BorradorDetalleRespuesta(
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
         List<PrendaDelAlbumRespuesta> prendasDelAlbum) {
 
-  public static BorradorDetalleRespuesta de(VerBorrador.DetalleDeBorrador detalle) {
+  public static BorradorDetalleRespuesta de(
+      VerBorrador.DetalleDeBorrador detalle, ComisionDePasarela comision) {
     return new BorradorDetalleRespuesta(
-        BorradorRespuesta.de(detalle.borrador()),
+        BorradorRespuesta.de(detalle.borrador(), comision),
         detalle.textos(),
         detalle.fotos().stream().map(FotoRespuesta::de).toList(),
         detalle.hermanos().stream()
