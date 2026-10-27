@@ -1,20 +1,27 @@
 package co.tecnosport.api.presentation.usuario;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.LimitadorDeIntentos;
 import co.tecnosport.api.application.usuario.CodificadorDeClaves;
+import co.tecnosport.api.application.usuario.ConfirmarActivacionSegundoFactor;
+import co.tecnosport.api.application.usuario.GeneradorDeTokens;
 import co.tecnosport.api.application.usuario.IniciarActivacionSegundoFactor;
 import co.tecnosport.api.application.usuario.RepositorioSegundosFactores;
+import co.tecnosport.api.application.usuario.RepositorioSesiones;
 import co.tecnosport.api.application.usuario.RepositorioUsuarios;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.usuario.Rol;
 import co.tecnosport.api.domain.usuario.SegundoFactor;
 import co.tecnosport.api.domain.usuario.Totp;
 import co.tecnosport.api.domain.usuario.Usuario;
+import co.tecnosport.api.presentation.compartido.TextosDeCorreoDobleDePrueba;
 import java.time.Duration;
 import java.time.Instant;
 import org.junit.jupiter.api.AfterEach;
@@ -41,6 +48,7 @@ class SegundoFactorControladorTest {
   @Autowired private RepositorioUsuariosDobleDePrueba usuarios;
   @Autowired private RepositorioSegundosFactoresDobleDePrueba factores;
   @Autowired private LimitadorDeIntentosDobleDePrueba limitador;
+  @Autowired private RepositorioSesionesDobleDePrueba sesiones;
 
   private Usuario admin;
 
@@ -49,6 +57,7 @@ class SegundoFactorControladorTest {
     usuarios.limpiar();
     factores.limpiar();
     limitador.reiniciar();
+    sesiones.limpiar();
     admin =
         Usuario.crear(
             new CorreoElectronico("admin@tecnosport.co"), "hash:clave", Rol.ADMIN, Instant.now());
@@ -119,6 +128,64 @@ class SegundoFactorControladorTest {
         .andExpect(status().isUnprocessableContent());
   }
 
+  private org.springframework.test.web.servlet.ResultActions confirmar(String codigo)
+      throws Exception {
+    return mockMvc.perform(
+        post("/api/v1/auth/segundo-factor/activacion/confirmar")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"codigo\":\"" + codigo + "\"}"));
+  }
+
+  private SegundoFactor pendiente() {
+    SegundoFactor factor = SegundoFactor.iniciar(admin.id(), Instant.now());
+    factores.con(factor);
+    return factor;
+  }
+
+  @Test
+  void confirmarConElCodigoActivaYAbreSesionConCookieYCodigos() throws Exception {
+    SegundoFactor factor = pendiente();
+
+    confirmar(Totp.codigoEn(factor.clave(), Totp.pasoDe(Instant.now())))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.sesion.accessToken").isString())
+        .andExpect(jsonPath("$.sesion.rol").value("ADMIN"))
+        .andExpect(jsonPath("$.codigosDeRespaldo.length()").value(10))
+        .andExpect(cookie().exists("refresco"))
+        .andExpect(cookie().httpOnly("refresco", true));
+    assertTrue(factores.de(admin.id()).orElseThrow().activo());
+  }
+
+  @Test
+  void confirmarConUnCodigoEquivocadoResponde401() throws Exception {
+    SegundoFactor factor = pendiente();
+
+    confirmar(Totp.codigoEn(factor.clave(), Totp.pasoDe(Instant.now()) + 10))
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.codigo").value("CODIGO_SEGUNDO_FACTOR_INVALIDO"))
+        .andExpect(cookie().doesNotExist("refresco"));
+    assertFalse(factores.de(admin.id()).orElseThrow().activo());
+  }
+
+  @Test
+  void confirmarSinActivacionIniciadaResponde409() throws Exception {
+    confirmar("123456")
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.codigo").value("ACTIVACION_SEGUNDO_FACTOR_NO_INICIADA"));
+  }
+
+  @Test
+  void confirmarUnFactorYaActivoResponde409() throws Exception {
+    SegundoFactor activo = SegundoFactor.iniciar(admin.id(), Instant.now());
+    activo.confirmar(
+        Totp.codigoEn(activo.clave(), Totp.pasoDe(Instant.now())), Instant.now(), VENTANA);
+    factores.con(activo);
+
+    confirmar("123456")
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.codigo").value("SEGUNDO_FACTOR_YA_ACTIVO"));
+  }
+
   @TestConfiguration
   static class Configuracion {
 
@@ -145,6 +212,44 @@ class SegundoFactorControladorTest {
     @Bean
     PlatformTransactionManager transactionManager() {
       return new PlatformTransactionManagerDobleDePrueba();
+    }
+
+    @Bean
+    RepositorioSesionesDobleDePrueba repositorioSesiones() {
+      return new RepositorioSesionesDobleDePrueba();
+    }
+
+    @Bean
+    GeneradorDeTokens generadorDeTokens() {
+      return new GeneradorDeTokensDobleDePrueba();
+    }
+
+    @Bean
+    EnviadorDeCorreo enviadorDeCorreo() {
+      return new EnviadorDeCorreoDobleDePrueba();
+    }
+
+    @Bean
+    ConfirmarActivacionSegundoFactor confirmarActivacionSegundoFactor(
+        RepositorioUsuarios repositorioUsuarios,
+        RepositorioSegundosFactores repositorioSegundosFactores,
+        RepositorioSesiones repositorioSesiones,
+        GeneradorDeTokens generadorDeTokens,
+        EnviadorDeCorreo enviadorDeCorreo,
+        LimitadorDeIntentos limitadorDeIntentos) {
+      return new ConfirmarActivacionSegundoFactor(
+          repositorioUsuarios,
+          repositorioSegundosFactores,
+          repositorioSesiones,
+          generadorDeTokens,
+          enviadorDeCorreo,
+          new TextosDeCorreoDobleDePrueba(),
+          Instant::now,
+          Duration.ofDays(30),
+          VENTANA,
+          limitadorDeIntentos,
+          5,
+          VENTANA);
     }
 
     @Bean

@@ -132,6 +132,8 @@ import co.tecnosport.api.domain.inventario.ExistenciaInsuficienteException;
 import co.tecnosport.api.domain.pedido.EnlaceDeCompraNoVigenteException;
 import co.tecnosport.api.domain.pedido.EntregaNoAplicaException;
 import co.tecnosport.api.domain.pedido.NumeroDePedidoNoCoincideException;
+import co.tecnosport.api.domain.usuario.ActivacionSegundoFactorNoIniciadaException;
+import co.tecnosport.api.domain.usuario.CodigoSegundoFactorInvalidoException;
 import co.tecnosport.api.domain.usuario.CorreoSinVerificarException;
 import co.tecnosport.api.domain.usuario.SegundoFactorYaActivoException;
 import java.net.URI;
@@ -1041,6 +1043,19 @@ public class ManejadorDeErrores {
   @ExceptionHandler(SegundoFactorYaActivoException.class)
   public ProblemDetail segundoFactorYaActivo(SegundoFactorYaActivoException excepcion) {
     return problema(HttpStatus.CONFLICT, "El segundo factor ya está activo", excepcion);
+  }
+
+  // 401 como la clave equivocada: es la misma clase de error —el secreto no coincide— y se
+  // corrige igual, escribiendo bien.
+  @ExceptionHandler(CodigoSegundoFactorInvalidoException.class)
+  public ProblemDetail codigoSegundoFactorInvalido(CodigoSegundoFactorInvalidoException excepcion) {
+    return problema(HttpStatus.UNAUTHORIZED, "Código inválido", excepcion);
+  }
+
+  @ExceptionHandler(ActivacionSegundoFactorNoIniciadaException.class)
+  public ProblemDetail activacionSegundoFactorNoIniciada(
+      ActivacionSegundoFactorNoIniciadaException excepcion) {
+    return problema(HttpStatus.CONFLICT, "No hay una activación en curso", excepcion);
   }
 
   // 429, mismo código que ya escribe a mano FiltroLimiteIntentos para el límite por IP — el

@@ -20,6 +20,24 @@
         },
         "type" : "object"
       },
+      "ActivacionConfirmadaRespuesta" : {
+        "properties" : {
+          "codigosDeRespaldo" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "sesion" : {
+            "$ref" : "#/components/schemas/SesionRespuesta"
+          }
+        },
+        "required" : [
+          "codigosDeRespaldo",
+          "sesion"
+        ],
+        "type" : "object"
+      },
       "ActivacionSegundoFactorRespuesta" : {
         "properties" : {
           "digitos" : {
@@ -937,6 +955,17 @@
             "type" : "string"
           }
         },
+        "type" : "object"
+      },
+      "CodigoSegundoFactorRequest" : {
+        "properties" : {
+          "codigo" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "codigo"
+        ],
         "type" : "object"
       },
       "ColorDePaletaRespuesta" : {
@@ -10395,6 +10424,36 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/ActivacionSegundoFactorRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "segundo-factor-controlador"
+        ]
+      }
+    },
+    "/api/v1/auth/segundo-factor/activacion/confirmar" : {
+      "post" : {
+        "operationId" : "confirmarActivacionSegundoFactor",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CodigoSegundoFactorRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ActivacionConfirmadaRespuesta"
                 }
               }
             },

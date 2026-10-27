@@ -1,13 +1,20 @@
 package co.tecnosport.api.presentation.usuario;
 
+import co.tecnosport.api.application.usuario.ActivacionConfirmada;
 import co.tecnosport.api.application.usuario.ActivacionIniciada;
+import co.tecnosport.api.application.usuario.ConfirmarActivacionSegundoFactor;
+import co.tecnosport.api.application.usuario.ConfirmarActivacionSegundoFactorComando;
 import co.tecnosport.api.application.usuario.IniciarActivacionSegundoFactor;
 import co.tecnosport.api.application.usuario.IniciarActivacionSegundoFactorComando;
 import co.tecnosport.api.application.usuario.SesionDeRefrescoInvalidaException;
+import co.tecnosport.api.presentation.usuario.dto.ActivacionConfirmadaRespuesta;
 import co.tecnosport.api.presentation.usuario.dto.ActivacionSegundoFactorRespuesta;
+import co.tecnosport.api.presentation.usuario.dto.CodigoSegundoFactorRequest;
 import co.tecnosport.api.presentation.usuario.dto.IniciarActivacionSegundoFactorRequest;
 import java.util.Objects;
 import java.util.UUID;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -28,12 +35,15 @@ import org.springframework.web.bind.annotation.RestController;
 public class SegundoFactorControlador {
 
   private final IniciarActivacionSegundoFactor iniciarActivacion;
+  private final ConfirmarActivacionSegundoFactor confirmarActivacion;
   private final TransactionTemplate transaccion;
 
   public SegundoFactorControlador(
       IniciarActivacionSegundoFactor iniciarActivacion,
+      ConfirmarActivacionSegundoFactor confirmarActivacion,
       PlatformTransactionManager transactionManager) {
     this.iniciarActivacion = Objects.requireNonNull(iniciarActivacion);
+    this.confirmarActivacion = Objects.requireNonNull(confirmarActivacion);
     this.transaccion = new TransactionTemplate(Objects.requireNonNull(transactionManager));
   }
 
@@ -52,6 +62,26 @@ public class SegundoFactorControlador {
         activacion.uri(),
         activacion.digitos(),
         activacion.periodoSegundos());
+  }
+
+  /**
+   * Activa el factor con el primer código de la aplicación. Revoca las demás sesiones y abre una
+   * nueva: responde como el inicio de sesión, con cookie, y además con los códigos de respaldo.
+   */
+  @PostMapping("/activacion/confirmar")
+  public ResponseEntity<ActivacionConfirmadaRespuesta> confirmarActivacionSegundoFactor(
+      @RequestBody CodigoSegundoFactorRequest cuerpo) {
+    UUID usuarioId = usuarioAutenticadoId();
+    ActivacionConfirmada confirmada =
+        transaccion.execute(
+            estado ->
+                confirmarActivacion.ejecutar(
+                    new ConfirmarActivacionSegundoFactorComando(usuarioId, cuerpo.codigo())));
+    return ResponseEntity.ok()
+        .header(HttpHeaders.SET_COOKIE, SesionConCookie.cookieDe(confirmada.sesion()).toString())
+        .body(
+            new ActivacionConfirmadaRespuesta(
+                SesionConCookie.cuerpo(confirmada.sesion()), confirmada.codigosDeRespaldo()));
   }
 
   /** Ver {@code AutenticacionControlador.usuarioAutenticadoId}. */

@@ -1956,6 +1956,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/segundo-factor/activacion/confirmar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["confirmarActivacionSegundoFactor"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/sesion": {
         parameters: {
             query?: never;
@@ -2448,6 +2464,10 @@ export interface components {
             productoId?: string;
             versionAsistente?: string;
         };
+        ActivacionConfirmadaRespuesta: {
+            codigosDeRespaldo: string[];
+            sesion: components["schemas"]["SesionRespuesta"];
+        };
         ActivacionSegundoFactorRespuesta: {
             /** Format: int32 */
             digitos: number;
@@ -2756,6 +2776,9 @@ export interface components {
             /** Format: uuid */
             padreId?: string;
             slug?: string;
+        };
+        CodigoSegundoFactorRequest: {
+            codigo: string;
         };
         ColorDePaletaRespuesta: {
             coloresPatron?: string[];
@@ -7776,6 +7799,30 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ActivacionSegundoFactorRespuesta"];
+                };
+            };
+        };
+    };
+    confirmarActivacionSegundoFactor: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CodigoSegundoFactorRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ActivacionConfirmadaRespuesta"];
                 };
             };
         };

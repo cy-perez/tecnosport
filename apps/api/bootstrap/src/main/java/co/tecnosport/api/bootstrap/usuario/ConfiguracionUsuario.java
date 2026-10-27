@@ -8,6 +8,7 @@ import co.tecnosport.api.application.legal.RepositorioAutorizaciones;
 import co.tecnosport.api.application.usuario.CambiarClave;
 import co.tecnosport.api.application.usuario.CerrarSesion;
 import co.tecnosport.api.application.usuario.CodificadorDeClaves;
+import co.tecnosport.api.application.usuario.ConfirmarActivacionSegundoFactor;
 import co.tecnosport.api.application.usuario.ConfirmarRecuperacion;
 import co.tecnosport.api.application.usuario.GeneradorDeTokens;
 import co.tecnosport.api.application.usuario.IniciarActivacionSegundoFactor;
@@ -321,5 +322,34 @@ public class ConfiguracionUsuario {
         propiedadesLimite.cuentaMaximo(),
         Duration.ofMinutes(propiedadesLimite.cuentaMinutos()),
         propiedades.emisor());
+  }
+
+  /** El código son seis dígitos: el tope es el del cambio de clave, por cuenta. */
+  @Bean
+  public ConfirmarActivacionSegundoFactor confirmarActivacionSegundoFactor(
+      RepositorioUsuarios repositorioUsuarios,
+      RepositorioSegundosFactores repositorioSegundosFactores,
+      RepositorioSesiones repositorioSesiones,
+      GeneradorDeTokens generadorDeTokens,
+      EnviadorDeCorreo enviadorDeCorreo,
+      TextosDeCorreo textos,
+      Reloj reloj,
+      PropiedadesJwt propiedadesJwt,
+      LimitadorDeIntentos limitadorDeIntentos,
+      PropiedadesLimiteAuth propiedadesLimite,
+      PropiedadesSegundoFactor propiedades) {
+    return new ConfirmarActivacionSegundoFactor(
+        repositorioUsuarios,
+        repositorioSegundosFactores,
+        repositorioSesiones,
+        generadorDeTokens,
+        enviadorDeCorreo,
+        textos,
+        reloj,
+        Duration.ofDays(propiedadesJwt.diasRefresco()),
+        Duration.ofMinutes(propiedades.minutosActivacionPendiente()),
+        limitadorDeIntentos,
+        propiedadesLimite.cuentaMaximo(),
+        Duration.ofMinutes(propiedadesLimite.cuentaMinutos()));
   }
 }
