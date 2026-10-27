@@ -1,6 +1,7 @@
 package co.tecnosport.api.infrastructure.usuario;
 
 import co.tecnosport.api.application.usuario.RepositorioTokensRecuperacion;
+import co.tecnosport.api.domain.usuario.HuellaDeToken;
 import co.tecnosport.api.domain.usuario.TokenRecuperacionClave;
 import co.tecnosport.api.infrastructure.usuario.entidad.TokenRecuperacionClaveJpaEntity;
 import java.util.Objects;
@@ -19,7 +20,9 @@ public class RepositorioTokensRecuperacionJpa implements RepositorioTokensRecupe
 
   @Override
   public Optional<TokenRecuperacionClave> buscarPorId(UUID id) {
-    return tokens.findById(id).map(this::aDominio);
+    // Se busca por la huella y el token se le devuelve al agregado desde quien lo trajo: la base no
+    // lo tiene (HuellaDeToken).
+    return tokens.findById(HuellaDeToken.de(id)).map(entidad -> aDominio(id, entidad));
   }
 
   @Override
@@ -27,9 +30,9 @@ public class RepositorioTokensRecuperacionJpa implements RepositorioTokensRecupe
     tokens.save(aEntidad(token));
   }
 
-  private TokenRecuperacionClave aDominio(TokenRecuperacionClaveJpaEntity entidad) {
+  private TokenRecuperacionClave aDominio(UUID token, TokenRecuperacionClaveJpaEntity entidad) {
     return new TokenRecuperacionClave(
-        entidad.getId(),
+        token,
         entidad.getUsuarioId(),
         entidad.getCreadoEn(),
         entidad.getExpiraEn(),
@@ -38,7 +41,7 @@ public class RepositorioTokensRecuperacionJpa implements RepositorioTokensRecupe
 
   private TokenRecuperacionClaveJpaEntity aEntidad(TokenRecuperacionClave token) {
     return new TokenRecuperacionClaveJpaEntity(
-        token.id(),
+        HuellaDeToken.de(token.id()),
         token.usuarioId(),
         token.creadoEn(),
         token.expiraEn(),

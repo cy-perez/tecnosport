@@ -11,7 +11,10 @@ import java.util.UUID;
 @Table(name = "token_verificacion_correo")
 public class TokenVerificacionCorreoJpaEntity {
 
-  @Id private UUID id;
+  /** SHA-256 del token en hexadecimal ({@code HuellaDeToken}); el token no se guarda. */
+  @Id
+  @Column(name = "huella", length = 64)
+  private String huella;
 
   @Column(name = "usuario_id", nullable = false)
   private UUID usuarioId;
@@ -28,16 +31,16 @@ public class TokenVerificacionCorreoJpaEntity {
   protected TokenVerificacionCorreoJpaEntity() {}
 
   public TokenVerificacionCorreoJpaEntity(
-      UUID id, UUID usuarioId, Instant creadoEn, Instant expiraEn, Instant usadoEn) {
-    this.id = id;
+      String huella, UUID usuarioId, Instant creadoEn, Instant expiraEn, Instant usadoEn) {
+    this.huella = huella;
     this.usuarioId = usuarioId;
     this.creadoEn = creadoEn;
     this.expiraEn = expiraEn;
     this.usadoEn = usadoEn;
   }
 
-  public UUID getId() {
-    return id;
+  public String getHuella() {
+    return huella;
   }
 
   public UUID getUsuarioId() {
