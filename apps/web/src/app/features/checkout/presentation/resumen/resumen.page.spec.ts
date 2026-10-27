@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject, Type } from '@angular/core';
 import { provideRouter, Router } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
@@ -231,8 +231,9 @@ class MetodoPagoMudo {}
 async function renderResumen(
   carrito: RepositorioCarrito,
   envios: RepositorioEnvios = new RepositorioEnviosFalso(null),
+  componente: Type<unknown> = ResumenPage,
 ) {
-  return render(ResumenPage, {
+  return render(componente, {
     imports: [
       TranslocoTestingModule.forRoot({
         langs: { es, en, 'carrito/es': esCarrito, 'checkout/es': esCheckout } as never,
@@ -1294,6 +1295,65 @@ describe('ResumenPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
 
     expect(checkout.datosEntrega()).toBeNull();
+  });
+
+  /**
+   * «Volver» desde la transportadora o el método de pago dejaba el formulario en blanco, con todo
+   * lo escrito guardado en `CheckoutStore.datosEntrega`. La casilla de autorización es la excepción,
+   * a propósito: ver `rellenarConLoYaEscrito`.
+   */
+  it('al volver, el formulario trae lo ya escrito salvo la casilla de autorización', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+
+    @Component({
+      selector: 'app-anfitrion-de-prueba',
+      imports: [ResumenPage],
+      template: `<app-resumen />`,
+    })
+    class ConDatosYaEscritos {
+      constructor() {
+        inject(CheckoutStore).guardarDatosEntrega({
+          correo: 'compra@ejemplo.co',
+          contacto: { nombre: 'Ana Pérez', telefono: '3138816711' },
+          tipoEntrega: 'ENVIO_A_DOMICILIO',
+          direccion: {
+            codigoDaneDepartamento: '05',
+            departamento: 'Antioquia',
+            codigoDaneCiudad: '05001',
+            ciudad: 'Medellín',
+            direccion: 'Cra. 26C #38B-31',
+            indicaciones: 'Portería',
+            barrio: 'Laureles',
+          },
+          autorizaDatos: true,
+          transportadora: null,
+        });
+      }
+    }
+
+    await renderResumen(
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioEnviosFalso(COTIZACION),
+      ConDatosYaEscritos,
+    );
+    await screen.findByText('Morral urbano');
+
+    const valor = (etiqueta: string) =>
+      (screen.getByLabelText(etiqueta) as HTMLInputElement | HTMLSelectElement).value;
+    expect(valor('Correo electrónico')).toBe('compra@ejemplo.co');
+    expect(valor('Nombre de quien recibe')).toBe('Ana Pérez');
+    expect(valor('Teléfono de contacto')).toBe('3138816711');
+    expect(valor('Departamento')).toBe('05');
+    expect(valor('Ciudad')).toBe('05001');
+    expect(valor('Dirección')).toBe('Cra. 26C #38B-31');
+    expect(
+      (
+        screen.getByLabelText(
+          'Autorizo el tratamiento de mis datos personales para procesar y entregar este pedido.',
+        ) as HTMLInputElement
+      ).checked,
+    ).toBe(false);
   });
 
   it('la casilla de autorización nunca arranca marcada', async () => {

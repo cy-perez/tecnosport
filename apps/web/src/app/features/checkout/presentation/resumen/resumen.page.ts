@@ -525,6 +525,8 @@ export class ResumenPage {
   private readonly opcionesDeEnvio = computed(() => this.tarifa()?.opciones ?? []);
 
   constructor() {
+    this.rellenarConLoYaEscrito();
+
     // Recordar la última cotización buena para poder decir cuánto se ahorra
     // quien cambia a recogida. Se guarda al llegar, no se recalcula después:
     // al cambiar a retiro la consulta se deshabilita y `data()` se vacía.
@@ -586,6 +588,43 @@ export class ResumenPage {
         control.updateValueAndValidity({ emitEvent: false });
       }
     });
+  }
+
+  /**
+   * Quien vuelve con «Volver» desde la transportadora o el método de pago encontraba el formulario
+   * en blanco, aunque `CheckoutStore.datosEntrega` tuviera todo lo que acababa de escribir.
+   *
+   * <p>Va **antes** de suscribirse al cambio de departamento, que vacía la ciudad: si no, poner el
+   * departamento borraría la ciudad recién puesta. Y el orden de las llaves importa por lo mismo.
+   *
+   * <p><b>La casilla de autorización no se rellena, y es una decisión.</b> `docs/08-seguridad-legal.md`
+   * fija que la casilla del checkout «nunca arranca marcada», y la constancia que guarda el servidor
+   * (`autorizacion_datos`) se toma al crear el pedido, con lo que haya en ella en ese momento. Haberla
+   * marcado hace un minuto no hace falsa una casilla marcada ahora, pero la regla escrita no
+   * distingue, y una casilla que aparece marcada sin que el titular la toque en esta pantalla es
+   * justo lo que la Ley 1581 pide evitar. Volver a marcarla es un clic; si se olvida, «Continuar»
+   * lo dice en la casilla misma.
+   */
+  private rellenarConLoYaEscrito(): void {
+    const datos = this.checkout.datosEntrega();
+    if (!datos) {
+      return;
+    }
+    this.form.patchValue({
+      nombre: datos.contacto.nombre,
+      telefono: datos.contacto.telefono,
+      correo: datos.correo,
+      tipoEntrega: datos.tipoEntrega,
+    });
+    if (datos.direccion) {
+      this.form.controls.direccion.patchValue({
+        codigoDaneDepartamento: datos.direccion.codigoDaneDepartamento,
+        codigoDaneCiudad: datos.direccion.codigoDaneCiudad,
+        direccion: datos.direccion.direccion,
+        indicaciones: datos.direccion.indicaciones ?? '',
+        barrio: datos.direccion.barrio ?? '',
+      });
+    }
   }
 
   /**
