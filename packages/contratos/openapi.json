@@ -957,6 +957,21 @@
         },
         "type" : "object"
       },
+      "ClaveYCodigoSegundoFactorRequest" : {
+        "properties" : {
+          "claveActual" : {
+            "type" : "string"
+          },
+          "codigo" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "claveActual",
+          "codigo"
+        ],
+        "type" : "object"
+      },
       "CodigoSegundoFactorRequest" : {
         "properties" : {
           "codigo" : {
@@ -965,6 +980,24 @@
         },
         "required" : [
           "codigo"
+        ],
+        "type" : "object"
+      },
+      "CodigosDeRespaldoRegeneradosRespuesta" : {
+        "properties" : {
+          "codigosDeRespaldo" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "sesion" : {
+            "$ref" : "#/components/schemas/SesionRespuesta"
+          }
+        },
+        "required" : [
+          "codigosDeRespaldo",
+          "sesion"
         ],
         "type" : "object"
       },
@@ -1905,6 +1938,30 @@
             "type" : "string"
           }
         },
+        "type" : "object"
+      },
+      "EstadoSegundoFactorRespuesta" : {
+        "properties" : {
+          "activadoEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "activo" : {
+            "type" : "boolean"
+          },
+          "codigosDeRespaldoRestantes" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "obligatorio" : {
+            "type" : "boolean"
+          }
+        },
+        "required" : [
+          "activo",
+          "codigosDeRespaldoRestantes",
+          "obligatorio"
+        ],
         "type" : "object"
       },
       "ExistenciaAjustadaRespuesta" : {
@@ -10443,6 +10500,26 @@
         ]
       }
     },
+    "/api/v1/auth/segundo-factor" : {
+      "get" : {
+        "operationId" : "consultarSegundoFactor",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EstadoSegundoFactorRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "segundo-factor-controlador"
+        ]
+      }
+    },
     "/api/v1/auth/segundo-factor/activacion" : {
       "post" : {
         "operationId" : "iniciarActivacionSegundoFactor",
@@ -10492,6 +10569,66 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/ActivacionConfirmadaRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "segundo-factor-controlador"
+        ]
+      }
+    },
+    "/api/v1/auth/segundo-factor/codigos-de-respaldo" : {
+      "post" : {
+        "operationId" : "regenerarCodigosDeRespaldo",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ClaveYCodigoSegundoFactorRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CodigosDeRespaldoRegeneradosRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "segundo-factor-controlador"
+        ]
+      }
+    },
+    "/api/v1/auth/segundo-factor/desactivacion" : {
+      "post" : {
+        "operationId" : "desactivarSegundoFactor",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ClaveYCodigoSegundoFactorRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SesionRespuesta"
                 }
               }
             },

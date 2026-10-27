@@ -255,7 +255,21 @@ class CodigosDeCableTest {
           Map.entry(MarcaYaExisteException.class, "MARCA_YA_EXISTE"),
           // 26 de octubre de 2026: el panel de pedidos traduce estos dos (ADR-0094).
           Map.entry(EntregaNoAplicaException.class, "ENTREGA_NO_APLICA"),
-          Map.entry(NumeroDePedidoNoCoincideException.class, "NUMERO_DE_PEDIDO_NO_COINCIDE"));
+          Map.entry(NumeroDePedidoNoCoincideException.class, "NUMERO_DE_PEDIDO_NO_COINCIDE"),
+          // 27 de octubre de 2026: la pantalla de seguridad del panel traduce los cuatro 409 del
+          // segundo factor (ADR-0096).
+          Map.entry(
+              co.tecnosport.api.domain.usuario.SegundoFactorYaActivoException.class,
+              "SEGUNDO_FACTOR_YA_ACTIVO"),
+          Map.entry(
+              co.tecnosport.api.domain.usuario.ActivacionSegundoFactorNoIniciadaException.class,
+              "ACTIVACION_SEGUNDO_FACTOR_NO_INICIADA"),
+          Map.entry(
+              co.tecnosport.api.domain.usuario.SegundoFactorNoActivoException.class,
+              "SEGUNDO_FACTOR_NO_ACTIVO"),
+          Map.entry(
+              co.tecnosport.api.domain.usuario.SegundoFactorObligatorioException.class,
+              "SEGUNDO_FACTOR_OBLIGATORIO"));
 
   @Test
   void losCodigosQueUnAdaptadorDelFrontendCableaNoCambian() {

@@ -136,6 +136,8 @@ import co.tecnosport.api.domain.usuario.ActivacionSegundoFactorNoIniciadaExcepti
 import co.tecnosport.api.domain.usuario.CodigoSegundoFactorInvalidoException;
 import co.tecnosport.api.domain.usuario.CorreoSinVerificarException;
 import co.tecnosport.api.domain.usuario.DesafioSegundoFactorInvalidoException;
+import co.tecnosport.api.domain.usuario.SegundoFactorNoActivoException;
+import co.tecnosport.api.domain.usuario.SegundoFactorObligatorioException;
 import co.tecnosport.api.domain.usuario.SegundoFactorYaActivoException;
 import java.net.URI;
 import java.util.List;
@@ -1044,6 +1046,18 @@ public class ManejadorDeErrores {
   @ExceptionHandler(SegundoFactorYaActivoException.class)
   public ProblemDetail segundoFactorYaActivo(SegundoFactorYaActivoException excepcion) {
     return problema(HttpStatus.CONFLICT, "El segundo factor ya está activo", excepcion);
+  }
+
+  @ExceptionHandler(SegundoFactorNoActivoException.class)
+  public ProblemDetail segundoFactorNoActivo(SegundoFactorNoActivoException excepcion) {
+    return problema(HttpStatus.CONFLICT, "El segundo factor no está activo", excepcion);
+  }
+
+  // 409 y no 403: la persona puede hacerlo todo, salvo esto, y es por una regla del panel
+  // (ADMIN_EXIGE_SEGUNDO_FACTOR), no por quién es.
+  @ExceptionHandler(SegundoFactorObligatorioException.class)
+  public ProblemDetail segundoFactorObligatorio(SegundoFactorObligatorioException excepcion) {
+    return problema(HttpStatus.CONFLICT, "El segundo factor es obligatorio", excepcion);
   }
 
   // 401 como la clave equivocada: es la misma clase de error —el secreto no coincide— y se

@@ -111,6 +111,12 @@ public enum TextoDeCorreo {
   USUARIO_SEGUNDO_FACTOR_ACTIVADO_CUERPO("usuario.segundo_factor.activado.cuerpo"),
   USUARIO_SEGUNDO_FACTOR_RESPALDO_USADO_ASUNTO("usuario.segundo_factor.respaldo_usado.asunto"),
   USUARIO_SEGUNDO_FACTOR_RESPALDO_USADO_CUERPO("usuario.segundo_factor.respaldo_usado.cuerpo"),
+  USUARIO_SEGUNDO_FACTOR_DESACTIVADO_ASUNTO("usuario.segundo_factor.desactivado.asunto"),
+  USUARIO_SEGUNDO_FACTOR_DESACTIVADO_CUERPO("usuario.segundo_factor.desactivado.cuerpo"),
+  USUARIO_SEGUNDO_FACTOR_RESPALDO_REGENERADO_ASUNTO(
+      "usuario.segundo_factor.respaldo_regenerado.asunto"),
+  USUARIO_SEGUNDO_FACTOR_RESPALDO_REGENERADO_CUERPO(
+      "usuario.segundo_factor.respaldo_regenerado.cuerpo"),
   SUGERENCIA_ASUNTO("sugerencia.asunto"),
   SUGERENCIA_CUERPO("sugerencia.cuerpo"),
   SUGERENCIA_ANONIMA("sugerencia.anonima");

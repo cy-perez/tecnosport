@@ -10,12 +10,15 @@ import co.tecnosport.api.application.usuario.CerrarSesion;
 import co.tecnosport.api.application.usuario.CodificadorDeClaves;
 import co.tecnosport.api.application.usuario.ConfirmarActivacionSegundoFactor;
 import co.tecnosport.api.application.usuario.ConfirmarRecuperacion;
+import co.tecnosport.api.application.usuario.ConsultarSegundoFactor;
+import co.tecnosport.api.application.usuario.DesactivarSegundoFactor;
 import co.tecnosport.api.application.usuario.GeneradorDeTokens;
 import co.tecnosport.api.application.usuario.IniciarActivacionSegundoFactor;
 import co.tecnosport.api.application.usuario.IniciarSesion;
 import co.tecnosport.api.application.usuario.IniciarSesionConGoogle;
 import co.tecnosport.api.application.usuario.ReenviarVerificacion;
 import co.tecnosport.api.application.usuario.RefrescarToken;
+import co.tecnosport.api.application.usuario.RegenerarCodigosDeRespaldo;
 import co.tecnosport.api.application.usuario.RegistrarUsuario;
 import co.tecnosport.api.application.usuario.RepositorioDesafiosSegundoFactor;
 import co.tecnosport.api.application.usuario.RepositorioSegundosFactores;
@@ -407,5 +410,74 @@ public class ConfiguracionUsuario {
         limitadorDeIntentos,
         propiedadesLimite.cuentaMaximo(),
         Duration.ofMinutes(propiedadesLimite.cuentaMinutos()));
+  }
+
+  @Bean
+  public ConsultarSegundoFactor consultarSegundoFactor(
+      RepositorioUsuarios repositorioUsuarios,
+      RepositorioSegundosFactores repositorioSegundosFactores,
+      PoliticaDeSegundoFactor politicaDeSegundoFactor) {
+    return new ConsultarSegundoFactor(
+        repositorioUsuarios, repositorioSegundosFactores, politicaDeSegundoFactor);
+  }
+
+  /** Mismo límite que el cambio de clave: pide la clave, y el abuso que frena es el mismo. */
+  @Bean
+  public RegenerarCodigosDeRespaldo regenerarCodigosDeRespaldo(
+      RepositorioUsuarios repositorioUsuarios,
+      RepositorioSegundosFactores repositorioSegundosFactores,
+      RepositorioSesiones repositorioSesiones,
+      CodificadorDeClaves codificadorDeClaves,
+      GeneradorDeTokens generadorDeTokens,
+      EnviadorDeCorreo enviadorDeCorreo,
+      TextosDeCorreo textos,
+      Reloj reloj,
+      PropiedadesJwt propiedadesJwt,
+      LimitadorDeIntentos limitadorDeIntentos,
+      PropiedadesLimiteAuth propiedadesLimite) {
+    return new RegenerarCodigosDeRespaldo(
+        repositorioUsuarios,
+        repositorioSegundosFactores,
+        repositorioSesiones,
+        codificadorDeClaves,
+        generadorDeTokens,
+        enviadorDeCorreo,
+        textos,
+        reloj,
+        Duration.ofDays(propiedadesJwt.diasRefresco()),
+        limitadorDeIntentos,
+        propiedadesLimite.cuentaMaximo(),
+        Duration.ofMinutes(propiedadesLimite.cuentaMinutos()));
+  }
+
+  /** Mismo límite que el cambio de clave. */
+  @Bean
+  public DesactivarSegundoFactor desactivarSegundoFactor(
+      RepositorioUsuarios repositorioUsuarios,
+      RepositorioSegundosFactores repositorioSegundosFactores,
+      RepositorioSesiones repositorioSesiones,
+      CodificadorDeClaves codificadorDeClaves,
+      GeneradorDeTokens generadorDeTokens,
+      EnviadorDeCorreo enviadorDeCorreo,
+      TextosDeCorreo textos,
+      Reloj reloj,
+      PropiedadesJwt propiedadesJwt,
+      LimitadorDeIntentos limitadorDeIntentos,
+      PropiedadesLimiteAuth propiedadesLimite,
+      PoliticaDeSegundoFactor politicaDeSegundoFactor) {
+    return new DesactivarSegundoFactor(
+        repositorioUsuarios,
+        repositorioSegundosFactores,
+        repositorioSesiones,
+        codificadorDeClaves,
+        generadorDeTokens,
+        enviadorDeCorreo,
+        textos,
+        reloj,
+        Duration.ofDays(propiedadesJwt.diasRefresco()),
+        limitadorDeIntentos,
+        propiedadesLimite.cuentaMaximo(),
+        Duration.ofMinutes(propiedadesLimite.cuentaMinutos()),
+        politicaDeSegundoFactor);
   }
 }

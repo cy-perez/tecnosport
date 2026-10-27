@@ -1940,6 +1940,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/segundo-factor": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["consultarSegundoFactor"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/segundo-factor/activacion": {
         parameters: {
             query?: never;
@@ -1966,6 +1982,38 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["confirmarActivacionSegundoFactor"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/segundo-factor/codigos-de-respaldo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["regenerarCodigosDeRespaldo"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/segundo-factor/desactivacion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["desactivarSegundoFactor"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2793,8 +2841,16 @@ export interface components {
             padreId?: string;
             slug?: string;
         };
+        ClaveYCodigoSegundoFactorRequest: {
+            claveActual: string;
+            codigo: string;
+        };
         CodigoSegundoFactorRequest: {
             codigo: string;
+        };
+        CodigosDeRespaldoRegeneradosRespuesta: {
+            codigosDeRespaldo: string[];
+            sesion: components["schemas"]["SesionRespuesta"];
         };
         ColorDePaletaRespuesta: {
             coloresPatron?: string[];
@@ -3104,6 +3160,14 @@ export interface components {
             guias?: components["schemas"]["GuiaRespuesta"][];
             /** Format: date-time */
             recaudoConciliadoEn?: string;
+        };
+        EstadoSegundoFactorRespuesta: {
+            /** Format: date-time */
+            activadoEn?: string;
+            activo: boolean;
+            /** Format: int32 */
+            codigosDeRespaldoRestantes: number;
+            obligatorio: boolean;
         };
         ExistenciaAjustadaRespuesta: {
             dejaReservasSinRespaldo?: boolean;
@@ -7806,6 +7870,26 @@ export interface operations {
             };
         };
     };
+    consultarSegundoFactor: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EstadoSegundoFactorRespuesta"];
+                };
+            };
+        };
+    };
     iniciarActivacionSegundoFactor: {
         parameters: {
             query?: never;
@@ -7850,6 +7934,54 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ActivacionConfirmadaRespuesta"];
+                };
+            };
+        };
+    };
+    regenerarCodigosDeRespaldo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClaveYCodigoSegundoFactorRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CodigosDeRespaldoRegeneradosRespuesta"];
+                };
+            };
+        };
+    };
+    desactivarSegundoFactor: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClaveYCodigoSegundoFactorRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SesionRespuesta"];
                 };
             };
         };

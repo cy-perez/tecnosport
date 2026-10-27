@@ -420,6 +420,9 @@ POST /api/v1/auth/recuperacion | /recuperacion/confirmar
 POST /api/v1/auth/segundo-factor/verificacion       segundo paso del inicio de sesión (adr/0096), sin sesión
 POST /api/v1/auth/segundo-factor/activacion          ADMIN: clave actual → clave TOTP pendiente
 POST /api/v1/auth/segundo-factor/activacion/confirmar  ADMIN: primer código → activo, sesión nueva y códigos de respaldo
+GET  /api/v1/auth/segundo-factor                     ADMIN: {activo, activadoEn, codigosDeRespaldoRestantes, obligatorio}
+POST /api/v1/auth/segundo-factor/codigos-de-respaldo  ADMIN: clave + código → diez códigos nuevos y sesión nueva
+POST /api/v1/auth/segundo-factor/desactivacion       ADMIN: clave + código → sin factor y sesión nueva
 GET  /api/v1/cuenta/pedidos
 GET/POST/PATCH /api/v1/cuenta/direcciones
 ```
@@ -447,6 +450,11 @@ de un administrador que todavía no lo activó, cuando el panel lo exige).
 periodoSegundos}` (409 `SEGUNDO_FACTOR_YA_ACTIVO`); `/activacion/confirmar` pide
 `{codigo}` y responde `{sesion, codigosDeRespaldo}` con cookie nueva: revoca las
 demás sesiones (409 `ACTIVACION_SEGUNDO_FACTOR_NO_INICIADA`).
+`/codigos-de-respaldo` y `/desactivacion` piden `{claveActual, codigo}` —el código
+puede ser de la aplicación o de respaldo—, revocan las demás sesiones y responden
+con cookie nueva; los dos avisan por correo. Desactivar con
+`ADMIN_EXIGE_SEGUNDO_FACTOR` encendida responde 409 `SEGUNDO_FACTOR_OBLIGATORIO`, y
+sin factor activo, 409 `SEGUNDO_FACTOR_NO_ACTIVO`.
 
 `/auth/verificacion/reenviar` (solo el correo) responde 204 con **tres**
 desenlaces indistinguibles: la cuenta no existe, existe sin verificar —y recibe
