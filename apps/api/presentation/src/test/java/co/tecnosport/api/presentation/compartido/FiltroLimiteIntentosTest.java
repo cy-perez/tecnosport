@@ -109,4 +109,31 @@ class FiltroLimiteIntentosTest {
 
     assertThat(limitador.ultimaClave()).contains("198.51.100.7");
   }
+
+  /**
+   * La URI cruda no se decodifica: con ella en la llave, escapar un carácter estrenaba presupuesto
+   * mientras el contenedor seguía llevando la petición al mismo endpoint.
+   */
+  @Test
+  void laMismaRutaConUnCaracterEscapadoCompartePresupuesto() throws Exception {
+    String claveLimpia = claveDe("/api/v1/auth/sesion");
+
+    assertThat(claveDe("/api/v1/auth/%73esion")).isEqualTo(claveLimpia);
+    assertThat(claveDe("/api/v1/auth/sesion;jsessionid=x")).isEqualTo(claveLimpia);
+    assertThat(claveDe("/api/v1//auth/./sesion")).isEqualTo(claveLimpia);
+    assertThat(claveLimpia).isEqualTo("ip:/api/v1/auth/sesion:203.0.113.5");
+  }
+
+  /** El diseño quiere un presupuesto por endpoint: el registro no gasta el del inicio de sesión. */
+  @Test
+  void cadaEndpointConservaSuPropioPresupuesto() throws Exception {
+    assertThat(claveDe("/api/v1/auth/registro")).isNotEqualTo(claveDe("/api/v1/auth/sesion"));
+  }
+
+  private String claveDe(String uri) throws Exception {
+    MockHttpServletRequest request = new MockHttpServletRequest("POST", uri);
+    request.setRemoteAddr("203.0.113.5");
+    filtro.doFilter(request, new MockHttpServletResponse(), (req, res) -> {});
+    return limitador.ultimaClave();
+  }
 }
