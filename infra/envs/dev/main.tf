@@ -473,10 +473,13 @@ module "api" {
     SPRING_PROFILES_ACTIVE = "dev"
     # Contraentrega encendida solo en dev desde el 8 de octubre de 2026, para probar el flujo
     # completo. Producción espera a que Skydropx confirme comisión, tope y plazo de giro del
-    # recaudo (ADR-0023). La recogida en el punto, en cambio, va apagada en todos los ambientes:
-    # su valor por omisión ya es `false` y no se repite aquí.
+    # recaudo (ADR-0023).
     CONTRAENTREGA_HABILITADA = "true"
-    GOOGLE_CLIENT_ID         = "2132674273-64m082sb4vfika599ja818f2eubnpfdi.apps.googleusercontent.com"
+    # La recogida en el punto, encendida en dev el 26 de octubre de 2026 junto con los textos que
+    # la ofrecen (términos 2026-10-26.1) y la entrega en el punto (ADR-0094). Solo aplica a los
+    # carritos de proveedores locales; el valor por omisión sigue siendo `false`.
+    RETIRO_EN_PUNTO_HABILITADO = "true"
+    GOOGLE_CLIENT_ID           = "2132674273-64m082sb4vfika599ja818f2eubnpfdi.apps.googleusercontent.com"
     # Las cuentas de transferencia (docs/11-pagos-y-envios.md). Los valores vienen de
     # `cuentas.auto.tfvars`, que no se versiona porque el repo es público; ver la variable.
     TRANSFERENCIA_NEQUI_NUMERO      = var.cuentas_de_transferencia.nequi.numero
