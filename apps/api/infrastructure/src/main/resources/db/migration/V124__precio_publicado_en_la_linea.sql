@@ -12,10 +12,13 @@ alter table linea_pedido add column precio_publicado numeric(14, 2);
 
 update linea_pedido set precio_publicado = precio_unitario;
 
-alter table linea_pedido alter column precio_publicado set not null;
-
+-- Nullable a proposito, aunque la revision nueva siempre lo escribe: mientras dura el despliegue,
+-- la revision vieja sigue atendiendo y crea pedidos sin conocer esta columna. Con `not null` cada
+-- compra en esa ventana daba 500. Una linea sin publicado se lee como sin descuento (publicado
+-- igual al cobrado), que es justo lo que cobro la revision vieja.
+--
 -- El publicado es el maximo que alguien paga: un precio cobrado por encima seria un recargo, que es
 -- justo lo que el ADR-0095 descarto. El dominio lo exige al construir la linea; esto lo exige a
 -- cualquier otra puerta.
 alter table linea_pedido add constraint ck_linea_pedido_publicado_no_menor_que_cobrado
-    check (precio_publicado >= precio_unitario);
+    check (precio_publicado is null or precio_publicado >= precio_unitario);

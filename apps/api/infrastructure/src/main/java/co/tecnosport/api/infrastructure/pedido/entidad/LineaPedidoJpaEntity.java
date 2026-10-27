@@ -32,7 +32,9 @@ public class LineaPedidoJpaEntity {
   private BigDecimal precioUnitario;
 
   /** El precio anunciado al comprar (V124, ADR-0095); {@code precioUnitario} es lo que se cobra. */
-  @Column(name = "precio_publicado", nullable = false)
+  // Nullable: la escribe siempre esta revisión, pero la anterior no la conoce y sigue creando
+  // pedidos mientras dura el despliegue (V124). Null se lee como publicado = unitario.
+  @Column(name = "precio_publicado")
   private BigDecimal precioPublicado;
 
   @Column(name = "tasa_iva", nullable = false)

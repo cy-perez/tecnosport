@@ -346,7 +346,10 @@ public class RepositorioPedidosJpa implements RepositorioPedidos {
         l.getImagenUrl(),
         l.getIdReserva(),
         l.getDetalleVariante(),
-        Dinero.deCop(l.getPrecioPublicado()));
+        // Null es una línea que creó la revisión anterior durante el despliegue de V124: se cobró
+        // al único precio que conocía, así que el publicado es ese y el descuento, cero.
+        Dinero.deCop(
+            l.getPrecioPublicado() == null ? l.getPrecioUnitario() : l.getPrecioPublicado()));
   }
 
   private HistorialPedido aHistorial(HistorialPedidoJpaEntity h) {

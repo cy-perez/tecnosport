@@ -105,11 +105,19 @@ class MigracionPrecioPublicadoEnLaLineaTest {
         .isInstanceOf(DataIntegrityViolationException.class);
   }
 
+  /**
+   * La revisión anterior sigue creando pedidos mientras dura el despliegue y no conoce la columna:
+   * su insert tiene que pasar. Con {@code not null} cada compra en esa ventana daba 500.
+   */
   @Test
-  void despuesDeLaMigracionElPublicadoEsObligatorio() {
+  void despuesDeLaMigracionUnaLineaSinPublicadoSeSigueInsertando() {
     flywayHasta("124").migrate();
 
-    assertThatThrownBy(() -> linea("V124-SIN-PUBLICADO", 50_000))
-        .isInstanceOf(DataIntegrityViolationException.class);
+    UUID id = linea("V124-SIN-PUBLICADO", 50_000);
+
+    assertThat(
+            jdbc.queryForObject(
+                "select precio_publicado from linea_pedido where id = ?", BigDecimal.class, id))
+        .isNull();
   }
 }
