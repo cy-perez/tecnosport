@@ -194,8 +194,8 @@ Instagram corta por su cuenta justo lo que aquí se cuida de no cortar.
 Con `ImageIO` y `Graphics2D`, los dos del JDK: sin dependencia nueva. El
 resultado se guarda bajo `productos/{id}/redes/` con la key derivada del
 contenido y de la proporción, así que difundir dos veces no sube nada nuevo. El
-informe de huérfanos las declara **no juzgables**, como las de `rotacion/`: las
-reclama `publicacion_en_red.urls_imagenes` y ninguna API las expone.
+informe de huérfanos las declara **no juzgables** (las de `rotacion/` también lo
+eran hasta el retiro del 360, `adr/0097`): las reclama `publicacion_en_red.urls_imagenes` y ninguna API las expone.
 
 **El encaje tiene que caer dentro del rango, no en su borde.** La proporción que
 se pide suele ser justo el límite que la red admite, así que redondear al entero
