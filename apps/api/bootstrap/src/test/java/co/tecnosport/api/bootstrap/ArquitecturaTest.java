@@ -195,8 +195,27 @@ class ArquitecturaTest {
         .that()
         .resideInAPackage(RAIZ + ".domain..")
         .should()
-        .onlyDependOnClassesThat(permitidas(RAIZ + ".domain.."))
+        .onlyDependOnClassesThat(permitidasEnDominio())
         .check(clases);
+  }
+
+  /**
+   * Lo que el dominio puede usar: lo de {@link #permitidas} y, solo aquí, {@code javax.crypto}.
+   * Desde el 27 de octubre de 2026 (ADR-0096) el código TOTP es una regla del dominio —qué código
+   * vale en qué instante— y se calcula con {@code javax.crypto.Mac}, que viene en el JDK.
+   * Aplicación no lo necesita y no lo tiene: el cifrado de la clave guardada es de {@code
+   * infrastructure}.
+   */
+  private static DescribedPredicate<JavaClass> permitidasEnDominio() {
+    DescribedPredicate<JavaClass> base = permitidas(RAIZ + ".domain..");
+    DescribedPredicate<JavaClass> criptografia =
+        JavaClass.Predicates.resideInAPackage("javax.crypto..");
+    return new DescribedPredicate<JavaClass>(base.getDescription() + " y javax.crypto") {
+      @Override
+      public boolean test(JavaClass clase) {
+        return base.test(clase) || criptografia.test(clase.getBaseComponentType());
+      }
+    };
   }
 
   /**
@@ -259,6 +278,20 @@ class ArquitecturaTest {
     org.junit.jupiter.api.Assertions.assertTrue(deDominio.test(muestra.get(java.util.List.class)));
     org.junit.jupiter.api.Assertions.assertTrue(
         deDominio.test(muestra.get(java.math.BigDecimal.class)));
+  }
+
+  /** {@code javax.crypto} entra al dominio y a nada más; {@code java.sql} sigue fuera. */
+  @Test
+  void laCriptografiaDelJdkEntraAlDominioYNoAAplicacion() {
+    JavaClasses muestra =
+        new ClassFileImporter().importClasses(javax.crypto.Mac.class, java.sql.Connection.class);
+    org.junit.jupiter.api.Assertions.assertTrue(
+        permitidasEnDominio().test(muestra.get(javax.crypto.Mac.class)));
+    org.junit.jupiter.api.Assertions.assertFalse(
+        permitidasEnDominio().test(muestra.get(java.sql.Connection.class)));
+    org.junit.jupiter.api.Assertions.assertFalse(
+        permitidas(RAIZ + ".domain..", RAIZ + ".application..")
+            .test(muestra.get(javax.crypto.Mac.class)));
   }
 
   /** Del JDK, lo que es tecnología y no lenguaje: una base de datos y un cliente HTTP. */
