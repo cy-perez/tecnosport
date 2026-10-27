@@ -212,6 +212,19 @@ describe('aMetodoDePagoConPrecio', () => {
       metodo: 'TRANSFERENCIA_MANUAL',
       subtotal: { valor: 230_000, moneda: 'COP' },
       descuento: { valor: 9_000, moneda: 'COP' },
+      costoEnvio: null,
     });
+  });
+
+  /** Con contraentrega el servidor manda el flete con recaudo, que es el que se va a cobrar. */
+  it('trae el flete del medio cuando el servidor lo manda', () => {
+    expect(
+      aMetodoDePagoConPrecio({
+        metodo: 'CONTRAENTREGA',
+        subtotal: { valor: 240_000, moneda: 'COP' },
+        descuento: { valor: 0, moneda: 'COP' },
+        costoEnvio: { valor: 14_500, moneda: 'COP' },
+      }).costoEnvio,
+    ).toEqual({ valor: 14_500, moneda: 'COP' });
   });
 });

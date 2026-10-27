@@ -232,11 +232,13 @@ describe('PedidoHttpRepositorio: la transportadora elegida', () => {
         metodo: 'WOMPI',
         subtotal: { valor: 239_000, moneda: 'COP' },
         descuento: { valor: 0, moneda: 'COP' },
+        costoEnvio: null,
       },
       {
         metodo: 'TRANSFERENCIA_MANUAL',
         subtotal: { valor: 230_000, moneda: 'COP' },
         descuento: { valor: 9_000, moneda: 'COP' },
+        costoEnvio: null,
       },
     ]);
   });
