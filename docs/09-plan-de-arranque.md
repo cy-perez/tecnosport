@@ -1366,6 +1366,11 @@ cliente.
 
 ## Fase 5. Sistema 360
 
+> **Retirada el 27 de octubre de 2026** (`ADR-0097`): el negocio decidió no usar el
+> visor 360 ni la captura desde el teléfono, y se quitaron del código, de la base y
+> de la documentación. Esta sección se queda como historia de lo que se construyó y
+> de lo que se aprendió; nada de lo que describe existe ya.
+
 Se hace al final a propósito: necesita el panel, la autenticación, el
 almacenamiento y las URL firmadas ya funcionando.
 

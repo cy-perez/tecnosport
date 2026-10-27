@@ -297,8 +297,8 @@ cubren o para lo que no debe olvidarse:
   el esqueleto. Y por la misma razón: `styles.scss` acorta la *duración* de toda
   animación bajo `[data-movimiento]`, y un anillo que da la vuelta en 0,01 ms es
   un parpadeo, peor que uno quieto. Hay que apagarlo, no acelerarlo.
-- `superficie-arrastre` — las tres propiedades que hacen arrastrable el visor
-  360, incluida `-webkit-user-drag`, que no tiene utilidad en Tailwind.
+- `superficie-arrastre` — las tres propiedades que hacen arrastrable el carrusel
+  de portada, incluida `-webkit-user-drag`, que no tiene utilidad en Tailwind.
 
 **El riesgo que trae este cambio, y hay que conocerlo: una clase que no existe no
 falla, simplemente no hace nada.** Pasó dos veces en la propia fase con `min-h-0`
@@ -400,7 +400,7 @@ SCSS con los mismos valores.
 
 **En `shared/` — compartidos de verdad, pero no tontos:** `ts-precio` (necesita
 el idioma activo para formatear la moneda) · `ts-esqueleto` · `ts-migas` ·
-`ts-paginador` · `ts-alternador-idioma` · `ts-alternador-tema` · `ts-visor-360`.
+`ts-paginador` · `ts-alternador-idioma` · `ts-alternador-tema`.
 
 ### Los dos indicadores de carga, y cuándo va cada uno
 
@@ -506,9 +506,8 @@ fuera viene de fábrica, así que el componente ya no necesita silenciar dos
 reglas de ESLint para tener un fondo pulsable.
 
 **Sigue siendo la excepción a la regla de "primero el consumidor":** se construyó en
-la Fase 2 sin consumidor, por petición explícita. `eliminar(setId)` existe en el
-puerto y el repositorio de `captura360`, pero ninguna pantalla lo dispara
-todavía, así que el diálogo no se alcanza desde ningún sitio del sitio.
+la Fase 2 sin consumidor, por petición explícita, y el diálogo no se alcanza
+desde ningún sitio del sitio.
 
 `ts-alternador-idioma` y `ts-alternador-tema` **no pasan por `ts-select`**, y
 los dos lo hicieron hasta el 24 de septiembre de 2026. `ts-select` envuelve un
@@ -788,7 +787,6 @@ y enlaces. Si todo se tiñe de ámbar, muere la regla de una sola cosa por panta
   abra un diálogo**. O sea: la trampa de foco de este proyecto está sin
   verificar de las dos formas que valen. Se verifica el día que `ts-dialogo`
   tenga su primer consumidor.
-- El visor 360 se opera con flechas y con botones visibles, no solo arrastrando.
 
 ## El carrusel de portada
 
@@ -821,8 +819,8 @@ arrastrable, parece roto. En los extremos, donde no hay pieza que descubrir, el
 arrastre se frena a un tercio: se mueve lo justo para sentirse atendido sin
 enseñar una franja vacía.
 
-El patrón sale del visor 360, que ya lo había pagado una vez, y **tres cosas de
-las que cuesta acordarse**: `touch-action: pan-y` deja el eje vertical al
+El patrón salió del visor 360 —retirado el 27 de octubre de 2026, `ADR-0097`—, que
+ya lo había pagado una vez, y **tres cosas de las que cuesta acordarse**: `touch-action: pan-y` deja el eje vertical al
 navegador —o deslizar aquí secuestra el scroll de la página—, el temporizador se
 apaga mientras el dedo está encima y se reprograma al soltar, y un arrastre que
 termina sobre el botón de la diapositiva no puede activarlo.
@@ -1033,8 +1031,8 @@ tipografía de marca no ha cargado (`ADR-0059`) el texto se pinta con el respald
 del sistema, y ahí el mismo rótulo pasa a pedir 19,3ch — no porque crezca, sino
 porque encoge el `ch`, que es el ancho del "0" de la fuente que esté puesta.
 
-`ch` y no píxeles: es la escapatoria que la regla dura #2 admite y que ya usan
-`min-w-[12ch]` en el visor 360 y `min-w-[2ch]` en la línea del carrito. Y se
+`ch` y no píxeles: es la escapatoria que la regla dura #2 admite y que ya usa
+`min-w-[2ch]` en la línea del carrito. Y se
 comprueba leyendo el ancho pintado, no calculándolo: un `<span>` de prueba con la
 misma declaración `font` daba 8,89 px por carácter donde el elemento de verdad
 resuelve 9,6.
@@ -1107,8 +1105,6 @@ cobertura.
 ## Imágenes del catálogo
 
 - Producto, imagen principal: 1:1, 1000 x 1000 px, fondo claro uniforme.
-- Set de rotación: 1:1, 1000 x 1000 px, misma escala del producto en todos los
-  fotogramas. Lo produce el asistente de captura.
 - Hero: 4:3, 1200 x 900 px.
 - Ejes de categoría: 16:9, 1200 x 675 px.
 

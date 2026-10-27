@@ -1,6 +1,7 @@
 # ADR 0018. El set de rotación como agregado propio, y qué se verifica de verdad al completarlo
 
-Fecha: 2026-09-06. Estado: aceptada.
+Fecha: 2026-09-06. Estado: **superada por `adr/0097`** (27 de octubre de
+2026): el negocio retiró el sistema 360 entero, visor y captura.
 
 ## Contexto
 

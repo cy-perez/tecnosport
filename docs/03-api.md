@@ -57,7 +57,7 @@ frontend, así que no sigue la convención JSON del resto del contrato.
 
 ```
 GET  /api/v1/productos                      filtros, orden, cursor
-GET  /api/v1/productos/{slug}               incluye imágenes y set de rotación
+GET  /api/v1/productos/{slug}               incluye imágenes y galería
 GET  /api/v1/categorias                     el árbol completo, con `padreId`; incluye las vacías
 GET  /api/v1/marcas                         solo las que tienen algo publicado
 POST /api/v1/carritos
@@ -394,21 +394,6 @@ Las variantes con `estado == INACTIVA` nunca aparecen en `variantes` de la
 ficha pública: mismo principio que `Producto.estado == PUBLICADO`, el
 servidor no expone lo que dio de baja.
 
-El set de rotación viaja dentro de la ficha del producto, ya ordenado y con las
-URL absolutas:
-
-```json
-"rotacion": {
-  "fotogramas": 8,
-  "imagenes": [
-    { "orden": 0, "url": "...", "ancho": 1000, "alto": 1000 }
-  ]
-}
-```
-
-El frontend no calcula ni adivina el orden. Si el set está incompleto, el campo
-`rotacion` viene nulo y no se envían fotogramas sueltos.
-
 ## Endpoints con sesión
 
 ```
@@ -552,12 +537,6 @@ PUT /api/v1/admin/envios/referencias/medidas          fija largo, ancho y alto d
 PUT /api/v1/admin/envios/referencias/pesos/{id}       fija el peso de esa categoría; tecnología o rama es 409 PESO_DE_REFERENCIA_NO_ADMITIDO
 DELETE /api/v1/admin/envios/referencias/pesos/{id}    le quita el peso: sus variantes sin medir vuelven a solo recogida; 204
 GET /api/v1/admin/envios/paquetes/{pedidoId}          los paquetes de un pedido a domicilio para crear su guía a mano: peso en kg, medidas, declarado y contenido
-
-POST /api/v1/admin/sets-rotacion                    abre un set vacío en BORRADOR
-POST /api/v1/admin/sets-rotacion/{id}/subidas       N URL firmadas, una por fotograma
-POST /api/v1/admin/sets-rotacion/{id}/completar     verifica los objetos y pasa a COMPLETO
-POST /api/v1/admin/sets-rotacion/{id}/publicar      de COMPLETO a PUBLICADO: la ficha muestra el visor
-DELETE /api/v1/admin/sets-rotacion/{id}             borra el set y sus objetos del bucket
 ```
 
 **El ajuste de existencia recibe el conteo, no la diferencia** (`adr/0049`). Quien
@@ -640,42 +619,22 @@ Sin `Idempotency-Key`: la máquina de estados de la solicitud ya hace idempotent
 estas acciones administrativas de un solo actor, y radicar dos veces lo bloquea
 la guarda de "una sola en curso" con un 409.
 
-El set se abre **prometiendo cuántos fotogramas va a tener** (entre 4 y 16), y esa
-promesa manda en todo lo demás: `/subidas` emite exactamente esas N URL —el
-cliente no elige cuántas ni dónde escribe, la key la arma el servidor— y
-`/completar` exige que hayan llegado todas. Sin la promesa, un set de 8 que
-termina con 4 fotogramas contiguos pasaría por un set de 4 perfectamente válido.
-
 Las imágenes se suben **directo a Cloud Storage con URL firmada**. No pasan por el
-backend. Al completar, el servidor verifica contra el almacén real que cada objeto
-existe, que no está vacío y que pertenece al set, que llegaron todos los
-prometidos, y que las dimensiones **declaradas** son las de un fotograma de
-rotación (cuadrado, 1000 px). Un set que no pasa esa verificación se queda en
-`BORRADOR` entero, no a medias: medio set publicado es un visor roto.
+backend. Al confirmar, el servidor verifica contra el almacén real que cada objeto
+existe y su tamaño en bytes.
 
-De cada fotograma, el cuerpo de `/completar` lleva `orden`, `objectKey`, `ancho`,
-`alto` y **`hash`**: el SHA-256 del archivo en hexadecimal, que el navegador
-calcula sobre los bytes que acaba de subir. El mismo campo va en el cuerpo de
-`POST /api/v1/admin/productos/{id}/imagen-principal`. El servidor exige que sea
-un hash bien formado, pero no puede confirmar que corresponda al archivo sin
-descargarlo: `ADR-0019`.
+El cuerpo de `POST /api/v1/admin/productos/{id}/imagen-principal` lleva los
+objetos subidos —uno por ancho—, el `alto` y el **`hash`** de la variante mayor:
+el SHA-256 del archivo en hexadecimal, que el navegador calcula sobre los bytes
+que acaba de subir. El servidor exige que sea un hash bien formado, pero no puede confirmar que
+corresponda al archivo sin descargarlo: `ADR-0019`.
 
 Lo que el servidor **no** verifica, y conviene tenerlo escrito: que los bytes
 sean de verdad una imagen, que sus dimensiones reales sean las declaradas, y que
 el hash sea el de ese archivo.
 Comprobarlo exigiría descargar y decodificar el archivo en el backend, que es lo
-que la subida directa evita — mismo riesgo aceptado que en la imagen principal
-(`ADR-0016`), y por el mismo motivo: el panel lo usa solo el administrador.
-Detalle en `ADR-0018`.
-
-**Publicar es un paso aparte de completar** a propósito: entre los dos está la
-revisión del set entero en el asistente (`docs/10-captura-360.md`, paso 6), que es
-donde se caza el fotograma torcido. Un producto tiene a lo sumo un set publicado;
-publicar sobre uno que ya lo está responde 409 y hay que borrar el anterior
-primero.
-
-La imagen principal (Fase 4) verifica menos que esto: solo que el objeto exista y
-su tamaño en bytes, sin proporción esperada.
+que la subida directa evita — riesgo aceptado (`ADR-0016`) porque el panel lo
+usa solo el administrador.
 
 ### La ingesta de proveedores
 

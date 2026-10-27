@@ -100,9 +100,8 @@ Un componente inyecta `RepositorioProductos`, la interfaz declarada en `domain`,
 no `ProductosHttpService`. El proveedor se declara en la ruta. Con eso, una
 prueba de componente no necesita interceptar HTTP.
 
-Las APIs del navegador (cámara, sensores, canvas) se tratan como infraestructura:
-detrás de un puerto, con implementación falsa para pruebas. Detalle en
-`10-captura-360.md`.
+Las APIs del navegador (almacenamiento, portapapeles) se tratan como
+infraestructura: detrás de un puerto, con implementación falsa para pruebas.
 
 **Qué se renderiza en el servidor.** Todo, menos `/admin`. El catálogo es
 contenido vivo y va con SSR por solicitud, nunca prerenderizado en el build. El

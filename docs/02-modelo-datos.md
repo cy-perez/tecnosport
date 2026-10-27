@@ -242,11 +242,10 @@ categoría al agregar una variante (`GET /api/v1/atributos`,
 `docs/03-api.md`). Nada impide hoy asignarle "almacenamiento" a una camiseta
 por error del panel. Queda pendiente si el negocio lo pide.
 
-## Imágenes y set de rotación
+## Imágenes
 
 Un producto tiene una **imagen principal** obligatoria, que es la que se ve
-primero en la rejilla y en la ficha, y opcionalmente un **set de rotación** con N
-fotogramas ordenados.
+primero en la rejilla y en la ficha, y una galería opcional.
 
 ```
 imagen_producto
@@ -259,7 +258,7 @@ variante_imagen
   id, imagen_id, ancho, url, bytes
   unique (imagen_id, ancho) · on delete cascade desde imagen_producto
 
-tipo: PRINCIPAL | GALERIA | ROTACION
+tipo: PRINCIPAL | GALERIA
 ```
 
 Reglas:
@@ -297,14 +296,6 @@ Reglas:
   tamaño de la lista, así que quitar deja huecos a propósito: la ficha ordena y no
   cuenta. Y **la misma foto no entra dos veces**, comparando el `hash` —que es
   justo para lo que está, ver abajo—.
-- **El set de rotación pertenece a la variante cuando el color cambia el aspecto**
-  (ropa, bolsos, celulares). Si la variante no tiene set propio, se usa el del
-  producto. Esto evita fotografiar catorce colores el primer día sin cerrar la
-  puerta a hacerlo después.
-- **El set es completo o no existe.** Un set con fotogramas faltantes no se
-  publica: el visor no se muestra y la ficha cae a la galería normal.
-- `orden` va de 0 a N-1 y define la secuencia de giro. El fotograma 0 es la vista
-  frontal y es el que se muestra antes de que el usuario interactúe.
 - `hash` del contenido para detectar recargas duplicadas del mismo archivo: el
   SHA-256 en hexadecimal, 64 caracteres en minúscula, con un `check` en el
   esquema que lo exige (`V19`). Lo calcula el navegador, que es el único que
@@ -313,9 +304,7 @@ Reglas:
   descargarlo: `ADR-0019`. Lo que **no** va aquí es la key del objeto en Cloud
   Storage; guardarla ahí, como se hizo hasta la Fase 5, ni cabía en la columna ni
   permitía detectar duplicado alguno, porque cada key es única por construcción.
-- `alt_es` y `alt_en` obligatorios en la principal, opcionales en los fotogramas
-  de rotación, que son decorativos y llevan `alt=""` con la descripción en el
-  contenedor.
+- `alt_es` y `alt_en` obligatorios en toda imagen.
 - **Imagen principal con URL firmada (Fase 4):** el navegador sube el archivo
   directo a Cloud Storage con un `PUT`, el backend nunca ve los bytes; solo
   verifica que **cada objeto** exista y su tamaño antes de confirmar. `ancho` y
@@ -343,33 +332,16 @@ Reglas:
   reales, y no hay tamaño máximo de subida propio — riesgo aceptado mientras
   el panel solo lo use el administrador del negocio (`ADR-0016`).
 
-```
-set_rotacion
-  id, producto_id, variante_id (nullable), fotogramas, estado,
-  capturado_por, capturado_en, dispositivo, version_asistente
-
-estado: BORRADOR | COMPLETO | PUBLICADO
-fotogramas: 4 mínimo, 8 recomendado, 16 máximo
-```
-
-`fotogramas` es **cuántos se prometieron al abrir el set**, no cuántas filas de
-imagen tiene ya: es lo que permite distinguir un set de 4 de uno de 8 al que se le
-perdieron cuatro subidas. Se fija al abrir y no cambia (migración `V18`).
-
-Se guarda `dispositivo` y `version_asistente` porque cuando un set se ve mal, lo
-primero que hay que saber es con qué se capturó.
-
-**Un producto tiene a lo sumo un set publicado**, y es el único que la ficha
-carga: mientras se captura uno nuevo, el que ya está publicado se sigue viendo.
-Reemplazarlo son dos pasos —borrar el viejo, publicar el nuevo— y en el medio el
-producto se queda sin visor. El set en `BORRADOR` y el `COMPLETO` solo los ve el
-panel. Ver `ADR-0018`.
+Hasta el 27 de octubre de 2026 hubo además un **set de rotación** —la tabla
+`set_rotacion` y las imágenes de tipo `ROTACION`— para el visor 360 de la ficha.
+Se retiró con el visor y el asistente de captura (`ADR-0097`): la `V147` borró
+esas filas y la tabla.
 
 ## Entidades principales
 
 | Agregado | Contenido | Nota |
 |---|---|---|
-| `Producto` | variantes, imágenes, set de rotación, marca, categoría, estado | Raíz del catálogo |
+| `Producto` | variantes, imágenes, marca, categoría, estado | Raíz del catálogo |
 | `Variante` | sku, atributos, precio publicado y de contado, paquete | Dentro de `Producto`. Sin existencia: la tiene `Inventario` (`ADR-0050`) |
 | `UnidadSerializada` | imei, estado, variante | Solo celulares |
 | `Inventario` | movimientos y reservas | El saldo no se edita: se agrega movimiento |
@@ -386,7 +358,7 @@ panel. Ver `ADR-0018`.
 | `Direccion` | departamento, ciudad, dirección, barrio, indicaciones | Códigos DANE. El barrio y las indicaciones son opcionales: el barrio es el `area_level3` de la plataforma de envíos, y el checkout lo pide sin exigirlo |
 | `Contacto` | nombre y teléfono de quien recibe | Va en la guía y es a quien llama el mensajero. Nulo solo en pedidos anteriores a `V36` |
 | `Categoria`, `Marca`, `Atributo` | catálogo maestro | `Atributo.unidad` (opcional) acompaña al valor cuando el número solo no dice nada: "12 meses". `Marca.nombre` es único **sin distinguir mayúsculas** (`V56`) y se crea desde el panel. `Categoria` es un **árbol**: `padre_id` nulo en el primer nivel, un nivel más y ahí para (`V63`, `ADR-0061`). El árbol inicial entra por migración y lo de después se crea desde el panel |
-| `SetRotacion`, `ImagenProducto` | material visual | |
+| `ImagenProducto` | material visual | |
 | `CorreoPendiente` | destinatario, asunto, cuerpo, intentos, próximo intento | No es del dominio: es la bandeja de salida (`ADR-0045`). La fila se escribe con la transacción de la operación que la origina, así que un correo de algo que revirtió no se manda. Lleva datos personales en reposo y se purga a los 30 días |
 
 ## Reglas de inventario
@@ -903,7 +875,7 @@ el checkout lo presente al crear el pedido.
 ## Convenciones de base de datos
 
 - Nombres en español, `snake_case`, tablas en singular: `producto`,
-  `linea_pedido`, `movimiento_inventario`, `set_rotacion`.
+  `linea_pedido`, `movimiento_inventario`, `imagen_producto`.
 - Clave primaria `id uuid`, versión 7, generada en la aplicación.
 - `creado_en` y `actualizado_en` en `timestamptz`, siempre UTC.
 - Borrado lógico solo donde el negocio lo pida (`producto.estado`), no como norma.

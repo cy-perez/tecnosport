@@ -14,7 +14,6 @@ Orden de lectura para quien llega nuevo al proyecto.
 | `07-infra-gcp.md` | Entornos, Cloud Run, Terraform, CI/CD, DNS, configuración |
 | `08-seguridad-legal.md` | Autenticación, OWASP y la ley colombiana |
 | `09-plan-de-arranque.md` | Orden de construcción y prompts de cada fase |
-| `10-captura-360.md` | Captura asistida de fotos y visor de rotación |
 | `11-pagos-y-envios.md` | Wompi, contraentrega, transferencia, envío cotizado con Skydropx y seguimiento |
 | `12-legales-de-envio.md` | Cláusulas del envío cotizado y auditoría de vacíos legales del envío |
 | `13-skydropx-capacidades.md` | Qué ofrece Skydropx, qué podemos personalizar y qué falta confirmar antes de codificar |

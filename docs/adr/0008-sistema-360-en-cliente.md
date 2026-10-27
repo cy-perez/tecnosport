@@ -1,6 +1,7 @@
 # ADR 0008. Rotación 360 con captura y procesamiento en el cliente
 
-Fecha: 2026-08-30. Estado: aceptada.
+Fecha: 2026-08-30. Estado: **superada por `adr/0097`** (27 de octubre de
+2026): el negocio retiró el sistema 360 entero, visor y captura.
 
 ## Contexto
 Se quiere mostrar los productos girando. Las opciones eran: contratar fotografía
