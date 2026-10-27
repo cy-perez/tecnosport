@@ -29,11 +29,14 @@ existe.
 
 ### 2. Un controlador puede leer un repositorio para una consulta pura
 
-Siete controladores del panel (`AdminGarantias`, `AdminReversiones`,
+Ocho controladores del panel (`AdminGarantias`, `AdminReversiones`,
 `AdminRetractos`, `AdminDifusion`, `AdminProveedor`, `AdminBorrador`,
-`AdminIngesta`) leen un puerto de repositorio sin pasar por un caso de uso. Lo
-hacen solo para leer, sin regla de negocio en medio. Envolver cada lectura en un
-caso de uso que solo delega duplica clases sin proteger nada.
+`AdminIngesta` y `AdminArchivosDeIngesta`) leen un puerto de repositorio sin
+pasar por un caso de uso. Lo hacen solo para leer, sin regla de negocio en
+medio. Envolver cada lectura en un caso de uso que solo delega duplica clases
+sin proteger nada. El octavo —la lista de los zips subidos, que lee
+`RepositorioArchivosDeIngesta`— llegó después de este registro y faltaba en la
+lista hasta la revisión adversarial del 27 de octubre de 2026.
 
 **El límite queda escrito:** en el momento en que una lectura necesite un filtro
 de autorización o de visibilidad, pasa a un caso de uso. Ningún controlador
