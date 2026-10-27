@@ -17,15 +17,18 @@ import java.util.UUID;
  * y el clic; el sí/no también, pero el servidor lo vuelve a comprobar al reservar, que es donde
  * importa.
  *
- * <p>{@code precio} es el publicado, el que se anuncia; {@code precioContado} es el que se paga sin
- * pasarela —transferencia, en el punto o contra entrega— y la vitrina lo pinta como segunda cifra
- * (ADR-0095). Iguales cuando la variante no tiene descuento.
+ * <p>{@code precio} es el publicado, el único que se anuncia; {@code precioContado} es el que se
+ * paga sin pasarela —transferencia, en el punto o contra entrega—. La vitrina no lo pinta como
+ * segundo precio: con él calcula el ahorro y dice «Ahorras $X pagando por transferencia, en el
+ * punto o contra entrega» (ADR-0095, decisión 10). Iguales cuando la variante no tiene descuento.
  */
 public record VarianteRespuesta(
     UUID id,
     String sku,
     DineroRespuesta precio,
-    DineroRespuesta precioContado,
+    // Obligatorio por lo mismo que `disponible`: el servidor siempre lo manda, y opcional en el
+    // contrato obligaba al front a inventar un relleno (caer al publicado) que escondería su falta.
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED) DineroRespuesta precioContado,
     // `@Schema` porque springdoc no lo deduce: sin esto el OpenAPI lo publica como opcional, el
     // cliente TypeScript lo genera como `disponible?: boolean` y el mapeador del front cae a
     // `?? false`. O sea que el dia que el campo dejara de serializarse, **la tienda entera saldria

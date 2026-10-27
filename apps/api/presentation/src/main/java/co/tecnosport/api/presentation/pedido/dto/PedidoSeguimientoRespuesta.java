@@ -2,6 +2,7 @@ package co.tecnosport.api.presentation.pedido.dto;
 
 import co.tecnosport.api.domain.pedido.MetodoPago;
 import co.tecnosport.api.presentation.compartido.dto.DineroRespuesta;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -42,4 +43,4 @@ public record PedidoSeguimientoRespuesta(
     /** La transportadora que eligió el comprador (ADR-0073); nula en recogida. */
     String transportadora,
     /** El descuento por pagar sin pasarela (ADR-0095), ya restado en {@code subtotal}. */
-    DineroRespuesta descuento) {}
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED) DineroRespuesta descuento) {}

@@ -15,8 +15,8 @@ class SugerenciaDePrecioTecnologiaTest {
   private static final Dinero TOPE = Dinero.deCop(400_000);
 
   private static Dinero sugerir(long costo, Long mercado) {
-    return SugerenciaDePrecioTecnologia.contadoSugerido(
-        Dinero.deCop(costo), mercado == null ? null : Dinero.deCop(mercado), TOPE);
+    return new SugerenciaDePrecioTecnologia(TOPE)
+        .contadoSugerido(Dinero.deCop(costo), mercado == null ? null : Dinero.deCop(mercado));
   }
 
   /** El ejemplo de la ADR: con mercado de 1.000.000 el contado sugerido es 1.000.000. */

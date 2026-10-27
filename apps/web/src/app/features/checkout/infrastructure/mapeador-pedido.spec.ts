@@ -22,6 +22,7 @@ describe('aPedido', () => {
           nombre: 'Camiseta running',
           cantidad: 2,
           precioUnitario: { valor: 80_000, moneda: 'COP' },
+          precioPublicado: { valor: 80_000, moneda: 'COP' },
           tasaIva: 0.19,
           imagenUrl: 'https://cdn.tecnosport.co/camiseta.webp',
           detalleVariante: 'Negro · M',
@@ -131,8 +132,9 @@ describe('aPedido', () => {
     expect(pedido.datosTransferencia).toBeNull();
   });
 
+  /** El descuento no: el contrato lo declara obligatorio, y el servidor lo manda en cero. */
   it('campos ausentes se rellenan con valores por defecto, nunca undefined', () => {
-    const pedido = aPedido({});
+    const pedido = aPedido({ descuento: { valor: 0, moneda: 'COP' } });
 
     expect(pedido).toEqual({
       id: '',
@@ -162,7 +164,7 @@ describe('aPedido', () => {
    * otro lado: que el mapeador pase el valor tal cual y no lo reemplace por el de por omisión.
    */
   it('un método que llegó después al enum pasa tal cual, sin caer en el de por omisión', () => {
-    const pedido = aPedido({ metodoPago: 'SISTECREDITO' });
+    const pedido = aPedido({ metodoPago: 'SISTECREDITO', descuento: { valor: 0, moneda: 'COP' } });
 
     expect(pedido.metodoPago).toBe('SISTECREDITO');
     expect(METODOS_DE_PAGO_AL_DIA).toBe(true);
@@ -189,10 +191,6 @@ describe('el descuento del medio de pago', () => {
     const pedido = aPedido({ descuento: { valor: 9_000, moneda: 'COP' } });
 
     expect(pedido.descuento).toEqual({ valor: 9_000, moneda: 'COP' });
-  });
-
-  it('un pedido de antes de que existiera no tuvo descuento', () => {
-    expect(aPedido({}).descuento).toEqual({ valor: 0, moneda: 'COP' });
   });
 
   it('aSeguimiento también lo lleva', () => {

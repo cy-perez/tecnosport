@@ -44,6 +44,7 @@ describe('PedidoHttpRepositorio: la llave de idempotencia', () => {
     correo: 'cliente@tecnosport.co',
     metodoPago: 'WOMPI',
     subtotal: { valor: '100000', moneda: 'COP' },
+    descuento: { valor: '0', moneda: 'COP' },
     costoEnvio: { valor: '10000', moneda: 'COP' },
     total: { valor: '110000', moneda: 'COP' },
     lineas: [],
@@ -152,7 +153,12 @@ describe('PedidoHttpRepositorio: la transportadora elegida', () => {
   };
 
   it('va en el cuerpo al crear el pedido', async () => {
-    const cuerpos = capturarCuerpos({ id: 'pedido-1', lineas: [], historial: [] });
+    const cuerpos = capturarCuerpos({
+      id: 'pedido-1',
+      lineas: [],
+      historial: [],
+      descuento: { valor: 0, moneda: 'COP' },
+    });
 
     await new PedidoHttpRepositorio().crear({
       correo: 'cliente@tecnosport.co',
@@ -241,7 +247,12 @@ describe('PedidoHttpRepositorio: la transportadora elegida', () => {
    * confirmado y la unidad apartada.
    */
   it('el enlace de compra de una línea va en el cuerpo al crear el pedido', async () => {
-    const cuerpos = capturarCuerpos({ id: 'pedido-1', lineas: [], historial: [] });
+    const cuerpos = capturarCuerpos({
+      id: 'pedido-1',
+      lineas: [],
+      historial: [],
+      descuento: { valor: 0, moneda: 'COP' },
+    });
 
     await new PedidoHttpRepositorio().crear({
       correo: 'cliente@tecnosport.co',

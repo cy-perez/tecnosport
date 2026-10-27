@@ -97,6 +97,14 @@ public class PedidoControlador {
     return mapeador.aRespuesta(pedido);
   }
 
+  /**
+   * Los medios que se ofrecen, sin el precio de cada uno.
+   *
+   * @deprecated lo reemplazó {@code POST /pedidos/metodos-de-pago-con-precio}, que trae además lo
+   *     que el comprador pagaría con cada medio (ADR-0095). El checkout web ya no la llama; se
+   *     conserva mientras pueda haber un cliente que sí, y se retira cuando ninguno la use.
+   */
+  @Deprecated
   @PostMapping("/metodos-de-pago-disponibles")
   public List<MetodoPago> metodosDePagoDisponibles(
       @RequestBody MetodosDePagoDisponiblesRequest cuerpo) {
@@ -125,8 +133,9 @@ public class PedidoControlador {
             .toList());
   }
 
-  private static MetodosDePagoConPrecioRespuesta.Metodo aRespuesta(MedioDePagoConPrecio medio) {
-    return new MetodosDePagoConPrecioRespuesta.Metodo(
+  private static MetodosDePagoConPrecioRespuesta.MetodoDePagoConPrecioRespuesta aRespuesta(
+      MedioDePagoConPrecio medio) {
+    return new MetodosDePagoConPrecioRespuesta.MetodoDePagoConPrecioRespuesta(
         medio.metodo(), dinero(medio.subtotal()), dinero(medio.descuento()));
   }
 

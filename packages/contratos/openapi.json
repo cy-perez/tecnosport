@@ -2615,6 +2615,9 @@
             "type" : "string"
           }
         },
+        "required" : [
+          "precioPublicado"
+        ],
         "type" : "object"
       },
       "LineaRequest" : {
@@ -2852,7 +2855,7 @@
         },
         "type" : "object"
       },
-      "Metodo" : {
+      "MetodoDePagoConPrecioRespuesta" : {
         "properties" : {
           "descuento" : {
             "$ref" : "#/components/schemas/DineroRespuesta"
@@ -2882,7 +2885,7 @@
         "properties" : {
           "metodos" : {
             "items" : {
-              "$ref" : "#/components/schemas/Metodo"
+              "$ref" : "#/components/schemas/MetodoDePagoConPrecioRespuesta"
             },
             "type" : "array"
           }
@@ -3265,6 +3268,9 @@
             "$ref" : "#/components/schemas/DineroRespuesta"
           }
         },
+        "required" : [
+          "descuento"
+        ],
         "type" : "object"
       },
       "PedidoSeguimientoRespuesta" : {
@@ -3345,6 +3351,9 @@
             "type" : "string"
           }
         },
+        "required" : [
+          "descuento"
+        ],
         "type" : "object"
       },
       "PedidosPaginadosRespuesta" : {
@@ -5137,7 +5146,8 @@
         },
         "required" : [
           "disponibilidadPorConfirmar",
-          "disponible"
+          "disponible",
+          "precioContado"
         ],
         "type" : "object"
       },
@@ -10778,6 +10788,7 @@
     },
     "/api/v1/pedidos/metodos-de-pago-disponibles" : {
       "post" : {
+        "deprecated" : true,
         "operationId" : "metodosDePagoDisponibles",
         "requestBody" : {
           "content" : {

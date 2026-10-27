@@ -1,6 +1,7 @@
 package co.tecnosport.api.presentation.pedido.dto;
 
 import co.tecnosport.api.presentation.compartido.dto.DineroRespuesta;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
 import java.util.UUID;
 
@@ -20,4 +21,4 @@ public record LineaPedidoRespuesta(
      * sin pasarela y se aplicó el descuento; igual con Wompi, con Sistecrédito y en las líneas de
      * antes.
      */
-    DineroRespuesta precioPublicado) {}
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED) DineroRespuesta precioPublicado) {}

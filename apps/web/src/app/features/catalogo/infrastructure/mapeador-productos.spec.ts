@@ -59,23 +59,6 @@ describe('mapeador-productos', () => {
     expect(producto.variantes[0].atributos[1].unidad).toBe('meses');
   });
 
-  /** Una respuesta sin el contado no tiene descuento: caer a cero anunciaría el precio entero. */
-  it('sin precio de contado en el DTO, el contado es el publicado', () => {
-    const producto = aProducto({
-      paleta: [],
-      variantes: [
-        {
-          id: 'v1',
-          precio: { valor: 50_000, moneda: 'COP' },
-          disponible: true,
-          disponibilidadPorConfirmar: false,
-        },
-      ],
-    });
-
-    expect(producto.variantes[0].precioContado).toEqual({ valor: 50_000, moneda: 'COP' });
-  });
-
   it('no truena con campos ausentes del DTO', () => {
     const producto = aProducto({ paleta: [] });
 

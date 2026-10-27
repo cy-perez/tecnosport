@@ -46,18 +46,18 @@ public record SugerenciaDePrecioTecnologia(Dinero gananciaMaxima) {
 
   /** El contado sugerido de esa configuración; nulo si la lista no trajo su precio de mercado. */
   public Dinero contadoSugerido(ConfiguracionTecnologia configuracion) {
-    return contadoSugerido(
-        configuracion.costoProveedor(), configuracion.precioMercado(), gananciaMaxima);
+    return contadoSugerido(configuracion.costoProveedor(), configuracion.precioMercado());
   }
 
   /**
-   * {@code min(precioMercado, costo + gananciaMaxima)}, con el tope bajado a la unidad de mil.
+   * {@code min(precioMercado, costo + gananciaMaxima)}, con el tope bajado a la unidad de mil. De
+   * instancia y no estático: la ganancia máxima es la que validó el constructor, no una que traiga
+   * quien llama.
    *
    * @return nulo si no hay precio de mercado
    */
-  public static Dinero contadoSugerido(Dinero costo, Dinero precioMercado, Dinero gananciaMaxima) {
+  public Dinero contadoSugerido(Dinero costo, Dinero precioMercado) {
     Objects.requireNonNull(costo, "La sugerencia necesita el costo del proveedor.");
-    Objects.requireNonNull(gananciaMaxima, "La sugerencia necesita la ganancia máxima.");
     if (precioMercado == null) {
       return null;
     }

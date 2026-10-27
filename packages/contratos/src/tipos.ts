@@ -2253,6 +2253,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** @deprecated */
         post: operations["metodosDePagoDisponibles"];
         delete?: never;
         options?: never;
@@ -3259,7 +3260,7 @@ export interface components {
             id?: string;
             imagenUrl?: string;
             nombre?: string;
-            precioPublicado?: components["schemas"]["DineroRespuesta"];
+            precioPublicado: components["schemas"]["DineroRespuesta"];
             precioUnitario?: components["schemas"]["DineroRespuesta"];
             sku?: string;
             tasaIva?: number;
@@ -3364,14 +3365,14 @@ export interface components {
             /** Format: int32 */
             pesoGramos?: number;
         };
-        Metodo: {
+        MetodoDePagoConPrecioRespuesta: {
             descuento: components["schemas"]["DineroRespuesta"];
             /** @enum {string} */
             metodo: "WOMPI" | "SISTECREDITO" | "TRANSFERENCIA_MANUAL" | "CONTRAENTREGA" | "PAGO_EN_PUNTO";
             subtotal: components["schemas"]["DineroRespuesta"];
         };
         MetodosDePagoConPrecioRespuesta: {
-            metodos: components["schemas"]["Metodo"][];
+            metodos: components["schemas"]["MetodoDePagoConPrecioRespuesta"][];
         };
         MetodosDePagoDisponiblesRequest: {
             correo?: string;
@@ -3459,7 +3460,7 @@ export interface components {
             /** Format: date-time */
             creadoEn?: string;
             datosTransferencia?: components["schemas"]["DatosTransferenciaRespuesta"];
-            descuento?: components["schemas"]["DineroRespuesta"];
+            descuento: components["schemas"]["DineroRespuesta"];
             dineroRecibido?: components["schemas"]["DineroRespuesta"];
             direccion?: components["schemas"]["DireccionRespuesta"];
             envio?: components["schemas"]["EnvioRespuesta"];
@@ -3489,7 +3490,7 @@ export interface components {
             /** Format: date-time */
             creadoEn?: string;
             datosTransferencia?: components["schemas"]["DatosTransferenciaRespuesta"];
-            descuento?: components["schemas"]["DineroRespuesta"];
+            descuento: components["schemas"]["DineroRespuesta"];
             direccion?: components["schemas"]["DireccionRespuesta"];
             envio?: components["schemas"]["EnvioPublicoRespuesta"];
             estado?: string;
@@ -4127,7 +4128,7 @@ export interface components {
             /** Format: uuid */
             id?: string;
             precio?: components["schemas"]["DineroRespuesta"];
-            precioContado?: components["schemas"]["DineroRespuesta"];
+            precioContado: components["schemas"]["DineroRespuesta"];
             sku?: string;
         };
         VarianteResumenAdminRespuesta: {

@@ -24,7 +24,7 @@ type DireccionDto = components['schemas']['DireccionRespuesta'];
 type ContactoDto = components['schemas']['ContactoRespuesta'];
 type LineaPedidoDto = components['schemas']['LineaPedidoRespuesta'];
 type DatosTransferenciaDto = components['schemas']['DatosTransferenciaRespuesta'];
-type MetodoConPrecioDto = components['schemas']['Metodo'];
+type MetodoConPrecioDto = components['schemas']['MetodoDePagoConPrecioRespuesta'];
 type DineroDto = components['schemas']['DineroRespuesta'];
 
 /**
@@ -63,7 +63,7 @@ export function aPedido(dto: PedidoDto): Pedido {
     metodoPago: dto.metodoPago ?? 'WOMPI',
     estado: (dto.estado ?? 'PAGO_PENDIENTE') as EstadoPedido,
     subtotal: { valor: dto.subtotal?.valor ?? 0, moneda: dto.subtotal?.moneda ?? 'COP' },
-    // Sin el campo es un pedido de antes de ADR-0095: no tuvo descuento.
+    // Obligatorio en el contrato: un pedido de antes de ADR-0095 llega con descuento cero.
     descuento: aDinero(dto.descuento),
     costoEnvio: { valor: dto.costoEnvio?.valor ?? 0, moneda: dto.costoEnvio?.moneda ?? 'COP' },
     total: { valor: dto.total?.valor ?? 0, moneda: dto.total?.moneda ?? 'COP' },
@@ -73,8 +73,9 @@ export function aPedido(dto: PedidoDto): Pedido {
   };
 }
 
-function aDinero(dto: DineroDto | undefined): { valor: number; moneda: string } {
-  return { valor: dto?.valor ?? 0, moneda: dto?.moneda ?? 'COP' };
+/** Sin relleno: los campos que pasan por aquí son obligatorios en el contrato. */
+function aDinero(dto: DineroDto): { valor: number; moneda: string } {
+  return { valor: dto.valor, moneda: dto.moneda };
 }
 
 /** Un medio con su precio. El contrato los declara obligatorios: no hay nada que rellenar. */
@@ -156,7 +157,7 @@ export function aSeguimiento(dto: SeguimientoDto): Seguimiento {
     metodoPago: dto.metodoPago ?? 'WOMPI',
     estado: (dto.estado ?? 'PAGO_PENDIENTE') as EstadoPedido,
     subtotal: { valor: dto.subtotal?.valor ?? 0, moneda: dto.subtotal?.moneda ?? 'COP' },
-    // Sin el campo es un pedido de antes de ADR-0095: no tuvo descuento.
+    // Obligatorio en el contrato: un pedido de antes de ADR-0095 llega con descuento cero.
     descuento: aDinero(dto.descuento),
     costoEnvio: { valor: dto.costoEnvio?.valor ?? 0, moneda: dto.costoEnvio?.moneda ?? 'COP' },
     total: { valor: dto.total?.valor ?? 0, moneda: dto.total?.moneda ?? 'COP' },

@@ -14,7 +14,7 @@ import java.util.Objects;
  * quien lo lee.
  */
 public record MetodosDePagoConPrecioRespuesta(
-    @Schema(requiredMode = RequiredMode.REQUIRED) List<Metodo> metodos) {
+    @Schema(requiredMode = RequiredMode.REQUIRED) List<MetodoDePagoConPrecioRespuesta> metodos) {
 
   public MetodosDePagoConPrecioRespuesta {
     metodos = List.copyOf(Objects.requireNonNull(metodos));
@@ -25,7 +25,9 @@ public record MetodosDePagoConPrecioRespuesta(
    *     de contado sin ella
    * @param descuento lo que este medio ahorra frente al precio publicado; cero con pasarela
    */
-  public record Metodo(
+  // Con un nombre único y no `Metodo`: springdoc nombra el esquema por el nombre simple del record,
+  // y uno tan genérico choca con el primero que se llame igual en otro paquete.
+  public record MetodoDePagoConPrecioRespuesta(
       @Schema(requiredMode = RequiredMode.REQUIRED) MetodoPago metodo,
       @Schema(requiredMode = RequiredMode.REQUIRED) DineroRespuesta subtotal,
       @Schema(requiredMode = RequiredMode.REQUIRED) DineroRespuesta descuento) {}
