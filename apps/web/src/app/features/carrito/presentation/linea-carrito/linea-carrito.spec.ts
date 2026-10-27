@@ -79,6 +79,44 @@ describe('LineaCarritoComponent', () => {
     expect(emitido).toBe(3);
   });
 
+  /**
+   * El tope que manda el servidor: en él, el "+" no emite —se queda en el orden de tabulación,
+   * como el "−" en uno— y la línea dice por qué. Por debajo del tope, sí sube.
+   */
+  it('en el tope de unidades sumar no emite y lo dice', async () => {
+    let emitido: number | undefined;
+    await renderLinea(
+      {
+        linea: { id: 'linea-1', varianteId: 'variante-1', cantidad: 5 },
+        snapshot: snapshotDePrueba(),
+        cantidadMaxima: 5,
+      },
+      { cantidadCambio: (valor: number) => (emitido = valor) },
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Aumentar cantidad de Morral urbano: ya tienes el máximo de 5 unidades',
+      }),
+    );
+
+    expect(emitido).toBeUndefined();
+    expect(screen.getByText('Máximo 5 unidades por producto')).toBeTruthy();
+  });
+
+  it('por debajo del tope sumar sí emite y no avisa nada', async () => {
+    let emitido: number | undefined;
+    await renderLinea(
+      { linea: lineaDePrueba(), snapshot: snapshotDePrueba(), cantidadMaxima: 5 },
+      { cantidadCambio: (valor: number) => (emitido = valor) },
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Aumentar cantidad de Morral urbano' }));
+
+    expect(emitido).toBe(3);
+    expect(screen.queryByText('Máximo 5 unidades por producto')).toBeNull();
+  });
+
   it('restar emite la cantidad actual menos uno', async () => {
     let emitido: number | undefined;
     await renderLinea(

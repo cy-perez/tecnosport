@@ -63,6 +63,11 @@ export class CarritoPage {
   /** El del servidor (`CarritoStore.subtotal`), no la suma de los precios guardados al agregar. */
   protected readonly total = computed(() => this.store.subtotal());
 
+  /** El tope que manda el servidor con el carrito; `null` mientras el carrito no ha llegado. */
+  protected readonly cantidadMaximaPorLinea = computed(
+    () => this.store.consulta.data()?.cantidadMaximaPorLinea ?? null,
+  );
+
   /**
    * El ahorro de pagar sin pasarela, ya formateado para ir dentro de la frase; `null` si no hay.
    * Un ahorro y no un segundo total (ADR-0095): con dos precios a la vista, el artículo 26 de la

@@ -12,6 +12,8 @@
   "eliminar": "Eliminar",
   "disminuir_de": "Disminuir cantidad de {{nombre}}",
   "aumentar_de": "Aumentar cantidad de {{nombre}}",
+  "aumentar_de_en_el_maximo": "Aumentar cantidad de {{nombre}}: ya tienes el máximo de {{maximo}} unidades",
+  "maximo_por_linea": "Máximo {{maximo}} unidades por producto",
   "eliminar_de": "Eliminar {{nombre}} del carrito",
   "foto_de": "Foto de {{nombre}}",
   "anuncio_cantidad": "{{nombre}}: {{cantidad}} en el carrito.",
@@ -21,6 +23,7 @@
   "agregando": "Agregando…",
   "agregado": "Agregado al carrito: {{nombre}}",
   "error_agregar": "No pudimos agregarlo al carrito. Revisa tu conexión y vuelve a intentarlo.",
+  "error_agregar_maximo": "Ya tienes en el carrito el máximo de unidades de este producto.",
   "envio_aparte": "El costo de envío se cotiza al pagar, según tu destino.",
   "seguir_comprando": "Seguir comprando"
 }

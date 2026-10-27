@@ -6,6 +6,7 @@ describe('aCarrito', () => {
       id: 'carrito-1',
       usuarioId: 'usuario-1',
       creadoEn: '2026-09-02T12:00:00Z',
+      cantidadMaximaPorLinea: 5,
       lineas: [
         { id: 'linea-1', varianteId: 'variante-1', cantidad: 2 },
         { id: 'linea-2', varianteId: 'variante-2', cantidad: 1, enlaceCompra: 'token-1' },
@@ -16,6 +17,7 @@ describe('aCarrito', () => {
       id: 'carrito-1',
       usuarioId: 'usuario-1',
       creadoEn: '2026-09-02T12:00:00Z',
+      cantidadMaximaPorLinea: 5,
       lineas: [
         { id: 'linea-1', varianteId: 'variante-1', cantidad: 2, enlaceCompra: null },
         { id: 'linea-2', varianteId: 'variante-2', cantidad: 1, enlaceCompra: 'token-1' },
@@ -24,9 +26,15 @@ describe('aCarrito', () => {
   });
 
   it('campos ausentes se rellenan con valores por defecto, nunca undefined', () => {
-    const carrito = aCarrito({});
+    const carrito = aCarrito({ cantidadMaximaPorLinea: 5 });
 
-    expect(carrito).toEqual({ id: '', usuarioId: null, creadoEn: '', lineas: [] });
+    expect(carrito).toEqual({
+      id: '',
+      usuarioId: null,
+      creadoEn: '',
+      lineas: [],
+      cantidadMaximaPorLinea: 5,
+    });
   });
 });
 

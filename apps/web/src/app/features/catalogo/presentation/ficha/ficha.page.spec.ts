@@ -28,6 +28,7 @@ import {
   RepositorioEnlacesDeCompra,
 } from '../../domain/repositorio-enlaces-de-compra.puerto';
 import { esperarSinViolaciones } from '../../../../../testing/axe';
+import { ErrorHttp } from '../../../../core/http/respuesta-http';
 import { proveerAlmacenesCarrito } from '../../../../../testing/carrito';
 
 /** El precio que el servidor da hoy en estas pruebas. */
@@ -85,6 +86,15 @@ class RepositorioCarritoQueAgrega extends RepositorioCarritoFalso {
       lineas: [{ id: 'l1', varianteId: 'variante-1', cantidad: 1 }],
       creadoEn: '2026-10-04',
     });
+  }
+}
+
+/** El que rechaza la línea por el tope de unidades: la variante ya tiene el máximo en el carrito. */
+class RepositorioCarritoEnElMaximo extends RepositorioCarritoQueAgrega {
+  override agregarLinea(): Promise<Carrito> {
+    return Promise.reject(
+      new ErrorHttp(422, 'tope de unidades por línea', 'CANTIDAD_POR_LINEA_EXCEDIDA'),
+    );
   }
 }
 
@@ -1162,6 +1172,25 @@ describe('FichaPage', () => {
 
     await vi.waitFor(() =>
       expect(screen.getByRole('status').textContent).toMatch(/no pudimos agregarlo/i),
+    );
+  });
+
+  /** El tope no es un fallo de conexión: decirle "revisa tu conexión" la manda a reintentar. */
+  it('dice que ya tiene el máximo cuando el carrito rechaza por el tope de unidades', async () => {
+    const repositorio: RepositorioProductos = {
+      buscar: () =>
+        Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
+      buscarPorSlug: () => Promise.resolve(productoDePrueba()),
+    };
+    await renderFicha(repositorio, 'morral-urbano', RepositorioCarritoEnElMaximo);
+    const boton = await screen.findByRole('button', { name: 'Agregar al carrito' });
+
+    fireEvent.click(boton);
+
+    await vi.waitFor(() =>
+      expect(screen.getByRole('status').textContent?.trim()).toBe(
+        'Ya tienes en el carrito el máximo de unidades de este producto.',
+      ),
     );
   });
 

@@ -14,6 +14,13 @@ export interface Carrito {
   readonly usuarioId: string | null;
   readonly lineas: readonly LineaCarrito[];
   readonly creadoEn: string;
+  /**
+   * Cuántas unidades de una misma variante caben en una línea. Lo manda el servidor, que lo exige
+   * igual: el selector de cantidad se limita con esto y nunca con un número propio. El mapeador lo
+   * pone siempre; es opcional en el tipo porque los dobles de prueba de otras pantallas arman
+   * carritos a mano, y sin él el selector solo deja de limitar: el servidor sigue rechazando.
+   */
+  readonly cantidadMaximaPorLinea?: number;
 }
 
 /**
