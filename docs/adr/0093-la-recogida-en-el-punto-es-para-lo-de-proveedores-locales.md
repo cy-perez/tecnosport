@@ -1,8 +1,8 @@
 # ADR-0093: la recogida en el punto es para lo de proveedores locales
 
 Fecha: 2026-10-26
-Estado: aceptada. La regla está construida; **la recogida sigue apagada** hasta cerrar lo que
-dice «Lo que falta para encenderla».
+Estado: aceptada. La regla está construida, y lo que dice «Lo que falta para encenderla» lo cerró
+`ADR-0094` el mismo día: la recogida está encendida en dev.
 Matiza: `ADR-0072` (la recogida se apaga con una bandera del servidor).
 
 ## Contexto
@@ -41,6 +41,8 @@ las 8:00 a. m. y las 9:00 p. m.
    distintas: cada una es una lectura del catálogo y la consulta es pública.
 
 ## Lo que falta para encenderla
+
+> Cerrado por `ADR-0094`: entrega en el punto, pago al recoger y términos `2026-10-26.1`.
 
 Encender la bandera hoy haría una promesa que el sistema no cumple. Faltan tres cosas, y van juntas
 en un PR aparte:

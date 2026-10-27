@@ -1,6 +1,7 @@
 package co.tecnosport.api.application.pedido;
 
 import co.tecnosport.api.domain.pedido.EstadoPedido;
+import co.tecnosport.api.domain.pedido.MetodoPago;
 import co.tecnosport.api.domain.pedido.NumeroPedido;
 import co.tecnosport.api.domain.pedido.Pedido;
 import java.time.Instant;
@@ -60,6 +61,24 @@ final class RepositorioPedidosFalso implements RepositorioPedidos {
       EstadoPedido estado, Instant creadosAntesDe, int maximo) {
     return pedidos.values().stream()
         .filter(p -> p.estado() == estado && p.creadoEn().isBefore(creadosAntesDe))
+        .sorted(java.util.Comparator.comparing(Pedido::creadoEn))
+        .limit(maximo)
+        .map(Pedido::id)
+        .toList();
+  }
+
+  @Override
+  public List<UUID> buscarIdsEnEstadoDesdeAntesDe(
+      EstadoPedido estado, MetodoPago metodoPago, Instant desdeAntesDe, int maximo) {
+    return pedidos.values().stream()
+        .filter(p -> p.estado() == estado && p.metodoPago() == metodoPago)
+        .filter(
+            p ->
+                p.historial().stream()
+                    .filter(h -> h.estado() == estado)
+                    .reduce((primero, ultimo) -> ultimo)
+                    .map(h -> h.fecha().isBefore(desdeAntesDe))
+                    .orElse(false))
         .sorted(java.util.Comparator.comparing(Pedido::creadoEn))
         .limit(maximo)
         .map(Pedido::id)

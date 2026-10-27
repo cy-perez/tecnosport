@@ -54,4 +54,9 @@ public record PedidoRespuesta(
      * Las guías se crean a mano en la plataforma (ADR-0071): sin este dato, quien despacha no sabe
      * con cuál crearla.
      */
-    String transportadora) {}
+    String transportadora,
+    /**
+     * Hasta cuándo se guarda en el punto una recogida lista, o nulo si no está esperando a que la
+     * recojan (ADR-0094). Pasada esta hora el panel la muestra vencida.
+     */
+    Instant recogidaVenceEn) {}

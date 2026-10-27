@@ -1,8 +1,8 @@
 {
   "comun": {
     "version_etiqueta": "Version",
-    "version": "2026-10-25.2",
-    "vigencia": "In force since 25 October 2026.",
+    "version": "2026-10-26.1",
+    "vigencia": "In force since 26 October 2026.",
     "otros_documentos": "Other legal documents",
     "titular_aviso": "This site is operated by Cristhian Yurday Pérez Hoyos, NIT 1054994043-9, Carrera 26C # 38B-31, Medellín, Antioquia, Colombia.",
     "traduccion_cortesia": "This is a courtesy translation and has no legal effect. These documents are governed by Colombian law, and the Spanish version available on this site is the one that governs; in case of any discrepancy, the Spanish text prevails."
@@ -189,7 +189,7 @@
         "titulo": "4. Products, images, and prices",
         "parrafos": [
           "Photographs of clothing, footwear, and bags show the product we sell, taken by us or by the supplier who provides it. Technology photographs are reference images of the model, taken from information published by the brand or by a product-data catalogue, and not of the unit you receive: the model, memory, and other features are those stated on the product page, and the colour is the one you choose there, even if the photo shows another. Below the photos of each device we list the colours in which the manufacturer publishes that model: that does not mean we have all of them. Images and rotation viewers are to-scale representations of the actual product; colour may vary slightly depending on your screen.",
-          "All prices are shown in Colombian pesos (COP) and are the final price of each product: Tecno Sport is not a VAT (IVA) taxpayer in Colombia, so no tax is added to the published price. The price of each product does not include the shipping cost: that amount depends on the destination city and on the size and weight of your order, and is calculated at the time of purchase. Before you pay, we show you the full breakdown: the price of each product, the subtotal, the shipping cost listed separately, and the total you will pay.",
+          "All prices are shown in Colombian pesos (COP) and are the final price of each product: Tecno Sport is not a VAT (IVA) taxpayer in Colombia, so no tax is added to the published price. The price of each product does not include the shipping cost: that amount depends on the destination city and on the size and weight of your order, and is calculated at the time of purchase. If you pick the order up at our Medellín location (section 8), there is no shipping cost. Before you pay, we show you the full breakdown: the price of each product, the subtotal, the shipping cost listed separately, and the total you will pay.",
           "If an obvious system or typing error shows a product at a manifestly wrong price, we will tell you before shipping and you may either confirm the purchase at the correct price or cancel it at no cost.",
           "Check the use and care restrictions on each product page; for footwear and clothing, use other than intended may affect the warranty."
         ]
@@ -205,23 +205,29 @@
       {
         "titulo": "6. Payment methods",
         "parrafos": [
-          "We accept credit and debit cards, PSE and the Bancolombia button, processed by the Wompi payment gateway; transfers to our Nequi, Daviplata or BBVA accounts, which we check by hand against the receipt you send us; instalment payments with Sistecrédito; and cash on delivery, where enabled for your city and your order. The payment methods available for your order are the ones we show you at checkout: not all of them are enabled for every order. When you pay by transfer, your order is held for 24 hours: if we do not receive the receipt within that time, the hold is released and the order is cancelled. We do not store card data: that information is handled entirely on the gateway's platform.",
+          "We accept credit and debit cards, PSE and the Bancolombia button, processed by the Wompi payment gateway; transfers to our Nequi, Daviplata or BBVA accounts, which we check by hand against the receipt you send us; instalment payments with Sistecrédito; cash on delivery, where enabled for your city and your order; and pay at pickup, in cash or by transfer, when you pick the order up at our Medellín location (section 8). The payment methods available for your order are the ones we show you at checkout: not all of them are enabled for every order. When you pay by transfer, your order is held for 24 hours: if we do not receive the receipt within that time, the hold is released and the order is cancelled. We do not store card data: that information is handled entirely on the gateway's platform.",
+          "When you choose to pay at pickup, we call you or message you on WhatsApp to confirm the order before preparing it. If we cannot confirm it within forty-eight (48) hours of the purchase, we cancel it and release the products, at no charge. You pay the total at our location when you receive the order.",
           "For every purchase we email you a receipt, to the address you gave us, with the detail of what you bought, what you paid, and how we deliver it. Keep it: it is the proof of your purchase and what you need to claim the warranty. That receipt is not a sales invoice: Tecno Sport is not a VAT (IVA) taxpayer and is not required to issue invoices, under article 1.6.1.4.3 of Decree 1625 of 2016."
         ]
       },
       {
         "titulo": "7. Cash on delivery",
         "parrafos": [
-          "Whether cash on delivery is available is decided by the system based on the delivery city, the order value, and the product type, and you are told before choosing a payment method. When you pay on delivery, the amount the carrier collects is the order total, that is, the goods plus the shipping cost, and carriers only accept cash, so please have the exact amount ready. Refusing delivery is not the same as withdrawing: it is a purchase that was never completed, and in that case there is no money to refund because none was received. Repeatedly refusing deliveries may lead us not to enable this method on later purchases."
+          "Whether cash on delivery is available is decided by the system based on the delivery city, the order value, and the product type, and you are told before choosing a payment method. When you pay on delivery, the amount the carrier collects is the order total, that is, the goods plus the shipping cost, and carriers only accept cash, so please have the exact amount ready. Refusing delivery is not the same as withdrawing: it is a purchase that was never completed, and in that case there is no money to refund because none was received. Repeatedly refusing deliveries may lead us not to enable this method on later purchases.",
+          "Before shipping a cash-on-delivery order we call you or message you on WhatsApp to confirm it. If we cannot confirm it within forty-eight (48) hours of the purchase, we cancel it and release the products, at no charge."
         ]
       },
       {
         "titulo": "8. Shipping and delivery",
         "parrafos": [
-          "We ship nationwide through carrier companies. All orders are delivered to your address: there is no pickup at our premises.",
+          "We ship nationwide through carrier companies. You can also pick up your order at no cost at our location (Carrera 26C # 38B-31, apartment 401, La Milagrosa neighbourhood, Medellín) when every product in the order comes from our Medellín suppliers. Before you pay we show you whether your order can be picked up: if a single product comes from another supplier, that order is delivered to your address.",
           "The shipping cost is calculated using the destination city you give us and the weight and dimensions of your order. We show it to you before you pay, as an amount separate from the price of the products. If no carrier covers the address you provided, or if a product in your order cannot be delivered to your address, we will tell you at that moment, before you pay: that order cannot be placed on this site, and you may message us on WhatsApp to look for another way to deliver it.",
-          "We do not agree with you on a delivery term other than the statutory one, so the term of thirty (30) calendar days from payment confirmation applies. If we announce a shorter term for a specific order, that announced term is the one that binds us. The estimated date shown by the carrier at the time of purchase is its own estimate, not a term different from the one stated here.",
-          "When we ship your order we will send you an email with the carrier company handling it and the tracking number, along with a link where you can check your order status whenever you want. Tracking the package on its way is done by the carrier company using that tracking number; we do not display it on this site.",
+          "We do not agree with you on a delivery term other than the statutory one, so the term of thirty (30) calendar days from payment confirmation or, if you pay on receipt, from the day you place the order applies. If we announce a shorter term for a specific order, that announced term is the one that binds us. The estimated date shown by the carrier at the time of purchase is its own estimate, not a term different from the one stated here.",
+          "When we ship an order to your address we will send you an email with the carrier company handling it and the tracking number, along with a link where you can check your order status whenever you want. Tracking the package on its way is done by the carrier company using that tracking number; we do not display it on this site.",
+          "If you choose pickup, we email you when the order is ready at our location. It is an apartment, not a shop, so we agree with you on a time for the handover by WhatsApp or email, any day between 8:00 a.m. and 9:00 p.m.",
+          "We hand the order over to whoever shows us its order number, which appears in the purchase confirmation email and in the notice that it is ready. Do not share it with anyone you do not want to pick it up.",
+          "From the notice that it is ready we hold the order for forty-eight (48) hours. If you do not pick it up within that time, we cancel the order and release the products: if you had already paid, we refund everything you paid within the following fifteen (15) calendar days, through the method you paid with; if you were going to pay at pickup, there is nothing to refund.",
+          "The day you receive the order at our location is the delivery date: the five (5) business days of the right of withdrawal (section 9) and the one-year legal warranty (section 10) run from then.",
           "If we do not deliver within the applicable term, you may terminate the contract and recover your money, including any shipping cost you paid."
         ]
       },

@@ -3,6 +3,7 @@ import { MedioReintegro } from '../../retractos/domain/retracto.model';
 import {
   EmisionDeGuiaAdmin,
   FiltroPedidosAdmin,
+  MedioDePagoEnPunto,
   ModalidadRecaudo,
   MotivoCancelacion,
   PagoSinPedidoAdmin,
@@ -26,6 +27,15 @@ export interface RepositorioPedidosAdmin {
   emitirGuia(pedidoId: string): Promise<EmisionDeGuiaAdmin>;
 
   marcarEntregado(pedidoId: string): Promise<PedidoAdmin>;
+
+  marcarListoParaRecoger(pedidoId: string): Promise<PedidoAdmin>;
+
+  /** `medioDePago` solo en un pedido `PAGO_EN_PUNTO`; el número lo compara el servidor. */
+  entregarEnPunto(entrada: {
+    pedidoId: string;
+    numeroPedido: string;
+    medioDePago: MedioDePagoEnPunto | null;
+  }): Promise<PedidoAdmin>;
 
   /** Un pedido pagado cuya reserva venció sin existencia: lo lleva a preparación si ya la hay. */
   confirmarInventario(pedidoId: string): Promise<PedidoAdmin>;

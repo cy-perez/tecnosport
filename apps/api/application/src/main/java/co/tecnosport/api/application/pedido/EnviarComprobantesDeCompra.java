@@ -60,6 +60,7 @@ public final class EnviarComprobantesDeCompra {
           EstadoPedido.PAGADO,
           EstadoPedido.EN_PREPARACION,
           EstadoPedido.DESPACHADO,
+          EstadoPedido.LISTO_PARA_RECOGER,
           EstadoPedido.ENTREGADO,
           EstadoPedido.RECAUDO_PENDIENTE,
           EstadoPedido.RECAUDO_CONCILIADO);
@@ -177,6 +178,7 @@ public final class EnviarComprobantesDeCompra {
     // enum no compila hasta que alguien decida qué dice el comprobante de una compra pagada así.
     return switch (pedido.metodoPago()) {
       case CONTRAENTREGA -> TextoDeCorreo.PEDIDO_COMPROBANTE_PAGO_CONTRAENTREGA;
+      case PAGO_EN_PUNTO -> TextoDeCorreo.PEDIDO_COMPROBANTE_PAGO_EN_PUNTO;
       case TRANSFERENCIA_MANUAL -> TextoDeCorreo.PEDIDO_COMPROBANTE_PAGO_TRANSFERENCIA;
       case WOMPI, SISTECREDITO -> TextoDeCorreo.PEDIDO_COMPROBANTE_PAGO_EN_LINEA;
     };

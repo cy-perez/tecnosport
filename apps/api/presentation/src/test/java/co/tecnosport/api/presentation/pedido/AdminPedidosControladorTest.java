@@ -28,8 +28,10 @@ import co.tecnosport.api.application.pedido.ConciliarTransferencia;
 import co.tecnosport.api.application.pedido.ConfirmarInventarioDePedidoPagado;
 import co.tecnosport.api.application.pedido.DespacharPedido;
 import co.tecnosport.api.application.pedido.EliminarPedido;
+import co.tecnosport.api.application.pedido.EntregarEnPunto;
 import co.tecnosport.api.application.pedido.ListarPedidosAdmin;
 import co.tecnosport.api.application.pedido.MarcarEntregado;
+import co.tecnosport.api.application.pedido.MarcarListoParaRecoger;
 import co.tecnosport.api.application.pedido.RechazarEnEntrega;
 import co.tecnosport.api.application.pedido.RecibirPedidoRechazado;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
@@ -186,6 +188,127 @@ class AdminPedidosControladorTest {
 
   private Pedido pedidoConMetodo(MetodoPago metodoPago) {
     return pedidoConMetodo(metodoPago, UUID.randomUUID());
+  }
+
+  /** Una recogida con pago en el punto, verificada y en preparación (ADR-0094). */
+  private Pedido recogidaEnPreparacion() {
+    Inventario inventario = Inventario.crear(UUID.randomUUID());
+    inventario.registrarEntrada(1, "stock inicial de prueba", Instant.now());
+    MovimientoInventario reserva = inventario.reservar(1, null, Instant.now());
+    inventarios.conInventario(inventario);
+    Pedido pedido =
+        Pedido.crear(
+            siguienteNumeroDePrueba(),
+            null,
+            new CorreoElectronico("cliente@tecnosport.co"),
+            List.of(
+                new LineaPedido(
+                    UUID.randomUUID(),
+                    inventario.varianteId(),
+                    new Sku("TS-CAM-AZ-M"),
+                    "Camiseta running Dry-Fit",
+                    1,
+                    Dinero.deCop(50_000),
+                    new BigDecimal("0.19"),
+                    "https://cdn.tecnosport.co/img.webp",
+                    reserva.id())),
+            TipoEntrega.RETIRO_EN_PUNTO,
+            null,
+            MetodoPago.PAGO_EN_PUNTO,
+            "cliente@tecnosport.co",
+            Instant.now());
+    pedido.transicionar(EstadoPedido.EN_PREPARACION, "admin:test", "verificado", Instant.now());
+    pedidos.guardar(pedido);
+    return pedido;
+  }
+
+  @Test
+  void marcarListaUnaRecogidaDiceHastaCuandoSeGuarda() throws Exception {
+    Pedido pedido = recogidaEnPreparacion();
+    autenticarComoAdmin();
+
+    mockMvc
+        .perform(post("/api/v1/admin/pedidos/{id}/listo-para-recoger", pedido.id()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.estado").value("LISTO_PARA_RECOGER"))
+        .andExpect(jsonPath("$.recogidaVenceEn").isNotEmpty());
+  }
+
+  @Test
+  void unaRecogidaNoSeDespachaYResponde409ConSuCodigo() throws Exception {
+    Pedido pedido = recogidaEnPreparacion();
+    autenticarComoAdmin();
+
+    mockMvc
+        .perform(
+            post("/api/v1/admin/pedidos/{id}/despacho", pedido.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"guias":[{"transportadora":"Servientrega","guia":"SE1","costoEnvio":15000}]}
+                    """))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.codigo").value("ENTREGA_NO_APLICA"));
+  }
+
+  @Test
+  void entregarEnElPuntoConElNumeroYElMedioLaDejaEntregada() throws Exception {
+    Pedido pedido = recogidaEnPreparacion();
+    pedido.transicionar(EstadoPedido.LISTO_PARA_RECOGER, "admin:test", "listo", Instant.now());
+    pedidos.guardar(pedido);
+    autenticarComoAdmin();
+
+    mockMvc
+        .perform(
+            post("/api/v1/admin/pedidos/{id}/entrega-en-punto", pedido.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"numeroPedido\":\""
+                        + pedido.numeroPedido().valor()
+                        + "\",\"medioDePago\":\"EFECTIVO\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.estado").value("ENTREGADO"))
+        .andExpect(jsonPath("$.dineroRecibido.valor").value(50000));
+  }
+
+  @Test
+  void entregarEnElPuntoConOtroNumeroEs422YNoEntrega() throws Exception {
+    Pedido pedido = recogidaEnPreparacion();
+    pedido.transicionar(EstadoPedido.LISTO_PARA_RECOGER, "admin:test", "listo", Instant.now());
+    pedidos.guardar(pedido);
+    autenticarComoAdmin();
+
+    mockMvc
+        .perform(
+            post("/api/v1/admin/pedidos/{id}/entrega-en-punto", pedido.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"numeroPedido":"TS-2026-999999","medioDePago":"EFECTIVO"}
+                    """))
+        .andExpect(status().isUnprocessableContent())
+        .andExpect(jsonPath("$.codigo").value("NUMERO_DE_PEDIDO_NO_COINCIDE"));
+
+    assertEquals(EstadoPedido.LISTO_PARA_RECOGER, pedido.estado());
+  }
+
+  @Test
+  void entregarEnElPuntoSinNumeroEs422() throws Exception {
+    Pedido pedido = recogidaEnPreparacion();
+    autenticarComoAdmin();
+
+    mockMvc
+        .perform(
+            post("/api/v1/admin/pedidos/{id}/entrega-en-punto", pedido.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"medioDePago":"EFECTIVO"}
+                    """))
+        .andExpect(status().isUnprocessableContent())
+        // Lo rechaza el DTO, no el caso de uso: sin el `requireNonNull` saldría
+        // NUMERO_DE_PEDIDO_NO_COINCIDE, también 422.
+        .andExpect(jsonPath("$.codigo").value("HTTP_MESSAGE_NOT_READABLE"));
   }
 
   private Pedido pedidoConMetodo(MetodoPago metodoPago, UUID varianteId) {
@@ -1146,6 +1269,22 @@ class AdminPedidosControladorTest {
     @Bean
     RepositorioReintegros repositorioReintegros() {
       return new RepositorioReintegrosDobleDePrueba();
+    }
+
+    @Bean
+    MarcarListoParaRecoger marcarListoParaRecoger(RepositorioPedidos repositorioPedidos) {
+      return new MarcarListoParaRecoger(
+          repositorioPedidos,
+          (destinatario, asunto, cuerpo) -> {},
+          new TextosDeCorreoDobleDePrueba(),
+          Instant::now,
+          "https://tecnosport.co/es/checkout/estado");
+    }
+
+    @Bean
+    EntregarEnPunto entregarEnPunto(
+        RepositorioPedidos repositorioPedidos, RepositorioInventario repositorioInventario) {
+      return new EntregarEnPunto(repositorioPedidos, repositorioInventario, Instant::now);
     }
 
     @Bean

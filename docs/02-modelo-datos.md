@@ -438,6 +438,11 @@ CREADO
                                    DEVUELTO
 ```
 
+`CONFIRMADO_CONTRAENTREGA` lo alcanzan la contraentrega y el pago en el punto: los dos
+se pagan al recibir. La recogida en el punto (`adr/0094`) no pasa por `DESPACHADO`:
+`EN_PREPARACION -> LISTO_PARA_RECOGER -> ENTREGADO`, o `-> CANCELADO` si nadie la
+recoge en las 48 horas siguientes al aviso.
+
 Cada transición se registra en `HistorialPedido` con fecha, actor y motivo. Las
 transiciones válidas se declaran en el dominio: un pedido `ENTREGADO` no vuelve a
 `PAGADO`, y lo impide el código, no el buen juicio de quien opera.

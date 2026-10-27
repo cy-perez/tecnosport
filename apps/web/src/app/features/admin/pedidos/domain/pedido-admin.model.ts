@@ -5,7 +5,13 @@ export interface Dinero {
 
 export type TipoEntrega = 'ENVIO_A_DOMICILIO' | 'RETIRO_EN_PUNTO';
 
-export type MetodoPago = 'WOMPI' | 'SISTECREDITO' | 'TRANSFERENCIA_MANUAL' | 'CONTRAENTREGA';
+export type MetodoPago =
+  'WOMPI' | 'SISTECREDITO' | 'TRANSFERENCIA_MANUAL' | 'CONTRAENTREGA' | 'PAGO_EN_PUNTO';
+
+/** Cómo pagó en el punto quien recogió un pedido `PAGO_EN_PUNTO` (ADR-0094). */
+export type MedioDePagoEnPunto = 'EFECTIVO' | 'TRANSFERENCIA';
+
+export const MEDIOS_DE_PAGO_EN_PUNTO: readonly MedioDePagoEnPunto[] = ['EFECTIVO', 'TRANSFERENCIA'];
 
 /** Grafo completo de `docs/02-modelo-datos.md` — el panel opera todos los estados, a
  * diferencia de la página de seguimiento del cliente. */
@@ -16,6 +22,7 @@ export type EstadoPedido =
   | 'CONFIRMADO_CONTRAENTREGA'
   | 'EN_PREPARACION'
   | 'DESPACHADO'
+  | 'LISTO_PARA_RECOGER'
   | 'ENTREGADO'
   | 'RECHAZADO_EN_ENTREGA'
   | 'DEVUELTO'
@@ -35,6 +42,7 @@ export const ESTADOS_PEDIDO: readonly EstadoPedido[] = [
   'CONFIRMADO_CONTRAENTREGA',
   'EN_PREPARACION',
   'DESPACHADO',
+  'LISTO_PARA_RECOGER',
   'ENTREGADO',
   'RECHAZADO_EN_ENTREGA',
   'DEVUELTO',
@@ -200,6 +208,12 @@ export interface PedidoAdmin {
    * antes. Las guías se crean a mano (ADR-0071): es con la que hay que crearla.
    */
   readonly transportadora: string | null;
+  /**
+   * Hasta cuándo se guarda en el punto una recogida lista; `null` si no está esperando a que la
+   * recojan (ADR-0094). Pasada esa hora, la que se paga en el punto la cancela el servidor; la
+   * pagada en línea se cancela aquí con el motivo «no la recogió» y su reintegro.
+   */
+  readonly recogidaVenceEn: string | null;
 }
 
 export interface PedidosPaginadosAdmin {
@@ -219,7 +233,7 @@ export interface FiltroPedidosAdmin {
  * Por que el negocio cancela un pedido antes de despacharlo. Los dos salen de los terminos
  * publicados: "Disponibilidad" y "Envio y entrega".
  */
-export type MotivoCancelacion = 'NO_DISPONIBILIDAD' | 'PLAZO_INCUMPLIDO';
+export type MotivoCancelacion = 'NO_DISPONIBILIDAD' | 'PLAZO_INCUMPLIDO' | 'NO_RECOGIDO';
 
 /**
  * Por donde entro el dinero que la transportadora recaudo en la puerta: creditos de la plataforma
@@ -235,6 +249,7 @@ export const MODALIDADES_RECAUDO: readonly ModalidadRecaudo[] = ['CREDITOS', 'BA
 export const MOTIVOS_CANCELACION: readonly MotivoCancelacion[] = [
   'NO_DISPONIBILIDAD',
   'PLAZO_INCUMPLIDO',
+  'NO_RECOGIDO',
 ];
 
 /**
@@ -250,6 +265,7 @@ export const ESTADOS_QUE_ADMITEN_CANCELACION = [
   'PAGADO',
   'CONFIRMADO_CONTRAENTREGA',
   'EN_PREPARACION',
+  'LISTO_PARA_RECOGER',
 ] as const;
 
 /**

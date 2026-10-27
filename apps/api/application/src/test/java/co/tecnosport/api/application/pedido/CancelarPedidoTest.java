@@ -476,4 +476,57 @@ class CancelarPedidoTest {
 
     assertTrue(emisor.cancelados().isEmpty());
   }
+
+  /**
+   * Una recogida pagada en línea que nadie vino a buscar: la cancela una persona, con el reintegro
+   * y con su propio motivo, porque ni "no disponible" ni "plazo incumplido" son verdad (ADR-0094).
+   */
+  @Test
+  void unaRecogidaVencidaSeCancelaPorNoRecogidaConSuReintegro() {
+    Pedido pedido =
+        new Recogidas(pedidos, inventarios)
+            .lista(
+                MetodoPago.WOMPI,
+                AHORA.minus(Duration.ofDays(5)),
+                AHORA.minus(Duration.ofHours(49)));
+
+    casoDeUso()
+        .ejecutar(
+            new CancelarPedidoComando(
+                pedido.id(),
+                MotivoCancelacion.NO_RECOGIDO,
+                BigDecimal.valueOf(50_000),
+                MedioReintegro.WOMPI,
+                "DEV-9",
+                "admin:1"));
+
+    assertEquals(EstadoPedido.CANCELADO, pedido.estado());
+    assertEquals(MotivoReintegro.NO_RECOGIDO, reintegros.guardados().get(0).motivo());
+    assertTrue(correos.enviados().get(0).cuerpoHtml().contains("[pedido.cancelacion.no_recogido]"));
+  }
+
+  @Test
+  void noSeCancelaPorNoRecogidaAntesDeQueVenzaElPlazo() {
+    Pedido pedido =
+        new Recogidas(pedidos, inventarios)
+            .lista(
+                MetodoPago.WOMPI,
+                AHORA.minus(Duration.ofDays(5)),
+                AHORA.minus(Duration.ofHours(10)));
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            casoDeUso()
+                .ejecutar(
+                    new CancelarPedidoComando(
+                        pedido.id(),
+                        MotivoCancelacion.NO_RECOGIDO,
+                        BigDecimal.valueOf(50_000),
+                        MedioReintegro.WOMPI,
+                        null,
+                        "admin:1")));
+    assertEquals(EstadoPedido.LISTO_PARA_RECOGER, pedido.estado());
+    assertTrue(reintegros.guardados().isEmpty());
+  }
 }

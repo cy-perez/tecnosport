@@ -30,6 +30,9 @@ public enum MotivoReintegro {
   /** No se entregó dentro del plazo pactado y el comprador terminó el contrato. */
   PLAZO_INCUMPLIDO,
 
+  /** Una recogida pagada en línea que nadie vino a recoger a tiempo (ADR-0094). */
+  NO_RECOGIDO,
+
   /**
    * La transportadora no pudo entregar y la mercancía volvió. El comprador no recibió nada, así que
    * lo que pagó se le devuelve entero —producto y flete—: no hay contrato cumplido del que

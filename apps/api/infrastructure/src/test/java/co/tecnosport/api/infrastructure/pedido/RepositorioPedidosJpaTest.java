@@ -743,4 +743,45 @@ class RepositorioPedidosJpaTest {
     assertThat(repositorio.buscarIdsEnEstadoCreadosAntesDe(EstadoPedido.PAGADO, despues, 10))
         .doesNotContain(viejo.id());
   }
+
+  /**
+   * La consulta del vencimiento de la recogida (ADR-0094): cuenta desde que el pedido llegó a
+   * LISTO_PARA_RECOGER según el historial, no desde que se creó, y solo para el método pedido.
+   */
+  @Test
+  void buscarIdsEnEstadoDesdeAntesDeCuentaDesdeLaLlegadaAlEstado() {
+    Instant creado = Instant.now().minusSeconds(10 * 24 * 3600);
+    Instant listo = Instant.now().minusSeconds(3600);
+    Pedido pedido =
+        Pedido.crear(
+            NUMERO,
+            null,
+            new CorreoElectronico("cliente@tecnosport.co"),
+            List.of(linea()),
+            TipoEntrega.RETIRO_EN_PUNTO,
+            null,
+            MetodoPago.PAGO_EN_PUNTO,
+            "cliente@tecnosport.co",
+            creado);
+    pedido.transicionar(EstadoPedido.EN_PREPARACION, "admin:1", "verificado", creado);
+    pedido.transicionar(EstadoPedido.LISTO_PARA_RECOGER, "admin:1", "listo", listo);
+    repositorio.guardar(pedido);
+
+    // Creado hace diez días, pero listo hace una hora: un corte de hace dos horas no lo alcanza.
+    assertThat(
+            repositorio.buscarIdsEnEstadoDesdeAntesDe(
+                EstadoPedido.LISTO_PARA_RECOGER,
+                MetodoPago.PAGO_EN_PUNTO,
+                Instant.now().minusSeconds(7200),
+                10))
+        .doesNotContain(pedido.id());
+    assertThat(
+            repositorio.buscarIdsEnEstadoDesdeAntesDe(
+                EstadoPedido.LISTO_PARA_RECOGER, MetodoPago.PAGO_EN_PUNTO, Instant.now(), 10))
+        .containsExactly(pedido.id());
+    assertThat(
+            repositorio.buscarIdsEnEstadoDesdeAntesDe(
+                EstadoPedido.LISTO_PARA_RECOGER, MetodoPago.WOMPI, Instant.now(), 10))
+        .doesNotContain(pedido.id());
+  }
 }

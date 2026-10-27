@@ -30,7 +30,9 @@ import co.tecnosport.api.application.envio.TransportadoraNoDisponibleException;
 import co.tecnosport.api.application.garantia.LineaNoEsDelPedidoException;
 import co.tecnosport.api.application.pago.SistecreditoNoEntregoLaUrlDePagoException;
 import co.tecnosport.api.application.pedido.ContraentregaNoDisponibleException;
+import co.tecnosport.api.application.pedido.EntregaNoAplicaException;
 import co.tecnosport.api.application.pedido.MetodoDePagoNoEsTransferenciaManualException;
+import co.tecnosport.api.application.pedido.NumeroDePedidoNoCoincideException;
 import co.tecnosport.api.application.pedido.PedidoNoEliminableException;
 import co.tecnosport.api.application.pedido.RetiroEnPuntoNoDisponibleException;
 import co.tecnosport.api.application.proveedores.AjustesDeTallaDistintosException;
@@ -230,7 +232,10 @@ class CodigosDeCableTest {
           // 13 de octubre de 2026: el panel de borradores traduce este (ADR-0085).
           Map.entry(TallaDelProveedorDesconocidaException.class, "TALLA_DEL_PROVEEDOR_DESCONOCIDA"),
           Map.entry(AjustesDeTallaDistintosException.class, "AJUSTES_DE_TALLA_DISTINTOS"),
-          Map.entry(MarcaYaExisteException.class, "MARCA_YA_EXISTE"));
+          Map.entry(MarcaYaExisteException.class, "MARCA_YA_EXISTE"),
+          // 26 de octubre de 2026: el panel de pedidos traduce estos dos (ADR-0094).
+          Map.entry(EntregaNoAplicaException.class, "ENTREGA_NO_APLICA"),
+          Map.entry(NumeroDePedidoNoCoincideException.class, "NUMERO_DE_PEDIDO_NO_COINCIDE"));
 
   @Test
   void losCodigosQueUnAdaptadorDelFrontendCableaNoCambian() {

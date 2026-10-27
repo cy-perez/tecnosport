@@ -69,7 +69,9 @@
     "borrador_con_fotos_subidas": "The other draft has photos uploaded from the panel. Upload them to this one before merging: they would go away with the other.",
     "tallas_de_cada_tono_desconocidas": "The two drafts don't have the same sizes and one doesn't name its colors. Name both drafts' colors before merging, so each color keeps its sizes.",
     "talla_del_proveedor_desconocida": "The supplier names these sizes shifted, and one of them has no name to order it by, like an XXXL one size up. Remove it from the sizes before approving.",
-    "ajustes_de_talla_distintos": "The supplier names the sizes of the two differently, like the women's and men's drafts of the same post: merged, there would be no way to know which size to order."
+    "ajustes_de_talla_distintos": "The supplier names the sizes of the two differently, like the women's and men's drafts of the same post: merged, there would be no way to know which size to order.",
+    "entrega_no_aplica": "That is not how this order is delivered: a pickup is marked ready and handed over at our location, and a home delivery is shipped with a tracking number.",
+    "numero_de_pedido_no_coincide": "That number is not this order’s. Ask the person picking up to show the number from their email or order page. Do not hand it over."
   },
   "iniciarSesion": {
     "titulo": "Admin panel",
@@ -135,9 +137,10 @@
       "pago_pendiente": "Payment pending",
       "pagado": "Paid",
       "pago_fallido": "Payment failed",
-      "confirmado_contraentrega": "Cash on delivery confirmed",
+      "confirmado_contraentrega": "To verify · pays on receipt",
       "en_preparacion": "Preparing",
       "despachado": "Shipped",
+      "listo_para_recoger": "Ready for pickup",
       "entregado": "Delivered",
       "rechazado_en_entrega": "Rejected on delivery",
       "devuelto": "Returned",
@@ -185,6 +188,7 @@
       "motivo": "Reason",
       "conciliar_transferencia": "Reconcile transfer",
       "verificar_contraentrega": "Verify cash on delivery",
+      "verificar_pago_en_punto": "Verify pay at pickup",
       "transportadora": "Carrier",
       "guia": "Tracking number",
       "costo_envio": "Shipping cost",
@@ -234,7 +238,7 @@
     },
     "cancelacion": {
       "titulo": "Cancel the order",
-      "ayuda": "On our side and before dispatch: the product became unavailable, or we did not deliver within the agreed time.",
+      "ayuda": "Before shipping or handing over: the product stopped being available, we did not deliver on time, or a pickup was ready for 48 hours and nobody came for it.",
       "motivo": "Reason",
       "dinero_ayuda": "This order had already been paid, so cancelling it requires refunding. It cannot be cancelled without an amount.",
       "sin_dinero": "Nothing had been charged for this order yet, so there is nothing to refund.",
@@ -243,7 +247,8 @@
       "cancelar": "Cancel order",
       "motivos": {
         "no_disponibilidad": "The product became unavailable",
-        "plazo_incumplido": "We did not deliver on time"
+        "plazo_incumplido": "We did not deliver on time",
+        "no_recogido": "Nobody picked it up in time"
       }
     },
     "eliminar": {
@@ -257,6 +262,27 @@
       "eliminando": "Deleting…",
       "hecho": "Order {{numero}} was deleted.",
       "error": "The order could not be deleted. Try again."
+    },
+    "recogida": {
+      "listo_ayuda": "It is picked up at our location, with no tracking number. When the order is there, mark it ready: the buyer gets the notice with the address, the hours and their order number, and from then on it is held for 48 hours.",
+      "marcar_listo": "Mark ready for pickup",
+      "se_guarda_hasta": "Held until {{fecha}}.",
+      "vencida": "Pickup expired",
+      "vencida_sin_cobro": "It expired on {{fecha}} and nobody picked it up. The system cancels it on its next run and releases the products; there is no money to refund.",
+      "vencida_con_reintegro": "It expired on {{fecha}} and nobody picked it up. It is already paid: cancel it below with the reason “Nobody picked it up in time” and refund the money.",
+      "numero": "Order number they show you",
+      "numero_ayuda": "Hand it over only if it matches this order’s: it is what we agreed to ask for, so it goes to whoever bought it. Also compare the name with the recipient above and with whoever you agreed the time with.",
+      "numero_requerido": "Type the order number shown by the person picking up.",
+      "cobrar": "Collect on handover:",
+      "medio": "How they paid",
+      "medios": {
+        "efectivo": "Cash",
+        "transferencia": "Bank transfer"
+      },
+      "entregar": "Hand over at our location",
+      "medio_elige": "Choose how they paid",
+      "medio_ayuda": "If they paid by transfer, check the money reached the account before handing it over: a screenshot is not a payment.",
+      "medio_requerido": "Choose whether they paid in cash or by transfer: it is recorded in the order history."
     }
   },
   "productos": {

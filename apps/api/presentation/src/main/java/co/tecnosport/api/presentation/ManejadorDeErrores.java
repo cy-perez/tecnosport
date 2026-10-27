@@ -57,9 +57,12 @@ import co.tecnosport.api.application.pago.TransaccionDeOtroPagoException;
 import co.tecnosport.api.application.pedido.ContraentregaNoDisponibleException;
 import co.tecnosport.api.application.pedido.DisponibilidadPorConfirmarException;
 import co.tecnosport.api.application.pedido.EnlaceDeCompraNoEncontradoException;
+import co.tecnosport.api.application.pedido.EntregaNoAplicaException;
 import co.tecnosport.api.application.pedido.InventarioSinConfirmarException;
 import co.tecnosport.api.application.pedido.MetodoDePagoNoEsTransferenciaManualException;
 import co.tecnosport.api.application.pedido.MetodoDePagoNoHabilitadoException;
+import co.tecnosport.api.application.pedido.NumeroDePedidoNoCoincideException;
+import co.tecnosport.api.application.pedido.PagoEnPuntoNoDisponibleException;
 import co.tecnosport.api.application.pedido.PedidoNoEliminableException;
 import co.tecnosport.api.application.pedido.PedidoNoEncontradoException;
 import co.tecnosport.api.application.pedido.RetiroEnPuntoNoDisponibleException;
@@ -945,6 +948,27 @@ public class ManejadorDeErrores {
   @ExceptionHandler(RetiroEnPuntoNoDisponibleException.class)
   public ProblemDetail retiroEnPuntoNoDisponible(RetiroEnPuntoNoDisponibleException excepcion) {
     return problema(HttpStatus.CONFLICT, "Recogida en el punto no disponible", excepcion);
+  }
+
+  // Un cliente que pide pagar en el punto un pedido que va a domicilio (ADR-0094). 409, como la
+  // recogida: el pedido está bien formado y el negocio no lo ofrece así.
+  @ExceptionHandler(PagoEnPuntoNoDisponibleException.class)
+  public ProblemDetail pagoEnPuntoNoDisponible(PagoEnPuntoNoDisponibleException excepcion) {
+    return problema(HttpStatus.CONFLICT, "Pago en el punto no disponible", excepcion);
+  }
+
+  // Despachar con guía una recogida, o marcar lista una que va a domicilio (ADR-0094). 409: es el
+  // camino equivocado para ese pedido, y reintentar no lo arregla.
+  @ExceptionHandler(EntregaNoAplicaException.class)
+  public ProblemDetail entregaNoAplica(EntregaNoAplicaException excepcion) {
+    return problema(
+        HttpStatus.CONFLICT, "Ese no es el camino de entrega de este pedido", excepcion);
+  }
+
+  // Quien vino a recoger mostró otro número. 422: lo que no sirve es el dato de la solicitud.
+  @ExceptionHandler(NumeroDePedidoNoCoincideException.class)
+  public ProblemDetail numeroDePedidoNoCoincide(NumeroDePedidoNoCoincideException excepcion) {
+    return problema(HttpStatus.UNPROCESSABLE_CONTENT, "El número de pedido no coincide", excepcion);
   }
 
   // contraentrega ya no es elegible para este pedido (cobertura, monto, categoría o rechazo

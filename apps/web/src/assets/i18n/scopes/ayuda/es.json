@@ -18,7 +18,7 @@
           {
             "pregunta": "¿Qué medios de pago aceptan?",
             "respuesta": [
-              "Tarjeta de crédito y débito, PSE y el botón de Bancolombia, procesados por la pasarela de pagos Wompi; transferencia a nuestras cuentas de Nequi, Daviplata o BBVA; pago a cuotas con Sistecrédito; y pago contraentrega, cuando esté habilitado para tu ciudad y tu pedido.",
+              "Tarjeta de crédito y débito, PSE y el botón de Bancolombia, procesados por la pasarela de pagos Wompi; transferencia a nuestras cuentas de Nequi, Daviplata o BBVA; pago a cuotas con Sistecrédito; pago contraentrega, cuando esté habilitado para tu ciudad y tu pedido; y pago al recoger, en efectivo o por transferencia, cuando recoges el pedido en nuestro punto de Medellín.",
               "Los medios que veas al momento de pagar son los disponibles para ese pedido: no todos están habilitados para todos los pedidos.",
               "No almacenamos datos de tarjetas: esa información se maneja íntegramente en la plataforma de la pasarela."
             ]
@@ -73,7 +73,10 @@
           {
             "pregunta": "¿Puedo recoger el pedido en vez de que me lo envíen?",
             "respuesta": [
-              "No. Todos los pedidos se entregan a domicilio a través de una empresa de transporte, y no hay atención en mostrador."
+              "Sí, sin costo, en nuestro punto (Carrera 26C # 38B-31, apartamento 401, barrio La Milagrosa, Medellín), cuando todos los productos del pedido son de nuestros proveedores de Medellín. Antes de pagar te mostramos si tu pedido se puede recoger.",
+              "El punto es un apartamento, no un local: cuando el pedido esté listo te avisamos y acordamos contigo la hora, cualquier día entre las 8:00 a. m. y las 9:00 p. m. Se lo entregamos a quien muestre el número de pedido.",
+              "Te lo guardamos 48 horas desde el aviso. Si no lo recoges, cancelamos el pedido y, si ya lo habías pagado, te devolvemos el dinero.",
+              "Puedes pagarlo en línea o al recogerlo, en efectivo o por transferencia."
             ]
           },
           {
@@ -163,7 +166,7 @@
     ],
     "vendedor_titulo": "Quién vende",
     "punto_titulo": "Entregas",
-    "punto_nota": "Todos los pedidos se entregan a domicilio a través de una empresa de transporte. No hay atención en mostrador ni recogida en nuestra dirección.",
+    "punto_nota": "Despachamos a domicilio con empresas de transporte. Los pedidos de productos de nuestros proveedores de Medellín también se pueden recoger sin costo en nuestro punto (Carrera 26C # 38B-31, apartamento 401, barrio La Milagrosa, Medellín): es un apartamento, no un local, así que no hay atención en mostrador y la hora se acuerda contigo, cualquier día entre las 8:00 a. m. y las 9:00 p. m.",
     "enlaces_titulo": "También te puede servir",
     "enlace_preguntas": "Preguntas frecuentes",
     "enlace_estado": "Consultar el estado de un pedido",

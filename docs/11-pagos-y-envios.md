@@ -8,6 +8,7 @@
 | **`SISTECREDITO`** | — | Sistecrédito (pasarela propia) | Al aprobar el crédito |
 | `TRANSFERENCIA_MANUAL` | Nequi, Daviplata, BBVA | Ninguno | Al conciliar el comprobante |
 | **`CONTRAENTREGA`** | — | Transportadora con recaudo, vía Skydropx | Días después de la entrega |
+| `PAGO_EN_PUNTO` | Efectivo o transferencia, al recoger (`adr/0094`) | Ninguno | Al entregar en el punto |
 
 ### Por qué los medios de Wompi son un solo método
 
@@ -565,12 +566,18 @@ de Medellín pone el costo de envío en cero: no se cotiza, no se pide direcció
 entrega y no se emite guía. Es la única forma de comprar sin pagar flete, así que
 el checkout muestra el ahorro junto a la opción, no escondido en el total.
 
-Requiere elegir el punto y genera un código de retiro. Es el camino más simple del
-sistema y hay que mantenerlo así.
+No lleva guía (`adr/0094`): el pedido va de `EN_PREPARACION` a `LISTO_PARA_RECOGER`
+cuando está en el punto —el comprador recibe el aviso con la dirección, el horario y
+su número de pedido— y de ahí a `ENTREGADO` cuando lo recoge. Se entrega a quien
+muestre el número de pedido, y lo compara el servidor. Listo, se guarda **48 horas
+desde el aviso**: si nadie viene, el que se paga en el punto se cancela solo, y el
+pagado se cancela desde el panel con el motivo «no recogido» y su reintegro.
 
 **No admite contraentrega**, por lo mismo de siempre: no hay transportadora que
-recaude en un mostrador propio. Quien recoge paga en línea antes o paga en el
-punto, y eso último es un método de pago distinto, no una contraentrega.
+recaude en un mostrador propio. Quien recoge paga en línea antes o paga al recoger
+(`PAGO_EN_PUNTO`), en efectivo o por transferencia, que es un método de pago distinto.
+Ese se verifica por llamada o WhatsApp dentro de las 48 horas siguientes a la compra,
+como la contraentrega, o se cancela.
 
 **Solo para lo de proveedores locales** (`adr/0093`): con la bandera encendida, la
 recogida se ofrece si todo el carrito viene de un proveedor marcado como local —La

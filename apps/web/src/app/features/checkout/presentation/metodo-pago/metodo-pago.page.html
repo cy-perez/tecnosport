@@ -61,6 +61,11 @@
         {{ 'checkout.metodoPago.contraentrega_efectivo' | transloco }}
       </p>
     }
+    @if (ofrecePagoEnPunto()) {
+      <p class="mt-16 mb-0 text-sm text-ts-texto-suave">
+        {{ 'checkout.metodoPago.pago_en_punto_aviso' | transloco }}
+      </p>
+    }
 
     <!-- Vivo aunque no haya método elegido: deshabilitado salía del orden de tabulación sin decir
          por qué no avanzaba. Al pulsarlo sin elegir, lo dice aquí. Región siempre presente: lo que

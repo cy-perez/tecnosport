@@ -83,6 +83,11 @@
               <td>{{ pedido.correo }}</td>
               <td>
                 {{ etiquetaEstado(pedido.estado) }}
+                @if (recogidaVencida(pedido)) {
+                  <span class="block text-ts-error">
+                    {{ 'admin.pedidos.recogida.vencida' | transloco }}
+                  </span>
+                }
                 @if (pedido.plazoDeEntrega; as plazo) {
                   @if (plazo.verdicto === 'VENCIDO') {
                     <!-- Vencido y sin avisar es lo accionable; vencido y ya avisado es seguimiento.
@@ -359,135 +364,220 @@
                           formControlName="motivo"
                         />
                         <ts-boton tipo="submit" [cargando]="verificandoContraentrega(pedido.id)">
-                          {{ 'admin.pedidos.acciones.verificar_contraentrega' | transloco }}
+                          {{
+                            (pedido.metodoPago === 'PAGO_EN_PUNTO'
+                              ? 'admin.pedidos.acciones.verificar_pago_en_punto'
+                              : 'admin.pedidos.acciones.verificar_contraentrega'
+                            ) | transloco
+                          }}
                         </ts-boton>
                       </form>
                     }
                     @case ('EN_PREPARACION') {
-                      <!-- Mientras las guías se crean a mano en Skydropx (adr/0071), no se ofrece
+                      @if (pedido.tipoEntrega === 'RETIRO_EN_PUNTO') {
+                        <!-- La recogida no lleva guía (ADR-0094): cuando el pedido está en el punto
+                             se avisa al comprador y corren sus 48 horas. -->
+                        <p class="mt-0 mb-8 text-ts-texto-suave">
+                          {{ 'admin.pedidos.recogida.listo_ayuda' | transloco }}
+                        </p>
+                        <ts-boton
+                          [ocupado]="marcandoListo(pedido.id)"
+                          (click)="marcarListoParaRecoger(pedido.id)"
+                        >
+                          {{ 'admin.pedidos.recogida.marcar_listo' | transloco }}
+                        </ts-boton>
+                      } @else {
+                        <!-- Mientras las guías se crean a mano en Skydropx (adr/0071), no se ofrece
                            emitirlas por API: se dice dónde se crean y se registran con el formulario
                            de abajo. Con la emisión automática, la transportadora emite la guía y el
                            sistema despacha solo cuando el número existe. -->
-                      <!-- Con quién crear la guía: la que eligió y pagó el comprador (ADR-0073). -->
-                      @if (pedido.transportadora; as transportadora) {
-                        <p class="mt-0 mb-8 font-medio">
-                          {{
-                            'admin.pedidos.acciones.transportadora_elegida'
-                              | transloco: { transportadora: transportadora }
-                          }}
-                        </p>
-                      }
-                      @if (pedido.tipoEntrega === 'ENVIO_A_DOMICILIO' && !emisionAutomatica) {
-                        <p class="mt-0 mb-16 text-ts-texto-suave">
-                          {{ 'admin.pedidos.acciones.guia_en_plataforma' | transloco }}
-                        </p>
-                        <app-paquetes-para-guia [pedidoId]="pedido.id" />
-                      }
-                      @if (pedido.tipoEntrega === 'ENVIO_A_DOMICILIO' && emisionAutomatica) {
-                        <ts-boton
-                          [cargando]="emitiendoGuia(pedido.id)"
-                          (click)="emitirGuia(pedido.id)"
-                        >
-                          {{ 'admin.pedidos.acciones.emitir_guia' | transloco }}
-                        </ts-boton>
-                        <!-- `role="status"` y no una alerta: es un acuse, no un problema. La
+                        <!-- Con quién crear la guía: la que eligió y pagó el comprador (ADR-0073). -->
+                        @if (pedido.transportadora; as transportadora) {
+                          <p class="mt-0 mb-8 font-medio">
+                            {{
+                              'admin.pedidos.acciones.transportadora_elegida'
+                                | transloco: { transportadora: transportadora }
+                            }}
+                          </p>
+                        }
+                        @if (pedido.tipoEntrega === 'ENVIO_A_DOMICILIO' && !emisionAutomatica) {
+                          <p class="mt-0 mb-16 text-ts-texto-suave">
+                            {{ 'admin.pedidos.acciones.guia_en_plataforma' | transloco }}
+                          </p>
+                          <app-paquetes-para-guia [pedidoId]="pedido.id" />
+                        }
+                        @if (pedido.tipoEntrega === 'ENVIO_A_DOMICILIO' && emisionAutomatica) {
+                          <ts-boton
+                            [cargando]="emitiendoGuia(pedido.id)"
+                            (click)="emitirGuia(pedido.id)"
+                          >
+                            {{ 'admin.pedidos.acciones.emitir_guia' | transloco }}
+                          </ts-boton>
+                          <!-- `role="status"` y no una alerta: es un acuse, no un problema. La
                              region vive mientras la fila este desplegada y el acuse llega despues,
                              al pulsar emitir: una que naciera ya llena no se anunciaria (medido con
                              NVDA, ver `docs/06-testing.md`). El margen cuelga del contenido. -->
-                        <p
-                          class="text-ts-texto-suave"
-                          role="status"
-                          [class.mt-8]="emisionDe(pedido.id) !== null"
+                          <p
+                            class="text-ts-texto-suave"
+                            role="status"
+                            [class.mt-8]="emisionDe(pedido.id) !== null"
+                          >
+                            @if (emisionDe(pedido.id); as emision) {
+                              {{
+                                'admin.pedidos.acciones.emision_en_curso'
+                                  | transloco
+                                    : {
+                                        transportadora: emision.transportadora,
+                                        paquetes: emision.cuantosEnvios,
+                                      }
+                              }}
+                            }
+                          </p>
+                          <h3 class="mt-16 mb-8 text-base font-medio">
+                            {{ 'admin.pedidos.acciones.guia_por_fuera' | transloco }}
+                          </h3>
+                        }
+                        <form
+                          [formGroup]="formularioDespacho(pedido.id)"
+                          (submit)="$event.preventDefault(); despachar(pedido)"
                         >
-                          @if (emisionDe(pedido.id); as emision) {
+                          <!-- Una guía por paquete: sin multipaquete en Colombia, un pedido de dos
+                             variantes sale en dos guías con dos cobros (adr/0031). -->
+                          <div formArrayName="guias">
+                            @for (grupo of guiasDe(pedido.id).controls; track $index) {
+                              <fieldset [formGroupName]="$index">
+                                <legend>
+                                  {{
+                                    'admin.pedidos.acciones.guia_numero'
+                                      | transloco: { numero: $index + 1 }
+                                  }}
+                                </legend>
+                                <ts-campo
+                                  [idCampo]="'transportadora-' + pedido.id + '-' + $index"
+                                  [label]="'admin.pedidos.acciones.transportadora' | transloco"
+                                  [error]="
+                                    errorDe(
+                                      grupo.controls.transportadora,
+                                      'admin.pedidos.acciones.transportadora_requerida'
+                                    )
+                                  "
+                                  formControlName="transportadora"
+                                />
+                                <ts-campo
+                                  [idCampo]="'guia-' + pedido.id + '-' + $index"
+                                  [label]="'admin.pedidos.acciones.guia' | transloco"
+                                  [error]="
+                                    errorDe(
+                                      grupo.controls.guia,
+                                      'admin.pedidos.acciones.guia_requerida'
+                                    )
+                                  "
+                                  formControlName="guia"
+                                />
+                                <ts-campo
+                                  [idCampo]="'costo-envio-' + pedido.id + '-' + $index"
+                                  tipo="number"
+                                  [label]="'admin.pedidos.acciones.costo_envio' | transloco"
+                                  [error]="
+                                    errorDe(
+                                      grupo.controls.costoEnvio,
+                                      'admin.pedidos.acciones.costo_envio_requerido'
+                                    )
+                                  "
+                                  formControlName="costoEnvio"
+                                />
+                                @if (guiasDe(pedido.id).length > 1) {
+                                  <ts-boton
+                                    variante="peligro"
+                                    tipo="button"
+                                    [etiquetaAccesible]="
+                                      'admin.pedidos.acciones.quitar_guia_accesible'
+                                        | transloco: { numero: $index + 1 }
+                                    "
+                                    (click)="quitarGuia(pedido.id, $index)"
+                                  >
+                                    {{ 'admin.pedidos.acciones.quitar_guia' | transloco }}
+                                  </ts-boton>
+                                }
+                              </fieldset>
+                            }
+                          </div>
+                          <ts-boton
+                            variante="secundario"
+                            tipo="button"
+                            (click)="agregarGuia(pedido.id)"
+                          >
+                            {{ 'admin.pedidos.acciones.agregar_guia' | transloco }}
+                          </ts-boton>
+                          <ts-boton tipo="submit" [cargando]="despachando(pedido.id)">
+                            {{ 'admin.pedidos.acciones.despachar' | transloco }}
+                          </ts-boton>
+                        </form>
+                      }
+                    }
+                    @case ('LISTO_PARA_RECOGER') {
+                      @if (pedido.recogidaVenceEn; as vence) {
+                        @if (recogidaVencida(pedido)) {
+                          <p class="mt-0 mb-8 text-ts-error">
                             {{
-                              'admin.pedidos.acciones.emision_en_curso'
-                                | transloco
-                                  : {
-                                      transportadora: emision.transportadora,
-                                      paquetes: emision.cuantosEnvios,
-                                    }
+                              (pedido.metodoPago === 'PAGO_EN_PUNTO'
+                                ? 'admin.pedidos.recogida.vencida_sin_cobro'
+                                : 'admin.pedidos.recogida.vencida_con_reintegro'
+                              ) | transloco: { fecha: formatearFecha(vence) }
                             }}
-                          }
-                        </p>
-                        <h3 class="mt-16 mb-8 text-base font-medio">
-                          {{ 'admin.pedidos.acciones.guia_por_fuera' | transloco }}
-                        </h3>
+                          </p>
+                        } @else {
+                          <p class="mt-0 mb-8 text-ts-texto-suave">
+                            {{
+                              'admin.pedidos.recogida.se_guarda_hasta'
+                                | transloco: { fecha: formatearFecha(vence) }
+                            }}
+                          </p>
+                        }
                       }
                       <form
-                        [formGroup]="formularioDespacho(pedido.id)"
-                        (submit)="$event.preventDefault(); despachar(pedido)"
+                        [formGroup]="formularioEntregaEnPunto(pedido)"
+                        (submit)="$event.preventDefault(); entregarEnPunto(pedido)"
                       >
-                        <!-- Una guía por paquete: sin multipaquete en Colombia, un pedido de dos
-                             variantes sale en dos guías con dos cobros (adr/0031). -->
-                        <div formArrayName="guias">
-                          @for (grupo of guiasDe(pedido.id).controls; track $index) {
-                            <fieldset [formGroupName]="$index">
-                              <legend>
-                                {{
-                                  'admin.pedidos.acciones.guia_numero'
-                                    | transloco: { numero: $index + 1 }
-                                }}
-                              </legend>
-                              <ts-campo
-                                [idCampo]="'transportadora-' + pedido.id + '-' + $index"
-                                [label]="'admin.pedidos.acciones.transportadora' | transloco"
-                                [error]="
-                                  errorDe(
-                                    grupo.controls.transportadora,
-                                    'admin.pedidos.acciones.transportadora_requerida'
-                                  )
-                                "
-                                formControlName="transportadora"
-                              />
-                              <ts-campo
-                                [idCampo]="'guia-' + pedido.id + '-' + $index"
-                                [label]="'admin.pedidos.acciones.guia' | transloco"
-                                [error]="
-                                  errorDe(
-                                    grupo.controls.guia,
-                                    'admin.pedidos.acciones.guia_requerida'
-                                  )
-                                "
-                                formControlName="guia"
-                              />
-                              <ts-campo
-                                [idCampo]="'costo-envio-' + pedido.id + '-' + $index"
-                                tipo="number"
-                                [label]="'admin.pedidos.acciones.costo_envio' | transloco"
-                                [error]="
-                                  errorDe(
-                                    grupo.controls.costoEnvio,
-                                    'admin.pedidos.acciones.costo_envio_requerido'
-                                  )
-                                "
-                                formControlName="costoEnvio"
-                              />
-                              @if (guiasDe(pedido.id).length > 1) {
-                                <ts-boton
-                                  variante="peligro"
-                                  tipo="button"
-                                  [etiquetaAccesible]="
-                                    'admin.pedidos.acciones.quitar_guia_accesible'
-                                      | transloco: { numero: $index + 1 }
-                                  "
-                                  (click)="quitarGuia(pedido.id, $index)"
-                                >
-                                  {{ 'admin.pedidos.acciones.quitar_guia' | transloco }}
-                                </ts-boton>
-                              }
-                            </fieldset>
-                          }
-                        </div>
-                        <ts-boton
-                          variante="secundario"
-                          tipo="button"
-                          (click)="agregarGuia(pedido.id)"
-                        >
-                          {{ 'admin.pedidos.acciones.agregar_guia' | transloco }}
-                        </ts-boton>
-                        <ts-boton tipo="submit" [cargando]="despachando(pedido.id)">
-                          {{ 'admin.pedidos.acciones.despachar' | transloco }}
+                        <ts-campo
+                          [idCampo]="'numero-recogida-' + pedido.id"
+                          [label]="'admin.pedidos.recogida.numero' | transloco"
+                          [obligatorio]="true"
+                          [ayuda]="'admin.pedidos.recogida.numero_ayuda' | transloco"
+                          [error]="
+                            errorDe(
+                              formularioEntregaEnPunto(pedido).controls.numeroPedido,
+                              'admin.pedidos.recogida.numero_requerido'
+                            )
+                          "
+                          formControlName="numeroPedido"
+                        />
+                        @if (pedido.metodoPago === 'PAGO_EN_PUNTO') {
+                          <p class="mt-0 mb-8 font-medio">
+                            {{ 'admin.pedidos.recogida.cobrar' | transloco }}
+                            <ts-precio
+                              [valor]="pedido.total.valor"
+                              [moneda]="pedido.total.moneda"
+                            />
+                          </p>
+                          <ts-select
+                            [idCampo]="'medio-recogida-' + pedido.id"
+                            [label]="'admin.pedidos.recogida.medio' | transloco"
+                            [obligatorio]="true"
+                            [placeholder]="'admin.pedidos.recogida.medio_elige' | transloco"
+                            [ayuda]="'admin.pedidos.recogida.medio_ayuda' | transloco"
+                            [opciones]="opcionesMedioEnPunto()"
+                            [error]="
+                              errorDe(
+                                formularioEntregaEnPunto(pedido).controls.medioDePago,
+                                'admin.pedidos.recogida.medio_requerido'
+                              )
+                            "
+                            formControlName="medioDePago"
+                          />
+                        }
+                        <ts-boton tipo="submit" [cargando]="entregandoEnPunto(pedido.id)">
+                          {{ 'admin.pedidos.recogida.entregar' | transloco }}
                         </ts-boton>
                       </form>
                     }
@@ -608,7 +698,7 @@
                       <ts-select
                         [idCampo]="'cancelacion-motivo-' + pedido.id"
                         [label]="'admin.pedidos.cancelacion.motivo' | transloco"
-                        [opciones]="opcionesMotivoCancelacion()"
+                        [opciones]="opcionesMotivoCancelacion(pedido)"
                         formControlName="motivo"
                       />
                       @if (elDineroYaEntro(pedido)) {

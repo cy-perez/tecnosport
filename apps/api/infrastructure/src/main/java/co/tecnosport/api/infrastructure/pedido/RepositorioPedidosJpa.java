@@ -179,6 +179,13 @@ public class RepositorioPedidosJpa implements RepositorioPedidos {
   }
 
   @Override
+  public List<UUID> buscarIdsEnEstadoDesdeAntesDe(
+      EstadoPedido estado, MetodoPago metodoPago, Instant desdeAntesDe, int maximo) {
+    return pedidos.findIdsByEstadoAndMetodoPagoEnteredBefore(
+        estado.name(), metodoPago.name(), desdeAntesDe, PageRequest.of(0, maximo));
+  }
+
+  @Override
   public List<Pedido> buscarSinAvisoDePlazo(
       Collection<EstadoPedido> estados, Instant creadosAntesDe) {
     Objects.requireNonNull(estados, "Los estados no pueden ser nulos.");

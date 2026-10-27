@@ -11,6 +11,7 @@ export const MEDIO_POR_METODO: Record<MetodoPago, MedioReintegro> = {
   SISTECREDITO: 'SISTECREDITO',
   TRANSFERENCIA_MANUAL: 'TRANSFERENCIA_BANCARIA',
   CONTRAENTREGA: 'EFECTIVO',
+  PAGO_EN_PUNTO: 'EFECTIVO',
 };
 
 export const MEDIOS_DE_REINTEGRO: readonly MedioReintegro[] = [

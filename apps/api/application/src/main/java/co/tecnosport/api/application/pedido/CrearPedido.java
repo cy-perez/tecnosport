@@ -185,6 +185,12 @@ public final class CrearPedido {
     if (comando.metodoPago() == MetodoPago.CONTRAENTREGA) {
       exigirContraentregaDisponible(comando, tarifaEnvio);
     }
+    // Antes de reservar, aunque el agregado también lo rechace: llegar a `Pedido.crear` con esto
+    // sería haber apartado existencias para un pedido que no va a existir (ADR-0094).
+    if (comando.metodoPago() == MetodoPago.PAGO_EN_PUNTO
+        && comando.tipoEntrega() != TipoEntrega.RETIRO_EN_PUNTO) {
+      throw new PagoEnPuntoNoDisponibleException();
+    }
     // Simétrico a lo anterior y por el mismo motivo: `habilitados()` dice que el negocio ofrece
     // Sistecrédito, no que este carrito llegue a su monto mínimo. Sin esta comprobación un cliente
     // que postee el método creaba el pedido y el comprador se estrellaba contra el 802 de la
@@ -477,7 +483,9 @@ public final class CrearPedido {
   private Duration vigenciaReserva(MetodoPago metodoPago) {
     Objects.requireNonNull(metodoPago, "El método de pago no puede ser nulo.");
     return switch (metodoPago) {
-      case CONTRAENTREGA -> null;
+      // Lo que se paga al recibir no tiene pago que esperar: la reserva dura hasta la entrega, y lo
+      // que la acota es el vencimiento del pedido sin verificar (VencerContraentregaSinVerificar).
+      case CONTRAENTREGA, PAGO_EN_PUNTO -> null;
       case TRANSFERENCIA_MANUAL -> duracionReservaTransferencia;
       // Sistecrédito entra aquí y no en una duración propia: su transacción vive unos 15 minutos
       // y la notificación de cierre puede tardar hasta 3 más (G-ALI-12), así que la reserva de

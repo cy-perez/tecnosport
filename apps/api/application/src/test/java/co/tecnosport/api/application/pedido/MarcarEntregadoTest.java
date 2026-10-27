@@ -221,4 +221,18 @@ class MarcarEntregadoTest {
         TransicionDeEstadoInvalidaException.class,
         () -> caso.ejecutar(new MarcarEntregadoComando(pedido.id(), "admin:test")));
   }
+
+  /** Por aquí bastaría un clic para saltarse el número de pedido (ADR-0094). */
+  @Test
+  void unaRecogidaListaNoSeEntregaSinElNumero() {
+    MarcarEntregado caso = crear();
+    Pedido pedido =
+        new Recogidas(pedidos, inventarios)
+            .lista(MetodoPago.PAGO_EN_PUNTO, AHORA.minusSeconds(7200), AHORA.minusSeconds(3600));
+
+    assertThrows(
+        EntregaNoAplicaException.class,
+        () -> caso.ejecutar(new MarcarEntregadoComando(pedido.id(), "admin:1")));
+    assertEquals(EstadoPedido.LISTO_PARA_RECOGER, pedido.estado());
+  }
 }

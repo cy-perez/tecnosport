@@ -12,11 +12,15 @@ import co.tecnosport.api.application.pedido.ConfirmarInventarioDePedidoPagado;
 import co.tecnosport.api.application.pedido.DespacharPedido;
 import co.tecnosport.api.application.pedido.DespacharPedidoComando;
 import co.tecnosport.api.application.pedido.EliminarPedido;
+import co.tecnosport.api.application.pedido.EntregarEnPunto;
+import co.tecnosport.api.application.pedido.EntregarEnPuntoComando;
 import co.tecnosport.api.application.pedido.GuiaDespachada;
 import co.tecnosport.api.application.pedido.ListarPedidosAdmin;
 import co.tecnosport.api.application.pedido.ListarPedidosAdminComando;
 import co.tecnosport.api.application.pedido.MarcarEntregado;
 import co.tecnosport.api.application.pedido.MarcarEntregadoComando;
+import co.tecnosport.api.application.pedido.MarcarListoParaRecoger;
+import co.tecnosport.api.application.pedido.MarcarListoParaRecogerComando;
 import co.tecnosport.api.application.pedido.PedidosDelPanel;
 import co.tecnosport.api.application.pedido.PedidosPaginados;
 import co.tecnosport.api.application.pedido.RechazarEnEntrega;
@@ -37,6 +41,7 @@ import co.tecnosport.api.presentation.pedido.dto.CancelarPedidoRequest;
 import co.tecnosport.api.presentation.pedido.dto.ConciliarRecaudoRequest;
 import co.tecnosport.api.presentation.pedido.dto.DespacharPedidoRequest;
 import co.tecnosport.api.presentation.pedido.dto.EmisionDeGuiaRespuesta;
+import co.tecnosport.api.presentation.pedido.dto.EntregarEnPuntoRequest;
 import co.tecnosport.api.presentation.pedido.dto.PedidoRespuesta;
 import co.tecnosport.api.presentation.pedido.dto.PedidosPaginadosRespuesta;
 import co.tecnosport.api.presentation.pedido.dto.RechazarEnEntregaRequest;
@@ -87,6 +92,8 @@ public class AdminPedidosControlador {
   private final DespacharPedido despacharPedido;
   private final EmitirGuiaDePedido emitirGuiaDePedido;
   private final MarcarEntregado marcarEntregado;
+  private final MarcarListoParaRecoger marcarListoParaRecoger;
+  private final EntregarEnPunto entregarEnPunto;
   private final CancelarPedido cancelarPedido;
   private final EliminarPedido eliminarPedido;
   private final RechazarEnEntrega rechazarEnEntrega;
@@ -103,6 +110,8 @@ public class AdminPedidosControlador {
       DespacharPedido despacharPedido,
       EmitirGuiaDePedido emitirGuiaDePedido,
       MarcarEntregado marcarEntregado,
+      MarcarListoParaRecoger marcarListoParaRecoger,
+      EntregarEnPunto entregarEnPunto,
       CancelarPedido cancelarPedido,
       EliminarPedido eliminarPedido,
       RechazarEnEntrega rechazarEnEntrega,
@@ -117,6 +126,8 @@ public class AdminPedidosControlador {
     this.despacharPedido = Objects.requireNonNull(despacharPedido);
     this.emitirGuiaDePedido = Objects.requireNonNull(emitirGuiaDePedido);
     this.marcarEntregado = Objects.requireNonNull(marcarEntregado);
+    this.marcarListoParaRecoger = Objects.requireNonNull(marcarListoParaRecoger);
+    this.entregarEnPunto = Objects.requireNonNull(entregarEnPunto);
     this.cancelarPedido = Objects.requireNonNull(cancelarPedido);
     this.eliminarPedido = Objects.requireNonNull(eliminarPedido);
     this.rechazarEnEntrega = Objects.requireNonNull(rechazarEnEntrega);
@@ -233,6 +244,37 @@ public class AdminPedidosControlador {
           "Pedido entregado pero no se pudo confirmar la reserva de inventario de alguna línea"
               + " (venció o ya se había resuelto) — el saldo total queda por encima de la"
               + " existencia real, revisar a mano. pedido={}",
+          id);
+    }
+    return mapeador.aRespuesta(resultado.pedido());
+  }
+
+  /** La recogida está en el punto: se le avisa al comprador y corren sus 48 horas (ADR-0094). */
+  @PostMapping("/{id}/listo-para-recoger")
+  public PedidoRespuesta marcarListoParaRecoger(@PathVariable UUID id) {
+    String actor = "admin:" + actorId();
+    Pedido pedido =
+        transaccion.execute(
+            estado ->
+                marcarListoParaRecoger.ejecutar(new MarcarListoParaRecogerComando(id, actor)));
+    return mapeador.aRespuesta(pedido);
+  }
+
+  /** Se entrega a quien muestre el número de pedido, que compara el servidor (ADR-0094). */
+  @PostMapping("/{id}/entrega-en-punto")
+  public PedidoRespuesta entregarEnPunto(
+      @PathVariable UUID id, @RequestBody EntregarEnPuntoRequest cuerpo) {
+    String actor = "admin:" + actorId();
+    ResultadoEntrega resultado =
+        transaccion.execute(
+            estado ->
+                entregarEnPunto.ejecutar(
+                    new EntregarEnPuntoComando(
+                        id, cuerpo.numeroPedido(), cuerpo.medioDePago(), actor)));
+    if (!resultado.inventarioConfirmado()) {
+      log.error(
+          "Recogida entregada pero no se pudo confirmar la reserva de inventario de alguna línea"
+              + " — revisar a mano. pedido={}",
           id);
     }
     return mapeador.aRespuesta(resultado.pedido());

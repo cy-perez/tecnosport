@@ -72,7 +72,8 @@ public class MapeadorRespuestasPedido {
         // dos sumas del mismo dinero en dos capas distintas se separan el día que una cambie.
         aRespuesta(tope.yaDevuelto(pedido.id())),
         plazoDeEntrega(pedido),
-        pedido.tarifaEnvio().map(TarifaEnvio::transportadora).orElse(null));
+        pedido.tarifaEnvio().map(TarifaEnvio::transportadora).orElse(null),
+        pedido.recogidaVenceEn().orElse(null));
   }
 
   /** El veredicto lo decide el pedido (`Pedido.verdictoDelPlazoDeEntrega`); aquí solo se mapea. */

@@ -688,4 +688,18 @@ class MetodosDePagoDisponiblesTest {
 
     assertTrue(disponibles.contains(MetodoPago.CONTRAENTREGA));
   }
+
+  /** El pago en el punto es de quien viene al punto, y de nadie más (ADR-0094). */
+  @Test
+  void elPagoEnElPuntoSoloSeOfreceParaRecoger() {
+    MetodosDePagoDisponibles caso = crear(CRITERIOS_PERMISIVOS);
+    cotizador.conTarifaQueRecauda();
+
+    assertTrue(
+        caso.ejecutar(comando(TipoEntrega.RETIRO_EN_PUNTO, null))
+            .contains(MetodoPago.PAGO_EN_PUNTO));
+    assertFalse(
+        caso.ejecutar(comando(TipoEntrega.ENVIO_A_DOMICILIO, DIRECCION_MEDELLIN))
+            .contains(MetodoPago.PAGO_EN_PUNTO));
+  }
 }

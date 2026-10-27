@@ -643,6 +643,43 @@ talla. Nada de los textos habla de réplicas, de marcas ni de su relación con e
    la información sea veraz y suficiente (Ley 1480), o eso empeora la posición
    frente al titular de la marca?
 
+## 11. La recogida en el punto: entregar por el número y cancelar a las 48 horas
+
+> Nació el 26 de octubre de 2026 con `ADR-0094`.
+
+**El hecho.** Vuelve la recogida sin costo en el punto de Medellín, que es un
+apartamento, para los pedidos de proveedores locales. El negocio decidió tres cosas:
+se entrega a **quien muestre el número de pedido**, sin pedir documento; el pedido
+listo se guarda **48 horas desde el aviso** y, si nadie viene, se cancela —el pagado
+en línea con reintegro total, el que se paga al recoger sin cobro—; y quien elige
+pagar al recoger, en efectivo o por transferencia, se verifica por llamada o
+WhatsApp dentro de las 48 horas siguientes a la compra o el pedido se cancela, igual
+que la contraentrega desde el 4 de octubre.
+
+**Qué dice el texto publicado (versión `2026-10-26.1`).** Términos, numeral 6: el
+pago al recoger y su verificación de 48 horas. Numeral 7: la verificación de la
+contraentrega, que se aplicaba desde el 4 de octubre y los términos no decían.
+Numeral 8: dónde y cuándo se recoge, la entrega a quien muestre el número, las 48
+horas, el reintegro en quince días calendario y que el día de la recogida es el día
+de la entrega para el retracto y la garantía.
+
+**Las tres preguntas.**
+
+1. **¿Entregar a quien muestre el número traslada al comprador el riesgo de que otro
+   lo use?** El texto le pide no compartirlo. Si alguien le saca el número del
+   correo y recoge, ¿el negocio cumplió la entrega o responde por ella? La
+   alternativa es pedir además el nombre o el documento de quien compró, que cuesta
+   una pregunta en la puerta y un dato más en el pedido.
+2. **¿Cancelar a las 48 horas un contrato pagado es una facultad que se puede pactar
+   en un contrato de adhesión?** Se devuelve todo lo pagado, pero la cancelación la
+   decide el negocio por un hecho del comprador. ¿Hace falta avisarle antes de
+   cancelar, o dar un plazo mayor, para que no se lea como una cláusula que le
+   permite al productor terminar el contrato a su arbitrio?
+3. **¿El plazo legal de entrega se cumple al dejar el pedido listo, o al entregarlo?**
+   Los términos cuentan los treinta días desde el pago, o desde el pedido si se paga
+   al recibir, y no dicen qué pasa si el comprador demora la recogida. El sistema deja
+   de vigilar el plazo mientras el pedido está listo.
+
 ## Antes de la consulta
 
 - [x] ~~Leer el contrato y la documentación de Resend y anotar la región de

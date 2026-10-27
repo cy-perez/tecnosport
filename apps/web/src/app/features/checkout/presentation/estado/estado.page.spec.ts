@@ -237,6 +237,37 @@ describe('EstadoPage', () => {
     expect(screen.getByText('Confirmado, pago contra entrega')).toBeTruthy();
   });
 
+  /** Comparte estado con la contraentrega, pero no le dice al comprador que paga a un mensajero. */
+  it('un pedido que se paga al recoger dice que se paga al recoger', async () => {
+    await renderConPedidoEnMemoria(
+      pedidoDePrueba({
+        metodoPago: 'PAGO_EN_PUNTO',
+        tipoEntrega: 'RETIRO_EN_PUNTO',
+        direccion: null,
+      }),
+      new RepositorioPedidosFalso(),
+      new RepositorioPagosFalso(),
+    );
+
+    expect(await screen.findByText('Confirmado, pagas al recoger')).toBeTruthy();
+    expect(screen.queryByText('Confirmado, pago contra entrega')).toBeNull();
+  });
+
+  it('una recogida lista lo dice', async () => {
+    await renderConPedidoEnMemoria(
+      pedidoDePrueba({
+        estado: 'LISTO_PARA_RECOGER',
+        metodoPago: 'WOMPI',
+        tipoEntrega: 'RETIRO_EN_PUNTO',
+        direccion: null,
+      }),
+      new RepositorioPedidosFalso(),
+      new RepositorioPagosFalso(),
+    );
+
+    expect(await screen.findByText('Listo para recoger en nuestro punto')).toBeTruthy();
+  });
+
   it('sin pedido en memoria pero con pedidoId y correo en la URL, consulta el seguimiento', async () => {
     const pedidos = new RepositorioPedidosFalso(
       seguimientoDePrueba({ estado: 'PAGADO', metodoPago: 'WOMPI' }),

@@ -44,6 +44,7 @@ class MetodoPagoTest {
     assertEquals(ProveedorDePago.NINGUNO, MetodoPago.CONTRAENTREGA.pasarela());
     assertFalse(MetodoPago.TRANSFERENCIA_MANUAL.laCobraUnaPasarela());
     assertFalse(MetodoPago.CONTRAENTREGA.laCobraUnaPasarela());
+    assertEquals(ProveedorDePago.NINGUNO, MetodoPago.PAGO_EN_PUNTO.pasarela());
   }
 
   /**
@@ -66,5 +67,15 @@ class MetodoPagoTest {
             .collect(Collectors.toCollection(() -> EnumSet.noneOf(MetodoPago.class)));
 
     assertEquals(EnumSet.of(MetodoPago.WOMPI), deWompi);
+  }
+
+  @Test
+  void seCobranAlRecibirLaContraentregaYElPagoEnElPunto() {
+    Set<MetodoPago> alRecibir =
+        Arrays.stream(MetodoPago.values())
+            .filter(MetodoPago::seCobraAlRecibir)
+            .collect(Collectors.toCollection(() -> EnumSet.noneOf(MetodoPago.class)));
+
+    assertEquals(EnumSet.of(MetodoPago.CONTRAENTREGA, MetodoPago.PAGO_EN_PUNTO), alRecibir);
   }
 }

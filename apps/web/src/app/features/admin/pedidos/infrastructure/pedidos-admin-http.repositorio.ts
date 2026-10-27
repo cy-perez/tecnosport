@@ -8,6 +8,7 @@ import {
   EmisionDeGuiaAdmin,
   FiltroPedidosAdmin,
   ModalidadRecaudo,
+  MedioDePagoEnPunto,
   EstadoPedido,
   MetodoPago,
   MotivoCancelacion,
@@ -84,6 +85,28 @@ export class PedidosAdminHttpRepositorio implements RepositorioPedidosAdmin {
       params: { path: { id: pedidoId } },
     });
     return aPedidoAdmin(desempaquetar(respuesta, 'no se pudo marcar el pedido como entregado'));
+  }
+
+  async marcarListoParaRecoger(pedidoId: string): Promise<PedidoAdmin> {
+    const respuesta = await this.cliente.POST('/api/v1/admin/pedidos/{id}/listo-para-recoger', {
+      params: { path: { id: pedidoId } },
+    });
+    return aPedidoAdmin(desempaquetar(respuesta, 'no se pudo marcar el pedido listo para recoger'));
+  }
+
+  async entregarEnPunto(entrada: {
+    pedidoId: string;
+    numeroPedido: string;
+    medioDePago: MedioDePagoEnPunto | null;
+  }): Promise<PedidoAdmin> {
+    const respuesta = await this.cliente.POST('/api/v1/admin/pedidos/{id}/entrega-en-punto', {
+      params: { path: { id: entrada.pedidoId } },
+      body: {
+        numeroPedido: entrada.numeroPedido,
+        ...(entrada.medioDePago ? { medioDePago: entrada.medioDePago } : {}),
+      },
+    });
+    return aPedidoAdmin(desempaquetar(respuesta, 'no se pudo entregar el pedido en el punto'));
   }
 
   async rechazarEnEntrega(pedidoId: string, motivo: string): Promise<PedidoAdmin> {
