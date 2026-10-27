@@ -1,7 +1,17 @@
 import { NgOptimizedImage } from '@angular/common';
 import { iconoEnvio, iconoUbicacion } from '../../../../shared/ui/icono/iconos';
 import { TsIcono } from '../../../../shared/ui/icono/ts-icono';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
+import { CarritoStore } from '../../../carrito/application/carrito.store';
+import { ALMACEN_CARRITO_POR_PAGAR } from '../../domain/almacen-carrito-por-pagar.puerto';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { correoValido } from '../../../../shared/formularios/validadores';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -24,6 +34,7 @@ import { EnvioPublico, EstadoPedido, Pedido, RetractoPublico } from '../../domai
 import {
   esMetodoPagoSistecredito,
   esMetodoPagoWompi,
+  pagoConfirmado,
   puedeReintentarPago,
 } from '../../domain/reglas-pedido';
 import { urlWebCheckoutWompi } from '../../domain/wompi';
@@ -229,6 +240,31 @@ export class EstadoPage {
   );
 
   private readonly idioma = usarIdiomaActivo();
+
+  private readonly carrito = inject(CarritoStore);
+  private readonly carritosPorPagar = inject(ALMACEN_CARRITO_POR_PAGAR);
+
+  constructor() {
+    // El carrito que salió a pagarse en la pasarela se vacía aquí, al volver pagado, y no al salir
+    // (`AlmacenCarritoPorPagar`). Solo si es el mismo carrito que originó el pedido: a esta
+    // pantalla también se llega por el enlace de un correo, con otra compra a medias. `carritoId`
+    // se lee en `afterNextRender`, así que hasta entonces vale `null` y no se decide nada.
+    effect(() => {
+      const pedido = this.pedido();
+      const carritoId = this.carrito.carritoId();
+      if (!pedido || carritoId === null || !pagoConfirmado(pedido.estado)) {
+        return;
+      }
+      const delPedido = this.carritosPorPagar.carritoDe(pedido.id);
+      if (delPedido === null) {
+        return;
+      }
+      if (delPedido === carritoId) {
+        untracked(() => this.carrito.limpiar());
+      }
+      this.carritosPorPagar.olvidar(pedido.id);
+    });
+  }
 
   /** El descuento del medio de pago (ADR-0095), formateado para ir dentro de la frase. */
   protected readonly descuento = computed(() => {

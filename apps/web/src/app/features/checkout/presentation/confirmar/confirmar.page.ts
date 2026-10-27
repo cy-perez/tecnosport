@@ -35,6 +35,7 @@ import { ErrorHttp } from '../../../../core/http/respuesta-http';
 import { esMetodoPagoSistecredito, esMetodoPagoWompi } from '../../domain/reglas-pedido';
 import { urlWebCheckoutWompi } from '../../domain/wompi';
 import { ALMACEN_CORREO_DE_PEDIDO } from '../../domain/almacen-correo-de-pedido.puerto';
+import { ALMACEN_CARRITO_POR_PAGAR } from '../../domain/almacen-carrito-por-pagar.puerto';
 
 const CLAVE_ETIQUETA: Record<MetodoPago, string> = {
   WOMPI: 'checkout.metodoPago.wompi',
@@ -87,6 +88,7 @@ export class ConfirmarPage {
   protected readonly carrito = inject(CarritoStore);
   protected readonly checkout = inject(CheckoutStore);
   private readonly correosDePedido = inject(ALMACEN_CORREO_DE_PEDIDO);
+  private readonly carritosPorPagar = inject(ALMACEN_CARRITO_POR_PAGAR);
 
   protected readonly error = signal<string | null>(null);
 
@@ -492,13 +494,17 @@ export class ConfirmarPage {
         // principio de este método impidiéndole volver a intentarlo.
         return;
       }
-      // Aquí y no antes. Las líneas ya son del pedido, así que dejar el carrito lleno invita a
-      // comprarlas dos veces; pero limpiarlo apenas se crea el pedido rompería el reintento de
-      // arriba, porque la guarda del principio de este método exige un carrito con líneas. Si
-      // `continuarSegunMetodoPago` falla —el intento de pago de Wompi, por ejemplo— no se llega
-      // hasta acá y el carrito queda intacto para volver a intentarlo.
-      this.carrito.limpiar();
+      // Aquí y no antes, y **solo sin pasarela**. Las líneas ya son del pedido, así que dejar el
+      // carrito lleno invita a comprarlas dos veces; pero limpiarlo apenas se crea el pedido
+      // rompería el reintento de arriba, porque la guarda del principio de este método exige un
+      // carrito con líneas.
+      //
+      // Con Wompi o Sistecrédito el comprador sale del sitio con el pago todavía por hacer: vaciar
+      // el carrito al salir dejaba con las manos vacías a quien cancelaba en la pasarela o a quien
+      // le negaban el crédito. Ese carrito lo vacía la pantalla de estado cuando el pedido vuelve
+      // pagado (`AlmacenCarritoPorPagar`).
       if (this.terminado()) {
+        this.carrito.limpiar();
         this.checkout.terminarCompra();
       }
     } catch (error) {
@@ -571,6 +577,14 @@ export class ConfirmarPage {
     void this.router.navigate(['../metodo-pago'], { relativeTo: this.route });
   }
 
+  /** Para que la pantalla de estado vacíe este carrito, y solo este, cuando el pedido vuelva pagado. */
+  private anotarCarritoPorPagar(pedidoId: string): void {
+    const carritoId = this.carrito.carritoId();
+    if (carritoId) {
+      this.carritosPorPagar.anotar(pedidoId, carritoId);
+    }
+  }
+
   private async continuarSegunMetodoPago(pedido: Pedido): Promise<boolean> {
     // Antes de cualquier salida: la pasarela, la transferencia o el estado lo leen de aquí.
     this.correosDePedido.recordar(pedido.id, pedido.correo);
@@ -588,6 +602,7 @@ export class ConfirmarPage {
         documento,
         this.transloco.activeLang(),
       );
+      this.anotarCarritoPorPagar(pedido.id);
       // La URL la arma la pasarela y es de un solo uso: no se compone nada aquí, solo se va. Y a
       // dónde vuelve el comprador NO se decide en esta llamada —va en `urlResponse`, que el
       // backend fija desde su configuración—, a diferencia de Wompi.
@@ -611,6 +626,7 @@ export class ConfirmarPage {
         pedidoId: pedido.id,
       });
       const urlRetorno = `${window.location.origin}/${idioma}/checkout/retorno-wompi?${parametrosRetorno.toString()}`;
+      this.anotarCarritoPorPagar(pedido.id);
       window.location.href = urlWebCheckoutWompi(intento, urlRetorno);
       return true;
     }

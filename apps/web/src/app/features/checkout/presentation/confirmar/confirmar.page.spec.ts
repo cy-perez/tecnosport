@@ -42,6 +42,10 @@ import {
   ALMACEN_CORREO_DE_PEDIDO,
   AlmacenCorreoDePedido,
 } from '../../domain/almacen-correo-de-pedido.puerto';
+import {
+  ALMACEN_CARRITO_POR_PAGAR,
+  AlmacenCarritoPorPagar,
+} from '../../domain/almacen-carrito-por-pagar.puerto';
 
 /** El navegador que recordó el correo antes de ir a la pasarela, en memoria. */
 class AlmacenCorreoEnMemoria implements AlmacenCorreoDePedido {
@@ -62,6 +66,22 @@ function almacenDesde(query: Record<string, string> = {}): AlmacenCorreoEnMemori
   }
   return almacen;
 }
+
+/** Qué carrito salió a pagarse en la pasarela, en memoria. */
+class CarritosPorPagarEnMemoria implements AlmacenCarritoPorPagar {
+  readonly anotados = new Map<string, string>();
+  anotar(pedidoId: string, carritoId: string): void {
+    this.anotados.set(pedidoId, carritoId);
+  }
+  carritoDe(pedidoId: string): string | null {
+    return this.anotados.get(pedidoId) ?? null;
+  }
+  olvidar(pedidoId: string): void {
+    this.anotados.delete(pedidoId);
+  }
+}
+
+let carritosPorPagar = new CarritosPorPagarEnMemoria();
 
 /** El precio que el servidor da hoy en estas pruebas. */
 const PRECIO_DE_HOY = 150_000;
@@ -462,6 +482,7 @@ async function renderConDatos(
     ],
     providers: [
       { provide: ALMACEN_CORREO_DE_PEDIDO, useValue: almacenDesde() },
+      { provide: ALMACEN_CARRITO_POR_PAGAR, useValue: carritosPorPagar },
       ...proveerAlmacenesCarrito(),
       provideRouter([
         { path: 'metodo-pago', component: RutaMuda },
@@ -496,6 +517,7 @@ describe('ConfirmarPage', () => {
 
   beforeEach(() => {
     window.localStorage.clear();
+    carritosPorPagar = new CarritosPorPagarEnMemoria();
     ubicacionOriginal = window.location;
     // jsdom no navega de verdad ("Not implemented: navigation") — se
     // reemplaza por un objeto mutable para poder verificar a dónde se
@@ -1293,6 +1315,31 @@ describe('ConfirmarPage', () => {
       expect(carrito.carritoId()).toBeNull();
       expect(new CarritoIdLocalStorageAlmacen().leer()).toBeNull();
     });
+  });
+
+  /**
+   * Salir a la pasarela no es haber pagado: quien cancela en Wompi vuelve a un carrito vacío si se
+   * vacía aquí. Se anota cuál carrito salió a pagarse, y lo vacía la pantalla de estado.
+   */
+  it('al salir hacia Wompi, el carrito queda lleno y anotado para vaciarlo al volver pagado', async () => {
+    sembrarCarritoId('carrito-1');
+    const pedidos = new RepositorioPedidosFalso(pedidoDePrueba({ metodoPago: 'WOMPI' }));
+
+    const { fixture } = await renderConDatos(
+      'WOMPI',
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      pedidos,
+    );
+    await screen.findByText('compra@ejemplo.co');
+    await esperarCarritoCargado(fixture);
+    const carrito = fixture.debugElement.injector.get(CarritoStore);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
+
+    await vi.waitFor(() => expect(window.location.href).toContain('https://checkout.wompi.co/'));
+    expect(carrito.carritoId()).toBe('carrito-1');
+    expect(new CarritoIdLocalStorageAlmacen().leer()).toBe('carrito-1');
+    expect(carritosPorPagar.carritoDe('pedido-1')).toBe('carrito-1');
   });
 
   it('si el intento de pago falla, el carrito queda intacto para reintentar', async () => {

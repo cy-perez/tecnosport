@@ -19,6 +19,16 @@ import {
   ALMACEN_CORREO_DE_PEDIDO,
   AlmacenCorreoDePedido,
 } from '../../domain/almacen-correo-de-pedido.puerto';
+import {
+  ALMACEN_CARRITO_POR_PAGAR,
+  AlmacenCarritoPorPagar,
+} from '../../domain/almacen-carrito-por-pagar.puerto';
+import {
+  REPOSITORIO_CARRITO,
+  RepositorioCarrito,
+} from '../../../carrito/domain/repositorio-carrito.puerto';
+import { CarritoStore } from '../../../carrito/application/carrito.store';
+import { proveerAlmacenesCarrito, sembrarCarritoId } from '../../../../../testing/carrito';
 
 /** El navegador que recordó el correo antes de ir a la pasarela, en memoria. */
 class AlmacenCorreoEnMemoria implements AlmacenCorreoDePedido {
@@ -38,6 +48,41 @@ function almacenDesde(query: Record<string, string> = {}): AlmacenCorreoEnMemori
     almacen.recordar(query['pedidoId'], query['correo']);
   }
   return almacen;
+}
+
+/** Qué carrito salió a pagarse en la pasarela, en memoria. */
+class CarritosPorPagarEnMemoria implements AlmacenCarritoPorPagar {
+  readonly anotados = new Map<string, string>();
+  anotar(pedidoId: string, carritoId: string): void {
+    this.anotados.set(pedidoId, carritoId);
+  }
+  carritoDe(pedidoId: string): string | null {
+    return this.anotados.get(pedidoId) ?? null;
+  }
+  olvidar(pedidoId: string): void {
+    this.anotados.delete(pedidoId);
+  }
+}
+
+let carritosPorPagar = new CarritosPorPagarEnMemoria();
+
+/** El carrito del navegador: solo hace falta que exista, la pantalla no pinta sus líneas. */
+const repositorioCarrito: Partial<RepositorioCarrito> = {
+  ver: async (id: string) => ({
+    id,
+    usuarioId: null,
+    creadoEn: '2026-01-01T00:00:00Z',
+    lineas: [],
+  }),
+};
+
+/** Lo que toda pantalla con `CarritoStore` necesita, más el almacén de carritos por pagar. */
+function proveedoresDelCarrito() {
+  return [
+    ...proveerAlmacenesCarrito(),
+    { provide: REPOSITORIO_CARRITO, useValue: repositorioCarrito },
+    { provide: ALMACEN_CARRITO_POR_PAGAR, useValue: carritosPorPagar },
+  ];
 }
 
 function pedidoDePrueba(overrides: Partial<Pedido> = {}): Pedido {
@@ -178,6 +223,7 @@ async function renderConProviders(
     ],
     providers: [
       { provide: ALMACEN_CORREO_DE_PEDIDO, useValue: almacenDesde(query) },
+      ...proveedoresDelCarrito(),
       provideTanStackQuery(new QueryClient()),
       { provide: REPOSITORIO_PEDIDOS, useValue: pedidos },
       { provide: REPOSITORIO_PAGOS, useValue: pagos },
@@ -204,6 +250,7 @@ async function renderConPedidoEnMemoria(
     ],
     providers: [
       { provide: ALMACEN_CORREO_DE_PEDIDO, useValue: almacenDesde() },
+      ...proveedoresDelCarrito(),
       provideTanStackQuery(new QueryClient()),
       { provide: REPOSITORIO_PEDIDOS, useValue: pedidos },
       { provide: REPOSITORIO_PAGOS, useValue: pagos },
@@ -227,6 +274,57 @@ function cifraDe(rotulo: string): string {
 }
 
 describe('EstadoPage', () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+    carritosPorPagar = new CarritosPorPagarEnMemoria();
+  });
+
+  describe('el carrito que salió a pagarse en la pasarela', () => {
+    async function volverConElPedido(estado: Pedido['estado']) {
+      const { fixture } = await renderConProviders(
+        new RepositorioPedidosFalso(seguimientoDePrueba({ estado, metodoPago: 'WOMPI' })),
+        new RepositorioPagosFalso(),
+        { pedidoId: 'pedido-1', correo: 'cliente@tecnosport.co' },
+      );
+      await screen.findByText('Pedido TS-2026-000001');
+      const carrito = fixture.debugElement.injector.get(CarritoStore);
+      // `carritoId` se lee en `afterNextRender`: primero que exista, luego se mira si se vació.
+      fixture.detectChanges();
+      await fixture.whenStable();
+      return carrito;
+    }
+
+    it('se vacía al volver con el pedido pagado', async () => {
+      sembrarCarritoId('carrito-1');
+      carritosPorPagar.anotar('pedido-1', 'carrito-1');
+
+      const carrito = await volverConElPedido('PAGADO');
+
+      await vi.waitFor(() => expect(carrito.carritoId()).toBeNull());
+      expect(carritosPorPagar.carritoDe('pedido-1')).toBeNull();
+    });
+
+    it('se queda lleno mientras el pago no ha entrado', async () => {
+      sembrarCarritoId('carrito-1');
+      carritosPorPagar.anotar('pedido-1', 'carrito-1');
+
+      const carrito = await volverConElPedido('PAGO_FALLIDO');
+
+      await vi.waitFor(() => expect(carrito.carritoId()).toBe('carrito-1'));
+      expect(carritosPorPagar.carritoDe('pedido-1')).toBe('carrito-1');
+    });
+
+    it('no toca otro carrito: el del navegador ya es una compra distinta', async () => {
+      sembrarCarritoId('carrito-nuevo');
+      carritosPorPagar.anotar('pedido-1', 'carrito-1');
+
+      const carrito = await volverConElPedido('PAGADO');
+
+      await vi.waitFor(() => expect(carritosPorPagar.carritoDe('pedido-1')).toBeNull());
+      expect(carrito.carritoId()).toBe('carrito-nuevo');
+    });
+  });
+
   it('con el pedido ya en memoria, lo muestra sin consultar al servidor', async () => {
     const pedidos = new RepositorioPedidosFalso();
     await renderConPedidoEnMemoria(pedidoDePrueba(), pedidos, new RepositorioPagosFalso());
