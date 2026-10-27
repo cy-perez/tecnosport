@@ -40,7 +40,10 @@ uso con la misma forma —escriben una fila, llaman a un tercero que mueve diner
 de verdad, y escriben otra vez— y, desde el 30 de septiembre de 2026, dos más de
 la ingesta por la misma razón con otro tercero: `ProcesarLoteDeIngesta` abre una
 transacción por publicación y deja fuera la llamada a la API de Claude, y la
-tarea de expiración (`ADR-0066`) corre sin controlador que le abra ninguna. Ahí
+tarea de expiración (`ADR-0066`) corre sin controlador que le abra ninguna. Y
+desde el 27 de octubre de 2026, aprobar y eliminar un borrador de tecnología:
+confirman la fila y después borran del bucket, para que un fallo del bucket no
+deje un borrador vivo con las fotos ya borradas. Ahí
 la atomicidad ya no existe —ninguna transacción de base de datos revierte lo que
 hizo el tercero—, así que agrupar las dos escrituras solo consigue que la primera
 no esté confirmada cuando el dinero se va. Si un caso de uso quiere esto sin tener
