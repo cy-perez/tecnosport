@@ -3240,6 +3240,39 @@
         ],
         "type" : "object"
       },
+      "PedidoDetenidoRespuesta" : {
+        "properties" : {
+          "correo" : {
+            "type" : "string"
+          },
+          "desde" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "metodoPago" : {
+            "type" : "string"
+          },
+          "numeroPedido" : {
+            "type" : "string"
+          },
+          "pedidoId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "tipoEntrega" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "correo",
+          "desde",
+          "metodoPago",
+          "numeroPedido",
+          "pedidoId",
+          "tipoEntrega"
+        ],
+        "type" : "object"
+      },
       "PedidoRespuesta" : {
         "properties" : {
           "contacto" : {
@@ -3414,6 +3447,25 @@
         },
         "required" : [
           "descuento"
+        ],
+        "type" : "object"
+      },
+      "PedidosDetenidosRespuesta" : {
+        "properties" : {
+          "pedidos" : {
+            "items" : {
+              "$ref" : "#/components/schemas/PedidoDetenidoRespuesta"
+            },
+            "type" : "array"
+          },
+          "umbralDias" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "required" : [
+          "pedidos",
+          "umbralDias"
         ],
         "type" : "object"
       },
@@ -5360,6 +5412,26 @@
         "responses" : {
           "204" : {
             "description" : "No Content"
+          }
+        },
+        "tags" : [
+          "admin-alertas-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/alertas/pedidos-en-preparacion" : {
+      "get" : {
+        "operationId" : "pedidosDetenidosEnPreparacion",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PedidosDetenidosRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
           }
         },
         "tags" : [

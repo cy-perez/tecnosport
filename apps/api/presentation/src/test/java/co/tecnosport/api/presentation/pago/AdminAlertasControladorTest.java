@@ -137,6 +137,32 @@ class AdminAlertasControladorTest {
         .andExpect(jsonPath("$.codigo").value("PAGO_CON_TRANSACCION_O_RESUELTO"));
   }
 
+  /** Llegó a preparación hace cuatro días: pasa el umbral de tres, con su fecha de llegada. */
+  @Test
+  void laAlertaListaElPedidoDetenidoEnPreparacionConSuLlegada() throws Exception {
+    Pago pago = pagoSinTransaccionCreadoHace(Duration.ofHours(1));
+    Pedido pedido = pedidos.buscarPorId(pago.pedidoId()).orElseThrow();
+    Instant llegada = Instant.now().minus(Duration.ofDays(4));
+    pedido.transicionar(
+        co.tecnosport.api.domain.pedido.EstadoPedido.PAGADO, "webhook-wompi", "aprobado", llegada);
+    pedido.transicionar(
+        co.tecnosport.api.domain.pedido.EstadoPedido.EN_PREPARACION,
+        "admin:1",
+        "inventario confirmado",
+        llegada);
+    pedidos.guardar(pedido);
+
+    mockMvc
+        .perform(get("/api/v1/admin/alertas/pedidos-en-preparacion"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.umbralDias").value(3))
+        .andExpect(jsonPath("$.pedidos", hasSize(1)))
+        .andExpect(jsonPath("$.pedidos[0].pedidoId").value(pedido.id().toString()))
+        .andExpect(jsonPath("$.pedidos[0].tipoEntrega").value("ENVIO_A_DOMICILIO"))
+        .andExpect(jsonPath("$.pedidos[0].metodoPago").value("WOMPI"))
+        .andExpect(jsonPath("$.pedidos[0].desde").exists());
+  }
+
   @TestConfiguration
   static class Configuracion {
 
@@ -159,6 +185,13 @@ class AdminAlertasControladorTest {
     ListarPagosSinTransaccion listarPagosSinTransaccion(
         RepositorioPagos pagos, RepositorioPedidos pedidos) {
       return new ListarPagosSinTransaccion(pagos, pedidos, Instant::now, Duration.ofHours(12));
+    }
+
+    @Bean
+    co.tecnosport.api.application.pedido.ListarPedidosDetenidosEnPreparacion
+        listarPedidosDetenidosEnPreparacion(RepositorioPedidos pedidos) {
+      return new co.tecnosport.api.application.pedido.ListarPedidosDetenidosEnPreparacion(
+          pedidos, Instant::now, Duration.ofDays(3));
     }
 
     @Bean

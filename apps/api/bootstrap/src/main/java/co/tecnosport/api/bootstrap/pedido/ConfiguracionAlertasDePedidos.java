@@ -4,6 +4,7 @@ import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.pago.ListarPagosSinTransaccion;
 import co.tecnosport.api.application.pago.MarcarPagoSinTransaccionRevisado;
 import co.tecnosport.api.application.pago.RepositorioPagos;
+import co.tecnosport.api.application.pedido.ListarPedidosDetenidosEnPreparacion;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import java.time.Duration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -26,6 +27,13 @@ public class ConfiguracionAlertasDePedidos {
         repositorioPedidos,
         reloj,
         Duration.ofHours(propiedades.pagoSinTransaccionHoras()));
+  }
+
+  @Bean
+  public ListarPedidosDetenidosEnPreparacion listarPedidosDetenidosEnPreparacion(
+      RepositorioPedidos repositorioPedidos, Reloj reloj, PropiedadesAlertasDePedidos propiedades) {
+    return new ListarPedidosDetenidosEnPreparacion(
+        repositorioPedidos, reloj, Duration.ofDays(propiedades.enPreparacionDias()));
   }
 
   @Bean

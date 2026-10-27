@@ -36,6 +36,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/alertas/pedidos-en-preparacion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["pedidosDetenidosEnPreparacion"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/atencion": {
         parameters: {
             query?: never;
@@ -3503,6 +3519,16 @@ export interface components {
         PartirBorradorPeticion: {
             fotos: string[];
         };
+        PedidoDetenidoRespuesta: {
+            correo: string;
+            /** Format: date-time */
+            desde: string;
+            metodoPago: string;
+            numeroPedido: string;
+            /** Format: uuid */
+            pedidoId: string;
+            tipoEntrega: string;
+        };
         PedidoRespuesta: {
             contacto?: components["schemas"]["ContactoRespuesta"];
             correo?: string;
@@ -3556,6 +3582,11 @@ export interface components {
             tipoEntrega?: string;
             total?: components["schemas"]["DineroRespuesta"];
             transportadora?: string;
+        };
+        PedidosDetenidosRespuesta: {
+            pedidos: components["schemas"]["PedidoDetenidoRespuesta"][];
+            /** Format: int64 */
+            umbralDias: number;
         };
         PedidosPaginadosRespuesta: {
             items?: components["schemas"]["PedidoRespuesta"][];
@@ -4265,6 +4296,26 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    pedidosDetenidosEnPreparacion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PedidosDetenidosRespuesta"];
+                };
             };
         };
     };

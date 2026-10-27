@@ -4,10 +4,15 @@ import co.tecnosport.api.application.pago.ListarPagosSinTransaccion;
 import co.tecnosport.api.application.pago.MarcarPagoSinTransaccionRevisado;
 import co.tecnosport.api.application.pago.PagoSinTransaccion;
 import co.tecnosport.api.application.pago.PagosSinTransaccion;
+import co.tecnosport.api.application.pedido.ListarPedidosDetenidosEnPreparacion;
+import co.tecnosport.api.application.pedido.PedidoDetenido;
+import co.tecnosport.api.application.pedido.PedidosDetenidosEnPreparacion;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.presentation.compartido.dto.DineroRespuesta;
 import co.tecnosport.api.presentation.pedido.dto.PagoSinTransaccionRespuesta;
 import co.tecnosport.api.presentation.pedido.dto.PagosSinTransaccionRespuesta;
+import co.tecnosport.api.presentation.pedido.dto.PedidoDetenidoRespuesta;
+import co.tecnosport.api.presentation.pedido.dto.PedidosDetenidosRespuesta;
 import java.util.Objects;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -31,14 +36,17 @@ public class AdminAlertasControlador {
 
   private final ListarPagosSinTransaccion listarPagosSinTransaccion;
   private final MarcarPagoSinTransaccionRevisado marcarRevisado;
+  private final ListarPedidosDetenidosEnPreparacion listarDetenidosEnPreparacion;
   private final TransactionTemplate transaccion;
 
   public AdminAlertasControlador(
       ListarPagosSinTransaccion listarPagosSinTransaccion,
       MarcarPagoSinTransaccionRevisado marcarRevisado,
+      ListarPedidosDetenidosEnPreparacion listarDetenidosEnPreparacion,
       PlatformTransactionManager transactionManager) {
     this.listarPagosSinTransaccion = Objects.requireNonNull(listarPagosSinTransaccion);
     this.marcarRevisado = Objects.requireNonNull(marcarRevisado);
+    this.listarDetenidosEnPreparacion = Objects.requireNonNull(listarDetenidosEnPreparacion);
     this.transaccion = new TransactionTemplate(Objects.requireNonNull(transactionManager));
   }
 
@@ -55,6 +63,24 @@ public class AdminAlertasControlador {
   public void marcarRevisado(@PathVariable UUID pagoId) {
     String actor = "admin:" + SecurityContextHolder.getContext().getAuthentication().getPrincipal();
     transaccion.executeWithoutResult(estado -> marcarRevisado.ejecutar(pagoId, actor));
+  }
+
+  @GetMapping("/pedidos-en-preparacion")
+  public PedidosDetenidosRespuesta pedidosDetenidosEnPreparacion() {
+    PedidosDetenidosEnPreparacion alerta = listarDetenidosEnPreparacion.ejecutar();
+    return new PedidosDetenidosRespuesta(
+        alerta.umbral().toDays(),
+        alerta.pedidos().stream().map(AdminAlertasControlador::aRespuesta).toList());
+  }
+
+  private static PedidoDetenidoRespuesta aRespuesta(PedidoDetenido item) {
+    return new PedidoDetenidoRespuesta(
+        item.pedido().id(),
+        item.pedido().numeroPedido().valor(),
+        item.pedido().correo().valor(),
+        item.pedido().tipoEntrega().name(),
+        item.pedido().metodoPago().name(),
+        item.desde());
   }
 
   private static PagoSinTransaccionRespuesta aRespuesta(PagoSinTransaccion item) {
