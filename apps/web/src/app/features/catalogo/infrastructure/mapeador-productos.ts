@@ -7,7 +7,6 @@ import {
   MarcaDeVitrina,
   PatronDeColor,
   Producto,
-  Rotacion,
   TipoAtributo,
   ValorAtributo,
   Variante,
@@ -21,7 +20,6 @@ type MarcaDeVitrinaDto = components['schemas']['MarcaDeVitrinaRespuesta'];
 type CategoriaDto = components['schemas']['CategoriaRespuesta'];
 type VarianteDto = components['schemas']['VarianteRespuesta'];
 type ValorAtributoDto = components['schemas']['AtributoValorRespuesta'];
-type RotacionDto = components['schemas']['RotacionRespuesta'];
 type AtributoDto = components['schemas']['AtributoRespuesta'];
 
 /** DTO generado -> modelo propio del front. Ningún componente ve la forma de la respuesta HTTP. */
@@ -34,7 +32,6 @@ export function aProducto(dto: ProductoDto): Producto {
     categoria: aCategoria(dto.categoria),
     imagenPrincipal: dto.imagenPrincipal ? aImagen(dto.imagenPrincipal) : null,
     galeria: (dto.galeria ?? []).map(aImagen),
-    rotacion: dto.rotacion ? aRotacion(dto.rotacion) : null,
     variantes: (dto.variantes ?? []).map(aVariante),
     escalaTallas: dto.escalaTallas ?? [],
     tallaSirveHasta: dto.tallaSirveHasta ?? null,
@@ -107,25 +104,6 @@ function aImagen(dto: ImagenDto): Imagen {
     varianteId: dto.varianteId ?? null,
     enLaFicha: dto.enLaFicha ?? false,
     variantesQueMuestra: dto.variantesQueMuestra ?? [],
-  };
-}
-
-/**
- * El orden de los fotogramas es la rotación: uno fuera de sitio se ve como un salto al girar. Se
- * garantiza aquí, en la frontera donde el DTO se vuelve modelo, y no en cada pantalla que lo
- * consuma — el visor recibe el arreglo ya ordenado y no tiene que volver a saberlo.
- */
-function aRotacion(dto: RotacionDto): Rotacion {
-  return {
-    fotogramas: dto.fotogramas ?? 0,
-    imagenes: (dto.imagenes ?? [])
-      .map((fotograma) => ({
-        orden: fotograma.orden ?? 0,
-        url: fotograma.url ?? '',
-        ancho: fotograma.ancho ?? 0,
-        alto: fotograma.alto ?? 0,
-      }))
-      .sort((uno, otro) => uno.orden - otro.orden),
   };
 }
 

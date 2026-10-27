@@ -7,36 +7,16 @@
     <ts-migas [ruta]="migas()" />
 
     <div class="grid grid-cols-1 gap-32 desde-tableta:grid-cols-2">
-      <!-- Las dos ramas repiten <ts-galeria> a propósito, en vez de ligar `prioritaria` a una
-           expresión: `priority` es una entrada que NgOptimizedImage congela tras inicializar, y
-           navegar de una ficha con rotación a otra sin ella la cambiaría en caliente. En ramas
-           distintas, cada instancia nace con su valor y nunca lo cambia. Las dos lo declaran
-           aunque una coincida con el valor por omisión: quién es la candidata a LCP de esta
-           pantalla se lee aquí, no en el componente.
-
-           Dos fotogramas es el mínimo con el que `ts-visor-360` pinta algo. La condición se repite
-           aquí para no dejar un hueco de rejilla con un visor vacío dentro. -->
+      <!-- `prioritaria` se declara aunque coincida con el valor por omisión: quién es la candidata
+           a LCP de esta pantalla se lee aquí, no en el componente. -->
       <div class="flex flex-col gap-12">
-        @if (fotogramas360().length > 1) {
-          <div class="flex flex-col gap-24">
-            <ts-visor-360 [imagenes]="fotogramas360()" />
-            <ts-galeria
-              [imagenes]="imagenesGaleria()"
-              [indiceInicial]="indiceEnLaGaleria()"
-              (fotoElegida)="elegirFoto($event)"
-              [nombreProducto]="p.nombre"
-              [prioritaria]="false"
-            />
-          </div>
-        } @else {
-          <ts-galeria
-            [imagenes]="imagenesGaleria()"
-            [indiceInicial]="indiceEnLaGaleria()"
-            (fotoElegida)="elegirFoto($event)"
-            [nombreProducto]="p.nombre"
-            [prioritaria]="true"
-          />
-        }
+        <ts-galeria
+          [imagenes]="imagenesGaleria()"
+          [indiceInicial]="indiceEnLaGaleria()"
+          (fotoElegida)="elegirFoto($event)"
+          [nombreProducto]="p.nombre"
+          [prioritaria]="true"
+        />
 
         <!-- El pie de las fotos de tecnología (ADR-0086): son del modelo y no de cada color, y los
              colores que se dicen son los que publica el fabricante, no los que hay. Cuáles tiene

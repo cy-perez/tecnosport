@@ -2,8 +2,7 @@
   <div class="flex flex-col gap-8">
     <!-- Mismo criterio que ts-tarjeta-producto: el recorte cuadrado lo decide
          el CSS, así que la imagen va en modo `fill` dentro de un marco que
-         reserva el espacio. Es la del LCP de la ficha salvo cuando hay visor
-         360, que se queda con esa prioridad. -->
+         reserva el espacio. Es la del LCP de la ficha. -->
     <div class="relative aspect-square bg-ts-superficie-alt">
       <!-- `@for` sobre una lista de una, y no el `<img>` suelto dentro del `@if`: de las entradas
            de NgOptimizedImage solo `ngSrc` se puede cambiar en caliente, y `ngSrcset` y

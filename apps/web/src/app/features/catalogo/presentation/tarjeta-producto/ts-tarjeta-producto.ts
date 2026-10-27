@@ -84,7 +84,7 @@ export class TsTarjetaProducto {
     this.producto().slug,
   ]);
 
-  /** La misma regla que la galería y el visor 360: WebP con el original de respaldo. */
+  /** La misma regla que la galería: WebP con el original de respaldo. */
   protected readonly descriptores = descriptoresDe;
   protected readonly TAMANOS = TAMANOS_TARJETA;
 

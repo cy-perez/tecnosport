@@ -37,19 +37,6 @@ export interface Imagen {
   readonly variantesQueMuestra: readonly string[];
 }
 
-/** Un fotograma de rotación se publica en un solo ancho: el visor los pinta todos igual. */
-export interface ImagenRotacion {
-  readonly orden: number;
-  readonly url: string;
-  readonly ancho: number;
-  readonly alto: number;
-}
-
-export interface Rotacion {
-  readonly fotogramas: number;
-  readonly imagenes: readonly ImagenRotacion[];
-}
-
 /** Lo que no es un color sino un diseño. Los mismos nombres que `PatronDeColor` en la API. */
 export type PatronDeColor = 'MULTICOLOR' | 'ESTAMPADO' | 'ANIMAL_PRINT';
 
@@ -180,7 +167,6 @@ export interface Producto {
   readonly categoria: Categoria;
   readonly imagenPrincipal: Imagen | null;
   readonly galeria: readonly Imagen[];
-  readonly rotacion: Rotacion | null;
   readonly variantes: readonly Variante[];
   /**
    * Las tallas de la categoría en su orden —XS…XXXL, 26…42, 34…45—, heredadas de la rama si la
@@ -235,7 +221,7 @@ export function parametrosDe(imagen: Imagen): Record<string, unknown> {
  * a partir de la forma de una key del bucket, que es el acoplamiento que produjo `url_webp`.
  *
  * Vive aquí y no en cada plantilla para que la tarjeta y la galería no elijan distinto sobre el
- * mismo dato: durante un tiempo la galería sirvió el original y el visor la WebP, sin que nadie lo
+ * mismo dato: durante un tiempo la galería sirvió el original y el visor 360 —ya retirado— la WebP, sin que nadie lo
  * decidiera.
  */
 export function descriptoresDe(imagen: Imagen): string {

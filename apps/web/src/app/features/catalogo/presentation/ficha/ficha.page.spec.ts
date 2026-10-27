@@ -135,7 +135,6 @@ function productoDePrueba(): Producto {
     },
     imagenPrincipal: null,
     galeria: [],
-    rotacion: null,
     escalaTallas: [],
     tallaSirveHasta: null,
     paleta: [],
@@ -170,7 +169,6 @@ function productoConVariantes(): Producto {
     },
     imagenPrincipal: null,
     galeria: [],
-    rotacion: null,
     escalaTallas: [],
     tallaSirveHasta: null,
     paleta: [],
@@ -254,7 +252,7 @@ function productoConPrincipalDeUnColor(): Producto {
   };
 }
 
-function productoConRotacion(): Producto {
+function productoConFotoPrincipal(): Producto {
   return {
     ...productoDePrueba(),
     imagenPrincipal: {
@@ -268,17 +266,6 @@ function productoConRotacion(): Producto {
       varianteId: null,
       enLaFicha: false,
       variantesQueMuestra: [],
-    },
-    // Ordenados, como los entrega el mapeador: que el orden se garantice en la frontera es
-    // asunto de `mapeador-productos.spec.ts`, no de esta pantalla.
-    rotacion: {
-      fotogramas: 4,
-      imagenes: [0, 1, 2, 3].map((orden) => ({
-        orden,
-        url: `https://imagenes.test/r${orden}.jpg`,
-        ancho: 1000,
-        alto: 1000,
-      })),
     },
   };
 }
@@ -625,57 +612,13 @@ describe('FichaPage', () => {
     expect(screen.getAllByRole('button', { name: /imagenes\.test/ })).toHaveLength(2);
   });
 
-  it('un producto sin set de rotación no muestra el visor 360', async () => {
+  // La galería es la única candidata a LCP de la ficha y lo declara siempre: sin ella la pantalla se
+  // quedaría sin imagen prioritaria.
+  it('la foto principal de la galería es la prioritaria de la pantalla', async () => {
     const repositorio: RepositorioProductos = {
       buscar: () =>
         Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
-      buscarPorSlug: () => Promise.resolve(productoDePrueba()),
-    };
-
-    await renderFicha(repositorio);
-
-    expect(await screen.findByRole('heading', { name: 'Morral urbano' })).toBeTruthy();
-    expect(screen.queryByRole('group', { name: 'Vista 360 del producto' })).toBeNull();
-  });
-
-  it('un producto con set de rotación muestra el visor, empezando por el fotograma frontal', async () => {
-    const repositorio: RepositorioProductos = {
-      buscar: () =>
-        Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
-      buscarPorSlug: () => Promise.resolve(productoConRotacion()),
-    };
-
-    await renderFicha(repositorio);
-
-    const visor = await screen.findByRole('group', { name: 'Vista 360 del producto' });
-    expect(visor.querySelector('img')?.getAttribute('src')).toContain('r0.jpg');
-    expect(screen.getByText('Fotograma 1 de 4')).toBeTruthy();
-  });
-
-  // Priorizar las dos imágenes es no priorizar ninguna: con visor, la candidata a LCP es el
-  // fotograma frontal y la galería deja de serlo. Con las dos ramas del @if, es lo único que
-  // atrapa que alguien cambie una y se olvide de la otra.
-  it('con visor, la prioridad de LCP es del fotograma frontal y no de la galería', async () => {
-    const repositorio: RepositorioProductos = {
-      buscar: () =>
-        Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
-      buscarPorSlug: () => Promise.resolve(productoConRotacion()),
-    };
-
-    await renderFicha(repositorio);
-
-    const visor = await screen.findByRole('group', { name: 'Vista 360 del producto' });
-    expect(visor.querySelector('img')?.getAttribute('fetchpriority')).toBe('high');
-    expect(
-      screen.getByRole('img', { name: 'Morral de frente' }).getAttribute('fetchpriority'),
-    ).toBe('auto');
-  });
-
-  it('sin visor, la prioridad vuelve a la galería: la pantalla nunca se queda sin candidata', async () => {
-    const repositorio: RepositorioProductos = {
-      buscar: () =>
-        Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
-      buscarPorSlug: () => Promise.resolve({ ...productoConRotacion(), rotacion: null }),
+      buscarPorSlug: () => Promise.resolve(productoConFotoPrincipal()),
     };
 
     await renderFicha(repositorio);
@@ -685,89 +628,7 @@ describe('FichaPage', () => {
     ).toBe('high');
   });
 
-  // Un set de un solo fotograma no llega hoy del backend (`PUBLICADO` exige cuatro), pero si
-  // llegara, la ficha no puede quedarse con un hueco vacío ni sin candidata a LCP: la galería
-  // vuelve a ser la prioritaria.
-  it('un set de rotación de un solo fotograma no monta el visor', async () => {
-    const producto = productoConRotacion();
-    const repositorio: RepositorioProductos = {
-      buscar: () =>
-        Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
-      buscarPorSlug: () =>
-        Promise.resolve({
-          ...producto,
-          rotacion: { fotogramas: 1, imagenes: [producto.rotacion!.imagenes[0]] },
-        }),
-    };
-
-    await renderFicha(repositorio);
-
-    expect(await screen.findByRole('heading', { name: 'Morral urbano' })).toBeTruthy();
-    expect(screen.queryByRole('group', { name: 'Vista 360 del producto' })).toBeNull();
-  });
-
-  // TanStack revalida sola al volver a la pestaña pasado el `staleTime`. Que el producto llegue de
-  // nuevo del servidor no significa que la rotación haya cambiado: devolver el visor al frontal
-  // mientras alguien lo está girando es perder su sitio sin motivo.
-  it('un refetch que trae los mismos datos no mueve el visor', async () => {
-    const repositorio: RepositorioProductos = {
-      buscar: () =>
-        Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
-      buscarPorSlug: () => Promise.resolve(productoConRotacion()),
-    };
-
-    const { fixture, queryClient } = await renderFicha(repositorio);
-    const visor = await screen.findByRole('group', { name: 'Vista 360 del producto' });
-
-    fireEvent.keyDown(visor, { key: 'ArrowRight' });
-    fireEvent.keyDown(visor, { key: 'ArrowRight' });
-    await fixture.whenStable();
-    expect(screen.getByText('Fotograma 3 de 4')).toBeTruthy();
-
-    await queryClient.refetchQueries();
-    await fixture.whenStable();
-
-    expect(screen.getByText('Fotograma 3 de 4')).toBeTruthy();
-  });
-
-  // Y aunque el producto sí cambie —le subieron el precio mientras miraba—, lo que cambió no es la
-  // rotación: el visor no tiene por qué enterarse. El precio nuevo en pantalla es lo que prueba
-  // que el refetch llegó de verdad al componente; sin esa comprobación, la prueba pasaría igual
-  // aunque la revalidación no hubiera ocurrido.
-  it('un refetch que sí trae datos nuevos actualiza el precio pero no mueve el visor', async () => {
-    let precio = 150_000;
-    const repositorio: RepositorioProductos = {
-      buscar: () =>
-        Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
-      buscarPorSlug: () => {
-        const producto = productoConRotacion();
-        return Promise.resolve({
-          ...producto,
-          variantes: producto.variantes.map((variante) => ({
-            ...variante,
-            precio: { ...variante.precio, valor: precio },
-          })),
-        });
-      },
-    };
-
-    const { fixture, queryClient } = await renderFicha(repositorio);
-    const visor = await screen.findByRole('group', { name: 'Vista 360 del producto' });
-
-    fireEvent.keyDown(visor, { key: 'ArrowRight' });
-    fireEvent.keyDown(visor, { key: 'ArrowRight' });
-    await fixture.whenStable();
-    expect(screen.getByText('Fotograma 3 de 4')).toBeTruthy();
-    expect(screen.getByText(/150\.000/)).toBeTruthy();
-
-    precio = 175_000;
-    await queryClient.refetchQueries();
-
-    expect(await screen.findByText(/175\.000/)).toBeTruthy();
-    expect(screen.getByText('Fotograma 3 de 4')).toBeTruthy();
-  });
-
-  // Mismo defecto que el del visor, en el otro control de la ficha: la variante elegida es del
+  // TanStack revalida sola al volver a la pestaña pasado el `staleTime`: la variante elegida es del
   // visitante, no del último dato que llegó del servidor.
   it('un refetch no devuelve la variante elegida a la de por defecto', async () => {
     let recargo = 0;

@@ -40,7 +40,6 @@ function productoDePrueba(): Producto {
       variantesQueMuestra: [],
     },
     galeria: [],
-    rotacion: null,
     escalaTallas: [],
     tallaSirveHasta: null,
     paleta: [],

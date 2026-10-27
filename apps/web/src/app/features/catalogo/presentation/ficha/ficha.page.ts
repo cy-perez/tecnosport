@@ -35,7 +35,6 @@ import { Miga, TsMigas } from '../../../../shared/ts-migas/ts-migas';
 import { TsPrecio } from '../../../../shared/ts-precio/ts-precio';
 import { ErrorHttp } from '../../../../core/http/respuesta-http';
 import { TsSelectorVariante } from '../selector-variante/ts-selector-variante';
-import { TsVisor360 } from '../../../../shared/ts-visor-360/ts-visor-360';
 import { usarFichaProducto } from '../../application/buscar-ficha-producto.consulta';
 import { usarEnlaceDeCompra } from '../../application/consultar-enlace-de-compra.consulta';
 import { fechaConHora } from '../../../../core/i18n/fecha-colombia';
@@ -78,7 +77,6 @@ import {
     TsBoton,
     TsDescripcion,
     TsMigas,
-    TsVisor360,
   ],
   templateUrl: './ficha.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -288,11 +286,6 @@ export class FichaPage {
     );
   });
 
-  /** El visor recibe URL y nada más. Llegan ya ordenadas por `orden` desde el mapeador. */
-  protected readonly fotogramas360 = computed<string[]>(() =>
-    (this.producto()?.rotacion?.imagenes ?? []).map((fotograma) => fotograma.url),
-  );
-
   /**
    * La talla única no es una elección: no sale en el selector, se dice al lado del nombre. El eje de
    * talla sigue el orden de la escala de la categoría y enseña solo las tallas que se pueden comprar
@@ -375,7 +368,7 @@ export class FichaPage {
    * Un producto **distinto**, por su slug. No sirve depender de `producto()`: TanStack revalida en
    * segundo plano al volver a la pestaña, y cualquier cambio real —un precio, una existencia—
    * devuelve un objeto nuevo. Con eso, la variante que eligió el visitante se reiniciaba sola a la
-   * de por defecto. La misma trampa que el visor 360 tiene con la identidad de su arreglo.
+   * de por defecto.
    */
   private readonly slugCargado = computed(() => this.producto()?.slug ?? null);
 

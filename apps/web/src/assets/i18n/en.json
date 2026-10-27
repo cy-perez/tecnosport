@@ -167,15 +167,6 @@
     "catalogo": "Catalog",
     "panel": "Dashboard"
   },
-  "visor360": {
-    "etiqueta": "360 view of the product",
-    "instrucciones": "Drag over the image, or use the left and right arrow keys, to turn the product.",
-    "pista": "Drag to turn",
-    "girar_izquierda": "Turn left",
-    "girar_derecha": "Turn right",
-    "posicion": "Frame {{actual}} of {{total}}",
-    "anuncio_posicion": "Turned to frame {{actual}} of {{total}}"
-  },
   "seo": {
     "portada": {
       "titulo": "Tecno Sport · Casual and sportswear, footwear, bags and tech",
@@ -229,9 +220,6 @@
     },
     "admin": {
       "titulo": "Admin panel · Tecno Sport"
-    },
-    "captura360": {
-      "titulo": "360 capture · Tecno Sport"
     }
   },
   "comun": {

@@ -126,8 +126,8 @@ const DIAPOSITIVAS: readonly DiapositivaHero[] = [
  * mientras dura el gesto en vez de esperar a que se levante: un carrusel que no se mueve hasta que
  * sueltas no parece arrastrable, parece roto.
  *
- * <p>Tres cosas que no son gratis y que el visor 360 ya había pagado una vez —de ahí sale el
- * patrón—: `touch-action: pan-y` deja el desplazamiento vertical de la página al navegador, el
+ * <p>Tres cosas que no son gratis —el patrón lo pagó primero el visor 360, hoy retirado
+ * (`ADR-0097`)—: `touch-action: pan-y` deja el desplazamiento vertical de la página al navegador, el
  * temporizador se apaga mientras el dedo está encima y se reprograma al soltar, y un arrastre que
  * termina sobre el botón de la diapositiva <b>no puede activarlo</b>. Ese último es el que muerde:
  * sin la guarda, empezar el gesto encima del botón pasaba de pieza y navegaba a la vez.

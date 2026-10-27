@@ -37,7 +37,6 @@ function productoDePrueba(slug: string): Producto {
     },
     imagenPrincipal: null,
     galeria: [],
-    rotacion: null,
     escalaTallas: [],
     tallaSirveHasta: null,
     paleta: [],
