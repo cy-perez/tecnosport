@@ -1,4 +1,4 @@
-import { NgOptimizedImage } from '@angular/common';
+import { isPlatformBrowser, NgOptimizedImage } from '@angular/common';
 import { iconoEnvio, iconoUbicacion } from '../../../../shared/ui/icono/iconos';
 import { TsIcono } from '../../../../shared/ui/icono/ts-icono';
 import {
@@ -7,6 +7,7 @@ import {
   computed,
   effect,
   inject,
+  PLATFORM_ID,
   signal,
   untracked,
 } from '@angular/core';
@@ -164,8 +165,22 @@ export class EstadoPage {
    * anillo, y el resultado, las dos regiones vivas.
    */
   protected readonly pidiendoDatos = computed(
-    () => this.criteriosSeguimiento() === null && this.pedido() === null,
+    () =>
+      this.criteriosSeguimiento() === null &&
+      this.pedido() === null &&
+      !this.correoSoloEnElNavegador,
   );
+
+  /**
+   * En el servidor, con `pedidoId` en la URL, el correo todavía no se puede saber: viene en el
+   * fragmento —que el navegador nunca manda— o en el `sessionStorage`. El SSR servía entonces el
+   * formulario de «pide el enlace», y al hidratar lo cambiaba por el esqueleto y luego por el
+   * pedido: un parpadeo, y un formulario en el HTML que ve quien llega por el enlace de un correo.
+   * Se sirve el esqueleto; si en el navegador tampoco aparece el correo, ahí sí cae al formulario.
+   */
+  private readonly correoSoloEnElNavegador =
+    !isPlatformBrowser(inject(PLATFORM_ID)) &&
+    this.route.snapshot.queryParamMap.get('pedidoId') !== null;
 
   /**
    * Lo que se le dice a quien pidió el enlace y no se le pudo mandar: el límite de intentos y la

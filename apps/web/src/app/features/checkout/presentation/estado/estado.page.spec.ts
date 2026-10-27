@@ -1,5 +1,5 @@
 import { ErrorHttp } from '../../../../core/http/respuesta-http';
-import { Component, inject } from '@angular/core';
+import { Component, inject, PLATFORM_ID } from '@angular/core';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
@@ -228,6 +228,7 @@ async function renderConProviders(
   pedidos: RepositorioPedidos,
   pagos: RepositorioPagos,
   query: Record<string, string> = {},
+  plataforma: 'browser' | 'server' = 'browser',
 ) {
   return render(EstadoPage, {
     imports: [
@@ -239,6 +240,7 @@ async function renderConProviders(
     ],
     providers: [
       { provide: ALMACEN_CORREO_DE_PEDIDO, useValue: almacenDesde(query) },
+      { provide: PLATFORM_ID, useValue: plataforma },
       ...proveedoresDelCarrito(),
       provideTanStackQuery(new QueryClient()),
       { provide: REPOSITORIO_PEDIDOS, useValue: pedidos },
@@ -452,6 +454,31 @@ describe('EstadoPage', () => {
    * `id` —es un UUID— así que no tenía forma de llegar con parámetros. Ahora se le pregunta por el
    * número de su comprobante.
    */
+  /**
+   * En el servidor el correo no se puede saber —va en el fragmento o en el `sessionStorage`—, y el
+   * SSR servía el formulario de «pide el enlace» a quien llegaba por el enlace de un correo.
+   */
+  it('en el servidor, con pedidoId en la URL, sirve el esqueleto y no el formulario', async () => {
+    await renderConProviders(
+      new RepositorioPedidosFalso(),
+      new RepositorioPagosFalso(),
+      { pedidoId: 'pedido-1' },
+      'server',
+    );
+
+    expect(screen.queryByRole('heading', { name: 'Consulta tu pedido' })).toBeNull();
+    expect(screen.queryByLabelText('Número del pedido')).toBeNull();
+  });
+
+  /** En el navegador, si tampoco aparece el correo, el formulario sigue siendo la salida. */
+  it('en el navegador, con pedidoId pero sin correo, pide el número y el correo', async () => {
+    await renderConProviders(new RepositorioPedidosFalso(), new RepositorioPagosFalso(), {
+      pedidoId: 'pedido-1',
+    });
+
+    expect(await screen.findByRole('heading', { name: 'Consulta tu pedido' })).toBeTruthy();
+  });
+
   it('sin pedido en memoria ni datos en la URL, pide el número y el correo', async () => {
     await renderConProviders(new RepositorioPedidosFalso(), new RepositorioPagosFalso());
 
