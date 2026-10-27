@@ -471,6 +471,8 @@ POST /api/v1/admin/pedidos/{id}/verificar-contraentrega     contacto por WhatsAp
 POST /api/v1/admin/pedidos/{id}/emitir-guia                 le pide las guías a Skydropx; 202, no despacha todavía
 POST /api/v1/admin/pedidos/{id}/despacho                    registra una guía emitida por fuera y despacha
 POST /api/v1/admin/pedidos/{id}/entrega                     marca entregado
+POST /api/v1/admin/pedidos/{id}/listo-para-recoger          recogida en el punto lista; avisa al comprador (adr/0094)
+POST /api/v1/admin/pedidos/{id}/entrega-en-punto            {numeroPedido, medioDePago?}; 422 si el número no coincide
 POST /api/v1/admin/pedidos/{id}/rechazo-entrega             libera inventario, registra motivo
 POST /api/v1/admin/pedidos/{id}/recaudo                     concilia contraentrega
 POST /api/v1/admin/pedidos/{id}/conciliar-transferencia     concilia transferencia manual
