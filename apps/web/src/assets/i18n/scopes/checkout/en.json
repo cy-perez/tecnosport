@@ -61,6 +61,7 @@
     "precio_final": "Each product's price is final: no tax is added to it."
   },
   "metodoPago": {
+    "medio_ya_no_disponible": "The payment method you chose is no longer available for this order. Choose another one.",
     "ahorro": "You save {{ahorro}}.",
     "titulo": "Payment method",
     "wompi": "Card, PSE or Bancolombia",
@@ -109,6 +110,9 @@
     "continuar": "Continue"
   },
   "confirmar": {
+    "total_sin_precio": "The price with this payment method is missing",
+    "precios_calculando": "Calculating the price…",
+    "precios_error": "We could not calculate the price with this payment method. Try again in a few minutes.",
     "descuento": "Payment method discount",
     "con_transportadora": "With {{transportadora}}",
     "transportadora_no_disponible": "The carrier you chose is no longer available for this shipment. Go back and choose another one.",

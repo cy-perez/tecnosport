@@ -17,7 +17,11 @@ import { CheckoutStore } from '../../application/checkout.store';
 import { IntentoDePago } from '../../domain/intento-pago.model';
 import { ErrorHttp } from '../../../../core/http/respuesta-http';
 import { DocumentoComprador, IntentoSistecredito } from '../../domain/intento-sistecredito.model';
-import { CrearPedidoComando, DatosEntrega } from '../../domain/pedido.comandos';
+import {
+  CrearPedidoComando,
+  DatosEntrega,
+  MetodosDePagoDisponiblesComando,
+} from '../../domain/pedido.comandos';
 import { MetodoDePagoConPrecio, MetodoPago, Pedido, Seguimiento } from '../../domain/pedido.model';
 import { REPOSITORIO_PAGOS, RepositorioPagos } from '../../domain/repositorio-pagos.puerto';
 import { REPOSITORIO_PEDIDOS, RepositorioPedidos } from '../../domain/repositorio-pedidos.puerto';
@@ -299,6 +303,68 @@ function snapshotDePrueba(varianteId: string) {
   };
 }
 
+const TODOS_LOS_MEDIOS: readonly MetodoPago[] = [
+  'CONTRAENTREGA',
+  'PAGO_EN_PUNTO',
+  'SISTECREDITO',
+  'TRANSFERENCIA_MANUAL',
+  'WOMPI',
+];
+
+/**
+ * Lo que el servidor contesta a `metodos-de-pago-con-precio` (ADR-0095), que confirmar vuelve a
+ * pedir con el carrito de ese momento. Por omisión ofrece todos los medios al precio de hoy, por la
+ * cantidad del comando y sin descuento; `precio` cambia un medio y `ofrecidos` quita los demás.
+ */
+class ServidorDeMetodos {
+  readonly comandos: MetodosDePagoDisponiblesComando[] = [];
+  ofrecidos: readonly MetodoPago[] = TODOS_LOS_MEDIOS;
+  precioUnitario = PRECIO_DE_HOY;
+  /** Un medio con su subtotal y descuento fijos, como en las pruebas de descuento. */
+  fijo: MetodoDePagoConPrecio | null = null;
+  /** Si está, la respuesta espera hasta que se llame a `soltar`. */
+  private espera: Promise<void> | null = null;
+  private soltarEspera: (() => void) | null = null;
+
+  retener(): void {
+    this.espera = new Promise((resolver) => (this.soltarEspera = resolver));
+  }
+
+  soltar(): void {
+    this.soltarEspera?.();
+    this.espera = null;
+  }
+
+  async responder(comando: MetodosDePagoDisponiblesComando): Promise<MetodoDePagoConPrecio[]> {
+    this.comandos.push(comando);
+    if (this.espera) {
+      await this.espera;
+    }
+    const unidades = comando.lineas.reduce((suma, linea) => suma + linea.cantidad, 0);
+    return this.ofrecidos.map((metodo) =>
+      this.fijo?.metodo === metodo
+        ? this.fijo
+        : {
+            metodo,
+            subtotal: { valor: this.precioUnitario * unidades, moneda: 'COP' },
+            descuento: { valor: 0, moneda: 'COP' },
+          },
+    );
+  }
+}
+
+/** El repositorio de la prueba, con los métodos de pago respondidos por el servidor de arriba. */
+function conMetodos(pedidos: RepositorioPedidos, servidor: ServidorDeMetodos): RepositorioPedidos {
+  return {
+    crear: (comando) => pedidos.crear(comando),
+    metodosDePagoConPrecio: (comando) => servidor.responder(comando),
+    reintentarPago: (pedidoId, correo) => pedidos.reintentarPago(pedidoId, correo),
+    consultarSeguimiento: (pedidoId, correo) => pedidos.consultarSeguimiento(pedidoId, correo),
+    solicitarEnlaceDeSeguimiento: (numero, correo) =>
+      pedidos.solicitarEnlaceDeSeguimiento(numero, correo),
+  };
+}
+
 /** Mismo motivo que en `metodo-pago.page.spec.ts`: el guardia corre en el
  * primer `effect()`, así que los datos tienen que existir antes de que
  * `ConfirmarPage` se construya. */
@@ -317,15 +383,9 @@ function anfitrionConDatos(
 
     constructor() {
       this.checkout.guardarDatosEntrega(datos);
-      // Un medio a secas es uno sin descuento: el subtotal del carrito de prueba, una unidad.
+      // Solo el medio: el precio lo vuelve a pedir la pantalla (ADR-0095).
       this.checkout.elegirMetodoPago(
-        typeof metodoPago === 'string'
-          ? {
-              metodo: metodoPago,
-              subtotal: { valor: PRECIO_DE_HOY, moneda: 'COP' },
-              descuento: { valor: 0, moneda: 'COP' },
-            }
-          : metodoPago,
+        typeof metodoPago === 'string' ? metodoPago : metodoPago.metodo,
       );
       // Sin documento, la pantalla de Sistecredito se va a pedirlo y nunca llama a la pasarela:
       // vive solo en memoria y no sobrevive a una recarga, a proposito.
@@ -385,7 +445,13 @@ async function renderConDatos(
   datos: DatosEntrega = DATOS_ENTREGA,
   envios: RepositorioEnvios = new RepositorioEnviosFalso(),
   documento: DocumentoComprador | null = null,
+  servidor: ServidorDeMetodos = new ServidorDeMetodos(),
+  queryClient: QueryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } }),
 ) {
+  // Un medio con su precio es el que el servidor devuelve así: con su subtotal y su descuento.
+  if (typeof metodoPago !== 'string' && servidor.fijo === null) {
+    servidor.fijo = metodoPago;
+  }
   return render(anfitrionConDatos(metodoPago, datos, documento), {
     imports: [
       TranslocoTestingModule.forRoot({
@@ -402,9 +468,9 @@ async function renderConDatos(
         { path: 'transferencia', component: RutaMuda },
         { path: 'estado', component: RutaMuda },
       ]),
-      provideTanStackQuery(new QueryClient({ defaultOptions: { queries: { retry: false } } })),
+      provideTanStackQuery(queryClient),
       { provide: REPOSITORIO_CARRITO, useValue: carrito },
-      { provide: REPOSITORIO_PEDIDOS, useValue: pedidos },
+      { provide: REPOSITORIO_PEDIDOS, useValue: conMetodos(pedidos, servidor) },
       { provide: REPOSITORIO_ENVIOS, useValue: envios },
       { provide: REPOSITORIO_PAGOS, useValue: pagos },
     ],
@@ -418,6 +484,11 @@ async function renderConDatos(
 async function esperarCarritoCargado(fixture: ComponentFixture<unknown>): Promise<void> {
   const carrito = fixture.debugElement.injector.get(CarritoStore);
   await vi.waitFor(() => expect(carrito.consulta.data()).toBeTruthy());
+  // Y al precio fresco del medio: mientras se pide, el botón va ocupado y no confirma.
+  await screen.findByRole('button', { name: 'Confirmar pedido' });
+  await vi.waitFor(() =>
+    expect(screen.queryAllByText(esCheckout.confirmar.precios_calculando)).toHaveLength(0),
+  );
 }
 
 describe('ConfirmarPage', () => {
@@ -510,6 +581,138 @@ describe('ConfirmarPage', () => {
     expect(screen.getByText(/-\s?\$\s?5\.000/)).toBeTruthy();
     // El total del publicado (159.540) no se pinta en ningún sitio.
     expect(screen.queryByText(/159\.540/)).toBeFalsy();
+  });
+
+  /**
+   * La regresión que esto cierra: confirmar enseñaba el subtotal guardado al elegir el medio, y el
+   * pedido se cobra con el carrito vivo. Con dos unidades en el carrito, el total es el de dos,
+   * dado por el servidor para ese comando.
+   */
+  it('con el carrito cambiado después de elegir el medio, enseña el total del carrito de ahora', async () => {
+    sembrarCarritoId('carrito-1');
+    const servidor = new ServidorDeMetodos();
+
+    await renderConDatos(
+      'TRANSFERENCIA_MANUAL',
+      new RepositorioCarritoFalso({
+        ...CARRITO_CON_LINEAS,
+        lineas: [{ id: 'linea-1', varianteId: 'variante-1', cantidad: 2 }],
+      }),
+      new RepositorioPedidosFalso(),
+      new RepositorioPagosFalso(),
+      DATOS_ENTREGA,
+      new RepositorioEnviosFalso(),
+      null,
+      servidor,
+    );
+
+    expect(await screen.findAllByText(/300\.000/)).toHaveLength(2);
+    expect(screen.queryByText(/150\.000/)).toBeFalsy();
+    expect(servidor.comandos.at(-1)?.lineas).toEqual([{ varianteId: 'variante-1', cantidad: 2 }]);
+  });
+
+  /**
+   * Un precio que cambió en el servidor después de elegir el medio: la caché de la página anterior
+   * todavía tiene el viejo, y confirmar no se fía de ella — vuelve a preguntar al entrar.
+   */
+  it('vuelve a pedir el precio aunque la caché tenga el de hace un momento', async () => {
+    sembrarCarritoId('carrito-1');
+    const servidor = new ServidorDeMetodos();
+    servidor.precioUnitario = 160_000;
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const comando: MetodosDePagoDisponiblesComando = {
+      correo: DATOS_ENTREGA.correo,
+      lineas: [{ varianteId: 'variante-1', cantidad: 1 }],
+      tipoEntrega: DATOS_ENTREGA.tipoEntrega,
+      direccion: DATOS_ENTREGA.direccion,
+      transportadora: DATOS_ENTREGA.transportadora,
+      telefono: DATOS_ENTREGA.contacto.telefono,
+    };
+    queryClient.setQueryData(
+      ['checkout', 'metodos-de-pago-con-precio', comando],
+      [
+        {
+          metodo: 'CONTRAENTREGA',
+          subtotal: { valor: 150_000, moneda: 'COP' },
+          descuento: { valor: 0, moneda: 'COP' },
+        },
+      ],
+    );
+
+    await renderConDatos(
+      'CONTRAENTREGA',
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioPedidosFalso(),
+      new RepositorioPagosFalso(),
+      DATOS_ENTREGA,
+      new RepositorioEnviosFalso(),
+      null,
+      servidor,
+      queryClient,
+    );
+
+    expect(await screen.findAllByText(/160\.000/)).toHaveLength(2);
+    expect(screen.queryByText(/150\.000/)).toBeFalsy();
+    expect(servidor.comandos).toHaveLength(1);
+  });
+
+  /** La contraentrega dejó de cubrir entre elegirla y confirmar: se vuelve a elegir, y se dice. */
+  it('si el medio elegido ya no se ofrece, devuelve a elegir otro con un aviso', async () => {
+    sembrarCarritoId('carrito-1');
+    const servidor = new ServidorDeMetodos();
+    servidor.ofrecidos = ['WOMPI', 'TRANSFERENCIA_MANUAL'];
+    const pedidos = new RepositorioPedidosFalso();
+
+    const { fixture } = await renderConDatos(
+      'CONTRAENTREGA',
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      pedidos,
+      new RepositorioPagosFalso(),
+      DATOS_ENTREGA,
+      new RepositorioEnviosFalso(),
+      null,
+      servidor,
+    );
+    const checkout = fixture.debugElement.injector.get(CheckoutStore);
+    const router = fixture.debugElement.injector.get(Router);
+
+    await vi.waitFor(() => expect(checkout.medioYaNoDisponible()).toBe(true));
+    expect(checkout.metodoPago()).toBeNull();
+    await vi.waitFor(() => expect(router.url).toBe('/metodo-pago'));
+    expect(pedidos.llamadasCrear).toBe(0);
+  });
+
+  /** Mientras el precio fresco no ha vuelto no hay total que aceptar, y el botón no manda nada. */
+  it('no deja confirmar mientras se piden los precios del medio', async () => {
+    sembrarCarritoId('carrito-1');
+    const servidor = new ServidorDeMetodos();
+    servidor.retener();
+    const pedidos = new RepositorioPedidosFalso(pedidoDePrueba({ metodoPago: 'CONTRAENTREGA' }));
+
+    const { fixture } = await renderConDatos(
+      'CONTRAENTREGA',
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      pedidos,
+      new RepositorioPagosFalso(),
+      DATOS_ENTREGA,
+      new RepositorioEnviosFalso(),
+      null,
+      servidor,
+    );
+    const carrito = fixture.debugElement.injector.get(CarritoStore);
+    await vi.waitFor(() => expect(carrito.consulta.data()).toBeTruthy());
+    await vi.waitFor(() => expect(servidor.comandos).toHaveLength(1));
+
+    const ocupado = await screen.findByRole('button', {
+      name: esCheckout.confirmar.precios_calculando,
+    });
+    fireEvent.click(ocupado);
+    expect(screen.queryByText(/150\.000/)).toBeFalsy();
+    expect(pedidos.llamadasCrear).toBe(0);
+
+    servidor.soltar();
+    fireEvent.click(await screen.findByRole('button', { name: 'Confirmar pedido' }));
+    await vi.waitFor(() => expect(pedidos.llamadasCrear).toBe(1));
   });
 
   it('con un medio sin descuento no pinta la fila de descuento', async () => {

@@ -61,6 +61,7 @@
     "precio_final": "El precio de cada producto es el valor final: no se le suma ningún impuesto."
   },
   "metodoPago": {
+    "medio_ya_no_disponible": "El medio de pago que elegiste ya no está disponible para este pedido. Elige otro.",
     "ahorro": "Ahorras {{ahorro}}.",
     "titulo": "Método de pago",
     "wompi": "Tarjeta, PSE o Bancolombia",
@@ -109,6 +110,9 @@
     "continuar": "Continuar"
   },
   "confirmar": {
+    "total_sin_precio": "Falta el precio con este medio de pago",
+    "precios_calculando": "Calculando el precio…",
+    "precios_error": "No pudimos calcular el precio con este medio de pago. Vuelve a intentarlo en unos minutos.",
     "descuento": "Descuento por medio de pago",
     "con_transportadora": "Con {{transportadora}}",
     "transportadora_no_disponible": "La transportadora que elegiste ya no está disponible para este envío. Vuelve atrás y elige otra.",

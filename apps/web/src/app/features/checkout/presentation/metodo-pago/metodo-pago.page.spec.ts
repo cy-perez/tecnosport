@@ -316,7 +316,7 @@ describe('MetodoPagoPage', () => {
     expect(detalleWompi?.textContent).not.toContain('Ahorras');
   });
 
-  it('al elegir un medio guarda en el store su subtotal y su descuento', async () => {
+  it('al elegir un medio guarda en el store el medio, no su precio', async () => {
     sembrarCarritoId('carrito-1');
 
     const { fixture } = await renderConDatosEntrega(
@@ -327,7 +327,8 @@ describe('MetodoPagoPage', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'Transferencia bancaria' }));
 
-    expect(checkout.eleccionDePago()).toEqual(conPrecio('TRANSFERENCIA_MANUAL', 5_000));
+    // Solo el medio: confirmar vuelve a pedir su precio con el carrito de ese momento.
+    expect(checkout.metodoPago()).toBe('TRANSFERENCIA_MANUAL');
   });
 
   /**

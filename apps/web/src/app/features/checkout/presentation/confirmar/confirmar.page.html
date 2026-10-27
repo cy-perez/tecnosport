@@ -61,7 +61,21 @@
         solo "Subtotal" — que además era el total, porque el flete no se cobraba aparte.
       -->
       <dt>{{ 'checkout.resumen.subtotal' | transloco }}</dt>
-      <dd><ts-precio [valor]="subtotal()" moneda="COP" /></dd>
+      <dd>
+        <!-- De la consulta fresca del medio elegido, no de una copia guardada al elegirlo: el
+             pedido se cobra con el carrito de ahora (ADR-0095). -->
+        @if (eleccionVigente()) {
+          <ts-precio [valor]="subtotal()" moneda="COP" />
+        } @else if (preciosConError()) {
+          <span class="text-ts-texto-suave">{{
+            'checkout.confirmar.precios_error' | transloco
+          }}</span>
+        } @else {
+          <span class="text-ts-texto-suave">{{
+            'checkout.confirmar.precios_calculando' | transloco
+          }}</span>
+        }
+      </dd>
 
       @if (muestraEnvio()) {
         <dt>{{ 'checkout.resumen.costo_envio' | transloco }}</dt>
@@ -151,6 +165,14 @@
              transacción — que es lo que el artículo 50 de la Ley 1480 de 2011 no permite. -->
         @if (totalConocido()) {
           <ts-precio [valor]="total()" moneda="COP" />
+        } @else if (preciosCargando()) {
+          <span class="font-regular text-ts-texto-suave">{{
+            'checkout.confirmar.precios_calculando' | transloco
+          }}</span>
+        } @else if (preciosConError()) {
+          <span class="font-regular text-ts-texto-suave">{{
+            'checkout.confirmar.total_sin_precio' | transloco
+          }}</span>
         } @else if (cotizacion.isFetching()) {
           <span class="font-regular text-ts-texto-suave">{{
             'checkout.resumen.envio_calculando' | transloco
@@ -176,8 +198,13 @@
     <ts-boton
       class="block"
       variante="primario"
-      [cargando]="enviando()"
-      [etiquetaCargando]="'checkout.confirmar.enviando' | transloco"
+      [cargando]="enviando() || preciosCargando()"
+      [etiquetaCargando]="
+        (preciosCargando() && !enviando()
+          ? 'checkout.confirmar.precios_calculando'
+          : 'checkout.confirmar.enviando'
+        ) | transloco
+      "
       (click)="confirmar()"
     >
       {{ 'checkout.confirmar.confirmar' | transloco }}

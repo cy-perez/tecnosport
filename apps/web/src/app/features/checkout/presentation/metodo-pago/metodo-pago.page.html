@@ -14,6 +14,15 @@
     </a>
   }
 
+  <!-- Confirmar volvió a pedir los precios y el medio elegido ya no venía: se dice por qué se está
+       otra vez aquí. `alert` y no `status`: nace con la página, y una región cortés que nace llena
+       no se anuncia (apps/web/CLAUDE.md). -->
+  @if (checkout.medioYaNoDisponible()) {
+    <p class="mb-16 text-ts-error" role="alert">
+      {{ 'checkout.metodoPago.medio_ya_no_disponible' | transloco }}
+    </p>
+  }
+
   @if (consulta.isPending()) {
     <ts-esqueleto />
   } @else if (consulta.isError()) {

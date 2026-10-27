@@ -22,11 +22,15 @@ import {
   usarCotizacionEnvio,
   usarOlvidarCotizacionEnvio,
 } from '../../application/cotizacion-envio.consulta';
+import {
+  comandoMetodosDePago,
+  usarMetodosDePagoDisponibles,
+} from '../../application/metodos-de-pago-disponibles.consulta';
 import { usarModalidadesDeEntrega } from '../../application/modalidades-entrega.consulta';
 import { TsSalidaSinEnvio } from '../salida-sin-envio/ts-salida-sin-envio';
 import { CotizarEnvioComando, OpcionEnvio, opcionDeTransportadora } from '../../domain/envio.model';
-import { CrearPedidoComando } from '../../domain/pedido.comandos';
-import { MetodoPago, Pedido } from '../../domain/pedido.model';
+import { CrearPedidoComando, MetodosDePagoDisponiblesComando } from '../../domain/pedido.comandos';
+import { MetodoDePagoConPrecio, MetodoPago, Pedido } from '../../domain/pedido.model';
 import { ErrorHttp } from '../../../../core/http/respuesta-http';
 import { esMetodoPagoSistecredito, esMetodoPagoWompi } from '../../domain/reglas-pedido';
 import { urlWebCheckoutWompi } from '../../domain/wompi';
@@ -232,6 +236,11 @@ export class ConfirmarPage {
    * pasar el total falso si aquí se preguntara solo si hay datos.
    */
   protected readonly totalConocido = computed(
+    () => this.eleccionVigente() !== null && this.envioConocido(),
+  );
+
+  /** El flete conocido, o que no hace falta: lo único que `totalConocido` miraba antes. */
+  private readonly envioConocido = computed(
     () => !this.muestraEnvio() || this.envioElegido() != null,
   );
 
@@ -245,7 +254,7 @@ export class ConfirmarPage {
    * el resumen: mirar los estados terminales de la consulta deja una rendija entre
    * que los criterios quedan listos y que TanStack arranca la petición.
    */
-  protected readonly bloqueadoPorCobertura = computed(() => !this.totalConocido());
+  protected readonly bloqueadoPorCobertura = computed(() => !this.envioConocido());
 
   /**
    * La cuarta razón para quedarse sin domicilio: la plataforma rechazó los datos del envío. Aquí
@@ -306,26 +315,56 @@ export class ConfirmarPage {
   protected readonly esperandoCotizacion = signal(false);
 
   /**
-   * El subtotal del servidor (`GET /carritos/{id}/cotizacion`). Sumaba el precio que el navegador
-   * guardó al agregar: si cambió, el comprador aceptaba un total y se le cobraba otro, y una línea
-   * sin foto guardada sumaba cero.
+   * La misma consulta que la página de métodos de pago, con el carrito y la entrega **de ahora**
+   * (ADR-0095). El precio del medio se tomaba de una copia guardada al elegirlo, que nada invalidaba
+   * si después cambiaba el carrito, un precio o la tarifa, y el pedido se cobra con el carrito
+   * vivo: la pantalla donde se finaliza la transacción enseñaba un total que no era el que se iba a
+   * cobrar. `siempreFresco` porque la caché de la página anterior puede tener quince segundos.
    */
+  private readonly criteriosMetodos = computed<MetodosDePagoDisponiblesComando | null>(() => {
+    const datos = this.checkout.datosEntrega();
+    const lineas = this.carrito.consulta.data()?.lineas ?? [];
+    return datos && lineas.length > 0 ? comandoMetodosDePago(datos, lineas) : null;
+  });
+
+  protected readonly metodos = usarMetodosDePagoDisponibles(() => this.criteriosMetodos(), {
+    siempreFresco: true,
+  });
+
+  /**
+   * El medio elegido en la respuesta fresca, tomado por su nombre. `null` mientras la consulta no
+   * ha vuelto —o vuelve a pedir— y también si ya no lo trae: en ninguno de los tres casos hay un
+   * precio que enseñar ni un pedido que mandar.
+   */
+  protected readonly eleccionVigente = computed<MetodoDePagoConPrecio | null>(() => {
+    if (!this.metodos.isSuccess() || this.metodos.isFetching()) {
+      return null;
+    }
+    const metodo = this.checkout.metodoPago();
+    return this.metodos.data()?.find((opcion) => opcion.metodo === metodo) ?? null;
+  });
+
+  /** Mientras se piden los precios no se confirma: el total todavía no es el que se cobraría. */
+  protected readonly preciosCargando = computed(
+    () =>
+      this.criteriosMetodos() !== null && (this.metodos.isPending() || this.metodos.isFetching()),
+  );
+
+  protected readonly preciosConError = computed(
+    () => !this.preciosCargando() && this.metodos.isError(),
+  );
+
+  /** Al publicado: es el precio anunciado, y el descuento va en su propia fila. */
   protected readonly subtotal = computed(() => {
-    const eleccion = this.checkout.eleccionDePago();
-    // Al publicado: es el precio anunciado, y el descuento va en su propia fila. Sin elección no
-    // se llega a pintar —la pantalla vuelve al método de pago—; el del carrito es el mismo número.
-    return eleccion ? eleccion.subtotal.valor + eleccion.descuento.valor : this.carrito.subtotal();
+    const eleccion = this.eleccionVigente();
+    return eleccion ? eleccion.subtotal.valor + eleccion.descuento.valor : 0;
   });
 
   /** El descuento del medio elegido (ADR-0095); cero con Wompi y Sistecrédito. */
-  protected readonly descuento = computed(
-    () => this.checkout.eleccionDePago()?.descuento.valor ?? 0,
-  );
+  protected readonly descuento = computed(() => this.eleccionVigente()?.descuento.valor ?? 0);
 
   /** La mercancía con el medio elegido: el subtotal que dio el servidor para ese medio. */
-  private readonly subtotalCobrado = computed(
-    () => this.checkout.eleccionDePago()?.subtotal.valor ?? this.carrito.subtotal(),
-  );
+  private readonly subtotalCobrado = computed(() => this.eleccionVigente()?.subtotal.valor ?? 0);
 
   protected readonly etiquetaMetodoPago = computed(() => {
     const metodo = this.checkout.metodoPago();
@@ -349,6 +388,20 @@ export class ConfirmarPage {
         void this.router.navigate(['../metodo-pago'], { relativeTo: this.route });
       }
     });
+
+    // La consulta fresca volvió y ya no trae el medio elegido —la contraentrega dejó de cubrir, el
+    // monto ya no alcanza para Sistecrédito—: se descarta, y el efecto de arriba devuelve a elegir
+    // otro, donde la página dice por qué.
+    effect(() => {
+      if (
+        this.checkout.metodoPago() !== null &&
+        this.metodos.isSuccess() &&
+        !this.metodos.isFetching() &&
+        this.eleccionVigente() === null
+      ) {
+        this.checkout.descartarMetodoNoDisponible();
+      }
+    });
   }
 
   protected async confirmar(): Promise<void> {
@@ -362,6 +415,15 @@ export class ConfirmarPage {
     const metodoPago = this.checkout.metodoPago();
     const datosCarrito = this.carrito.consulta.data();
     if (!datos || !metodoPago || !datosCarrito || datosCarrito.lineas.length === 0) {
+      return;
+    }
+    // Sin el precio fresco del medio no se confirma: mientras carga, el botón ya va ocupado, pero
+    // un clic que llegue antes de pintarse, o con la consulta en error, no puede mandar un pedido
+    // cuyo total nadie vio.
+    if (this.eleccionVigente() === null) {
+      if (this.preciosConError()) {
+        this.error.set(this.transloco.translate('checkout.confirmar.precios_error'));
+      }
       return;
     }
     this.error.set(null);

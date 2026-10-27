@@ -3,7 +3,7 @@ import { injectMutation } from '@tanstack/angular-query-experimental';
 import { IntentoDePago } from '../domain/intento-pago.model';
 import { DocumentoComprador, IntentoSistecredito } from '../domain/intento-sistecredito.model';
 import { CrearPedidoComando, DatosEntrega } from '../domain/pedido.comandos';
-import { MetodoDePagoConPrecio, Pedido } from '../domain/pedido.model';
+import { MetodoPago, Pedido } from '../domain/pedido.model';
 import { REPOSITORIO_PAGOS } from '../domain/repositorio-pagos.puerto';
 import { REPOSITORIO_PEDIDOS } from '../domain/repositorio-pedidos.puerto';
 
@@ -49,7 +49,7 @@ export class CheckoutStore {
     // Si ya existía un pedido creado con los datos anteriores, tampoco sigue
     // sirviendo: un pedido es inmutable una vez creado, así que un cambio de
     // dirección exige uno nuevo, no reutilizar el viejo.
-    this.eleccionDePago.set(null);
+    this.metodoPago.set(null);
     this.pedido.set(null);
   }
 
@@ -69,18 +69,30 @@ export class CheckoutStore {
 
   /**
    * Mismo criterio que `datosEntrega`: en memoria, poblado por la página de selección de método de
-   * pago para que la de creación del pedido lo lea. **Con su precio**, tal como lo dio el servidor
-   * para ese carrito y esa entrega (ADR-0095): es lo que la pantalla de confirmar enseña como
-   * subtotal, descuento y total, sin sumar precios en el navegador. Se elige con el precio o no se
-   * elige, para que nadie pueda dejar un medio sin la cifra que le corresponde.
+   * pago para que la de creación del pedido lo lea. **Solo el medio, sin su precio** (ADR-0095).
+   * Guardaba también el subtotal y el descuento que el servidor dio al elegir, y confirmar los
+   * enseñaba: una copia que nada invalidaba si después cambiaba el carrito, un precio o la tarifa,
+   * mientras el pedido se cobra con el carrito vivo. Confirmar vuelve a pedir el precio de cada
+   * medio y toma este por su nombre.
    */
-  readonly eleccionDePago = signal<MetodoDePagoConPrecio | null>(null);
+  readonly metodoPago = signal<MetodoPago | null>(null);
 
-  readonly metodoPago = computed(() => this.eleccionDePago()?.metodo ?? null);
+  /**
+   * Confirmar descubrió que el medio elegido ya no se ofrece para este carrito y esta entrega, y
+   * devolvió al comprador a elegir otro: la página de métodos de pago lo dice.
+   */
+  readonly medioYaNoDisponible = signal(false);
 
-  elegirMetodoPago(eleccion: MetodoDePagoConPrecio): void {
-    const metodo = eleccion.metodo;
-    this.eleccionDePago.set(eleccion);
+  /** Lo llama confirmar cuando la consulta fresca ya no trae el medio elegido. */
+  descartarMetodoNoDisponible(): void {
+    this.metodoPago.set(null);
+    this.pedido.set(null);
+    this.medioYaNoDisponible.set(true);
+  }
+
+  elegirMetodoPago(metodo: MetodoPago): void {
+    this.metodoPago.set(metodo);
+    this.medioYaNoDisponible.set(false);
     // Mismo motivo que en guardarDatosEntrega: el método de pago queda
     // congelado en el pedido ya creado, así que cambiarlo exige uno nuevo.
     this.pedido.set(null);

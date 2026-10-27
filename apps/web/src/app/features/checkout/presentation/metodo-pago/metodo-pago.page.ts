@@ -261,15 +261,18 @@ export class MetodoPagoPage {
   /** Se pulsó «Continuar» sin elegir método: el botón ya no se deshabilita, así que lo dice. */
   protected readonly faltaMetodo = signal(false);
 
-  /** Se guarda el medio **con su precio**: es lo que la pantalla de confirmar enseña. */
+  /**
+   * Se guarda el medio, no su precio: confirmar vuelve a pedirlo con el carrito de ese momento
+   * (ADR-0095). Solo uno de los que se ofrecen.
+   */
   protected elegir(metodo: MetodoPago): void {
-    const eleccion = this.consulta
+    const ofrecido = this.consulta
       .data()
-      ?.find((opcion: MetodoDePagoConPrecio) => opcion.metodo === metodo);
-    if (!eleccion) {
+      ?.some((opcion: MetodoDePagoConPrecio) => opcion.metodo === metodo);
+    if (!ofrecido) {
       return;
     }
-    this.checkout.elegirMetodoPago(eleccion);
+    this.checkout.elegirMetodoPago(metodo);
     this.faltaMetodo.set(false);
   }
 

@@ -53,12 +53,20 @@ function opcionesMetodosDePago(
  */
 export function usarMetodosDePagoDisponibles(
   criterios: () => MetodosDePagoDisponiblesComando | null,
+  opciones: { readonly siempreFresco?: boolean } = {},
 ) {
   const repositorio = inject(REPOSITORIO_PEDIDOS);
 
   return injectQuery(() => {
     const valor = criterios();
-    return { ...opcionesMetodosDePago(repositorio, valor), enabled: valor !== null };
+    return {
+      ...opcionesMetodosDePago(repositorio, valor),
+      enabled: valor !== null,
+      // Confirmar no se fía de la caché: el precio que enseña es el que se va a cobrar. Las dos
+      // cosas, porque la consulta nace apagada —sin carrito todavía— y `refetchOnMount` solo mira
+      // el montaje: lo que la hace pedir al encenderse es que lo guardado ya cuente como viejo.
+      ...(opciones.siempreFresco ? { staleTime: 0, refetchOnMount: 'always' as const } : {}),
+    };
   });
 }
 
