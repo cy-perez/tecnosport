@@ -12,6 +12,7 @@ import {
   EstadoPedido,
   MetodoPago,
   MotivoCancelacion,
+  AlertaPagosSinTransaccion,
   PagoSinPedidoAdmin,
   PedidoAdmin,
   PedidosPaginadosAdmin,
@@ -115,6 +116,32 @@ export class PedidosAdminHttpRepositorio implements RepositorioPedidosAdmin {
       body: { motivo },
     });
     return aPedidoAdmin(desempaquetar(respuesta, 'no se pudo registrar el rechazo en la entrega'));
+  }
+
+  async listarPagosSinTransaccion(): Promise<AlertaPagosSinTransaccion> {
+    const respuesta = await this.cliente.GET('/api/v1/admin/alertas/pagos-sin-transaccion');
+    const alerta = desempaquetar(respuesta, 'no se pudieron cargar los pagos sin transacción');
+    return {
+      umbralHoras: alerta.umbralHoras,
+      pagos: alerta.pagos.map((p) => ({
+        pagoId: p.pagoId,
+        referencia: p.referencia,
+        monto: { valor: p.monto.valor, moneda: p.monto.moneda },
+        creadoEn: p.creadoEn,
+        pedidoId: p.pedidoId,
+        numeroPedido: p.numeroPedido,
+        estadoPedido: p.estadoPedido as EstadoPedido,
+        correo: p.correo,
+      })),
+    };
+  }
+
+  async marcarPagoSinTransaccionRevisado(pagoId: string): Promise<void> {
+    const respuesta = await this.cliente.POST(
+      '/api/v1/admin/alertas/pagos-sin-transaccion/{pagoId}/revision',
+      { params: { path: { pagoId } } },
+    );
+    exigirExito(respuesta, 'no se pudo marcar el pago como revisado');
   }
 
   async listarPagosSinPedido(): Promise<PagoSinPedidoAdmin[]> {

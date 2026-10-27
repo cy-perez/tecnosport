@@ -18,6 +18,7 @@ import {
   EmisionDeGuiaAdmin,
   ModalidadRecaudo,
   MotivoCancelacion,
+  AlertaPagosSinTransaccion,
   PagoSinPedidoAdmin,
   PedidoAdmin,
   PedidosPaginadosAdmin,
@@ -226,6 +227,21 @@ class RepositorioPedidosAdminFalso implements RepositorioPedidosAdmin {
     }
     this.entregasEnPunto.push(entrada);
     return this.items[0];
+  }
+
+  alertaPagosSinTransaccion: AlertaPagosSinTransaccion = { umbralHoras: 12, pagos: [] };
+  pagosRevisados: string[] = [];
+
+  async listarPagosSinTransaccion(): Promise<AlertaPagosSinTransaccion> {
+    return this.alertaPagosSinTransaccion;
+  }
+
+  async marcarPagoSinTransaccionRevisado(pagoId: string): Promise<void> {
+    this.pagosRevisados.push(pagoId);
+    this.alertaPagosSinTransaccion = {
+      ...this.alertaPagosSinTransaccion,
+      pagos: this.alertaPagosSinTransaccion.pagos.filter((p) => p.pagoId !== pagoId),
+    };
   }
 
   pagosSinPedido: PagoSinPedidoAdmin[] = [];
@@ -1122,6 +1138,43 @@ describe('ListaPedidosAdminPage', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Confirmar inventario y preparar' }));
 
     await vi.waitFor(() => expect(repositorio.confirmacionesDeInventario).toEqual(['p1']));
+  });
+
+  /**
+   * Un pago de Wompi sin id de transacción no lo concilia nadie: la alerta lo enseña con su
+   * referencia —lo que se busca en el portal de Wompi— y el umbral que aplicó el servidor.
+   */
+  it('un pago sin transacción sale en las alertas y al revisarlo desaparece', async () => {
+    const repositorio = new RepositorioPedidosAdminFalso([pedidoDePrueba()]);
+    repositorio.alertaPagosSinTransaccion = {
+      umbralHoras: 12,
+      pagos: [
+        {
+          pagoId: 'pago-7',
+          referencia: 'TS-2026-000321-1',
+          monto: { valor: 89_900, moneda: 'COP' },
+          creadoEn: '2026-10-26T08:00:00Z',
+          pedidoId: 'p1',
+          numeroPedido: 'TS-2026-000321',
+          estadoPedido: 'PAGO_PENDIENTE',
+          correo: 'cliente@example.com',
+        },
+      ],
+    };
+    await renderListaCon(repositorio);
+
+    await screen.findByText('Pagos de Wompi sin transacción (1)');
+    expect(screen.getByText(/más de 12 horas/)).toBeTruthy();
+    expect(screen.getByText(/Referencia TS-2026-000321-1/)).toBeTruthy();
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Marcar como revisado en Wompi el pago TS-2026-000321-1',
+      }),
+    );
+
+    await vi.waitFor(() => expect(repositorio.pagosRevisados).toEqual(['pago-7']));
+    await vi.waitFor(() => expect(screen.queryByText(/Pagos de Wompi sin transacción/)).toBeNull());
   });
 
   it('sin pagos por devolver, la bandeja no ocupa nada', async () => {

@@ -6,6 +6,7 @@ import {
   MedioDePagoEnPunto,
   ModalidadRecaudo,
   MotivoCancelacion,
+  AlertaPagosSinTransaccion,
   PagoSinPedidoAdmin,
   PedidoAdmin,
   PedidosPaginadosAdmin,
@@ -55,6 +56,12 @@ export interface RepositorioPedidosAdmin {
     modalidadRecaudo: ModalidadRecaudo,
     comisionRecaudo: number,
   ): Promise<PedidoAdmin>;
+
+  /** Pagos de Wompi pendientes sin id de transacción, pasado el umbral y sin revisar. */
+  listarPagosSinTransaccion(): Promise<AlertaPagosSinTransaccion>;
+
+  /** Alguien lo buscó en el portal de Wompi: deja de salir en la alerta. */
+  marcarPagoSinTransaccionRevisado(pagoId: string): Promise<void>;
 
   /** Pagos aprobados sin pedido que los esperara y todavía sin devolver. */
   listarPagosSinPedido(): Promise<PagoSinPedidoAdmin[]>;

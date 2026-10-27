@@ -71,7 +71,8 @@
     "talla_del_proveedor_desconocida": "El proveedor nombra estas tallas corridas y una de ellas no tiene con qué nombre pedírsela, como la XXXL una talla más arriba. Quítala de las tallas antes de aprobar.",
     "ajustes_de_talla_distintos": "El proveedor nombra distinto las tallas de los dos, como el de dama y el de caballero de un mismo anuncio: unidos, no se sabría qué talla pedirle.",
     "entrega_no_aplica": "Ese no es el camino de entrega de este pedido: una recogida se marca lista y se entrega en el punto, y un envío a domicilio se despacha con guía.",
-    "numero_de_pedido_no_coincide": "Ese número no es el de este pedido. Pídele a quien vino que te muestre el número del correo o de la pantalla de su pedido. No lo entregues."
+    "numero_de_pedido_no_coincide": "Ese número no es el de este pedido. Pídele a quien vino que te muestre el número del correo o de la pantalla de su pedido. No lo entregues.",
+    "pago_con_transaccion_o_resuelto": "El pago ya tiene su transacción o ya se resolvió: recarga la página."
   },
   "iniciarSesion": {
     "titulo": "Panel administrativo",
@@ -219,6 +220,15 @@
       "pagado_sin_inventario": "El pago entró cuando la reserva ya había vencido y no había existencia. Cuando repongas, confírmalo para prepararlo; si no va a haber, cancélalo con reintegro.",
       "confirmar_inventario": "Confirmar inventario y preparar",
       "guia_en_plataforma": "La guía se crea a mano en Skydropx (Cotizar y crear) con los paquetes de abajo, y se registra aquí con su número."
+    },
+    "alertas": {
+      "pagos_sin_transaccion": {
+        "titulo": "Pagos de Wompi sin transacción ({{cuantos}})",
+        "ayuda": "Intentos de pago con Wompi que llevan más de {{horas}} horas pendientes sin id de transacción: no llegó el aviso de Wompi y el comprador no volvió al sitio, así que la conciliación no puede consultarlos. Casi siempre es un pago abandonado, pero puede ser uno cobrado cuyo aviso se perdió. Búscalos por su referencia en el portal de Wompi y márcalos como revisados.",
+        "resumen": "Referencia {{referencia}} · pedido {{numero}} · {{correo}} · creado {{fecha}} ·",
+        "revisado": "Ya lo revisé en Wompi",
+        "revisado_de": "Marcar como revisado en Wompi el pago {{referencia}}"
+      }
     },
     "pagos_sin_pedido": {
       "titulo": "Pagos por devolver ({{cuantos}})",

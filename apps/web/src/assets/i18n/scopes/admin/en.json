@@ -71,7 +71,8 @@
     "talla_del_proveedor_desconocida": "The supplier names these sizes shifted, and one of them has no name to order it by, like an XXXL one size up. Remove it from the sizes before approving.",
     "ajustes_de_talla_distintos": "The supplier names the sizes of the two differently, like the women's and men's drafts of the same post: merged, there would be no way to know which size to order.",
     "entrega_no_aplica": "That is not how this order is delivered: a pickup is marked ready and handed over at our location, and a home delivery is shipped with a tracking number.",
-    "numero_de_pedido_no_coincide": "That number is not this order’s. Ask the person picking up to show the number from their email or order page. Do not hand it over."
+    "numero_de_pedido_no_coincide": "That number is not this order’s. Ask the person picking up to show the number from their email or order page. Do not hand it over.",
+    "pago_con_transaccion_o_resuelto": "The payment already has its transaction or was resolved: reload the page."
   },
   "iniciarSesion": {
     "titulo": "Admin panel",
@@ -219,6 +220,15 @@
       "pagado_sin_inventario": "The payment arrived after the reservation expired and there was no stock. Once you restock, confirm it to prepare it; if there will be none, cancel it with a refund.",
       "confirmar_inventario": "Confirm stock and prepare",
       "guia_en_plataforma": "The label is created by hand in Skydropx (Quote and create) with the packages below, and recorded here with its number."
+    },
+    "alertas": {
+      "pagos_sin_transaccion": {
+        "titulo": "Wompi payments without a transaction ({{cuantos}})",
+        "ayuda": "Wompi payment attempts pending for more than {{horas}} hours without a transaction id: Wompi's notification never arrived and the buyer didn't come back to the site, so reconciliation can't look them up. It's almost always an abandoned payment, but it could be a charged one whose notification was lost. Look them up by reference in the Wompi dashboard and mark them as reviewed.",
+        "resumen": "Reference {{referencia}} · order {{numero}} · {{correo}} · created {{fecha}} ·",
+        "revisado": "Reviewed in Wompi",
+        "revisado_de": "Mark payment {{referencia}} as reviewed in Wompi"
+      }
     },
     "pagos_sin_pedido": {
       "titulo": "Payments to refund ({{cuantos}})",
