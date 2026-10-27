@@ -55,6 +55,13 @@ public class FiltroIdempotencia extends OncePerRequestFilter {
 
     Optional<RespuestaIdempotente> completada = repositorio.buscarCompletada(llave, reloj.ahora());
     if (completada.isPresent()) {
+      // La llave la elige el cliente. Sin esta comparación, una llave usada para crear un intento
+      // de pago y reenviada a /pedidos devolvía el intento como si fuera el pedido creado: la
+      // respuesta de otro recurso, con un 2xx, y sin crear nada.
+      if (!completada.get().esDe(request.getMethod(), request.getRequestURI())) {
+        llaveDeOtraOperacion(response);
+        return;
+      }
       repetir(response, completada.get());
       return;
     }
@@ -123,6 +130,25 @@ public class FiltroIdempotencia extends OncePerRequestFilter {
                 + "\"detail\":\"Esa misma petición todavía se está procesando."
                 + " Vuelve a intentarlo en un momento.\","
                 + "\"codigo\":\"PETICION_EN_CURSO\"}");
+  }
+
+  /**
+   * 422 y no 409: no hay nada en curso que esperar, la petición está mal formada para esta llave.
+   * Es lo que propone el borrador de la IETF para una llave reutilizada con otra petición.
+   */
+  private void llaveDeOtraOperacion(HttpServletResponse response) throws IOException {
+    response.setStatus(422);
+    response.setContentType("application/problem+json");
+    response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+    response
+        .getWriter()
+        .write(
+            "{\"type\":\"https://tecnosport.co/errores/llave-de-idempotencia-reutilizada\","
+                + "\"title\":\"Llave de idempotencia de otra operación\","
+                + "\"status\":422,"
+                + "\"detail\":\"Esa Idempotency-Key ya se usó con otra operación."
+                + " Usa una llave nueva para esta.\","
+                + "\"codigo\":\"LLAVE_DE_IDEMPOTENCIA_REUTILIZADA\"}");
   }
 
   private void sinLlave(HttpServletResponse response) throws IOException {

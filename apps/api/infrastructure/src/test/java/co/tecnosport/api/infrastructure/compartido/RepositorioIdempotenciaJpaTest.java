@@ -77,6 +77,9 @@ class RepositorioIdempotenciaJpaTest {
     assertThat(encontrada.estadoHttp()).isEqualTo(200);
     assertThat(encontrada.tipoContenido()).isEqualTo("application/json");
     assertThat(encontrada.cuerpo()).isEqualTo("{\"id\":\"abc\"}");
+    // Lo que se reclamó, que es lo que el filtro compara antes de repetir la respuesta.
+    assertThat(encontrada.metodo()).isEqualTo("POST");
+    assertThat(encontrada.ruta()).isEqualTo("/api/v1/pedidos");
   }
 
   @Test
