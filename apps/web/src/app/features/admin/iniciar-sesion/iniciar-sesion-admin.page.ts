@@ -32,6 +32,13 @@ export class IniciarSesionAdminPage {
   protected readonly error = signal<string | null>(null);
   protected readonly enviando = signal(false);
 
+  /**
+   * El panel cerró la sesión en la pestaña pero el servidor no lo confirmó (`PanelAdminPage`): la
+   * cookie de refresco sigue viva. Se dice aquí porque es adonde el panel navega.
+   */
+  protected readonly cierreSinConfirmar =
+    this.ruta.snapshot.queryParamMap.get('cierre') === 'sin-confirmar';
+
   protected readonly form = new FormGroup({
     correo: new FormControl('', {
       nonNullable: true,
@@ -129,7 +136,9 @@ export class IniciarSesionAdminPage {
         this.form.controls.clave.value,
       );
       if (sesion.rol !== 'ADMIN') {
-        await this.sesionStore.cerrarSesion();
+        // Si el cierre falla, el mensaje sigue siendo este: decir "correo o clave incorrectos" a
+        // quien acaba de entrar bien sería falso. La sesión ya se soltó en la pestaña.
+        await this.sesionStore.cerrarSesion().catch(() => undefined);
         this.error.set(this.transloco.translate('admin.iniciarSesion.no_es_admin'));
         return;
       }

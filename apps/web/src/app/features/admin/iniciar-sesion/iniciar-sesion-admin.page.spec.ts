@@ -58,7 +58,11 @@ class RepositorioSesionFalso implements RepositorioSesion {
   }
 }
 
-async function renderPagina(repositorio: RepositorioSesion, destino?: string) {
+async function renderPagina(
+  repositorio: RepositorioSesion,
+  destino?: string,
+  otros: Record<string, string> = {},
+) {
   return render(IniciarSesionAdminPage, {
     imports: [
       TranslocoTestingModule.forRoot({
@@ -74,7 +78,7 @@ async function renderPagina(repositorio: RepositorioSesion, destino?: string) {
         provide: ActivatedRoute,
         useValue: {
           snapshot: {
-            queryParamMap: convertToParamMap(destino === undefined ? {} : { destino }),
+            queryParamMap: convertToParamMap(destino === undefined ? otros : { ...otros, destino }),
           },
         },
       },
@@ -106,6 +110,19 @@ describe('IniciarSesionAdminPage', () => {
     fireEvent.click(boton);
 
     expect(await screen.findByText('Escribe el correo.')).toBeTruthy();
+  });
+
+  /** El panel salió sin que el servidor confirmara el cierre: la cookie de refresco sigue viva. */
+  it('avisa cuando el panel no pudo confirmar el cierre de sesión con el servidor', async () => {
+    await renderPagina(new RepositorioSesionFalso(), undefined, { cierre: 'sin-confirmar' });
+
+    expect(screen.getByText(esAdmin.iniciarSesion.cierre_sin_confirmar)).toBeTruthy();
+  });
+
+  it('sin ese aviso en la URL no dice nada del cierre', async () => {
+    await renderPagina(new RepositorioSesionFalso());
+
+    expect(screen.queryByText(esAdmin.iniciarSesion.cierre_sin_confirmar)).toBeNull();
   });
 
   it('con credenciales válidas de ADMIN, navega al panel', async () => {
