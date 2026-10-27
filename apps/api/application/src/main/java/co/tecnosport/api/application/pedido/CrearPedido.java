@@ -19,6 +19,7 @@ import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
 import co.tecnosport.api.domain.compartido.TopeDeUnidadesPorLinea;
+import co.tecnosport.api.domain.compartido.ZonaDelNegocio;
 import co.tecnosport.api.domain.envio.TarifaEnvio;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.inventario.MovimientoInventario;
@@ -32,7 +33,6 @@ import co.tecnosport.api.domain.pedido.Pedido;
 import co.tecnosport.api.domain.pedido.TipoEntrega;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -60,8 +60,6 @@ import java.util.UUID;
  * de la petición HTTP, no del caso de uso.
  */
 public final class CrearPedido {
-
-  private static final ZoneId ZONA_COLOMBIA = ZoneId.of("America/Bogota");
 
   private final RepositorioProductos repositorioProductos;
   private final RepositorioInventario repositorioInventario;
@@ -240,7 +238,7 @@ public final class CrearPedido {
             .map(lineaComando -> congeladasPorVariante.get(lineaComando.varianteId()))
             .toList();
 
-    int anio = ahora.atZone(ZONA_COLOMBIA).getYear();
+    int anio = ahora.atZone(ZonaDelNegocio.ZONA).getYear();
     NumeroPedido numeroPedido = repositorioPedidos.siguienteNumero(anio);
 
     Pedido pedido =

@@ -5,11 +5,11 @@ import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.compartido.TextoDeCorreo;
 import co.tecnosport.api.application.compartido.TextosDeCorreo;
+import co.tecnosport.api.domain.compartido.ZonaDelNegocio;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
 import co.tecnosport.api.domain.pedido.MetodoPago;
 import co.tecnosport.api.domain.pedido.Pedido;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 
@@ -24,7 +24,6 @@ import java.util.Objects;
  */
 public final class MarcarListoParaRecoger {
 
-  private static final ZoneId ZONA_COLOMBIA = ZoneId.of("America/Bogota");
   private static final DateTimeFormatter FECHA_Y_HORA =
       DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
@@ -65,7 +64,7 @@ public final class MarcarListoParaRecoger {
   private void avisarAlComprador(Pedido pedido) {
     String numero = pedido.numeroPedido().valor();
     String venceEn =
-        FECHA_Y_HORA.format(pedido.recogidaVenceEn().orElseThrow().atZone(ZONA_COLOMBIA));
+        FECHA_Y_HORA.format(pedido.recogidaVenceEn().orElseThrow().atZone(ZonaDelNegocio.ZONA));
     boolean pagaAlRecoger = pedido.metodoPago() == MetodoPago.PAGO_EN_PUNTO;
     String pago =
         pagaAlRecoger

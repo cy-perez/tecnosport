@@ -140,6 +140,23 @@ class ArquitecturaTest {
         java.util.List.of(), fuera, "Controladores del panel fuera de /api/v1/admin");
   }
 
+  /**
+   * La zona del negocio vive en un solo sitio, {@code ZonaDelNegocio.ZONA}. Tres casos de uso la
+   * redefinían cada uno con su {@code ZoneId.of("America/Bogota")}, y una copia que cambie sin las
+   * otras parte el día en dos según quién lo calcule.
+   */
+  @Test
+  void laZonaDelNegocioSeDefineUnaSolaVez() {
+    noClasses()
+        .that()
+        .resideInAnyPackage(RAIZ + ".domain..", RAIZ + ".application..")
+        .and()
+        .doNotHaveSimpleName("ZonaDelNegocio")
+        .should()
+        .callMethod(java.time.ZoneId.class, "of", String.class)
+        .check(clases);
+  }
+
   /** La otra mitad de la regla dura #1, la que el documento prometía y nadie comprobaba. */
   @Test
   void dominioNoSabeDeNingunFramework() {

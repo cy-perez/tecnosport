@@ -4,12 +4,12 @@ import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.compartido.TextoDeCorreo;
 import co.tecnosport.api.application.compartido.TextosDeCorreo;
+import co.tecnosport.api.domain.compartido.ZonaDelNegocio;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
 import co.tecnosport.api.domain.pedido.LineaPedido;
 import co.tecnosport.api.domain.pedido.Pedido;
 import co.tecnosport.api.domain.pedido.TipoEntrega;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.EnumSet;
 import java.util.List;
@@ -65,7 +65,6 @@ public final class EnviarComprobantesDeCompra {
           EstadoPedido.RECAUDO_PENDIENTE,
           EstadoPedido.RECAUDO_CONCILIADO);
 
-  private static final ZoneId ZONA_COLOMBIA = ZoneId.of("America/Bogota");
   private static final DateTimeFormatter FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
   private final RepositorioPedidos repositorioPedidos;
@@ -136,7 +135,7 @@ public final class EnviarComprobantesDeCompra {
         textos.texto(
             TextoDeCorreo.PEDIDO_COMPROBANTE_CUERPO,
             pedido.numeroPedido().valor(),
-            FECHA.format(pedido.creadoEn().atZone(ZONA_COLOMBIA))));
+            FECHA.format(pedido.creadoEn().atZone(ZonaDelNegocio.ZONA))));
     // Las líneas y el subtotal van al precio publicado y el descuento aparte, antes del total
     // (ADR-0095): así la cuenta se lee de arriba abajo y el descuento se ve. Sin descuento, el
     // publicado es lo que se cobró y el correo queda como siempre.
