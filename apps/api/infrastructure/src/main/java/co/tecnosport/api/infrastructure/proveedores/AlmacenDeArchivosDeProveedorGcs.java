@@ -81,4 +81,19 @@ public class AlmacenDeArchivosDeProveedorGcs implements AlmacenDeArchivosDeProve
   public void borrar(String objectKey) {
     storage.delete(BlobId.of(bucket, objectKey));
   }
+
+  @Override
+  public int borrarPorPrefijo(String prefijo) {
+    if (prefijo == null || !prefijo.endsWith("/")) {
+      throw new IllegalArgumentException("El prefijo de un borrado termina en «/»: " + prefijo);
+    }
+    int borrados = 0;
+    for (Blob blob : storage.list(bucket, Storage.BlobListOption.prefix(prefijo)).iterateAll()) {
+      // Por nombre, sin la generación que trae el Blob de la lista, como en AlmacenDeImagenesGcs:
+      // con ella se borraría esa versión de verdad, saltándose el versionado del bucket.
+      storage.delete(BlobId.of(bucket, blob.getName()));
+      borrados++;
+    }
+    return borrados;
+  }
 }

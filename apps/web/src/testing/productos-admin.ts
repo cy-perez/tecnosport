@@ -5,6 +5,7 @@ import {
   ExistenciasDelCatalogo,
   ImagenAdmin,
   InventarioSinMedir,
+  VariantesSinMargen,
   MedidasDelCatalogo,
   MedirVarianteAdmin,
   ProductoAdmin,
@@ -45,10 +46,15 @@ export class RepositorioMedicionFalso implements RepositorioProductosAdmin {
       totalSinMedirEnPublicados: 0,
       items: [],
     },
+    private sinMargen: VariantesSinMargen = { total: 0, items: [] },
   ) {}
 
   async listarSinMedir(): Promise<InventarioSinMedir> {
     return this.inventario;
+  }
+
+  async listarSinMargen(): Promise<VariantesSinMargen> {
+    return this.sinMargen;
   }
 
   /**
@@ -253,6 +259,10 @@ export class RepositorioExistenciasFalso implements RepositorioProductosAdmin {
   }
 
   listarSinMedir(): Promise<InventarioSinMedir> {
+    throw new Error('no usado por las pruebas de existencias');
+  }
+
+  listarSinMargen(): Promise<VariantesSinMargen> {
     throw new Error('no usado por las pruebas de existencias');
   }
 

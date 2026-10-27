@@ -15,6 +15,7 @@ import {
   ExistenciaAjustada,
   ExistenciasDelCatalogo,
   InventarioSinMedir,
+  VariantesSinMargen,
   MedidasDelCatalogo,
   MedirVarianteAdmin,
   ProductoAdmin,
@@ -42,6 +43,9 @@ export interface RepositorioProductosAdmin {
   /** Lo que falta por medir, entero y sin paginar: es una lista de tareas que tiene que llegar a
    * cero, no un listado del catálogo. */
   listarSinMedir(): Promise<InventarioSinMedir>;
+
+  /** Lo que el costo del proveedor dejó sin margen y agotado: el otro pendiente del panel. */
+  listarSinMargen(): Promise<VariantesSinMargen>;
 
   /** Publica un producto en BORRADOR: desde ese momento existe para quien compra. */
   publicar(id: string): Promise<ProductoAdmin>;

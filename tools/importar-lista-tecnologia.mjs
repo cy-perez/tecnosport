@@ -120,16 +120,19 @@ export function huellaDeArchivo(contenido) {
 }
 
 /**
- * La entrega del inventario a las skills de fotos y de fichas: lo que espera borrador, y la huella
- * del archivo de la lista con que entró. Los borradores se niegan si el archivo cambió después: le
- * propondrían a la API un contenido que el inventario nunca vio.
+ * La entrega del inventario a las skills de fotos y de fichas: lo que espera borrador, la huella
+ * del archivo de la lista con que entró y la API que lo respondió. Los borradores se niegan si el
+ * archivo cambió después —le propondrían a la API un contenido que el inventario nunca vio— y si
+ * van contra otra API: lo que espera borrador lo dijo la base de ese ambiente, no la de este (27
+ * de octubre de 2026), como el registro de `cargar-catalogo.mjs`.
  */
-export function porProponerDe(lista, resultado, huellaLista = null) {
+export function porProponerDe(lista, resultado, huellaLista = null, api = null) {
   const enLaLista = new Set((lista.modelos ?? []).map((m) => m.idModelo));
   const modelos = resultado.modelosPorProponer ?? [];
   return {
     fechaLista: lista.fechaLista,
     huellaLista,
+    api,
     modelos,
     // Lo que la API espera proponer pero esta lista no trae: el bloque 1 no lo exportó —casi
     // siempre por falta de descripción— y el bloque 3 no puede hacerle borrador. La tanda de
@@ -138,6 +141,21 @@ export function porProponerDe(lista, resultado, huellaLista = null) {
     sinFicha: modelos.filter((id) => !enLaLista.has(id)),
     configuraciones: resultado.configuracionesPorProponer ?? [],
   };
+}
+
+/**
+ * Por qué los borradores se niegan con un por-proponer.json de otra API, o nulo si es de esta. Uno
+ * de antes del 27/10/2026 no dice de cuál es, y se acepta: el ambiente lo decide quien lo corre.
+ */
+export function mensajeDeOtraApi(porProponer, api) {
+  if (!porProponer.api || porProponer.api === api) {
+    return null;
+  }
+  return (
+    `por-proponer.json salió del inventario contra ${porProponer.api}, y esto va contra ${api}: ` +
+    "lo que espera borrador lo dijo la base de aquel ambiente. Corre --borradores con " +
+    `--api ${porProponer.api}, o el inventario de esta lista contra ${api}.`
+  );
 }
 
 /**
@@ -299,7 +317,10 @@ export function informeDeImportacion(r) {
     lineas.push(`No se volvieron a proponer (ya rechazados): ${r.modelosYaDecididos.join(", ")}`);
   }
   if (r.sinMargen.length) {
-    lineas.push("OJO, el costo alcanzó el precio de venta y la lista no lo mueve:");
+    lineas.push(
+      "OJO, quedaron agotadas: el costo nuevo les deja menos del 10 % sobre el contado, y la " +
+        "lista no mueve el precio. Súbelo en el panel, que las avisa, o vuelven cuando baje:",
+    );
     lineas.push(...r.sinMargen.map((s) => `  - ${s}`));
   }
   if (r.coloresSinVariante?.length) {
@@ -349,7 +370,7 @@ async function importarInventario(ruta, lista, contenido) {
   const { copia, huella } = guardarLaQueEntro(dirname(ruta), lista.fechaLista, contenido);
   console.log(`Lo que entró quedó copiado en ${copia}`);
   const destino = join(dirname(ruta), "por-proponer.json");
-  const entrega = porProponerDe(cuerpo, resultado, huella);
+  const entrega = porProponerDe(cuerpo, resultado, huella, API);
   writeFileSync(destino, JSON.stringify(entrega, null, 2) + "\n");
   console.log(`Lo que espera borrador quedó en ${destino}`);
   if (entrega.sinFicha.length) {
@@ -370,6 +391,10 @@ async function importarBorradores(ruta, lista, contenido) {
     );
   }
   const porProponer = JSON.parse(readFileSync(rutaPorProponer, "utf8"));
+  const otraApi = mensajeDeOtraApi(porProponer, API);
+  if (otraApi) {
+    throw new Error(otraApi);
+  }
   if (porProponer.fechaLista !== lista.fechaLista) {
     throw new Error(
       `por-proponer.json es de la lista del ${porProponer.fechaLista} y esta es del ` +

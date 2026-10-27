@@ -9,6 +9,7 @@ import {
   ExistenciaDeVariante,
   ExistenciasDelCatalogo,
   InventarioSinMedir,
+  VariantesSinMargen,
   MedidaDeVariante,
   MedidasDelCatalogo,
   MarcaAdmin,
@@ -27,6 +28,7 @@ type ImagenDto = components['schemas']['ImagenRespuesta'];
 type ProductoDetalleDto = components['schemas']['ProductoAdminDetalleRespuesta'];
 type ImagenDeGaleriaDto = components['schemas']['ImagenDeGaleriaRespuesta'];
 type SinMedirDto = components['schemas']['VariantesSinMedirRespuesta'];
+type SinMargenDto = components['schemas']['VariantesSinMargenRespuesta'];
 type VarianteSinMedirDto = components['schemas']['VarianteSinMedirRespuesta'];
 type MedidasDto = components['schemas']['MedidasRespuesta'];
 type MedidaDeVarianteDto = components['schemas']['MedidaDeVarianteRespuesta'];
@@ -137,6 +139,19 @@ export function aInventarioSinMedir(dto: SinMedirDto): InventarioSinMedir {
     total: dto.total ?? 0,
     totalEnPublicados: dto.totalEnPublicados ?? 0,
     items: (dto.items ?? []).map(aVarianteSinMedir),
+  };
+}
+
+/** Como `aInventarioSinMedir`: el total se lee, no se cuenta sobre `items`. */
+export function aVariantesSinMargen(dto: SinMargenDto): VariantesSinMargen {
+  return {
+    total: dto.total ?? 0,
+    items: (dto.items ?? []).map((item) => ({
+      productoId: item.productoId ?? '',
+      nombreProducto: item.nombreProducto ?? '',
+      varianteId: item.varianteId ?? '',
+      sku: item.sku ?? '',
+    })),
   };
 }
 

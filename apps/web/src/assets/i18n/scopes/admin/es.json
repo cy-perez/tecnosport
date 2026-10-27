@@ -32,6 +32,7 @@
     "proveedor_de_listas": "Este proveedor es de tecnología: su catálogo entra por la lista de precios, no por la exportación del chat.",
     "proveedor_sin_listas": "Este proveedor no es de tecnología: su catálogo entra por la exportación del chat, no por una lista de precios.",
     "lista_de_tecnologia_desactualizada": "Esa lista es más vieja que la última que entró: impórtala solo si es de esa fecha o posterior.",
+    "precio_sin_margen_minimo": "El precio de contado deja menos del 10 % de margen sobre el costo del proveedor: súbelo antes de aprobar.",
     "lista_de_tecnologia_ya_importada": "Esa lista ya entró con este mismo contenido: repetirla volvería a reponer lo vendido.",
     "proveedor_con_productos": "El proveedor tiene productos en el catálogo. Desactívalo en vez de eliminarlo.",
     "proveedor_con_ingesta_en_curso": "El proveedor tiene una exportación en proceso. Espera a que termine e inténtalo de nuevo.",
@@ -105,6 +106,10 @@
       "enlace": "Ver y medir"
     },
     "ir_a_marcas": "Marcas",
+    "sinMargen": {
+      "aviso": "{{total}} variante(s) dejaron de venderse porque el costo nuevo del proveedor les deja menos del 10 % de margen sobre el precio de contado. Sube el contado en la ficha del producto, o vuelven solas cuando el costo baje.",
+      "skus": "({{skus}})"
+    },
     "existencias": {
       "aviso": "{{total}} variante(s) no tienen una sola unidad en el libro de inventario, {{publicados}} de ellas en productos publicados. Quien las vea en la tienda las ve agotadas.",
       "enlace": "Ver las existencias y contar"

@@ -190,19 +190,16 @@ class ProductoDeProveedorTest {
     assertEquals(EstadoDisponibilidad.DISPONIBLE, producto.estadoDisponibilidad());
   }
 
-  /**
-   * La huella lleva el precio dentro: con el precio viejo, el siguiente anuncio no la encuentra.
-   */
+  /** La huella no se recalcula con el precio: los gemelos llevan el mismo título y chocarían. */
   @Test
-  void cambiarElPrecioDeProveedorRecalculaLaHuella() {
+  void cambiarElPrecioDeProveedorNoTocaLaHuella() {
     Producto producto = deProveedor();
+    Optional<HuellaProveedor> antes = producto.huellaProveedor();
 
     producto.actualizarPrecioProveedor(Dinero.deCop(60000));
 
-    assertEquals(
-        Optional.of(
-            HuellaProveedor.calcular(PROVEEDOR, "Bolso de dama mediano", Dinero.deCop(60000))),
-        producto.huellaProveedor());
+    assertEquals(antes, producto.huellaProveedor());
+    assertEquals(Optional.of(Dinero.deCop(60000)), producto.precioProveedor());
   }
 
   @Test

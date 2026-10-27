@@ -612,5 +612,10 @@ class AdminProveedorControladorTest {
     public void borrar(String objectKey) {
       throw new UnsupportedOperationException();
     }
+
+    @Override
+    public int borrarPorPrefijo(String prefijo) {
+      throw new UnsupportedOperationException();
+    }
   }
 }

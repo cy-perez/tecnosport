@@ -3,6 +3,7 @@ package co.tecnosport.api.application.proveedores;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.proveedores.RepositorioProductosDeProveedor.PrendaDeProveedor;
+import co.tecnosport.api.domain.catalogo.EstadoVariante;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.compartido.Dinero;
@@ -18,6 +19,7 @@ import co.tecnosport.api.domain.proveedores.GeneroDeCalzado;
 import co.tecnosport.api.domain.proveedores.GeneroDelAnuncio;
 import co.tecnosport.api.domain.proveedores.HuellaProveedor;
 import co.tecnosport.api.domain.proveedores.LecturaDeCalzado;
+import co.tecnosport.api.domain.proveedores.MargenMinimo;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
 import co.tecnosport.api.domain.proveedores.MotivoDePublicacion;
 import co.tecnosport.api.domain.proveedores.PHash;
@@ -690,6 +692,9 @@ public final class ResolverBorrador {
       tipo = TipoDeResolucion.RENOVACION;
     }
     repositorioProductos.actualizar(producto);
+    if (!extraido.estaAgotado()) {
+      revisarMargen(producto);
+    }
     // Lo que se vende bajo confirmación vuelve a la existencia nominal cuando reaparece (ADR-0089).
     if (!extraido.estaAgotado()
         && proveedor.ajustesDeIngesta().ventaBajoConfirmacion()
@@ -710,6 +715,15 @@ public final class ResolverBorrador {
                 }
               }
               repositorioProductos.actualizar(gemelo);
+              if (!extraido.estaAgotado()) {
+                revisarMargen(gemelo);
+              }
+              // Como al de dama: renovado sin reponer, quedaba disponible y sin existencia.
+              if (!extraido.estaAgotado()
+                  && proveedor.ajustesDeIngesta().ventaBajoConfirmacion()
+                  && existenciaBajoConfirmacion != null) {
+                existenciaBajoConfirmacion.reponer(gemelo);
+              }
             });
     repositorioBorradores.guardar(
         BorradorProducto.conSet(
@@ -726,6 +740,27 @@ public final class ResolverBorrador {
                 ahora),
             set));
     return new Resolucion(tipo, alertas, null);
+  }
+
+  /**
+   * Con el costo del anuncio, cada variante activa cuyo contado no deja el margen mínimo queda
+   * agotada por el proveedor, y la que el margen había agotado y ya lo deja vuelve a la venta (27
+   * de octubre de 2026). El panel avisa de las agotadas; antes solo quedaba la alerta {@link
+   * AlertaBorrador#PRECIO_CAMBIO} y la variante se seguía vendiendo —y reponiendo, bajo
+   * confirmación— por debajo del margen. Se revisa en cada renovación, haya cambiado el costo o no:
+   * el contado que alguien subió en el panel también devuelve la variante a la venta.
+   */
+  private void revisarMargen(Producto producto) {
+    producto
+        .precioProveedor()
+        .ifPresent(
+            costo -> {
+              Map<UUID, Boolean> margen = new LinkedHashMap<>();
+              producto.variantes().stream()
+                  .filter(v -> v.estado() == EstadoVariante.ACTIVA)
+                  .forEach(v -> margen.put(v.id(), MargenMinimo.alcanza(v.precioContado(), costo)));
+              productosDeProveedor.marcarMargenDeVariantes(margen);
+            });
   }
 
   /**

@@ -123,5 +123,11 @@ class RepositorioPublicacionesProveedorJpaTest {
     assertThat(releida.cierre())
         .contains(new CierreDePublicacion(MotivoDePublicacion.MISMA_REFERENCIA_EN_REVISION, "3"));
     assertThat(releida.medios()).containsExactly(foto1.id(), foto2.id());
+
+    // La relectura con bloqueo de la ingesta (27 de octubre de 2026) trae lo mismo.
+    PublicacionProveedor bloqueada =
+        publicaciones.buscarPorIdParaActualizar(primera.id()).orElseThrow();
+    assertThat(bloqueada.estado()).isEqualTo(EstadoPublicacionProveedor.DESCARTADA);
+    assertThat(bloqueada.medios()).containsExactly(foto1.id(), foto2.id());
   }
 }

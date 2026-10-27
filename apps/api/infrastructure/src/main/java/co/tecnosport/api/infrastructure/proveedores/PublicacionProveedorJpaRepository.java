@@ -1,10 +1,13 @@
 package co.tecnosport.api.infrastructure.proveedores;
 
 import co.tecnosport.api.infrastructure.proveedores.entidad.PublicacionProveedorJpaEntity;
+import jakarta.persistence.LockModeType;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -12,6 +15,10 @@ public interface PublicacionProveedorJpaRepository
     extends JpaRepository<PublicacionProveedorJpaEntity, UUID> {
 
   List<PublicacionProveedorJpaEntity> findByLoteIdOrderByFechaAscCreadoEnAsc(UUID loteId);
+
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @Query("select p from PublicacionProveedorJpaEntity p where p.id = :id")
+  Optional<PublicacionProveedorJpaEntity> buscarConBloqueo(@Param("id") UUID id);
 
   @Query(
       "select p.mensajePrincipalId from PublicacionProveedorJpaEntity p"

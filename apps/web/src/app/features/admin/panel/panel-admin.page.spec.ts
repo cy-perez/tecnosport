@@ -15,6 +15,7 @@ import { Sesion } from '../../../core/autenticacion/sesion.model';
 import {
   ExistenciasDelCatalogo,
   InventarioSinMedir,
+  VariantesSinMargen,
 } from '../productos/domain/producto-admin.model';
 import { REPOSITORIO_PRODUCTOS_ADMIN } from '../productos/domain/repositorio-productos-admin.puerto';
 import { RepositorioMedicionFalso } from '../../../../testing/productos-admin';
@@ -61,6 +62,7 @@ const TODO_CON_EXISTENCIA: ExistenciasDelCatalogo = {
 async function renderPanel(
   inventario: InventarioSinMedir = NADA_SIN_MEDIR,
   existencias: ExistenciasDelCatalogo = TODO_CON_EXISTENCIA,
+  sinMargen: VariantesSinMargen = { total: 0, items: [] },
 ) {
   const sesion = new RepositorioSesionFalso();
   const resultado = await render(PanelAdminPage, {
@@ -77,7 +79,7 @@ async function renderPanel(
       { provide: REPOSITORIO_SESION, useValue: sesion },
       {
         provide: REPOSITORIO_PRODUCTOS_ADMIN,
-        useValue: new RepositorioMedicionFalso(inventario, existencias),
+        useValue: new RepositorioMedicionFalso(inventario, existencias, undefined, sinMargen),
       },
     ],
   });
@@ -180,6 +182,27 @@ describe('PanelAdminPage', () => {
    * septiembre de 2026 es `marco/pestanas-admin.spec.ts`. Hasta entonces el enlace permanente
    * vivía en esta pantalla y esta prueba comprobaba las dos cosas a la vez.
    */
+  /**
+   * El tercero (27 de octubre de 2026): lo que el costo del proveedor dejó con menos del 10 % de
+   * margen. La lista y la ingesta lo agotan solas, así que sin este aviso nadie se entera. Un
+   * renglón por producto, con su enlace a la ficha, donde se sube el contado.
+   */
+  it('avisa de lo que el costo dejó sin margen, un producto por renglón', async () => {
+    await renderPanel(NADA_SIN_MEDIR, TODO_CON_EXISTENCIA, {
+      total: 2,
+      items: [
+        { productoId: 'p1', nombreProducto: 'Samsung Galaxy A17 5G', varianteId: 'v1', sku: 'A' },
+        { productoId: 'p1', nombreProducto: 'Samsung Galaxy A17 5G', varianteId: 'v2', sku: 'B' },
+      ],
+    });
+
+    const enlace = await screen.findByRole('link', { name: 'Samsung Galaxy A17 5G' });
+    expect(enlace.getAttribute('href')).toMatch(/\/productos\/p1\/editar$/);
+    expect(screen.getAllByRole('link', { name: 'Samsung Galaxy A17 5G' })).toHaveLength(1);
+    expect(screen.getByRole('status').textContent).toContain('2 variante(s) dejaron de venderse');
+    expect(screen.getByRole('status').textContent).toContain('(A, B)');
+  });
+
   it('con todo con existencia no hay aviso', async () => {
     await renderPanel();
 

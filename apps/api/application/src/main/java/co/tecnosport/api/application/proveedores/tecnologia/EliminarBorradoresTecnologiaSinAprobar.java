@@ -13,7 +13,10 @@ import java.util.UUID;
  * <p><b>Por tandas</b>, con la forma de {@code EliminarBorradoresSinAprobar}: cada llamada borra
  * como mucho {@code tamanoTanda} y dice cuántos quedan, y el panel repite. Un borrador lleva unas
  * quince piezas en el bucket —cada foto con sus anchos y su vista previa—, y una bandeja entera en
- * una sola petición mantendría la transacción abierta cientos de borrados.
+ * una sola petición mantendría la transacción abierta cientos de borrados. Y cada borrador va en su
+ * propia transacción —la abre {@link EliminarBorradorTecnologia}—, no una para toda la tanda: el
+ * bucket se borra después de confirmar cada fila, y un fallo a mitad de tanda no revierte las filas
+ * de unos borradores cuyas fotos ya se fueron (27 de octubre de 2026).
  *
  * <p>Un borrador que alguien aprueba o borra entre la lista y su turno se salta, sin tumbar la
  * tanda: ya no es de los que se querían borrar.

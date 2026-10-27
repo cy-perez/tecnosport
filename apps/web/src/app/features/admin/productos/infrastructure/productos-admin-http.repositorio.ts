@@ -20,6 +20,7 @@ import {
   ExistenciaAjustada,
   ExistenciasDelCatalogo,
   InventarioSinMedir,
+  VariantesSinMargen,
   MedidasDelCatalogo,
   MedirVarianteAdmin,
   ProductoAdmin,
@@ -38,6 +39,7 @@ import {
   aExistenciaAjustada,
   aExistenciasDelCatalogo,
   aInventarioSinMedir,
+  aVariantesSinMargen,
   aMedidasDelCatalogo,
   aProductoAdmin,
   aProductoAdminDetalle,
@@ -148,6 +150,13 @@ export class ProductosAdminHttpRepositorio implements RepositorioProductosAdmin 
     const respuesta = await this.cliente.GET('/api/v1/admin/variantes/sin-medir', {});
     return aInventarioSinMedir(
       desempaquetar(respuesta, 'no se pudo consultar las variantes sin medir'),
+    );
+  }
+
+  async listarSinMargen(): Promise<VariantesSinMargen> {
+    const respuesta = await this.cliente.GET('/api/v1/admin/variantes/sin-margen', {});
+    return aVariantesSinMargen(
+      desempaquetar(respuesta, 'no se pudo consultar las variantes sin margen'),
     );
   }
 

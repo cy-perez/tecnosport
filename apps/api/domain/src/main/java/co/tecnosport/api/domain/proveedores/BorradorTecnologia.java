@@ -324,12 +324,10 @@ public final class BorradorTecnologia {
         throw new ExcepcionDeDominio("Falta el precio de contado de " + c.titulo() + ".");
       }
       // Vender al costo no es vender (tools/cargar-catalogo.mjs): un cero de menos al teclear se
-      // publicaría y se vendería con pérdida en cada unidad. Se compara el de contado, que es lo
-      // que el negocio recibe: el publicado lleva encima la comisión, que no es ganancia.
-      if (c.precioVenta().valor().compareTo(c.costoProveedor().valor()) <= 0) {
-        throw new ExcepcionDeDominio(
-            "El precio de contado de " + c.titulo() + " no supera su costo.");
-      }
+      // publicaría y se vendería con pérdida en cada unidad. Y superarlo por poco tampoco: hace
+      // falta el margen mínimo de la regla 18 (27 de octubre de 2026). Se compara el de contado,
+      // que es lo que el negocio recibe: el publicado lleva encima la comisión, que no es ganancia.
+      MargenMinimo.exigir(c.precioVenta(), c.costoProveedor(), c.titulo());
     }
   }
 

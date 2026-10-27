@@ -32,6 +32,7 @@
     "proveedor_de_listas": "This is a technology supplier: its catalog comes in through the price list, not through the chat export.",
     "proveedor_sin_listas": "This supplier is not a technology supplier: its catalog comes in through the chat export, not through a price list.",
     "lista_de_tecnologia_desactualizada": "That list is older than the last one imported: only import a list from that date or later.",
+    "precio_sin_margen_minimo": "The cash price leaves less than a 10 % margin over the supplier cost: raise it before approving.",
     "lista_de_tecnologia_ya_importada": "That list was already imported with this same content: repeating it would restock what was sold.",
     "proveedor_con_productos": "The supplier has products in the catalogue. Deactivate it instead of deleting it.",
     "proveedor_con_ingesta_en_curso": "The supplier has an export being processed. Wait for it to finish and try again.",
@@ -105,6 +106,10 @@
       "enlace": "Review and measure"
     },
     "ir_a_marcas": "Brands",
+    "sinMargen": {
+      "aviso": "{{total}} variant(s) stopped selling because the supplier's new cost leaves them less than a 10 % margin over the cash price. Raise the cash price on the product page, or they come back on their own when the cost drops.",
+      "skus": "({{skus}})"
+    },
     "existencias": {
       "aviso": "{{total}} catalog variant(s) have not a single unit in the inventory ledger, {{publicados}} of them on published products. Anyone seeing them in the shop sees them sold out.",
       "enlace": "Review stock and count"

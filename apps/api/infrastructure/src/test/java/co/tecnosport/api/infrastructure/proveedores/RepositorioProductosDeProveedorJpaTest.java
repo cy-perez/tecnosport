@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import co.tecnosport.api.application.catalogo.FiltroProductos;
 import co.tecnosport.api.application.catalogo.OrdenProductos;
 import co.tecnosport.api.application.catalogo.RepositorioMapaDelSitio;
+import co.tecnosport.api.application.proveedores.RepositorioProductosDeProveedor;
 import co.tecnosport.api.domain.catalogo.Categoria;
 import co.tecnosport.api.domain.catalogo.EstadoDisponibilidad;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
@@ -312,6 +313,44 @@ class RepositorioProductosDeProveedorJpaTest {
     var prendas = deProveedor.buscarPrendasPorReferencia(proveedor.id(), "RV102376");
     assertThat(prendas).hasSize(1);
     assertThat(prendas.getFirst().retirada()).isTrue();
+  }
+
+  /**
+   * La V125 (27 de octubre de 2026): la que el costo deja sin margen se agota y sale en el aviso;
+   * cambiarle el precio no le quita la marca; volver a anunciar su SKU no la devuelve, y el margen
+   * sí. Y la que ya estaba agotada por su SKU no la devuelve el margen.
+   */
+  @Test
+  void laVarianteSinMargenSeAgotaSaleEnElAvisoYVuelveConElMargen() {
+    catalogoBase();
+    Producto album = deProveedor("Set polo importado y gorra", 85000);
+    productos.guardar(album);
+    Variante sinMargen = variante(album);
+    Variante porSku = variante(album);
+    deProveedor.asignarReferencias(
+        java.util.Map.of(sinMargen.id(), "RV102376", porSku.id(), "RV102377"));
+    deProveedor.cambiarDisponibilidadDeVariantes(List.of(porSku.id()), false);
+
+    deProveedor.marcarMargenDeVariantes(
+        java.util.Map.of(sinMargen.id(), false, porSku.id(), false));
+    productos.actualizarPrecios(sinMargen.id(), Dinero.deCop(116000), Dinero.deCop(121000));
+
+    assertThat(deProveedor.variantesSinMargen())
+        .extracting(RepositorioProductosDeProveedor.VarianteSinMargen::varianteId)
+        .containsExactly(sinMargen.id());
+    assertThat(productos.buscarPorId(album.id()).orElseThrow().variantes())
+        .noneMatch(Variante::seVende);
+
+    deProveedor.cambiarDisponibilidadDeVariantes(List.of(sinMargen.id()), true);
+    assertThat(deProveedor.variantesSinMargen()).hasSize(1);
+
+    deProveedor.marcarMargenDeVariantes(java.util.Map.of(sinMargen.id(), true, porSku.id(), true));
+
+    assertThat(deProveedor.variantesSinMargen()).isEmpty();
+    assertThat(productos.buscarPorId(album.id()).orElseThrow().variantes())
+        .filteredOn(Variante::seVende)
+        .extracting(Variante::id)
+        .containsExactly(sinMargen.id());
   }
 
   /**

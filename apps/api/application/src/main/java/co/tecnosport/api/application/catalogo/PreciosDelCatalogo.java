@@ -20,7 +20,8 @@ public interface PreciosDelCatalogo {
    * no una lectura seguida de una escritura: si alguien cambió el precio entre la revisión y la
    * aplicación, no se pisa.
    *
-   * @return {@code false} si la variante cambió (o ya no existe) y no se grabó nada
+   * @return {@code false} si la variante cambió (o ya no existe), o si el publicado nuevo es menor
+   *     que el de contado, y no se grabó nada
    */
   boolean actualizarPublicado(
       UUID varianteId, Dinero contado, Dinero publicadoActual, Dinero publicadoNuevo);

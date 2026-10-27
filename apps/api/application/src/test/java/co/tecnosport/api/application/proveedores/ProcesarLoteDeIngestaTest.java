@@ -25,6 +25,7 @@ import co.tecnosport.api.domain.proveedores.AgrupadorDePublicaciones;
 import co.tecnosport.api.domain.proveedores.AlertaBorrador;
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
 import co.tecnosport.api.domain.proveedores.ChatDelZip;
+import co.tecnosport.api.domain.proveedores.CierreDePublicacion;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
 import co.tecnosport.api.domain.proveedores.EstadoLote;
 import co.tecnosport.api.domain.proveedores.EstadoPublicacionProveedor;
@@ -788,7 +789,9 @@ class ProcesarLoteDeIngestaTest {
     assertEquals(EstadoLote.TERMINADO, resultado.estado());
     assertEquals(EstadoLote.TERMINADO, lotes.buscarPorId(lote.id()).orElseThrow().estado());
     assertEquals(
-        4, lotes.bloqueos, "al tomarlo, al anotar la lectura, al anotar el avance y al soltarlo");
+        5,
+        lotes.bloqueos,
+        "al tomarlo, al anotar la lectura, al resolver, al anotar el avance y al soltarlo");
   }
 
   /**
@@ -807,7 +810,7 @@ class ProcesarLoteDeIngestaTest {
 
     assertEquals(EstadoLote.ERROR, resultado.estado());
     assertEquals(Optional.of(FalloDeLote.de(MotivoDeFalloDeLote.REINICIO)), resultado.fallo());
-    assertEquals(1, borradores.porId.size(), "la publicación en curso y ninguna más");
+    assertEquals(0, borradores.porId.size(), "ni la publicación en curso: el lote ya no es suyo");
   }
 
   /** Y si además se eliminó, no se vuelve a insertar desde la copia que tenía el trabajador. */
@@ -989,7 +992,9 @@ class ProcesarLoteDeIngestaTest {
 
   /**
    * Un trabajador congelado despierta con el lote en PROCESANDO, pero otro ya lo había retomado:
-   * los reintentos cambiaron, así que el lote no es suyo y no sigue creando borradores.
+   * los reintentos cambiaron, así que el lote no es suyo y no sigue creando borradores. Tampoco el
+   * de la publicación que estaba extrayendo cuando lo retomaron: esa la resuelve el otro, y
+   * resolverla aquí también la resolvía dos veces (revisión adversarial del 27 de octubre de 2026).
    */
   @Test
   void elTrabajadorQueDespiertaConElLoteRetomadoPorOtroNoSigue() {
@@ -1010,9 +1015,43 @@ class ProcesarLoteDeIngestaTest {
             .procesarTramo(lote.id());
 
     assertEquals(ProcesarLoteDeIngesta.Resultado.NADA, tramo.resultado());
-    assertEquals(1, borradores.porId.size(), "la publicación en curso y ninguna más");
+    assertEquals(0, borradores.porId.size(), "ni la publicación en curso: es del que lo retomó");
     LoteIngesta delOtro = lotes.buscarPorId(lote.id()).orElseThrow();
     assertEquals(EstadoLote.PROCESANDO, delOtro.estado(), "no escribió sobre el lote del otro");
+  }
+
+  /**
+   * La publicación que otro resolvió mientras este extraía no se vuelve a resolver: la transacción
+   * la relee bloqueada y, si ya no está pendiente, no hace nada.
+   */
+  @Test
+  void laPublicacionQueOtroResolvioMientrasSeExtraiaNoSeResuelveDosVeces() {
+    conCopias();
+    PublicacionProveedor[] primera = {null};
+    ExtractorDeProductos extractor =
+        extractorQueEnLaLlamada(
+            1,
+            () -> {
+              primera[0] =
+                  publicaciones.listarDeLote(lote.id()).stream()
+                      .filter(p -> p.estado() == EstadoPublicacionProveedor.PENDIENTE_EXTRACCION)
+                      .findFirst()
+                      .orElseThrow();
+              primera[0].fallar(
+                  CierreDePublicacion.de(MotivoDePublicacion.EXTRACCION_FALLIDA), "la cerró otro");
+              publicaciones.actualizar(primera[0]);
+            });
+
+    casoCon(new FuenteFija(comoChat(losNueveDelCriterio())), extractor).ejecutar(lote.id());
+
+    assertTrue(
+        borradores.porId.values().stream()
+            .noneMatch(b -> b.publicacionId().equals(primera[0].id())),
+        "ningún borrador de la que resolvió el otro");
+    assertEquals(
+        EstadoPublicacionProveedor.ERROR,
+        publicaciones.buscarPorId(primera[0].id()).orElseThrow().estado());
+    assertEquals(8, borradores.porId.size(), "las otras ocho sí");
   }
 
   /** El avance se anota después de cada publicación: un tramo cortado no se lleva lo que contó. */

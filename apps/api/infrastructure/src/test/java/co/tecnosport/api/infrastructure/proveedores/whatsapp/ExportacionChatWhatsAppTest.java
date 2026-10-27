@@ -225,6 +225,11 @@ class ExportacionChatWhatsAppTest {
     public void borrar(String objectKey) {
       throw new UnsupportedOperationException();
     }
+
+    @Override
+    public int borrarPorPrefijo(String prefijo) {
+      throw new UnsupportedOperationException();
+    }
   }
 
   /** Android: el nombre del chat es el del archivo, sin el prefijo ni la extensión. */

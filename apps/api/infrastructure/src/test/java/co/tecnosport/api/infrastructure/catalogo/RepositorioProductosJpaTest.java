@@ -856,6 +856,30 @@ class RepositorioProductosJpaTest {
     assertThat(p.variantes().get(0).precio()).isEqualTo(Dinero.deCop(239_000));
   }
 
+  /**
+   * Revisión adversarial del 27 de octubre de 2026: el SQL se saltaba Variante.validarPrecios. Un
+   * publicado por debajo del contado no se graba, y quien llama se entera.
+   */
+  @Test
+  void actualizarElPublicadoNoGrabaUnoMenorQueElContado() {
+    MarcaJpaEntity marca = marca("Marca precios T6");
+    CategoriaJpaEntity categoria =
+        categoria("Bolsos de mano", "bolsos-dama-bolsos-de-mano-pr6", "BOLSOS");
+    ProductoJpaEntity productoJpa =
+        producto("Bolso Luz", "bolso-luz-precios", "PUBLICADO", marca, categoria);
+    VarianteJpaEntity variante = variante(productoJpa, "TS-PRECIOS-6", "230000");
+    entityManager.flush();
+
+    boolean grabado =
+        preciosDelCatalogo.actualizarPublicado(
+            variante.getId(), Dinero.deCop(230_000), Dinero.deCop(230_000), Dinero.deCop(229_000));
+    entityManager.clear();
+
+    assertThat(grabado).isFalse();
+    Producto p = repositorio.buscarPorSlug(new Slug("bolso-luz-precios")).orElseThrow();
+    assertThat(p.variantes().get(0).precio()).isEqualTo(Dinero.deCop(230_000));
+  }
+
   @Test
   void actualizarElPublicadoDeUnaVarianteQueNoExisteNoGrabaNada() {
     assertThat(

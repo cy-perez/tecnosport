@@ -32,6 +32,29 @@
       </div>
     }
 
+    @if (haySinMargen()) {
+      <!-- Lo agotó el costo del proveedor sin preguntarle a nadie: se arregla en la ficha. -->
+      <div class="mb-24 border border-ts-borde-control p-16">
+        <p class="m-0 mb-8">
+          {{ 'admin.panel.sinMargen.aviso' | transloco: { total: totalSinMargen() } }}
+        </p>
+        <ul class="m-0 pl-16">
+          @for (producto of productosSinMargen(); track producto.productoId) {
+            <li>
+              <a
+                class="anillo-foco inline-flex min-h-tactil items-center text-ts-primario"
+                [routerLink]="['../productos', producto.productoId, 'editar']"
+                >{{ producto.nombreProducto }}</a
+              >
+              <span>
+                {{ 'admin.panel.sinMargen.skus' | transloco: { skus: producto.skus.join(', ') } }}
+              </span>
+            </li>
+          }
+        </ul>
+      </div>
+    }
+
     @if (haySinMedir()) {
       <!-- Una promesa a medias: esas variantes se venden, pero solo con recogida en el punto. -->
       <div class="mb-24 border border-ts-borde-control p-16">

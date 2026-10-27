@@ -833,7 +833,7 @@ class AdminTecnologiaControladorTest {
   }
 
   /** Sin productos: todo lo de la lista es nuevo. */
-  static final class SinProductosDeProveedor implements RepositorioProductosDeProveedor {
+  static class SinProductosDeProveedor implements RepositorioProductosDeProveedor {
     @Override
     public Optional<Producto> buscarPorHuella(UUID proveedorId, HuellaProveedor huella) {
       return Optional.empty();
@@ -858,6 +858,14 @@ class AdminTecnologiaControladorTest {
     @Override
     public void marcarDisponibilidadesPorConfirmar(
         java.util.Map<UUID, Boolean> porConfirmarPorVariante) {}
+
+    @Override
+    public void marcarMargenDeVariantes(java.util.Map<UUID, Boolean> alcanzaPorVariante) {}
+
+    @Override
+    public List<VarianteSinMargen> variantesSinMargen() {
+      return List.of();
+    }
   }
 
   /** El bucket privado del proveedor, en memoria. */
@@ -892,6 +900,13 @@ class AdminTecnologiaControladorTest {
     @Override
     public void borrar(String objectKey) {
       objetos.remove(objectKey);
+    }
+
+    @Override
+    public int borrarPorPrefijo(String prefijo) {
+      List<String> suyas = objetos.keySet().stream().filter(k -> k.startsWith(prefijo)).toList();
+      suyas.forEach(objetos::remove);
+      return suyas.size();
     }
   }
 
@@ -959,7 +974,16 @@ class AdminTecnologiaControladorTest {
     @Bean
     EliminarBorradorTecnologia eliminarBorradorTecnologia(
         BorradoresDoble borradores, AlmacenDoble almacen) {
-      return new EliminarBorradorTecnologia(borradores, almacen);
+      // Sin base de datos detrás, la transacción propia solo corre el trabajo.
+      return new EliminarBorradorTecnologia(
+          borradores,
+          almacen,
+          new co.tecnosport.api.application.compartido.EnTransaccionPropia() {
+            @Override
+            public <T> T ejecutar(java.util.function.Supplier<T> trabajo) {
+              return trabajo.get();
+            }
+          });
     }
 
     @Bean
@@ -1012,6 +1036,12 @@ class AdminTecnologiaControladorTest {
               TarifasDePrueba.WOMPI),
           almacen,
           noUsado(AlmacenDeImagenes.class),
+          new co.tecnosport.api.application.compartido.EnTransaccionPropia() {
+            @Override
+            public <T> T ejecutar(java.util.function.Supplier<T> trabajo) {
+              return trabajo.get();
+            }
+          },
           2);
     }
 

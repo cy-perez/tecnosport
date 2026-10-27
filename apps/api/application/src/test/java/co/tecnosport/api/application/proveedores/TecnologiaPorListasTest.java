@@ -1,12 +1,14 @@
 package co.tecnosport.api.application.proveedores;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.application.catalogo.AgregarVariante;
 import co.tecnosport.api.application.catalogo.ObjetoDeImagenNoEncontradoException;
 import co.tecnosport.api.application.catalogo.TarifasDePrueba;
+import co.tecnosport.api.application.compartido.EnTransaccionPropia;
 import co.tecnosport.api.application.compartido.RelojFalso;
 import co.tecnosport.api.application.proveedores.ApoyoDeCatalogoParaIngesta.RepositorioAtributosFijo;
 import co.tecnosport.api.application.proveedores.ApoyoDeCatalogoParaIngesta.RepositorioCategoriasFijo;
@@ -226,6 +228,7 @@ class TecnologiaPorListasTest {
                 productos, atributos, inventario, reloj, false, TarifasDePrueba.WOMPI),
             privado,
             publico,
+            transaccionDelBorrado,
             EXISTENCIA)
         .ejecutar(
             new AprobarBorradorTecnologiaComando(
@@ -607,8 +610,84 @@ class TecnologiaPorListasTest {
 
   // --- Borrar borradores (24/10/2026) -------------------------------------------------------
 
+  /**
+   * La transacción propia del borrado, que anota cuántos objetos tenía el bucket al confirmar: los
+   * objetos se borran después, nunca dentro.
+   */
+  private final class TransaccionQueMiraElBucket implements EnTransaccionPropia {
+    int veces;
+    final List<Integer> objetosAlConfirmar = new ArrayList<>();
+
+    @Override
+    public <T> T ejecutar(java.util.function.Supplier<T> trabajo) {
+      T resultado = trabajo.get();
+      veces++;
+      objetosAlConfirmar.add(privado.objetos.size());
+      return resultado;
+    }
+  }
+
+  private final TransaccionQueMiraElBucket transaccionDelBorrado = new TransaccionQueMiraElBucket();
+
   private EliminarBorradorTecnologia eliminar() {
-    return new EliminarBorradorTecnologia(borradores, privado);
+    return new EliminarBorradorTecnologia(borradores, privado, transaccionDelBorrado);
+  }
+
+  /**
+   * Revisión adversarial del 27 de octubre de 2026: el borrado se llevaba solo lo que nombraban las
+   * fotos del borrador. Una subida firmada que el panel no confirmó deja un objeto bajo su prefijo
+   * que ninguna fila nombra, y quedaba huérfano para siempre.
+   */
+  @Test
+  void borrarUnoSeLlevaTodoSuPrefijoAunqueNingunaFotoLoNombre() {
+    BorradorTecnologia borrador = unA17ListoParaAprobar();
+    String huerfano =
+        "proveedores/" + proveedor.id() + "/borradores-tecnologia/" + borrador.id() + "/x.avif";
+    privado.guardar(huerfano, "image/avif", new byte[3]);
+    String delVecino = "proveedores/" + proveedor.id() + "/borradores-tecnologia/otro/1.avif";
+    privado.guardar(delVecino, "image/avif", new byte[3]);
+
+    eliminar().ejecutar(borrador.id());
+
+    assertFalse(privado.objetos.containsKey(huerfano));
+    assertTrue(privado.objetos.containsKey(delVecino), "lo de otro borrador se queda");
+  }
+
+  /**
+   * Y al aprobar, los originales del bucket privado se quedaban para siempre: el producto ya tiene
+   * sus copias en el público. Se borran después de confirmar la aprobación, nunca antes.
+   */
+  @Test
+  void aprobarBorraLosOriginalesDelBucketPrivadoDespuesDeConfirmar() {
+    BorradorTecnologia borrador = unA17ListoParaAprobar();
+    String prefijo =
+        "proveedores/" + proveedor.id() + "/borradores-tecnologia/" + borrador.id() + "/";
+    long antes = privado.objetos.keySet().stream().filter(k -> k.startsWith(prefijo)).count();
+
+    aprobar(borrador.id());
+
+    assertEquals(
+        List.of((int) privado.objetos.size() + (int) antes),
+        transaccionDelBorrado.objetosAlConfirmar,
+        "al confirmar seguían todos");
+    assertTrue(privado.objetos.keySet().stream().noneMatch(k -> k.startsWith(prefijo)));
+    assertFalse(publico.objetos.isEmpty(), "el producto tiene sus copias en el público");
+  }
+
+  /**
+   * Revisión adversarial del 27 de octubre de 2026: las fotos se borraban del bucket antes que la
+   * fila y dentro de la transacción. Un fallo después las dejaba borradas con la fila revertida.
+   */
+  @Test
+  void borrarUnoConfirmaLaFilaAntesDeTocarElBucket() {
+    BorradorTecnologia borrador = unA17ListoParaAprobar();
+    int antes = privado.objetos.size();
+
+    int borrados = eliminar().ejecutar(borrador.id());
+
+    assertEquals(1, transaccionDelBorrado.veces);
+    assertEquals(List.of(antes), transaccionDelBorrado.objetosAlConfirmar, "nada antes del commit");
+    assertEquals(antes - borrados, privado.objetos.size(), "y todo después");
   }
 
   @Test
@@ -671,6 +750,7 @@ class TecnologiaPorListasTest {
     EliminarBorradoresTecnologiaSinAprobar enBloque =
         new EliminarBorradoresTecnologiaSinAprobar(borradores, eliminar());
     assertEquals(3, enBloque.contar());
+    int transaccionesAntes = transaccionDelBorrado.veces;
 
     BorradoresEliminados primera = enBloque.ejecutar(2);
     BorradoresEliminados segunda = enBloque.ejecutar(2);
@@ -681,6 +761,10 @@ class TecnologiaPorListasTest {
     assertEquals(0, segunda.quedan());
     assertEquals(1, borradores.porId.size(), "el aprobado se queda");
     assertTrue(borradores.porId.containsKey(aprobado.id()));
+    assertEquals(
+        3,
+        transaccionDelBorrado.veces - transaccionesAntes,
+        "una transacción por borrador, no por tanda");
   }
 
   @Test
@@ -842,6 +926,55 @@ class TecnologiaPorListasTest {
     assertEquals(2, resultado.sinMargen().size());
     assertTrue(
         resultado.sinMargen().getFirst().startsWith("Samsung Galaxy A17 5G 8GB RAM 256GB 1 SIM"));
+  }
+
+  /**
+   * Revisión adversarial del 27 de octubre de 2026: un costo que deja menos del 10 % sobre el
+   * contado reponía la existencia y solo dejaba una nota. Ahora la variante queda agotada por el
+   * proveedor, sin existencia libre y en el aviso del panel, y vuelve con la lista que le devuelve
+   * el margen.
+   */
+  @Test
+  void unCostoQueQuitaElMargenMinimoAgotaLaVarianteHastaQueVuelva() {
+    Producto producto = unA17QueYaSeVende();
+    List<UUID> variantes = producto.variantes().stream().map(Variante::id).toList();
+
+    // Contado 849.900 sobre 780.000: un 9 %.
+    ImportarListaDeTecnologia.Resultado sinMargen =
+        importar(lista(JUEVES, List.of(config(UNA_SIM, 780_000, "1 SIM")), List.of(), List.of()));
+
+    assertEquals(2, sinMargen.sinMargen().size());
+    for (UUID id : variantes) {
+      assertTrue(productosDeProveedor.retiradas.contains(id), "agotada por el proveedor");
+      assertEquals(0, disponible(id), "no se repone");
+    }
+    assertEquals(2, productosDeProveedor.variantesSinMargen().size(), "el panel lo avisa");
+
+    importar(
+        lista(
+            JUEVES.plusDays(1), List.of(config(UNA_SIM, 760_000, "1 SIM")), List.of(), List.of()));
+
+    for (UUID id : variantes) {
+      assertFalse(productosDeProveedor.retiradas.contains(id), "el margen volvió");
+      assertEquals(EXISTENCIA, disponible(id));
+    }
+    assertTrue(productosDeProveedor.variantesSinMargen().isEmpty());
+  }
+
+  /**
+   * Revisión adversarial del 27 de octubre de 2026: la configuración que no viene en la lista y la
+   * skill no reporta como desaparecida —`conocidos.json` la había visto «ausente»— no se retiraba
+   * nunca. Si su modelo viene en la lista, lo que no trae deja de tener existencia libre.
+   */
+  @Test
+  void unaConfiguracionQueNoVieneConSuModeloSeRetiraAunqueNadieLaDeclareDesaparecida() {
+    Producto producto = unA17QueYaSeVende();
+    List<UUID> variantes = producto.variantes().stream().map(Variante::id).toList();
+    variantes.forEach(id -> assertEquals(EXISTENCIA, disponible(id)));
+
+    importar(lista(JUEVES, List.of(config(DUAL, 690_000, "Dual SIM")), List.of(), List.of()));
+
+    variantes.forEach(id -> assertEquals(0, disponible(id), "la de una SIM ya no viene"));
   }
 
   @Test

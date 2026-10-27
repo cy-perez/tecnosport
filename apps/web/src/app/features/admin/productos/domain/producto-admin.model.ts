@@ -242,6 +242,23 @@ export interface VarianteSinMedir {
  * Los dos conteos vienen del servidor y no se derivan de `items`: el aviso del panel enseña el
  * número sin traerse la lista.
  */
+/**
+ * Lo que dejó de venderse porque el costo del proveedor le quitó el margen mínimo (10 % sobre el
+ * contado): la lista de tecnología o la renovación de un anuncio la agotaron sin preguntar. Se
+ * atiende subiendo el contado en la ficha del producto o esperando a que el costo baje.
+ */
+export interface VariantesSinMargen {
+  readonly total: number;
+  readonly items: readonly VarianteSinMargen[];
+}
+
+export interface VarianteSinMargen {
+  readonly productoId: string;
+  readonly nombreProducto: string;
+  readonly varianteId: string;
+  readonly sku: string;
+}
+
 export interface InventarioSinMedir {
   readonly total: number;
   readonly totalEnPublicados: number;

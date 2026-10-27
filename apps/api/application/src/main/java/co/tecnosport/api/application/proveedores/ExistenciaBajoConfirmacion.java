@@ -5,6 +5,7 @@ import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.inventario.Inventario;
+import co.tecnosport.api.domain.proveedores.MargenMinimo;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -61,11 +62,19 @@ public final class ExistenciaBajoConfirmacion {
     reponer(producto);
   }
 
-  /** El modelo volvió a aparecer en el chat: lo que se vende vuelve a la existencia nominal. */
+  /**
+   * El modelo volvió a aparecer en el chat: lo que se vende vuelve a la existencia nominal. Lo que
+   * con el costo de hoy no deja el {@link MargenMinimo} no se repone (27 de octubre de 2026): la
+   * renovación lo acaba de agotar, y el producto que llega aquí todavía no lo sabe.
+   */
   public void reponer(Producto producto) {
     Instant ahora = reloj.ahora();
     for (Variante variante : producto.variantes()) {
-      if (!variante.seVende()) {
+      if (!variante.seVende()
+          || !producto
+              .precioProveedor()
+              .map(costo -> MargenMinimo.alcanza(variante.precioContado(), costo))
+              .orElse(true)) {
         continue;
       }
       Inventario libro = repositorioInventario.abrirLibroConBloqueo(variante.id());
