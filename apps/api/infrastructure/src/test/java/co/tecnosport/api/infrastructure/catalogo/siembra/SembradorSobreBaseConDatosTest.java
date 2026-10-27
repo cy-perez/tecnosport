@@ -9,7 +9,6 @@ import co.tecnosport.api.infrastructure.catalogo.CategoriaJpaRepository;
 import co.tecnosport.api.infrastructure.catalogo.ImagenProductoJpaRepository;
 import co.tecnosport.api.infrastructure.catalogo.MarcaJpaRepository;
 import co.tecnosport.api.infrastructure.catalogo.ProductoJpaRepository;
-import co.tecnosport.api.infrastructure.catalogo.SetRotacionJpaRepository;
 import co.tecnosport.api.infrastructure.catalogo.VarianteAtributoValorJpaRepository;
 import co.tecnosport.api.infrastructure.catalogo.VarianteImagenJpaRepository;
 import co.tecnosport.api.infrastructure.catalogo.VarianteJpaRepository;
@@ -53,7 +52,6 @@ class SembradorSobreBaseConDatosTest {
   @Autowired private VarianteAtributoValorJpaRepository valoresAtributo;
   @Autowired private ImagenProductoJpaRepository imagenes;
   @Autowired private VarianteImagenJpaRepository variantesDeImagen;
-  @Autowired private SetRotacionJpaRepository setsRotacion;
   @Autowired private RepositorioInventarioJpa inventarios;
 
   /**
@@ -94,7 +92,6 @@ class SembradorSobreBaseConDatosTest {
         valoresAtributo,
         imagenes,
         variantesDeImagen,
-        setsRotacion,
         inventarios,
         new ComisionDePasarela(
             new BigDecimal("0.0265"), Dinero.deCop(700), new BigDecimal("0.19")));

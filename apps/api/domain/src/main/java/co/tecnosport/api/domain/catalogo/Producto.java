@@ -52,7 +52,6 @@ public final class Producto {
   private EstadoProducto estado;
   private ImagenProducto imagenPrincipal;
   private final List<ImagenProducto> galeria;
-  private SetRotacion setRotacion;
   private final List<Variante> variantes;
   private final OrigenProducto origen;
   private final UUID proveedorId;
@@ -94,7 +93,6 @@ public final class Producto {
       EstadoProducto estado,
       ImagenProducto imagenPrincipal,
       List<ImagenProducto> galeria,
-      SetRotacion setRotacion,
       List<Variante> variantes) {
     this(
         id,
@@ -106,7 +104,6 @@ public final class Producto {
         estado,
         imagenPrincipal,
         galeria,
-        setRotacion,
         variantes,
         OrigenProducto.MANUAL,
         null,
@@ -132,7 +129,6 @@ public final class Producto {
       EstadoProducto estado,
       ImagenProducto imagenPrincipal,
       List<ImagenProducto> galeria,
-      SetRotacion setRotacion,
       List<Variante> variantes,
       OrigenProducto origen,
       UUID proveedorId,
@@ -161,7 +157,6 @@ public final class Producto {
             "Una imagen de la galería no puede ser de tipo " + imagen.tipo() + ".");
       }
     }
-    this.setRotacion = setRotacion;
     this.variantes = new ArrayList<>();
     for (Variante variante : Objects.requireNonNullElse(variantes, List.<Variante>of())) {
       agregarVariante(variante);
@@ -201,7 +196,6 @@ public final class Producto {
         EstadoProducto.BORRADOR,
         null,
         List.of(),
-        null,
         List.of());
   }
 
@@ -234,7 +228,6 @@ public final class Producto {
         EstadoProducto.BORRADOR,
         null,
         List.of(),
-        null,
         List.of(),
         OrigenProducto.PROVEEDOR,
         proveedorId,
@@ -808,10 +801,6 @@ public final class Producto {
         "La imagen '" + imagenId + "' no está en la galería de '" + nombre + "'.");
   }
 
-  public void asignarSetRotacion(SetRotacion setRotacion) {
-    this.setRotacion = setRotacion;
-  }
-
   public void publicar() {
     if (imagenPrincipal == null) {
       throw new ProductoSinImagenPrincipalException(
@@ -871,10 +860,6 @@ public final class Producto {
 
   public List<ImagenProducto> galeria() {
     return List.copyOf(galeria);
-  }
-
-  public Optional<SetRotacion> setRotacion() {
-    return Optional.ofNullable(setRotacion);
   }
 
   public List<Variante> variantes() {

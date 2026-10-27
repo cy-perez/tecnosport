@@ -238,7 +238,6 @@ class ArmadorDePieDeFotoTest {
         EstadoProducto.PUBLICADO,
         null,
         List.of(),
-        null,
         variantes);
   }
 
@@ -261,8 +260,7 @@ class ArmadorDePieDeFotoTest {
         variante.codigoBarras().orElse(null),
         variante.paquete().orElse(null),
         EstadoVariante.INACTIVA,
-        variante.atributos(),
-        variante.setRotacionPropio().orElse(null));
+        variante.atributos());
   }
 
   private static Variante conAtributos(Variante variante, List<ValorAtributo> atributos) {
@@ -274,7 +272,6 @@ class ArmadorDePieDeFotoTest {
         variante.codigoBarras().orElse(null),
         variante.paquete().orElse(null),
         variante.estado(),
-        atributos,
-        variante.setRotacionPropio().orElse(null));
+        atributos);
   }
 }

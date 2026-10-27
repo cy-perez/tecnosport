@@ -131,8 +131,9 @@ const palabras = (texto) => texto.split(/\s+/).filter(Boolean);
  * **Que la clase exista no la hace válida.** Tailwind genera `min-w-[20ch]` sin protestar, así que
  * la comprobación de existencia la daba por buena, y la regla dura #2 no: la única escapatoria es
  * `[var(--token)]`. Tres sobrevivieron así hasta el 27 de octubre de 2026 —la cantidad del carrito,
- * el contador del visor 360 y el botón del carrusel de portada— defendidas en un comentario como
- * "lo que la regla prohíbe es el píxel suelto". Hoy salen de `anchos_min_ch` del kit.
+ * el contador del visor 360 (retirado después, `ADR-0097`) y el botón del carrusel de portada—
+ * defendidas en un comentario como "lo que la regla prohíbe es el píxel suelto". Las que quedan
+ * salen de `anchos_min_ch` del kit.
  *
  * Se miran las unidades de longitud que son una decisión de diseño. `%`, `vw` y `vh` no: son una
  * proporción de lo que hay alrededor, no un tamaño (`h-[min(100%,100vw)]`).

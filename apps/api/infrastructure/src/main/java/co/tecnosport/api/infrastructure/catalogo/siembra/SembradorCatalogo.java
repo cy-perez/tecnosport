@@ -11,7 +11,6 @@ import co.tecnosport.api.infrastructure.catalogo.CategoriaJpaRepository;
 import co.tecnosport.api.infrastructure.catalogo.ImagenProductoJpaRepository;
 import co.tecnosport.api.infrastructure.catalogo.MarcaJpaRepository;
 import co.tecnosport.api.infrastructure.catalogo.ProductoJpaRepository;
-import co.tecnosport.api.infrastructure.catalogo.SetRotacionJpaRepository;
 import co.tecnosport.api.infrastructure.catalogo.VarianteAtributoValorJpaRepository;
 import co.tecnosport.api.infrastructure.catalogo.VarianteImagenJpaRepository;
 import co.tecnosport.api.infrastructure.catalogo.VarianteJpaRepository;
@@ -20,7 +19,6 @@ import co.tecnosport.api.infrastructure.catalogo.entidad.CategoriaJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.ImagenProductoJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.MarcaJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.ProductoJpaEntity;
-import co.tecnosport.api.infrastructure.catalogo.entidad.SetRotacionJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.VarianteAtributoValorJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.VarianteImagenJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.VarianteJpaEntity;
@@ -75,12 +73,6 @@ public class SembradorCatalogo implements ApplicationRunner {
    */
   private static final String HOST_IMAGENES_DE_SIEMBRA = "https://picsum.photos";
 
-  /** El objetivo de docs/10-captura-360.md: donde el arrastre empieza a sentirse continuo. */
-  private static final int FOTOGRAMAS_OBJETIVO = 8;
-
-  /** El mínimo publicable de la misma tabla: cada arrastre salta 90 grados. */
-  private static final int FOTOGRAMAS_MINIMOS = 4;
-
   /*
    * Paquetes de DEMOSTRACIÓN. Este catálogo es ficción completa —ni "Under Trail" ni el "Celular
    * TecnoSport Aurora" existen—, así que no hay peso real que averiguar: no se está inventando un
@@ -125,7 +117,6 @@ public class SembradorCatalogo implements ApplicationRunner {
   private final VarianteAtributoValorJpaRepository valoresAtributo;
   private final ImagenProductoJpaRepository imagenes;
   private final VarianteImagenJpaRepository variantesDeImagen;
-  private final SetRotacionJpaRepository setsRotacion;
   private final RepositorioInventario inventarios;
   private final ComisionDePasarela comision;
 
@@ -138,7 +129,6 @@ public class SembradorCatalogo implements ApplicationRunner {
       VarianteAtributoValorJpaRepository valoresAtributo,
       ImagenProductoJpaRepository imagenes,
       VarianteImagenJpaRepository variantesDeImagen,
-      SetRotacionJpaRepository setsRotacion,
       RepositorioInventario inventarios,
       ComisionDePasarela comision) {
     this.marcas = marcas;
@@ -149,7 +139,6 @@ public class SembradorCatalogo implements ApplicationRunner {
     this.valoresAtributo = valoresAtributo;
     this.imagenes = imagenes;
     this.variantesDeImagen = variantesDeImagen;
-    this.setsRotacion = setsRotacion;
     this.inventarios = inventarios;
     this.comision = comision;
   }
@@ -346,13 +335,6 @@ public class SembradorCatalogo implements ApplicationRunner {
     guardarGaleria(tenis, ahora);
     guardarGaleria(morral, ahora);
     guardarGaleria(celular, ahora);
-
-    // Dos productos con set de rotación, de distinto tamaño, y los otros dos sin ninguno. Los tres
-    // casos hacen falta en desarrollo: la ficha con visor, la ficha sin visor, y sobre todo pasar
-    // de un set a otro dentro de la misma sesión, que es el camino donde vivían la carrera de la
-    // precarga y el reinicio del fotograma (docs/09-plan-de-arranque.md, Fase 5).
-    guardarSetRotacion(tenis, FOTOGRAMAS_OBJETIVO, ahora);
-    guardarSetRotacion(morral, FOTOGRAMAS_MINIMOS, ahora);
   }
 
   /**
@@ -483,39 +465,7 @@ public class SembradorCatalogo implements ApplicationRunner {
     int alto = 600;
     String semilla = producto.getSlug();
     String url = urlDeSiembra(semilla, ancho, alto);
-    sembrarImagen(producto, null, "PRINCIPAL", 0, url, ancho, alto, 120_000, semilla, ahora);
-  }
-
-  /**
-   * Set de rotación publicado, con el número de fotogramas que pida quien llama — la tabla de
-   * docs/10-captura-360.md contempla 4, 8 y 16. Las imágenes son de picsum.photos y no son un giro
-   * real: cada fotograma es una foto distinta, así que sirven para ejercitar el visor —el índice
-   * circular, la precarga, el arrastre— y no para juzgar cómo se ve una rotación de verdad. Eso
-   * llega con el asistente de captura.
-   */
-  private void guardarSetRotacion(ProductoJpaEntity producto, int fotogramas, Instant ahora) {
-    UUID setId = GeneradorIdentificador.nuevo();
-    setsRotacion.save(
-        new SetRotacionJpaEntity(
-            setId,
-            producto.getId(),
-            null,
-            fotogramas,
-            // PUBLICADO porque la ficha pública solo expone la rotación en ese estado
-            // (MapeadorRespuestasCatalogo, docs/03-api.md).
-            "PUBLICADO",
-            "siembra",
-            ahora,
-            "siembra",
-            "siembra"));
-
-    int ancho = 1000;
-    int alto = 1000;
-    for (int orden = 0; orden < fotogramas; orden++) {
-      String semilla = producto.getSlug() + "-360-" + orden;
-      String url = urlDeSiembra(semilla, ancho, alto);
-      sembrarImagen(producto, setId, "ROTACION", orden, url, ancho, alto, 180_000, semilla, ahora);
-    }
+    sembrarImagen(producto, "PRINCIPAL", 0, url, ancho, alto, 120_000, semilla, ahora);
   }
 
   /**
@@ -525,7 +475,6 @@ public class SembradorCatalogo implements ApplicationRunner {
    */
   private void sembrarImagen(
       ProductoJpaEntity producto,
-      UUID setRotacionId,
       String tipo,
       int orden,
       String url,
@@ -540,7 +489,6 @@ public class SembradorCatalogo implements ApplicationRunner {
             imagenId,
             producto.getId(),
             null,
-            setRotacionId,
             tipo,
             orden,
             url,
@@ -562,7 +510,7 @@ public class SembradorCatalogo implements ApplicationRunner {
     for (int orden = 0; orden < 2; orden++) {
       String semilla = producto.getSlug() + "-galeria-" + orden;
       String url = urlDeSiembra(semilla, ancho, alto);
-      sembrarImagen(producto, null, "GALERIA", orden, url, ancho, alto, 120_000, semilla, ahora);
+      sembrarImagen(producto, "GALERIA", orden, url, ancho, alto, 120_000, semilla, ahora);
     }
   }
 

@@ -35,7 +35,6 @@ import co.tecnosport.api.infrastructure.catalogo.entidad.CategoriaJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.ImagenProductoJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.MarcaJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.ProductoJpaEntity;
-import co.tecnosport.api.infrastructure.catalogo.entidad.SetRotacionJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.VarianteAtributoValorJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.VarianteImagenJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.VarianteJpaEntity;
@@ -79,12 +78,11 @@ class RepositorioProductosJpaTest {
   @Autowired private VarianteAtributoValorJpaRepository valoresAtributo;
   @Autowired private ImagenProductoJpaRepository imagenes;
   @Autowired private VarianteImagenJpaRepository variantesDeImagen;
-  @Autowired private SetRotacionJpaRepository setsRotacion;
   @Autowired private jakarta.persistence.EntityManager entityManager;
   @Autowired private org.springframework.jdbc.core.JdbcTemplate jdbc;
 
   @Test
-  void buscarPorSlugHidrataUnProductoCompletoConAtributosEImagenesYSetDeRotacion() {
+  void buscarPorSlugHidrataUnProductoCompletoConAtributosEImagenes() {
     MarcaJpaEntity marca = marca("TecnoSport");
     CategoriaJpaEntity categoria = categoria("Camisetas", "ropa-caballero-camisetas-t1", "ROPA");
     AtributoJpaEntity color = atributo("Color", "COLOR");
@@ -95,21 +93,6 @@ class RepositorioProductosJpaTest {
         new VarianteAtributoValorJpaEntity(
             UUID.randomUUID(), variante.getId(), color.getId(), "Azul marino", "#1E3A8A"));
     imagenPrincipal(producto);
-    SetRotacionJpaEntity set =
-        setsRotacion.save(
-            new SetRotacionJpaEntity(
-                UUID.randomUUID(),
-                producto.getId(),
-                null,
-                4,
-                "PUBLICADO",
-                "admin",
-                Instant.now(),
-                "iPhone 14",
-                "v1"));
-    for (int orden = 0; orden < 4; orden++) {
-      fotogramaRotacion(producto, set, orden);
-    }
 
     Optional<Producto> encontrado = repositorio.buscarPorSlug(new Slug("camiseta-test-1"));
 
@@ -122,56 +105,6 @@ class RepositorioProductosJpaTest {
     assertThat(p.variantes().get(0).sku().valor()).isEqualTo("SKU-TEST-1");
     assertThat(p.variantes().get(0).atributos().get(0).colorHex()).isEqualTo("#1E3A8A");
     assertThat(p.imagenPrincipal()).isPresent();
-    assertThat(p.setRotacion()).isPresent();
-    assertThat(p.setRotacion().orElseThrow().fotogramas()).hasSize(4);
-  }
-
-  @Test
-  void buscarPorSlugIgnoraUnSetEnBorradorYDevuelveElPublicado() {
-    // Recapturar un producto deja dos sets a la vez: el que ya se ve y el que se está armando.
-    // Antes de este filtro, el borrador podía ganar y la ficha se quedaba sin visor.
-    MarcaJpaEntity marca = marca("TecnoSport");
-    CategoriaJpaEntity categoria = categoria("Morrales", "bolsos-dama-morrales-t9", "BOLSOS");
-    ProductoJpaEntity producto =
-        producto("Morral recapturado", "morral-t9", "PUBLICADO", marca, categoria);
-    variante(producto, "SKU-T9", "150000");
-    imagenPrincipal(producto);
-
-    SetRotacionJpaEntity borrador =
-        setsRotacion.save(
-            new SetRotacionJpaEntity(
-                UUID.randomUUID(),
-                producto.getId(),
-                null,
-                8,
-                "BORRADOR",
-                "admin",
-                Instant.now(),
-                "iPhone 14",
-                "v1"));
-    SetRotacionJpaEntity publicado =
-        setsRotacion.save(
-            new SetRotacionJpaEntity(
-                UUID.randomUUID(),
-                producto.getId(),
-                null,
-                4,
-                "PUBLICADO",
-                "admin",
-                Instant.now(),
-                "iPhone 14",
-                "v1"));
-    for (int orden = 0; orden < 4; orden++) {
-      fotogramaRotacion(producto, publicado, orden);
-    }
-    assertThat(borrador.getId()).isNotEqualTo(publicado.getId());
-
-    Optional<Producto> encontrado = repositorio.buscarPorSlug(new Slug("morral-t9"));
-
-    assertThat(encontrado).isPresent();
-    assertThat(encontrado.orElseThrow().setRotacion()).isPresent();
-    assertThat(encontrado.orElseThrow().setRotacion().orElseThrow().id())
-        .isEqualTo(publicado.getId());
   }
 
   @Test
@@ -561,7 +494,6 @@ class RepositorioProductosJpaTest {
             EstadoProducto.BORRADOR,
             null,
             List.of(),
-            null,
             List.of());
 
     repositorio.actualizar(productoConIdExistente);
@@ -1278,7 +1210,7 @@ class RepositorioProductosJpaTest {
   }
 
   /**
-   * La cascada del borrado, contra Postgres de verdad y con las siete tablas pobladas.
+   * La cascada del borrado, contra Postgres de verdad y con las seis tablas pobladas.
    *
    * <p>Es la única forma de comprobarla: las foráneas de {@code variante}, {@code inventario} e
    * {@code imagen_producto} no llevan {@code on delete cascade}, así que un orden equivocado no
@@ -1286,7 +1218,7 @@ class RepositorioProductosJpaTest {
    * doble de prueba diría que sí a cualquier orden.
    */
   @Test
-  void eliminarSeLlevaVariantesAtributosInventarioImagenesYSetsDeRotacion() {
+  void eliminarSeLlevaVariantesAtributosInventarioEImagenes() {
     MarcaJpaEntity marca = marca("Marca a borrar");
     CategoriaJpaEntity categoria = categoria("Parlantes", "parlantes-borrado", "TECNOLOGIA");
     AtributoJpaEntity color = atributo("Color borrado", "COLOR");
@@ -1297,20 +1229,8 @@ class RepositorioProductosJpaTest {
         new VarianteAtributoValorJpaEntity(
             UUID.randomUUID(), variante.getId(), color.getId(), "Negro", "#000000"));
     imagenPrincipal(producto);
-    SetRotacionJpaEntity set =
-        setsRotacion.save(
-            new SetRotacionJpaEntity(
-                UUID.randomUUID(),
-                producto.getId(),
-                null,
-                2,
-                "PUBLICADO",
-                "admin",
-                Instant.now(),
-                "iPhone 14",
-                "v1"));
-    fotogramaRotacion(producto, set, 0);
-    fotogramaRotacion(producto, set, 1);
+    imagenDeGaleria(producto, 0);
+    imagenDeGaleria(producto, 1);
     // Volcado antes de los `insert` por JDBC: la variante todavía vive en el contexto de
     // persistencia, y la foránea de `inventario` la busca en la tabla.
     entityManager.flush();
@@ -1331,7 +1251,6 @@ class RepositorioProductosJpaTest {
     assertThat(cuantas("producto", "id", producto.getId())).isZero();
     assertThat(cuantas("variante", "producto_id", producto.getId())).isZero();
     assertThat(cuantas("imagen_producto", "producto_id", producto.getId())).isZero();
-    assertThat(cuantas("set_rotacion", "producto_id", producto.getId())).isZero();
     assertThat(cuantas("variante_atributo_valor", "variante_id", variante.getId())).isZero();
     assertThat(cuantas("inventario", "variante_id", variante.getId())).isZero();
     assertThat(cuantas("movimiento_inventario", "inventario_id", inventarioId)).isZero();
@@ -1462,7 +1381,6 @@ class RepositorioProductosJpaTest {
             imagenId,
             producto.getId(),
             null,
-            null,
             "PRINCIPAL",
             0,
             url,
@@ -1478,7 +1396,7 @@ class RepositorioProductosJpaTest {
         new VarianteImagenJpaEntity(UUID.randomUUID(), imagenId, 800, url, 1000));
   }
 
-  private void fotogramaRotacion(ProductoJpaEntity producto, SetRotacionJpaEntity set, int orden) {
+  private void imagenDeGaleria(ProductoJpaEntity producto, int orden) {
     String url = "https://picsum.photos/seed/" + producto.getSlug() + "-" + orden + "/800/600";
     UUID imagenId = UUID.randomUUID();
     imagenes.save(
@@ -1486,8 +1404,7 @@ class RepositorioProductosJpaTest {
             imagenId,
             producto.getId(),
             null,
-            set.getId(),
-            "ROTACION",
+            "GALERIA",
             orden,
             url,
             null,
@@ -1495,8 +1412,8 @@ class RepositorioProductosJpaTest {
             600,
             1000,
             hashDePrueba(producto.getSlug() + "-" + orden),
-            "",
-            "",
+            "alt es",
+            "alt en",
             Instant.now()));
     variantesDeImagen.save(
         new VarianteImagenJpaEntity(UUID.randomUUID(), imagenId, 800, url, 1000));

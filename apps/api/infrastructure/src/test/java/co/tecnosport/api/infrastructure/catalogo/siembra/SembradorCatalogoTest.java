@@ -9,19 +9,14 @@ import co.tecnosport.api.infrastructure.catalogo.CategoriaJpaRepository;
 import co.tecnosport.api.infrastructure.catalogo.ImagenProductoJpaRepository;
 import co.tecnosport.api.infrastructure.catalogo.MarcaJpaRepository;
 import co.tecnosport.api.infrastructure.catalogo.ProductoJpaRepository;
-import co.tecnosport.api.infrastructure.catalogo.SetRotacionJpaRepository;
 import co.tecnosport.api.infrastructure.catalogo.VarianteAtributoValorJpaRepository;
 import co.tecnosport.api.infrastructure.catalogo.VarianteImagenJpaRepository;
 import co.tecnosport.api.infrastructure.catalogo.VarianteJpaRepository;
 import co.tecnosport.api.infrastructure.catalogo.entidad.ImagenProductoJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.ProductoJpaEntity;
-import co.tecnosport.api.infrastructure.catalogo.entidad.SetRotacionJpaEntity;
 import co.tecnosport.api.infrastructure.inventario.RepositorioInventarioJpa;
 import java.math.BigDecimal;
-import java.util.Comparator;
 import java.util.List;
-import java.util.UUID;
-import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,10 +29,13 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
 /**
- * El sembrador de desarrollo no tenía ninguna prueba, y su set de rotación es el dato con el que se
- * ejercita el visor 360 en cada arranque local: un set mal armado —fotogramas declarados que no
- * coinciden con las imágenes, un orden con huecos, un hash que no pasa el {@code check} de {@code
- * V19}— no revienta al sembrar, revienta después, mirando la ficha y sin saber por qué.
+ * El sembrador de desarrollo pone las fotos con las que se mira la ficha en cada arranque local:
+ * una principal y dos de galería por producto. Una foto mal armada —un hash que no pasa el {@code
+ * check} de {@code V19}, una fila que declara un tamaño distinto del de su URL— no revienta al
+ * sembrar, revienta después, mirando la ficha y sin saber por qué.
+ *
+ * <p>Hasta el retiro del visor 360 (ADR-0097) esta prueba vigilaba además el set de rotación
+ * sembrado; las comprobaciones de las fotos son las mismas que se le hacían a sus fotogramas.
  *
  * <p>El sembrador se instancia a mano en vez de activar el perfil {@code local}: lo que se prueba
  * es lo que construye, no cuándo Spring decide correrlo.
@@ -47,12 +45,12 @@ import org.testcontainers.utility.DockerImageName;
 @Transactional
 class SembradorCatalogoTest {
 
-  /** El objetivo y el mínimo de la tabla de docs/10-captura-360.md. */
-  private static final int FOTOGRAMAS_DEL_TENIS = 8;
-
-  private static final int FOTOGRAMAS_DEL_MORRAL = 4;
-
-  private static final String TIPO_ROTACION = "ROTACION";
+  private static final List<String> SLUGS =
+      List.of(
+          "camiseta-running-dry-fit",
+          "tenis-trail-runner",
+          "morral-urbano-25l",
+          "celular-tecnosport-aurora");
 
   @Container @ServiceConnection
   static PostgreSQLContainer postgres =
@@ -66,7 +64,6 @@ class SembradorCatalogoTest {
   @Autowired private VarianteAtributoValorJpaRepository valoresAtributo;
   @Autowired private ImagenProductoJpaRepository imagenes;
   @Autowired private VarianteImagenJpaRepository variantesDeImagen;
-  @Autowired private SetRotacionJpaRepository setsRotacion;
   @Autowired private RepositorioInventarioJpa inventarios;
 
   private SembradorCatalogo sembrador;
@@ -83,7 +80,6 @@ class SembradorCatalogoTest {
             valoresAtributo,
             imagenes,
             variantesDeImagen,
-            setsRotacion,
             inventarios,
             new ComisionDePasarela(
                 new BigDecimal("0.0265"), Dinero.deCop(700), new BigDecimal("0.19")));
@@ -91,59 +87,42 @@ class SembradorCatalogoTest {
   }
 
   @Test
-  void siembra_un_set_publicado_para_el_tenis_y_otro_para_el_morral() {
-    assertThat(setDe("tenis-trail-runner").getEstado()).isEqualTo("PUBLICADO");
-    assertThat(setDe("tenis-trail-runner").getFotogramas()).isEqualTo(FOTOGRAMAS_DEL_TENIS);
-    assertThat(setDe("morral-urbano-25l").getEstado()).isEqualTo("PUBLICADO");
-    assertThat(setDe("morral-urbano-25l").getFotogramas()).isEqualTo(FOTOGRAMAS_DEL_MORRAL);
-  }
+  void siembra_una_principal_y_dos_de_galeria_por_producto() {
+    for (String slug : SLUGS) {
+      List<ImagenProductoJpaEntity> fotos = imagenesDe(slug);
 
-  /**
-   * Un set que declara ocho fotogramas y guarda siete deja al visor girando sobre un hueco: el
-   * contador dice "de 8" y esa imagen no existe. La cuenta declarada y las imágenes reales son dos
-   * verdades que tienen que coincidir.
-   */
-  @Test
-  void cada_fotograma_declarado_tiene_su_imagen_y_los_ordenes_van_completos() {
-    for (String slug : List.of("tenis-trail-runner", "morral-urbano-25l")) {
-      SetRotacionJpaEntity set = setDe(slug);
-      List<ImagenProductoJpaEntity> fotogramas = fotogramasDe(set.getId());
-
-      assertThat(fotogramas).hasSize(set.getFotogramas());
-      assertThat(fotogramas).allMatch(imagen -> TIPO_ROTACION.equals(imagen.getTipo()));
-      assertThat(fotogramas.stream().map(ImagenProductoJpaEntity::getOrden))
-          .containsExactlyElementsOf(IntStream.range(0, set.getFotogramas()).boxed().toList());
+      assertThat(fotos).as("fotos de %s", slug).hasSize(3);
+      assertThat(fotos.stream().filter(imagen -> "PRINCIPAL".equals(imagen.getTipo()))).hasSize(1);
+      assertThat(fotos.stream().filter(imagen -> "GALERIA".equals(imagen.getTipo()))).hasSize(2);
     }
   }
 
   /**
    * {@code HashContenido} exige un SHA-256 bien formado y {@code V19} lo repite como {@code check}
    * del esquema, así que un hash mal armado en la siembra tumba el arranque local entero. Y tienen
-   * que ser distintos entre sí: el hash existe para detectar la misma imagen cargada dos veces, y
-   * ocho fotogramas con el mismo hash serían ocho duplicados aparentes.
+   * que ser distintos entre sí: el hash existe para detectar la misma imagen cargada dos veces.
    */
   @Test
-  void cada_fotograma_lleva_un_sha256_bien_formado_y_propio() {
-    List<ImagenProductoJpaEntity> fotogramas = fotogramasDe(setDe("tenis-trail-runner").getId());
+  void cada_foto_lleva_un_sha256_bien_formado_y_propio() {
+    List<ImagenProductoJpaEntity> fotos = todas();
 
-    assertThat(fotogramas).allMatch(imagen -> imagen.getHash().matches("[0-9a-f]{64}"));
-    assertThat(fotogramas.stream().map(ImagenProductoJpaEntity::getHash).distinct())
-        .hasSize(FOTOGRAMAS_DEL_TENIS);
+    assertThat(fotos).allMatch(imagen -> imagen.getHash().matches("[0-9a-f]{64}"));
+    assertThat(fotos.stream().map(ImagenProductoJpaEntity::getHash).distinct())
+        .hasSize(fotos.size());
   }
 
   /**
-   * Los fotogramas de un set tienen que ser imágenes distintas, y sus columnas {@code ancho}/{@code
-   * alto} coincidir con lo que pide la URL: ocho fotogramas apuntando a la misma foto se ven como
-   * un visor que no gira, y una fila que dice 1000x1000 sobre una imagen de otro tamaño hace que
-   * `NgOptimizedImage` avise con razón (NG02952) en la ficha.
+   * Cada foto tiene que ser una imagen distinta, y sus columnas {@code ancho}/{@code alto}
+   * coincidir con lo que pide la URL: una fila que declara un tamaño sobre una imagen de otro hace
+   * que `NgOptimizedImage` avise con razón (NG02952) en la ficha.
    */
   @Test
-  void cada_fotograma_apunta_a_su_propia_imagen_del_tamano_que_declara() {
-    List<ImagenProductoJpaEntity> fotogramas = fotogramasDe(setDe("tenis-trail-runner").getId());
+  void cada_foto_apunta_a_su_propia_imagen_del_tamano_que_declara() {
+    List<ImagenProductoJpaEntity> fotos = todas();
 
-    assertThat(fotogramas.stream().map(ImagenProductoJpaEntity::getUrl).distinct())
-        .hasSize(FOTOGRAMAS_DEL_TENIS);
-    assertThat(fotogramas)
+    assertThat(fotos.stream().map(ImagenProductoJpaEntity::getUrl).distinct())
+        .hasSize(fotos.size());
+    assertThat(fotos)
         .allMatch(
             imagen -> imagen.getUrl().endsWith("/" + imagen.getAncho() + "/" + imagen.getAlto()),
             "la URL termina en el ancho y el alto que declara la fila");
@@ -151,28 +130,22 @@ class SembradorCatalogoTest {
 
   /**
    * El sembrador corre en cada {@code bootRun}, así que su guardia de "ya hay productos" es lo que
-   * separa un catálogo de desarrollo de ocho fotogramas de uno con dieciséis repetidos.
+   * separa un catálogo de desarrollo de tres fotos por producto de uno con seis repetidas.
    */
   @Test
-  void sembrar_dos_veces_no_duplica_el_set_ni_sus_fotogramas() {
+  void sembrar_dos_veces_no_duplica_las_fotos() {
     sembrador.run(null);
 
-    SetRotacionJpaEntity set = setDe("tenis-trail-runner");
-    assertThat(fotogramasDe(set.getId())).hasSize(FOTOGRAMAS_DEL_TENIS);
-    assertThat(setsRotacion.findByProductoIdIn(List.of(set.getProductoId()))).hasSize(1);
+    assertThat(imagenesDe("tenis-trail-runner")).hasSize(3);
   }
 
-  private SetRotacionJpaEntity setDe(String slug) {
+  private List<ImagenProductoJpaEntity> todas() {
+    return SLUGS.stream().flatMap(slug -> imagenesDe(slug).stream()).toList();
+  }
+
+  private List<ImagenProductoJpaEntity> imagenesDe(String slug) {
     ProductoJpaEntity producto =
         productos.findBySlug(slug).orElseThrow(() -> new AssertionError("sin producto " + slug));
-    List<SetRotacionJpaEntity> sets = setsRotacion.findByProductoIdIn(List.of(producto.getId()));
-    assertThat(sets).as("sets de rotación de %s", slug).hasSize(1);
-    return sets.getFirst();
-  }
-
-  private List<ImagenProductoJpaEntity> fotogramasDe(UUID setId) {
-    return imagenes.findBySetRotacionId(setId).stream()
-        .sorted(Comparator.comparingInt(ImagenProductoJpaEntity::getOrden))
-        .toList();
+    return imagenes.findByProductoIdIn(List.of(producto.getId()));
   }
 }

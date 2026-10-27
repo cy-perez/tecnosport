@@ -31,8 +31,6 @@ Accesibilidad:
 - Sin desbordamiento horizontal a 380 px. El texto aguanta 200 por ciento de zoom.
 - Se respetan `prefers-reduced-motion` y `prefers-color-scheme`.
 - Objetivos táctiles de al menos 44 por 44 px.
-- El visor 360 se opera con flechas y con botones visibles, no solo arrastrando.
-- El asistente de captura no comunica el estado del nivel solo por color.
 
 Reporta con archivo, línea, regla violada y corrección concreta. Separa lo que
 impide publicar de lo que es mejora.

@@ -27,14 +27,14 @@ import java.util.UUID;
  *       ajustes—. Uno por uno sí se puede, mirándolo; en bloque, no.
  * </ul>
  *
- * <p><b>Por tandas con cursor, y con tope.</b> Cada producto puede tener cientos de objetos —tres
- * resoluciones por foto y los fotogramas del visor 360—, y el bucket se borra uno por uno. La tanda
- * corre en la transacción del controlador, como en {@code EliminarLoteDeIngesta}: si algo falla,
- * las filas vuelven y los objetos ya no, y repetir termina el trabajo porque borrar por prefijo es
- * idempotente. El cursor —y no una página— deja atrás a los conservados. El tope se fija en la
- * primera tanda con el último id que había: los ids son UUID v7 y crecen con el tiempo, así que sin
- * él un producto que alguien crea en otra pestaña mientras corre el borrado caería en una tanda
- * posterior. La pregunta dijo cuántos eran; se borran esos.
+ * <p><b>Por tandas con cursor, y con tope.</b> Cada producto puede tener decenas de objetos —tres
+ * resoluciones por foto—, y el bucket se borra uno por uno. La tanda corre en la transacción del
+ * controlador, como en {@code EliminarLoteDeIngesta}: si algo falla, las filas vuelven y los
+ * objetos ya no, y repetir termina el trabajo porque borrar por prefijo es idempotente. El cursor
+ * —y no una página— deja atrás a los conservados. El tope se fija en la primera tanda con el último
+ * id que había: los ids son UUID v7 y crecen con el tiempo, así que sin él un producto que alguien
+ * crea en otra pestaña mientras corre el borrado caería en una tanda posterior. La pregunta dijo
+ * cuántos eran; se borran esos.
  *
  * <p>Un producto que alguien publica o borra entre la lista y su turno se salta.
  */

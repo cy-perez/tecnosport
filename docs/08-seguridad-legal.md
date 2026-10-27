@@ -3,7 +3,7 @@
 ## Autenticación
 
 Los precios son públicos y no hay muro de registro. La autenticación existe para
-el panel administrativo, el asistente de captura y la cuenta opcional del cliente.
+el panel administrativo y la cuenta opcional del cliente.
 
 - **Compra como invitado**, identificada por correo. Al final del checkout se
   ofrece crear cuenta con un clic reutilizando los datos ya escritos.
@@ -46,8 +46,8 @@ el panel administrativo, el asistente de captura y la cuenta opcional del client
   un ataque repartido entre muchos orígenes. **Pendiente del usuario:** separar
   el correo de administración del de contacto, para que el usuario del panel
   deje de ser público.
-- El asistente de captura exige rol `ADMIN` y una sesión activa; las URL firmadas
-  de subida se emiten con vencimiento corto y para un objeto específico.
+- La subida de imágenes del panel exige rol `ADMIN` y una sesión activa; las URL
+  firmadas de subida se emiten con vencimiento corto y para un objeto específico.
 - **Entrar con Google, desde el 8 de octubre de 2026** (`ADR-0074`). Google prueba
   la identidad y la sesión sigue siendo la nuestra: el mismo token y la misma
   cookie de refresco. Esta línea decía "no en la fase 1; el diseño lo permite
@@ -124,15 +124,17 @@ cual contra PostgreSQL con las migraciones reales.
   `Strict-Transport-Security`, `X-Content-Type-Options`, `X-Frame-Options: DENY`,
   `Referrer-Policy`, `Permissions-Policy` y una CSP **en modo informe**. Esta
   línea prometía una CSP con nonce desde el SSR y una política de permisos
-  acotada a la ruta del asistente, y hasta el 27 de octubre de 2026 no había
-  ninguna de las dos. Lo que hay:
-  - **`Permissions-Policy`**: cámara, `accelerometer`, `gyroscope`,
-    `magnetometer`, `screen-wake-lock` y `clipboard-write` en `(self)`;
-    micrófono, geolocalización, pagos, USB y captura de pantalla apagados.
-    **No se puede acotar a la ruta del asistente**: es una aplicación de una
-    sola página y la política es del documento que cargó primero, así que quien
-    entra por la portada y navega al asistente se quedaría sin cámara. `(self)`
-    impide que un marco ajeno las herede, que es lo que sí se puede.
+  acotada a la ruta del asistente de captura 360, y hasta el 27 de octubre de
+  2026 no había ninguna de las dos. Lo que hay:
+  - **`Permissions-Policy`**: solo `clipboard-write` en `(self)`, que lo usa el
+    botón de copiar; cámara, `accelerometer`, `gyroscope`, `magnetometer`,
+    `screen-wake-lock`, micrófono, geolocalización, pagos, USB y captura de
+    pantalla apagados con `()`. Los cinco primeros estuvieron en `(self)`
+    mientras existió el asistente de captura 360, que los necesitaba; se
+    apagaron al retirarlo (`ADR-0097`). `(self)` impide que un marco ajeno herede
+    el permiso, que es lo único que se puede hacer en una aplicación de una sola
+    página: la política es del documento que cargó primero y no se acota por
+    ruta.
   - **`Content-Security-Policy-Report-Only`**, sin nonce: `'self'` más los
     orígenes que el sitio usa de verdad (Google para entrar con Google, Cloud
     Storage para imágenes y subidas firmadas). Wompi y Sistecrédito no
@@ -145,13 +147,12 @@ cual contra PostgreSQL con las migraciones reales.
     entonces pasar a `Content-Security-Policy`.
 - Subida de imágenes: tipo verificado por contenido y no por extensión, tamaño
   máximo, nombre regenerado, servidas desde el dominio de estáticos. El backend
-  valida los objetos subidos antes de publicar un set. **Todavía no se cumple
-  del todo**: la imagen principal (Fase 4, ya construida) regenera el nombre y
+  valida los objetos subidos antes de confirmar una imagen. **Todavía no se
+  cumple del todo**: la imagen principal (Fase 4, ya construida) regenera el nombre y
   sirve desde el dominio de estáticos, pero acepta el tipo por una lista blanca
   que declara el propio cliente (no verificada contra los bytes reales) y no
   tiene tamaño máximo propio — riesgo aceptado mientras solo el `ADMIN` suba
-  ahí (`ADR-0016`). El set de rotación de la Fase 5 es el que debe cumplir la
-  frase completa.
+  ahí (`ADR-0016`).
 - Autorización verificada por recurso: que un usuario autenticado no pueda leer el
   pedido de otro cambiando el identificador.
 - **Ningún redirect abierto.** `adminGuard` anota en `?destino=` a dónde iba
@@ -312,8 +313,7 @@ completo, con las cláusulas redactadas y la auditoría del sistema, en
 
 **Fotografías de producto.** Las imágenes son del negocio, tomadas por el negocio.
 No se usan fotos de proveedores, de fabricantes ni de otras tiendas sin
-autorización escrita. El asistente de captura existe, entre otras cosas, para que
-no haya tentación de tomarlas de internet.
+autorización escrita.
 
 **Cookies y analítica**
 

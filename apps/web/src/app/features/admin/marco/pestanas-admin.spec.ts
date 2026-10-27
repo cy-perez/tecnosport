@@ -52,7 +52,7 @@ describe('pestanaActiva', () => {
   it('las pantallas hijas siguen marcando su sección', () => {
     expect(pestanaActiva('/es/admin/productos/crear')).toBe('admin.panel.ir_a_productos');
     expect(pestanaActiva('/es/admin/productos/abc-123/editar')).toBe('admin.panel.ir_a_productos');
-    expect(pestanaActiva('/es/admin/productos/abc-123/captura-360')).toBe(
+    expect(pestanaActiva('/es/admin/productos/abc-123/variantes/crear')).toBe(
       'admin.panel.ir_a_productos',
     );
   });

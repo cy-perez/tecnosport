@@ -5,7 +5,7 @@ import { ImageLoader, ImageLoaderConfig } from '@angular/common';
  *
  * **Se declara aquí y no se importa de `catalogo`, y esa es la corrección.** Este cargador se
  * registra como `IMAGE_LOADER` global en `app.config.ts`, así que lo usan la portada, la tarjeta,
- * la galería y el visor: la infraestructura de imágenes de toda la aplicación colgaba del `domain`
+ * la galería: la infraestructura de imágenes de toda la aplicación colgaba del `domain`
  * de una funcionalidad concreta, un ciclo `catalogo/presentation → core/imagenes → catalogo/domain`
  * a nivel de carpeta. `npm run capas` no lo podía ver, porque deja `core/` fuera del grafo a
  * propósito, así que el guardián tenía un agujero del tamaño de `core/` — que es donde viven la

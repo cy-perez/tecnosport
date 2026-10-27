@@ -7,12 +7,10 @@ import co.tecnosport.api.application.compartido.ResultadoPaginado;
 import co.tecnosport.api.application.inventario.VariantesDisponibles;
 import co.tecnosport.api.domain.catalogo.Atributo;
 import co.tecnosport.api.domain.catalogo.Categoria;
-import co.tecnosport.api.domain.catalogo.EstadoSetRotacion;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Marca;
 import co.tecnosport.api.domain.catalogo.Producto;
-import co.tecnosport.api.domain.catalogo.SetRotacion;
 import co.tecnosport.api.domain.catalogo.ValorAtributo;
 import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.compartido.Dinero;
@@ -21,13 +19,11 @@ import co.tecnosport.api.presentation.catalogo.dto.AtributoRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.AtributoValorRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.CategoriaRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.ImagenRespuesta;
-import co.tecnosport.api.presentation.catalogo.dto.ImagenRotacionRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.MarcaDeVitrinaRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.MarcaRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.ParteDeMuestraRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.ProductoRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.ResultadoPaginadoRespuesta;
-import co.tecnosport.api.presentation.catalogo.dto.RotacionRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.VarianteDeImagenRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.VarianteRespuesta;
 import co.tecnosport.api.presentation.compartido.dto.DineroRespuesta;
@@ -35,10 +31,7 @@ import java.util.Arrays;
 import java.util.List;
 import org.springframework.stereotype.Component;
 
-/**
- * Domain -> DTO de salida. {@code rotacion} solo se expone si el set está {@code PUBLICADO}
- * (docs/03-api.md: "si el set está incompleto, el campo rotación viene nulo").
- */
+/** Domain -> DTO de salida. */
 @Component
 public class MapeadorRespuestasCatalogo {
 
@@ -60,11 +53,6 @@ public class MapeadorRespuestasCatalogo {
         aRespuesta(producto.categoria()),
         producto.imagenPrincipal().map(this::aRespuesta).orElse(null),
         producto.galeria().stream().map(this::aRespuesta).toList(),
-        producto
-            .setRotacion()
-            .filter(set -> set.estado() == EstadoSetRotacion.PUBLICADO)
-            .map(this::aRespuesta)
-            .orElse(null),
         producto.variantes().stream()
             .map(variante -> aRespuesta(variante, disponibles.hay(variante.id())))
             .toList(),
@@ -181,14 +169,6 @@ public class MapeadorRespuestasCatalogo {
     return imagen.variantes().stream()
         .map(v -> new VarianteDeImagenRespuesta(v.ancho(), v.url()))
         .toList();
-  }
-
-  private RotacionRespuesta aRespuesta(SetRotacion setRotacion) {
-    List<ImagenRotacionRespuesta> imagenes =
-        setRotacion.fotogramas().stream()
-            .map(f -> new ImagenRotacionRespuesta(f.orden(), f.url(), f.ancho(), f.alto()))
-            .toList();
-    return new RotacionRespuesta(imagenes.size(), imagenes);
   }
 
   private DineroRespuesta aRespuesta(Dinero dinero) {

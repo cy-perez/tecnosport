@@ -360,8 +360,8 @@ describe('Pie', () => {
 
   // Es la única entrada al panel desde la vitrina, y tiene que estar sin sesión:
   // el enlace del encabezado solo aparece cuando `esAdmin()` ya es verdadero, así
-  // que no sirve para llegar a iniciar sesión. Sin este, el panel —y con él la
-  // pantalla de captura 360— solo se alcanzaba tecleando la ruta.
+  // que no sirve para llegar a iniciar sesión. Sin este, el panel solo se
+  // alcanzaba tecleando la ruta.
   it('el pie lleva al panel administrativo aunque no haya sesión', async () => {
     await renderPie();
 

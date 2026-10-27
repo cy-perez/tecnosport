@@ -50,6 +50,6 @@ class HashContenidoTest {
         () ->
             new HashContenido(
                 "productos/01a0782a-82a8-7c84-81a8-8736fd79bd43"
-                    + "/rotacion/01a079ed-aa02-7ecd-9927-d7b330b44fe4/0.webp"));
+                    + "/galeria/01a079ed-aa02-7ecd-9927-d7b330b44fe4/0.webp"));
   }
 }

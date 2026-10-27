@@ -11,7 +11,6 @@ public record ProductoRespuesta(
     CategoriaRespuesta categoria,
     ImagenRespuesta imagenPrincipal,
     List<ImagenRespuesta> galeria,
-    RotacionRespuesta rotacion,
     List<VarianteRespuesta> variantes,
     /**
      * DISPONIBLE, OCULTO_POR_VENCIMIENTO o AGOTADO_POR_PROVEEDOR. Un producto publicado que el

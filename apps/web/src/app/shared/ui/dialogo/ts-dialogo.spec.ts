@@ -9,7 +9,7 @@ import { TsDialogo } from './ts-dialogo';
     <ts-dialogo
       idDialogo="borrar-set"
       [abierto]="abierto()"
-      titulo="Borrar el set de rotación"
+      titulo="Borrar el producto"
       etiquetaCerrar="Cerrar"
       (cerrar)="cerrado.set(true)"
     >
@@ -48,7 +48,7 @@ describe('TsDialogo', () => {
   it('toma su nombre accesible del título', async () => {
     await abierto();
 
-    expect(screen.getByRole('dialog', { name: 'Borrar el set de rotación' })).toBeTruthy();
+    expect(screen.getByRole('dialog', { name: 'Borrar el producto' })).toBeTruthy();
   });
 
   it('proyecta el contenido y las acciones', async () => {

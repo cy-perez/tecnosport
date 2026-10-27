@@ -53,8 +53,7 @@ export class TsGaleria {
 
   /**
    * Quién es la candidata a LCP lo sabe la pantalla, no el componente — mismo criterio que
-   * `ts-tarjeta-producto`. En una ficha con visor 360 la prioritaria es el fotograma frontal del
-   * visor, y esta deja de serlo: priorizar las dos es no priorizar ninguna.
+   * `ts-tarjeta-producto`: priorizar dos imágenes en una pantalla es no priorizar ninguna.
    *
    * **Por omisión, `false`.** El valor por defecto tiene que ser el que no hace daño: una pantalla
    * nueva que se olvide de decidir se lleva una imagen sin priorizar, no una segunda candidata a

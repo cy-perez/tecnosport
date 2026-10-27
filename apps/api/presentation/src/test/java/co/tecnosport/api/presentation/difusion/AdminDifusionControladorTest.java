@@ -218,7 +218,6 @@ class AdminDifusionControladorTest {
         estado,
         conImagen ? imagen() : null,
         List.of(),
-        null,
         List.of(
             Variante.crear(
                 new Sku("JBL-GRIP"),

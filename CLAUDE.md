@@ -142,9 +142,6 @@ npm run lighthouse -- --con-ventana      mide con un Chrome visible en vez del h
 npm run pareja -- --antes A --despues B --prefijo P   ¿la diferencia se repite? (4 corridas, ~20 min)
 npm run pareja -- --solo-resumen P       vuelve a sacar el veredicto de un experimento ya medido
 npm run capas                            ¿alguna dependencia invertida en el frontend?
-npm run nivel-360                        reproduce una grabación del sensor contra el nivelador real;
-                                         --todas, --archivo X, --histeresis y --retardo. Graba con
-                                         node tools/sonda-nivel-360.mjs, desde el teléfono y por el túnel
 npm run marcadores                       ¿quedó algún [[ ]] en un texto que se publica?
 npm run kit                              ¿el kit se regenera igual, y sus tipografías aún escriben
                                          lo que el sitio escribe? (pide pip install fonttools brotli)
@@ -178,7 +175,7 @@ Windows: `gradlew.bat`, rutas con `/` en configuración, scripts en Node o Gradl
 - Ramas: `feat/`, `fix/`, `refactor/`, `docs/`, `chore/` más descripción corta.
 - Commits convencionales en español, con el alcance del monorepo:
   `feat(api/catalogo): reservar inventario al iniciar el pago`
-  `feat(web/visor360): arrastre continuo en escritorio`
+  `feat(web/catalogo): filtrar por marca en la rejilla`
 - Un commit por unidad coherente. Nada de commits que mezclan una migración, un
   componente y un cambio de estilos.
 - Nunca `--force` sobre `main`. Nunca commits con secretos, ni de prueba.

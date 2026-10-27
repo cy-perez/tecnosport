@@ -13,18 +13,27 @@ function directivas(politica: string, separador: string): Map<string, string> {
 describe('POLITICA_DE_PERMISOS', () => {
   const permisos = directivas(POLITICA_DE_PERMISOS, ',');
 
-  // El asistente de captura necesita la cámara y el nivelador los tres sensores: Chrome solo
-  // entrega `deviceorientation` con los tres permitidos. Apagarlos rompe la captura sin un error.
-  it('deja al propio sitio la cámara y los sensores del asistente de captura', () => {
-    for (const funcion of ['camera', 'accelerometer', 'gyroscope', 'magnetometer']) {
-      expect(permisos.get(funcion), funcion).toBe('(self)');
-    }
-    expect(permisos.get('screen-wake-lock')).toBe('(self)');
+  // El portapapeles es lo único que el sitio usa: el panel copia enlaces de compra y códigos de
+  // respaldo.
+  it('deja al propio sitio el portapapeles', () => {
     expect(permisos.get('clipboard-write')).toBe('(self)');
   });
 
+  // La cámara, los sensores y la pantalla despierta eran del asistente de captura 360, retirado
+  // en ADR-0097: sin él, dejarlos abiertos es superficie sin uso.
   it('apaga lo que el sitio no usa', () => {
-    for (const funcion of ['microphone', 'geolocation', 'payment', 'usb']) {
+    for (const funcion of [
+      'camera',
+      'accelerometer',
+      'gyroscope',
+      'magnetometer',
+      'screen-wake-lock',
+      'microphone',
+      'geolocation',
+      'payment',
+      'usb',
+      'display-capture',
+    ]) {
       expect(permisos.get(funcion), funcion).toBe('()');
     }
   });

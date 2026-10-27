@@ -19,9 +19,6 @@ public class ImagenProductoJpaEntity {
   @Column(name = "variante_id")
   private UUID varianteId;
 
-  @Column(name = "set_rotacion_id")
-  private UUID setRotacionId;
-
   @Column(nullable = false)
   private String tipo;
 
@@ -72,7 +69,6 @@ public class ImagenProductoJpaEntity {
       UUID id,
       UUID productoId,
       UUID varianteId,
-      UUID setRotacionId,
       String tipo,
       int orden,
       String url,
@@ -88,7 +84,6 @@ public class ImagenProductoJpaEntity {
         id,
         productoId,
         varianteId,
-        setRotacionId,
         tipo,
         orden,
         url,
@@ -108,7 +103,6 @@ public class ImagenProductoJpaEntity {
       UUID id,
       UUID productoId,
       UUID varianteId,
-      UUID setRotacionId,
       String tipo,
       int orden,
       String url,
@@ -127,7 +121,6 @@ public class ImagenProductoJpaEntity {
     this.id = id;
     this.productoId = productoId;
     this.varianteId = varianteId;
-    this.setRotacionId = setRotacionId;
     this.tipo = tipo;
     this.orden = orden;
     this.url = url;
@@ -151,10 +144,6 @@ public class ImagenProductoJpaEntity {
 
   public UUID getVarianteId() {
     return varianteId;
-  }
-
-  public UUID getSetRotacionId() {
-    return setRotacionId;
   }
 
   public String getTipo() {

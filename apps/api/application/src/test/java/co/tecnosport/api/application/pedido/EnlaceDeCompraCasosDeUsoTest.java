@@ -69,7 +69,6 @@ class EnlaceDeCompraCasosDeUsoTest {
             null,
             EstadoVariante.ACTIVA,
             List.of(),
-            null,
             false,
             disponibilidadPorConfirmar);
     producto.agregarVariante(variante);

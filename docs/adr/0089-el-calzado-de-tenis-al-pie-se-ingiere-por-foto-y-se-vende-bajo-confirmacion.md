@@ -89,5 +89,5 @@ Decidida por el negocio el 25 de octubre de 2026.
 - **No hay guía de tallas.** El comprador ve la talla nacional sin la equivalencia EUR, y una talla
   equivocada termina en un cambio o en un retracto.
 - **Las fotos son del proveedor**, y algunas las tomó él de otros vendedores. Una foto propia de
-  los pares comprados es la que se puede retocar con `fotos-estudio-degradado` y la que sirve para el
-  visor 360.
+  los pares comprados es la que se puede retocar con `fotos-estudio-degradado` (y la que servía para
+  el visor 360, retirado en `adr/0097`).

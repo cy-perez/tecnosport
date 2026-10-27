@@ -317,11 +317,6 @@
   --radius-lg: var(--radio-lg);
   --radius-completo: var(--radio-completo);
 
-  /* EL TRAZO FINO — 1 px que no es un borde: las guías de tercios del asistente
-     de captura 360. `w-trazo` y `h-trazo`, en vez de `w-px`, que es un píxel
-     suelto aunque Tailwind lo traiga de serie. */
-  --spacing-trazo: var(--trazo-fino);
-
   /* EL ANILLO DE FOCO, desde tokens (`--foco-ancho`, `--foco-separacion`).
      `outline-foco` es el ancho; `outline-offset-foco` la separación hacia
      fuera, y `outline-offset-foco-dentro` la misma separación hacia dentro:
@@ -584,9 +579,10 @@
 
 /* Las tres propiedades que hacen de un elemento una superficie de arrastre.
    Van juntas porque se explican juntas, y porque una de ellas —`-webkit-user-drag`—
-   no tiene utilidad en Tailwind: sin ella el puntero arrastra el fotograma como
+   no tiene utilidad en Tailwind: sin ella el puntero arrastra la fotografía como
    si fuera un enlace. `pan-y` deja el desplazamiento vertical al navegador; sin
-   eso, girar el visor en un teléfono secuestraría el scroll de la página. */
+   eso, deslizar el carrusel de portada en un teléfono secuestraría el scroll de
+   la página. */
 @utility superficie-arrastre {
   touch-action: pan-y;
   user-select: none;
@@ -600,9 +596,7 @@
      iniciara el arrastre nativo de un enlace, y ese arrastre **mata el gesto**
      con un `pointercancel`. El carrusel ya no lo interpreta como un final (ver
      `cancelarArrastre`), así que sin esta línea el gesto no haría daño; lo que
-     esta línea añade es que ahí sí funcione. El visor 360 tenía el mismo hueco
-     latente: su `-webkit-user-drag` estaba en el marco y el fotograma es un
-     hijo. */
+     esta línea añade es que ahí sí funcione. */
   & * {
     -webkit-user-drag: none;
   }

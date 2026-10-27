@@ -12,9 +12,10 @@ guardia, cambiar la constante— y verificando que falla, y que falla *la que le
 toca*. Después se deshace la mutación. Es la práctica con la que se construyó la
 Fase 5 entera y encontró cosas que ninguna corrida verde encontró:
 
-- Una prueba del visor 360 que forzaba una revalidación y comprobaba que el
-  fotograma no se movía **pasaba con el defecto puesto**: la revalidación no
-  estaba llegando al componente y la prueba no lo comprobaba. Sin la mutación
+- Una prueba del visor 360 (retirado desde `ADR-0097`; la lección se queda) que
+  forzaba una revalidación y comprobaba que el fotograma no se movía **pasaba
+  con el defecto puesto**: la revalidación no estaba llegando al componente y la
+  prueba no lo comprobaba. Sin la mutación
   habría quedado un defecto vivo marcado como inexistente.
 - Una prueba del valor por omisión de `ts-galeria.prioritaria` pasaba igual con
   el defecto cambiado a `true`, porque el ayudante de la prueba mandaba siempre
@@ -192,7 +193,6 @@ Lo que tiene prueba sin excepción:
 - Webhook con firma inválida: se rechaza.
 - Transición de estado inválida: se rechaza.
 - Un pedido histórico no cambia de total cuando cambia el precio del catálogo.
-- Un set de rotación incompleto no se publica.
 
 ## Frontend
 
@@ -207,31 +207,6 @@ documentación de la versión antes de configurar, no de memoria.
 | Componentes | Testing Library, por rol y texto accesible |
 | Accesibilidad | `axe-core` en las pantallas clave, más `npm run contrastes` |
 | Recorridos completos | Playwright, solo los cinco de `00-producto.md` |
-
-Específico del 360, porque es lo que más se rompe en silencio:
-
-- Recorte y escala: funciones puras sobre imágenes de prueba conocidas,
-  verificando el rectángulo detectado y que el factor de escala sea **común a
-  todo el set**.
-- Mapeo de desplazamiento a índice: función pura, con vueltas circulares y
-  valores negativos.
-- Nivelador: función pura sobre lecturas simuladas, con datos ruidosos y con
-  sensor ausente.
-- Visor: teclado, botones, y que el arrastre vertical no gire ni bloquee el
-  desplazamiento de la página.
-- Asistente de captura: **la pantalla entera se prueba sin cámara**. Todo lo que
-  toca el dispositivo entra por un puerto —`CAMARA`, `SENSOR_ORIENTACION`,
-  `PANTALLA_DESPIERTA`, `ALMACEN_LOCAL_DE_CAPTURAS`, `PROCESADOR_DE_FOTOGRAMAS`—
-  y la prueba inyecta un doble. No es ceremonia: es lo que obliga a que el
-  camino degradado (sin sensor, sin disco) exista de verdad y no solo de
-  palabra, porque una prueba lo puede simular.
-
-**Lo que ninguna prueba de Vitest puede dar, y por eso se recorre a mano en un
-teléfono real** (`apps/web/README.md` explica cómo, con el túnel HTTPS): el
-gesto táctil, el permiso del sensor de orientación de iOS —que exige gesto del
-usuario y certificado confiable—, el nivel con un pulso humano, y la rama de
-conexión lenta / ahorro de datos, que no se puede simular desde la
-automatización del navegador.
 
 ### Accesibilidad automatizada
 
@@ -466,112 +441,13 @@ anclan en el contenido, que es mas fuerte que antes.
 prueba que habia salido callada —el acuse del reenvio de verificacion— ahora escribe el texto
 entero en el registro, y la sonda del envoltorio confirmo que **`display: contents` no saca la
 region del arbol de accesibilidad**: un envoltorio vacio con `contents` al que se le mete una caja
-dentro se anuncia igual que uno normal. Es lo que sostiene los cinco del asistente 360.
+dentro se anuncia igual que uno normal. Es lo que sostenía los cinco del asistente 360, retirado
+desde `ADR-0097`.
 
 **El numero "regiones dentro de un `@if`" dejo de ser la medida.** Lo que importa es si la region
 existe antes de que llegue el mensaje: la de una fila desplegada, o la de un `@case`, nacen dentro
 de control de flujo y **si** se anuncian, porque su ambito abre antes de que la persona pulse nada.
 Contarlas como pendientes seria perseguir un numero equivocado.
-
-### El guion de TalkBack para el asistente de captura 360
-
-El asistente es la pantalla que más lo necesita y la única que **no se puede
-comprobar en el computador**: se usa con el teléfono en la mano, apuntando a un
-producto, y la mitad de su contenido depende de la cámara y del acelerómetro. El
-guion de NVDA de arriba sirve igual aquí, con TalkBack en vez de NVDA, y con un
-montaje que cuesta más.
-
-Esto es la segunda mitad de la deuda 32 del plan. La primera —cada cuánto habla
-el nivel— se decidió midiendo, y está en `nivel-360.ts`.
-
-#### El montaje
-
-```
-docker compose up -d                                   # desde la raíz
-gradlew.bat bootRun                                    # en apps/api
-npm run dev --workspace=apps/web -- --allowed-hosts    # desde la raíz
-cloudflared tunnel --url http://localhost:4200
-```
-
-La bandera `--allowed-hosts` no es opcional: sin ella el dev server rechaza el
-host efímero del túnel. El detalle está en `apps/web/README.md`, junto con el
-motivo por el que hace falta HTTPS —la cámara, el sensor y `crypto.subtle` solo
-existen en contexto seguro— y la advertencia de que mientras el túnel esté arriba
-la aplicación de desarrollo, panel incluido, es accesible desde internet.
-
-Hace falta además lo que ninguna herramienta sustituye: **la cámara, un producto
-y luz**. Y TalkBack encendido antes de abrir la pantalla, no después.
-
-Si el recorrido va a llegar hasta publicar el set, el bucket necesita conocer el
-host del túnel o el `PUT` firmado muere en el preflight de CORS — el comando está
-en `apps/web/README.md`. Para la parte de accesibilidad no hace falta: los pasos
-1 a 6 del asistente no suben nada.
-
-#### Las cinco comprobaciones
-
-Con TalkBack, el gesto de explorar es **deslizar a derecha e izquierda** para ir
-al siguiente elemento y **doble toque** para activar. Anota lo que oigas, o su
-ausencia, que es un dato igual de bueno.
-
-**1. La pantalla se puede recorrer sin verla.** Desliza desde arriba hasta abajo
-antes de tocar nada.
-**Qué mirar:** que las condiciones mínimas —fondo, luz, centrado, distancia— se
-oigan, que los botones de cantidad de fotogramas digan cuántos son, y que el
-botón de la cámara diga qué va a hacer.
-**Qué decide:** si algo no se oye, no está en el árbol de accesibilidad.
-
-**2. El permiso de la cámara.** Doble toque en "Permitir la cámara".
-**Qué mirar:** que al volver del diálogo del sistema se anuncie el cambio de
-estado, y que aparezca el botón de disparar.
-
-**3. El nivel, que es el corazón de la deuda.** Con la cámara abierta y el nivel
-activado, sostén el teléfono apuntando al producto y muévelo despacio dentro y
-fuera de la tolerancia.
-**Qué mirar:** cuántas veces habla. Tiene que decir frases como «Inclina el
-teléfono 7 grados hacia adelante» y **quedarse callado mientras el estado no
-cambie**, no recitar cada grado. La cuenta esperada es de unos pocos anuncios por
-minuto.
-**Qué decide:** si habla sin parar, el asentamiento del anuncio no está llegando
-a la región — el `aria-hidden` del texto visible y el `role="status"` de la
-región viva están en `ts-indicador-nivel.html`.
-
-**4. El obturador bloqueado.** Tuércelo hasta que el botón se deshabilite.
-**Qué mirar:** que el aviso **no** se anuncie por su cuenta —eso es
-deliberado, lo explica el nivel— y que el botón de disparar se anuncie como
-deshabilitado cuando se le llega deslizando.
-**Qué decide:** si el aviso habla además del nivel, se está diciendo lo mismo dos
-veces.
-
-**5. El set completo.** Captura las tomas prometidas, aceptando cada una.
-**Qué mirar:** que el progreso se oiga al cambiar de toma, que el acuse de "listas
-las N tomas" se anuncie, y que al final el visor de revisión sea alcanzable.
-
-#### Lo que se corrió, el 23 de septiembre de 2026
-
-Se hizo el recorrido entero en un Android con TalkBack, con la cámara, el
-producto y el set completo, sobre el código ya arreglado. **Las cinco
-comprobaciones pasaron y no apareció ninguna anomalía.** Con eso queda cerrada la
-mitad de la deuda 32 que pedía el aparato delante.
-
-**Cómo se anotó, que importa para saber cuánto vale.** Esta medición **no tiene
-registro**: es lo que oyó una persona, no un archivo de texto que se pueda pegar
-aquí. La de NVDA de más arriba sí lo tiene, porque el visor de voz escribe lo que
-manda al sintetizador y TalkBack no ofrece un equivalente cómodo. Así que esta
-vale para lo que vale — un «suena bien» de quien usa la pantalla — y lo que
-sostiene la conducta entre corrida y corrida son las pruebas de
-`nivel-360.spec.ts` y `ts-indicador-nivel.spec.ts`, que fallan si el anuncio
-vuelve a hablar en cada grado o si el texto visible deja de estar oculto al
-lector.
-
-Si algún día hace falta un registro literal, la vía es TalkBack con la salida de
-desarrollo activada y `adb logcat`, que no se probó.
-
-#### Lo que ya se sabe sin encender TalkBack
-
-Los cinco envoltorios de `display: contents` del asistente se apoyan en una sonda
-que respondió que sí —esa propiedad no saca la región del árbol de
-accesibilidad—, y eso es el mecanismo, no la pantalla. Este guion es lo que
-convierte el mecanismo en una observación.
 
 ### Lo que Vitest no atrapa en la capa visual
 
@@ -657,7 +533,8 @@ que se prueba **es** el paso del tiempo. Ahí `vi.waitFor` pasaría al instante 
 no probaría nada.
 
 **Un número fijo de *vueltas* es lo mismo que un número fijo de milisegundos**, y
-cuesta más verlo. `captura-360.page.spec.ts` esperaba con `asentarVarias`, que
+cuesta más verlo. `captura-360.page.spec.ts` —del asistente de captura, retirado desde
+`ADR-0097`— esperaba con `asentarVarias`, que
 asienta catorce veces y ya; el 22 de septiembre de 2026 la verificación web falló
 con `expected Array(3) to have a length of 4` — tres de los cuatro fotogramas
 subidos. Dos cosas que conviene tener presentes:

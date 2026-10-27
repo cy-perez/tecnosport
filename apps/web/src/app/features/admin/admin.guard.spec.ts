@@ -97,14 +97,14 @@ describe('adminGuard', () => {
 
     const resultado = await TestBed.runInInjectionContext(() =>
       adminGuard(rutaConLang('es'), {
-        url: '/es/admin/productos/abc-123/captura-360',
+        url: '/es/admin/productos/abc-123/variantes/crear',
       } as RouterStateSnapshot),
     );
 
     // Sin esto, abrir un enlace directo sin sesión terminaba en el panel y había
     // que volver a buscar el enlace.
     expect((resultado as UrlTree).toString()).toBe(
-      '/es/admin/iniciar-sesion?destino=%2Fes%2Fadmin%2Fproductos%2Fabc-123%2Fcaptura-360',
+      '/es/admin/iniciar-sesion?destino=%2Fes%2Fadmin%2Fproductos%2Fabc-123%2Fvariantes%2Fcrear',
     );
   });
 

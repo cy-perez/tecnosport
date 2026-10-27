@@ -6,28 +6,25 @@
 /**
  * Qué APIs del navegador puede usar este documento, y ninguna para un marco ajeno.
  *
- * Las que el sitio usa quedan en `(self)`, no en `()`: la cámara y los tres sensores de orientación
- * los usa el asistente de captura —el nivelador de `captura360`, el que reproduce
- * `npm run nivel-360`; Chrome entrega `deviceorientation` solo si `accelerometer`, `gyroscope` y
- * `magnetometer` están permitidos—, la pantalla despierta también, y el portapapeles lo usa
- * `core/portapapeles`.
+ * La única que el sitio usa es el portapapeles (`core/portapapeles`), y queda en `(self)`, no en
+ * `()`: ningún iframe de terceros —el de Google, por ejemplo— hereda nada. Todo lo demás va en
+ * `()`. La cámara, los tres sensores de orientación y la pantalla despierta estuvieron en `(self)`
+ * mientras existió el asistente de captura 360; se apagaron al retirarlo (`ADR-0097`).
  *
- * **No se pueden acotar a la ruta del asistente**, y `docs/08` lo prometía: esto es una aplicación
- * de una sola página, y la política es del documento que cargó primero. Quien entra por la portada
- * y navega al asistente del panel sigue con la política de la portada, así que una cámara apagada
- * fuera de la ruta del asistente lo dejaría sin cámara según por dónde se entró. `(self)` es lo que
- * sí se puede: ningún iframe de terceros —el de Google, por ejemplo— hereda nada.
+ * Una función que vuelva a hacer falta se abre para todo el documento o para ninguno: esto es una
+ * aplicación de una sola página, y la política es del documento que cargó primero, así que no se
+ * puede acotar a la ruta que la usa.
  *
  * Solo funciones que los navegadores reconocen: una desconocida no hace daño, pero Chrome la
  * anuncia como error en la consola de cada visita, y Lighthouse cuenta esos errores.
  */
 export const POLITICA_DE_PERMISOS = [
-  'camera=(self)',
-  'accelerometer=(self)',
-  'gyroscope=(self)',
-  'magnetometer=(self)',
-  'screen-wake-lock=(self)',
   'clipboard-write=(self)',
+  'camera=()',
+  'accelerometer=()',
+  'gyroscope=()',
+  'magnetometer=()',
+  'screen-wake-lock=()',
   'microphone=()',
   'geolocation=()',
   'payment=()',

@@ -49,7 +49,6 @@ function productoDePrueba(variantes: Variante[]): Producto {
     },
     imagenPrincipal: null,
     galeria: [],
-    rotacion: null,
     variantes,
     escalaTallas: [],
     tallaSirveHasta: null,

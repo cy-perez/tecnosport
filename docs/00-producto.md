@@ -62,9 +62,7 @@ Sí entra:
   **Un producto cuelga siempre de una hoja**, nunca de una rama: si "Camisas" tuviera
   productos y además subcategorías, "lo que hay en Camisas" tendría dos respuestas.
 - Búsqueda, filtros y orden.
-- Ficha de producto con imagen principal, galería y **visor de rotación 360**.
-- **Asistente de captura de fotos** para producir los fotogramas del visor desde
-  un teléfono, sin estudio fotográfico.
+- Ficha de producto con imagen principal y galería.
 - Carrito persistente.
 - Checkout con pago en línea por Wompi, transferencia y **contraentrega**.
 - **Cotización de envío por destino con Skydropx**, o recogida sin costo en el
@@ -88,9 +86,9 @@ No entra en la fase 1, y no se construye anticipadamente:
 
 | Actor | Qué puede hacer |
 |---|---|
-| Visitante | Ver catálogo y precios, buscar, filtrar, girar el visor 360, armar carrito, comprar como invitado |
+| Visitante | Ver catálogo y precios, buscar, filtrar, armar carrito, comprar como invitado |
 | Cliente registrado | Lo anterior, más historial de pedidos, direcciones guardadas y seguimiento |
-| Administrador | Productos, variantes, precios, existencias, captura y carga de imágenes, pedidos, despacho, confirmación de recaudo |
+| Administrador | Productos, variantes, precios, existencias, carga de imágenes, pedidos, despacho, confirmación de recaudo |
 
 La autenticación no desaparece por vender al detal. Los precios son públicos y no
 hay muro de registro, pero el panel administrativo la exige y el checkout
@@ -98,7 +96,7 @@ identifica al comprador, aunque sea solo por correo.
 
 ## Recorridos que tienen que funcionar
 
-1. **Comprar como invitado.** Llega a una ficha de producto, gira la imagen 360,
+1. **Comprar como invitado.** Llega a una ficha de producto, recorre la galería,
    elige talla, agrega al carrito, paga con Nequi y recibe el correo. Sin crear
    cuenta.
 2. **Comprar un celular.** Elige capacidad y color, ve que hay dos unidades, paga
@@ -113,11 +111,7 @@ identifica al comprador, aunque sea solo por correo.
    dice entregado.
 5. **Comprar y recoger en el punto.** Elige recogida, el costo de envío queda en
    cero, y recibe un código de retiro en vez de una guía.
-6. **Publicar un producto con 360.** El administrador entra desde su teléfono al
-   asistente de captura, toma los fotogramas guiados por la silueta y el nivel,
-   el cliente los recorta y los sube, y el producto queda publicado con el visor
-   funcionando.
-7. **Pago rechazado.** Falla el pago, el inventario reservado se libera, el pedido
+6. **Pago rechazado.** Falla el pago, el inventario reservado se libera, el pedido
    queda en pago fallido y se puede reintentar desde el enlace del correo.
 
 ## Reglas de negocio que el código debe respetar
@@ -153,8 +147,7 @@ identifica al comprador, aunque sea solo por correo.
   y la serialización se decide por variante y no por pertenecer a `TECNOLOGIA`. Cuando
   entren consolas o computadores habrá que decidir cuáles llevan serie, y esa
   decisión no se hereda de la línea.
-- **Un producto no se publica sin imagen principal.** El set 360 es opcional, pero
-  si existe debe estar completo: un set a medias no se muestra.
+- **Un producto no se publica sin imagen principal.**
 - **Todo cambio de estado de un pedido queda registrado** con fecha, actor y
   motivo. No se sobrescribe historia.
   La única excepción es borrar del todo un pedido en el que nunca hubo nada en
@@ -163,8 +156,7 @@ identifica al comprador, aunque sea solo por correo.
 
 ## Cómo se mide que salió bien
 
-- La ficha de producto carga en menos de 2,5 segundos en 4G, medido como LCP, y
-  el visor 360 no bloquea esa métrica.
+- La ficha de producto carga en menos de 2,5 segundos en 4G, medido como LCP.
 - El catálogo indexa en Google en español e inglés sin contenido duplicado.
 - Cero fallos de contraste y foco visible en todos los controles.
 - Un pedido pagado nunca deja el inventario inconsistente.

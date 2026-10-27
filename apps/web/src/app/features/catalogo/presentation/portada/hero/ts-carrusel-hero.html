@@ -22,8 +22,8 @@
        `aria-live` vale `off` mientras rota sola y `polite` cuando alguien la detuvo: anunciar un
        cambio que nadie pidió interrumpe la lectura de la página cada cuatro segundos.
 
-       **Y es la superficie del gesto.** `superficie-arrastre` son las tres propiedades que ya
-       necesitó el visor 360 y que se explican juntas: `touch-action: pan-y` —el eje vertical sigue
+       **Y es la superficie del gesto.** `superficie-arrastre` son las tres propiedades que se
+       explican juntas: `touch-action: pan-y` —el eje vertical sigue
        siendo del navegador, o deslizar aquí secuestraría el scroll de la página—, `user-select` y
        `-webkit-user-drag`, sin las cuales el puntero arrastra la fotografía como si fuera un enlace.
 
@@ -218,8 +218,8 @@
                        `ch` y no píxeles a propósito: es el ancho de un carácter de la propia fuente
                        del botón, así que esto sigue midiendo lo que tiene que medir si alguien
                        amplía el texto. El valor vive en el kit (`--ancho-min-boton-hero`, de
-                       `anchos_min_ch` en `tokens.json`), como el contador del visor 360 y la
-                       cantidad de la línea del carrito: la regla dura #2 tampoco admite un `ch`
+                       `anchos_min_ch` en `tokens.json`), como la cantidad de la línea del
+                       carrito: la regla dura #2 tampoco admite un `ch`
                        literal, solo `[var(--token)]`. -->
 
                   <ts-boton
@@ -320,5 +320,4 @@
       </button>
     </div>
   </div>
-
 </section>

@@ -24,22 +24,21 @@ import java.util.UUID;
  *   <li><b>Con ventas, no.</b> Nunca, ni retirado: ver {@link ProductoConVentasException}.
  * </ul>
  *
- * <p><b>Los objetos del bucket se borran antes que las filas</b>, que es el orden de {@code
- * EliminarSetRotacion} y el contrario al de {@code QuitarImagenDeGaleria}. Al revés —filas primero,
- * objetos después— un fallo a mitad deja los objetos huérfanos para siempre: ya no hay ninguna fila
- * que diga qué prefijo había que limpiar, y {@code npm run huerfanos} sería la única forma de
- * enterarse. Así, un fallo deja un producto sin fotos y todavía en la base, y reintentar termina el
- * trabajo, porque borrar por prefijo es idempotente.
+ * <p><b>Los objetos del bucket se borran antes que las filas</b>, el orden contrario al de {@code
+ * QuitarImagenDeGaleria}. Al revés —filas primero, objetos después— un fallo a mitad deja los
+ * objetos huérfanos para siempre: ya no hay ninguna fila que diga qué prefijo había que limpiar, y
+ * {@code npm run huerfanos} sería la única forma de enterarse. Así, un fallo deja un producto sin
+ * fotos y todavía en la base, y reintentar termina el trabajo, porque borrar por prefijo es
+ * idempotente.
  *
- * <p>Un solo prefijo para las tres clases de imagen: la principal, la galería y los fotogramas de
- * rotación viven todos bajo {@code productos/{id}/} ({@code ClavesDePrincipal}, {@code
- * ClavesDeGaleria}, {@code ClavesDeRotacion}). Recorrer los sets de rotación uno por uno dejaría
- * fuera justo lo que interesa reclamar: los objetos de una subida que murió a mitad y nunca llegó a
- * ser una fila.
+ * <p>Un solo prefijo para todas las imágenes: la principal y la galería viven bajo {@code
+ * productos/{id}/} ({@code ClavesDePrincipal}, {@code ClavesDeGaleria}), y también los fotogramas
+ * de rotación que quedaron en el bucket cuando el visor 360 se retiró (ADR-0097). Recorrer las
+ * imágenes una por una dejaría fuera justo lo que interesa reclamar: los objetos de una subida que
+ * murió a mitad y nunca llegó a ser una fila.
  *
- * <p>Y como en {@code EliminarSetRotacion}: <b>esto sigue siendo destructivo, y lo que lo hace
- * aceptable es el versionado de objetos del bucket</b> (docs/07-infra-gcp.md). Las filas no tienen
- * esa red.
+ * <p><b>Esto sigue siendo destructivo, y lo que lo hace aceptable es el versionado de objetos del
+ * bucket</b> (docs/07-infra-gcp.md). Las filas no tienen esa red.
  */
 public final class EliminarProducto {
 

@@ -28,13 +28,13 @@ import java.util.Set;
  * recién subidas —todas, no solo la mayor—, así que se lleva también lo que quedó de subidas que
  * nunca se confirmaron.
  *
- * <p><strong>Y se borra después de guardar, al revés que en {@code EliminarSetRotacion}</strong>.
- * Un set se va entero, así que allá conviene borrar los objetos primero. Aquí la fila se reemplaza:
- * si se borrara antes y el guardado fallara, el producto quedaría apuntando a un objeto que ya no
- * existe — una imagen rota en una ficha viva. El precio de este orden es que una limpieza que falla
- * deja objetos sin reclamar; se reporta en {@code ConfirmacionDeImagenPrincipal} en vez de tumbar
- * una confirmación que ya se guardó, y se cura sola: el siguiente reemplazo de ese producto borra
- * todo lo que haya quedado bajo el prefijo.
+ * <p><strong>Y se borra después de guardar, al revés que en {@link EliminarProducto}</strong>. Un
+ * producto se va entero, así que allá conviene borrar los objetos primero. Aquí la fila se
+ * reemplaza: si se borrara antes y el guardado fallara, el producto quedaría apuntando a un objeto
+ * que ya no existe — una imagen rota en una ficha viva. El precio de este orden es que una limpieza
+ * que falla deja objetos sin reclamar; se reporta en {@code ConfirmacionDeImagenPrincipal} en vez
+ * de tumbar una confirmación que ya se guardó, y se cura sola: el siguiente reemplazo de ese
+ * producto borra todo lo que haya quedado bajo el prefijo.
  *
  * <p><strong>Sin llevarse lo que reclama la galería.</strong> Desde {@link
  * UsarImagenDeGaleriaComoPrincipal} una principal puede pasar a la galería con sus objetos {@code
@@ -67,8 +67,8 @@ public final class ConfirmarImagenPrincipal {
       throw new IllegalArgumentException("Hay que confirmar al menos una variante de la imagen.");
     }
 
-    // El prefijo completo, no el del producto. Con el corto, una key de `galeria-` o de
-    // `rotacion/` del mismo producto pasaba las tres guardas y la limpieza de abajo borraba los
+    // El prefijo completo, no el del producto. Con el corto, una key de `galeria-` del mismo
+    // producto pasaba las tres guardas y la limpieza de abajo borraba los
     // objetos `principal-` de verdad. Ver `ClavesDePrincipal`.
     String prefijoEsperado = ClavesDePrincipal.prefijoDe(comando.productoId());
     List<String> claves =

@@ -28,8 +28,4 @@ public interface ImagenProductoJpaRepository extends JpaRepository<ImagenProduct
    * distinguir "no era de este producto" de "ya no estaba".
    */
   int deleteByIdAndProductoId(UUID id, UUID productoId);
-
-  List<ImagenProductoJpaEntity> findBySetRotacionId(UUID setRotacionId);
-
-  void deleteBySetRotacionId(UUID setRotacionId);
 }

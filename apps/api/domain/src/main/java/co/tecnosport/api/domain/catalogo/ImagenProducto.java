@@ -12,8 +12,7 @@ import java.util.UUID;
 
 /**
  * Una imagen de producto o variante, publicada en una o varias resoluciones. {@code altEs}/{@code
- * altEn} son obligatorios en PRINCIPAL y GALERIA; en ROTACION son decorativos y pueden ir vacíos,
- * ver docs/02-modelo-datos.md.
+ * altEn} son obligatorios siempre, ver docs/02-modelo-datos.md.
  *
  * <p><strong>La URL, el ancho y el peso no son campos: salen de la variante mayor.</strong> Antes
  * eran un campo cada uno y convivían con {@code urlWebp}, que guardaba la URL del mismo objeto —y
@@ -133,15 +132,10 @@ public final class ImagenProducto {
     this.enLaFicha = enLaFicha && varianteId == null;
     this.variantesQueMuestra = sinRepetirNiPropia(variantesQueMuestra, varianteId);
 
-    if (tipo == TipoImagen.PRINCIPAL || tipo == TipoImagen.GALERIA) {
-      this.altEs =
-          requerido(altEs, "El texto alternativo en español es obligatorio para " + tipo + ".");
-      this.altEn =
-          requerido(altEn, "El texto alternativo en inglés es obligatorio para " + tipo + ".");
-    } else {
-      this.altEs = altEs == null ? "" : altEs.trim();
-      this.altEn = altEn == null ? "" : altEn.trim();
-    }
+    this.altEs =
+        requerido(altEs, "El texto alternativo en español es obligatorio para " + tipo + ".");
+    this.altEn =
+        requerido(altEn, "El texto alternativo en inglés es obligatorio para " + tipo + ".");
   }
 
   public static ImagenProducto crear(

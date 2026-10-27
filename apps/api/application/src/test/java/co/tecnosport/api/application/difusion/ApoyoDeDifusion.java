@@ -67,7 +67,6 @@ final class ApoyoDeDifusion {
         EstadoProducto.PUBLICADO,
         imagen(PRINCIPAL_JPEG, 1183, 1280),
         galeria,
-        null,
         List.of(varianteUnica()));
   }
 
@@ -112,7 +111,6 @@ final class ApoyoDeDifusion {
         estado,
         conImagen ? imagenPrincipal(urlVistaPrevia) : null,
         galeria,
-        null,
         List.of(varianteUnica()));
   }
 

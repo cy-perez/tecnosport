@@ -16,8 +16,8 @@ import org.springframework.stereotype.Component;
  * Domain -> DTO del panel admin. Separado de {@link MapeadorRespuestasCatalogo} (vitrina pública)
  * porque las reglas de exposición son distintas: aquí sí se expone {@code id} y {@code estado}, y
  * un producto en {@code BORRADOR} se ve igual que uno {@code PUBLICADO}. Lista deliberadamente
- * liviana, sin variantes completas ni rotación — eso es para la pantalla de detalle/edición de un
- * caso de uso futuro.
+ * liviana, sin variantes completas — eso es para la pantalla de detalle/edición de un caso de uso
+ * futuro.
  */
 @Component
 public class MapeadorRespuestasProductoAdmin {

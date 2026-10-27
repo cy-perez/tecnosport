@@ -11,7 +11,7 @@ import java.util.Objects;
  * Saca una imagen de la galería y borra su objeto del bucket.
  *
  * <p><b>Primero la fila, después el objeto</b>, el mismo orden que {@link ConfirmarImagenPrincipal}
- * y el contrario al de {@code EliminarSetRotacion}. Si se borrara el objeto primero y el guardado
+ * y el contrario al de {@code EliminarProducto}. Si se borrara el objeto primero y el guardado
  * fallara, la ficha quedaría viva apuntando a una imagen que ya no existe. Al revés, lo peor que
  * pasa es un objeto sin reclamar, que no se ve desde fuera.
  *

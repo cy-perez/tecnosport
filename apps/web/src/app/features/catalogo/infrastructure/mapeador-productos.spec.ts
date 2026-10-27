@@ -46,7 +46,6 @@ describe('mapeador-productos', () => {
     expect(producto.imagenPrincipal?.variantes.map((variante) => variante.ancho)).toEqual([
       480, 800,
     ]);
-    expect(producto.rotacion).toBeNull();
     expect(producto.variantes).toHaveLength(1);
     expect(producto.variantes[0].id).toBe('v1');
     expect(producto.variantes[0].precio.valor).toBe(89900);
@@ -69,8 +68,6 @@ describe('mapeador-productos', () => {
     expect(producto.variantes).toEqual([]);
   });
 
-  // El orden de los fotogramas es la rotación: uno fuera de sitio se ve como un salto al girar.
-  // Se garantiza aquí, en la frontera, para que ninguna pantalla tenga que volver a saberlo.
   /**
    * El contrato declara `variantes` opcional —en el OpenAPI generado todo lo es— y la API nunca
    * publica una imagen sin ellas. Si aun así llegara vacía, servir la imagen en su único ancho
@@ -92,30 +89,6 @@ describe('mapeador-productos', () => {
 
     expect(producto.imagenPrincipal?.variantes).toEqual([
       { ancho: 640, url: 'https://x/unica.avif' },
-    ]);
-  });
-
-  it('ordena los fotogramas de la rotación por `orden`, llegue como llegue el arreglo', () => {
-    const producto = aProducto({
-      paleta: [],
-      slug: 'tenis',
-      rotacion: {
-        fotogramas: 4,
-        imagenes: [
-          { orden: 2, url: 'f2.jpg', ancho: 1000, alto: 1000 },
-          { orden: 0, url: 'f0.jpg', ancho: 1000, alto: 1000 },
-          { orden: 3, url: 'f3.jpg', ancho: 1000, alto: 1000 },
-          { orden: 1, url: 'f1.jpg', ancho: 1000, alto: 1000 },
-        ],
-      },
-    });
-
-    expect(producto.rotacion?.imagenes.map((imagen) => imagen.orden)).toEqual([0, 1, 2, 3]);
-    expect(producto.rotacion?.imagenes.map((imagen) => imagen.url)).toEqual([
-      'f0.jpg',
-      'f1.jpg',
-      'f2.jpg',
-      'f3.jpg',
     ]);
   });
 });

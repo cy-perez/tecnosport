@@ -21,11 +21,6 @@ es lenta.
 Variables en `.env.local`, que está en `.gitignore`. Hay un `.env.example`
 versionado con todas las claves y valores falsos.
 
-Para probar la captura 360 desde un teléfono real hace falta HTTPS, porque la
-cámara y los sensores no funcionan sobre HTTP fuera de `localhost`. Se resuelve
-con un túnel o con un certificado local. Está documentado en el README de
-`apps/web`.
-
 **Imágenes en local: bucket real de Cloud Storage, no un emulador.** Proyecto
 GCP separado (`tecnosport-dev`, nunca `tecnosport-prod`) con un bucket en la
 capa gratuita (5 GB-mes, clase Standard, regiones `us-central1`/`us-east1`/
@@ -53,9 +48,9 @@ aprobar un borrador las fotos se copian al bucket de imágenes—. En dev lo dec
 Terraform con `public_access_prevention = "enforced"` y sin CDN delante.
 Sin esa llave el backend arranca igual —el bean `Storage` se construye sin
 credenciales— pero firmar falla:
-`POST /api/v1/admin/sets-rotacion/{id}/subidas` responde 500 con
-`Signing key was not provided and could not be derived`, y con él se cae todo lo
-que sigue del asistente de captura. El del ambiente desplegado lo declara
+`POST /api/v1/admin/productos/{id}/galeria/url-subida` responde 500 con
+`Signing key was not provided and could not be derived`, y con él se cae toda
+subida de imágenes del panel. El del ambiente desplegado lo declara
 Terraform, y ese script se niega a tocarlo.
 
 ## Producción en GCP
@@ -66,7 +61,7 @@ Terraform, y ese script se niega a tocarlo.
 | Cloud Run `tecnosport-web` | Frontend Angular con SSR |
 | Cloud SQL PostgreSQL 16 | Base de datos, sin IP pública, por conector |
 | Artifact Registry | Imágenes de contenedor |
-| Cloud Storage y CDN | Imágenes de producto, sets de rotación y estáticos |
+| Cloud Storage y CDN | Imágenes de producto y estáticos |
 | Secret Manager | Llaves de Wompi, las tres credenciales de Sistecrédito, credenciales y secreto de webhook de Skydropx, secreto JWT, credenciales SMTP |
 | Cloud Load Balancing | Dominio, TLS y enrutamiento: `/api` a la API, el resto a la web |
 | Cloud Logging y Monitoring | Registros, métricas, alertas de 5xx y de latencia |
@@ -118,8 +113,8 @@ mientras la anterior todavía procesa.
 pediría un endpoint interno autenticado por tarea y sacar el `@Scheduled`; solo se justifica el día
 que la API de producción escale a cero, que hoy no es el caso.
 
-Las imágenes se suben directo a Cloud Storage con URL firmada desde el panel y
-desde el asistente de captura. No pasan por el backend. El bucket de imágenes es
+Las imágenes se suben directo a Cloud Storage con URL firmada desde el panel. No
+pasan por el backend. El bucket de imágenes es
 público de lectura a través del CDN, y de escritura solo con URL firmada.
 
 ## DNS: cuidado con lo que ya existe
@@ -613,8 +608,6 @@ PLAZO_ENTREGA_VIGILANCIA_RETRASO_INICIAL_MINUTOS
 MINUTOS_RESERVA_INVENTARIO
 ENLACE_COMPRA_HORAS_VIGENCIA
 IVA_TASA_PREDETERMINADA
-ROTACION_FOTOGRAMAS_PREDETERMINADO
-ROTACION_TOLERANCIA_GRADOS
 ```
 
 Las de `SKYDROPX_*` son la cotización, la emisión de guía y el seguimiento
@@ -689,11 +682,11 @@ Copias automáticas diarias de Cloud SQL con 30 días de retención y recuperaci
 punto en el tiempo activada. Una restauración de prueba antes de abrir al
 público: un respaldo que nunca se restauró no es un respaldo.
 
-El bucket de imágenes con versionado de objetos: un borrado accidental de un set
-de rotación son quince fotos que hay que volver a tomar. Esto no es solo para
-accidentes: `DELETE /api/v1/admin/sets-rotacion/{id}` borra de verdad los objetos
-del set —si no, el espacio no se reclama nunca— y el versionado es lo único que
-hace ese borrado reversible. Y con una regla de ciclo de vida que expire las
+El bucket de imágenes con versionado de objetos: un borrado accidental es una foto
+que hay que volver a tomar o a retocar. Esto no es solo para accidentes: quitar
+una imagen de la galería o reemplazar la principal borra de verdad sus objetos
+—si no, el espacio no se reclama nunca— y el versionado es lo único que hace ese
+borrado reversible. Y con una regla de ciclo de vida que expire las
 versiones no vigentes: sin ella se acumulan, y el espacio no se reclama igual.
 
 Un detalle que cuesta caro y no se ve: hay que borrar **por nombre, sin

@@ -17,11 +17,12 @@ no está escrita en el código.
 
 Sitio: http://localhost:4200
 
-## Probar el asistente de captura 360 desde un teléfono
+## Probar desde un teléfono
 
-La cámara, el sensor de orientación y `crypto.subtle` solo existen en un
-**contexto seguro**: HTTPS, o `localhost`. Desde un teléfono, `localhost` es el
-propio teléfono, así que el asistente de captura no se puede probar sin HTTPS.
+`crypto.subtle` —con el que el panel calcula el hash de una imagen antes de
+subirla— solo existe en un **contexto seguro**: HTTPS, o `localhost`. Desde un
+teléfono, `localhost` es el propio teléfono, así que el sitio se sirve por un
+túnel HTTPS.
 
 `proxy.conf.json` manda `/api` al backend, así que **un solo túnel al 4200 sirve
 la aplicación y la API**: no hay contenido mixto ni una segunda URL que
@@ -59,10 +60,6 @@ internet**, panel de `ADMIN` incluido, con el usuario que crea `ADMIN_CORREO`. L
 URL es aleatoria y efímera, pero es exposición real: bájalo al terminar
 (`Ctrl+C`).
 
-En iOS el permiso del sensor de orientación se pide con un gesto del usuario y
-solo sobre HTTPS con certificado confiable — por eso un certificado autofirmado
-en la LAN no basta ahí, y sí el túnel.
-
 ## Comandos
 
 ```
@@ -85,7 +82,7 @@ la pestaña de Actions.
 src/app/
   core/        interceptores, guards, configuración, tema, i18n, cliente http
   shared/      componentes del sistema de diseño (prefijo ts-)
-  features/    catalogo, carrito, checkout, cuenta, admin, captura360
+  features/    catalogo, carrito, checkout, cuenta, admin
   layout/      header, footer, menú móvil
 src/assets/
   marca/       copiado desde packages/marca. Generado, no se edita
@@ -114,7 +111,7 @@ Detalle en `docs/04-ui-marca.md`.
 `/es/productos` y `/en/productos` (rejilla con filtros y paginación por
 cursor) y `/es/productos/:slug` (ficha con galería y selector de variante)
 funcionan contra el backend real. Contenido todavía en un solo idioma —
-`docs/05-i18n.md` documenta el estado actual. Visor 360 pendiente, Fase 5.
+`docs/05-i18n.md` documenta el estado actual.
 
 ## Carrito (Fase 2 — cerrada)
 
