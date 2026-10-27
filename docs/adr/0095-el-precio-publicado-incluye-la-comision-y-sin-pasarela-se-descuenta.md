@@ -97,8 +97,9 @@ Aprobada por el negocio el 26 de octubre de 2026:
    redondos en todo el catálogo, y la diferencia en lo barato queda como margen.
 10. **La vitrina no muestra un segundo precio, muestra el ahorro** (27/10/2026). El artículo 26
    de la Ley 1480 dice que, cuando aparezcan dos o más precios, el consumidor solo está
-   obligado a pagar el más bajo. La ficha, la tarjeta y el carrito dicen «Ahorras $X pagando por
-   transferencia, en el punto o contra entrega»; el desglose con el descuento solo aparece en el
+   obligado a pagar el más bajo. La ficha y el carrito dicen «Ahorras $X pagando por
+   transferencia, en el punto o contra entrega» —la tarjeta de la rejilla también, hasta que se
+   quitó el mismo día a pedido, porque repetía la frase debajo de cada producto—; el desglose con el descuento solo aparece en el
    checkout, con el medio ya elegido. Si basta es el punto 12 de `docs/14`.
 
 ## Consecuencias
