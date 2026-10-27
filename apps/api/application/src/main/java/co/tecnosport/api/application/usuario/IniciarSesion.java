@@ -38,6 +38,14 @@ public final class IniciarSesion {
   private final int maximoIntentosPorCuenta;
   private final Duration ventanaIntentosPorCuenta;
 
+  /**
+   * Un hash cualquiera con el que comparar cuando no hay cuenta, o la cuenta no tiene clave. Sin
+   * él, el error era el mismo pero no tardaba lo mismo: sin cuenta no se calculaba ningún hash y la
+   * respuesta llegaba cientos de milisegundos antes, lo que bastaba para saber qué correos están
+   * registrados. Se calcula una vez, con el mismo codificador, para que cueste igual que uno real.
+   */
+  private final String hashDeRelleno;
+
   public IniciarSesion(
       RepositorioUsuarios repositorioUsuarios,
       RepositorioSesiones repositorioSesiones,
@@ -64,6 +72,7 @@ public final class IniciarSesion {
     this.maximoIntentosPorCuentaEIp = maximoIntentosPorCuentaEIp;
     this.maximoIntentosPorCuenta = maximoIntentosPorCuenta;
     this.ventanaIntentosPorCuenta = Objects.requireNonNull(ventanaIntentosPorCuenta);
+    this.hashDeRelleno = codificadorDeClaves.codificar(GeneradorIdentificador.nuevo().toString());
   }
 
   public TokensDeSesion ejecutar(IniciarSesionComando comando) {
@@ -85,14 +94,18 @@ public final class IniciarSesion {
       throw new LimiteDeIntentosExcedidoException();
     }
 
-    Usuario usuario =
-        repositorioUsuarios
-            .buscarPorCorreo(correo)
-            // Una cuenta que solo entra con Google no tiene clave que comparar: es el mismo
-            // error genérico, sin decir que la cuenta existe (ADR-0074).
-            .filter(u -> u.tieneClave())
-            .filter(u -> codificadorDeClaves.verificar(comando.claveTextoPlano(), u.claveHash()))
-            .orElseThrow(CredencialesInvalidasException::new);
+    // Una cuenta que solo entra con Google no tiene clave que comparar: es el mismo error
+    // genérico, sin decir que la cuenta existe (ADR-0074). Y el mismo tiempo: sin cuenta, o sin
+    // clave, se compara igual contra el hash de relleno.
+    Usuario candidato =
+        repositorioUsuarios.buscarPorCorreo(correo).filter(Usuario::tieneClave).orElse(null);
+    boolean claveCorrecta =
+        codificadorDeClaves.verificar(
+            comando.claveTextoPlano(), candidato == null ? hashDeRelleno : candidato.claveHash());
+    if (candidato == null || !claveCorrecta) {
+      throw new CredencialesInvalidasException();
+    }
+    Usuario usuario = candidato;
 
     // El límite cuenta intentos fallidos SEGUIDOS. Sin esta línea contaba intentos a secas,
     // aciertos incluidos —`permitir` cuenta antes de verificar, porque contar y comprobar en una

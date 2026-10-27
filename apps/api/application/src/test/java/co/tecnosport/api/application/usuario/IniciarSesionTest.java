@@ -236,4 +236,52 @@ class IniciarSesionTest {
       conteos.remove(clave);
     }
   }
+
+  /**
+   * Sin cuenta no se calculaba ningún hash, y la respuesta llegaba antes: el mismo error con otro
+   * tiempo dice qué correos existen.
+   */
+  @Test
+  void sinCuentaTambienSeCalculaUnHash() {
+    crear();
+    VerificacionesContadas contadas = new VerificacionesContadas();
+    IniciarSesion conConteo =
+        new IniciarSesion(
+            usuarios,
+            sesiones,
+            contadas,
+            new GeneradorDeTokensFalso(),
+            new RelojFalso(AHORA),
+            VIGENCIA_REFRESCO,
+            limitadorDeIntentos,
+            MAXIMO_INTENTOS_POR_CUENTA,
+            MAXIMO_INTENTOS_POR_CUENTA_SOLA,
+            VENTANA_INTENTOS_POR_CUENTA);
+    usuarios.conUsuario(Usuario.crearConGoogle(CORREO, "sub-1", AHORA));
+
+    assertThrows(
+        CredencialesInvalidasException.class,
+        () -> conConteo.ejecutar(new IniciarSesionComando("no-existe@tecnosport.co", "x", IP)));
+    assertThrows(
+        CredencialesInvalidasException.class,
+        () -> conConteo.ejecutar(new IniciarSesionComando("admin@tecnosport.co", "x", IP)));
+
+    assertEquals(2, contadas.verificaciones);
+  }
+
+  private static final class VerificacionesContadas implements CodificadorDeClaves {
+    private final CodificadorDeClavesFalso real = new CodificadorDeClavesFalso();
+    private int verificaciones;
+
+    @Override
+    public String codificar(String claveTextoPlano) {
+      return real.codificar(claveTextoPlano);
+    }
+
+    @Override
+    public boolean verificar(String claveTextoPlano, String claveHash) {
+      verificaciones++;
+      return real.verificar(claveTextoPlano, claveHash);
+    }
+  }
 }
