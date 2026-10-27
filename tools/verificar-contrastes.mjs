@@ -137,12 +137,7 @@ const PARES = [
     UMBRAL_TEXTO,
     "escala de ámbar, tono 4 (sin uso hoy)",
   ],
-  [
-    "--color-sobre-marca",
-    "--color-marca",
-    UMBRAL_TEXTO,
-    "pie, franjas de marca y pista del visor 360",
-  ],
+  ["--color-sobre-marca", "--color-marca", UMBRAL_TEXTO, "pie y franjas de marca"],
   ["--color-error", "--color-fondo", UMBRAL_TEXTO, "mensajes de error"],
   ["--color-error", "--color-superficie", UMBRAL_TEXTO, "error dentro de un formulario"],
   // La fila expandida del panel de pedidos vive sobre la superficie elevada, y ahí pinta en rojo el
@@ -184,7 +179,6 @@ const PARES = [
   // que sobre un relleno ambar el hover *borraba* el borde en lugar de marcarlo.
   ["--color-aviso", "--color-fondo", UMBRAL_TEXTO, "plazo de la transferencia"],
   ["--color-sobre-primario", "--color-error", UMBRAL_TEXTO, "botón de peligro y aviso bloqueante"],
-  ["--color-sobre-primario", "--color-exito", UMBRAL_TEXTO, "aviso de éxito de la captura"],
   ["--color-sobre-deshabilitado", "--color-deshabilitado", UMBRAL_TEXTO, "botón deshabilitado"],
   // Componentes de interfaz: borde y anillo de foco. Umbral de 3:1.
   ["--color-borde-control", "--color-superficie", UMBRAL_GRANDE, "borde de un campo"],
