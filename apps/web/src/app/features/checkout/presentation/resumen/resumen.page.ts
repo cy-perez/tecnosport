@@ -98,7 +98,7 @@ export class ResumenPage {
   protected readonly subtotal = computed(() => this.carrito.subtotal());
 
   /**
-   * Lo que se ahorra el carrito pagando sin pasarela, ya formateado; `null` si nada. El medio aún
+   * Lo que se ahorra lo marcado pagando sin pasarela, ya formateado; `null` si nada. El medio aún
    * no se ha elegido, así que el total es el publicado y esto lo acompaña como ahorro posible, no
    * como un segundo total (ADR-0095, art. 26 de la Ley 1480).
    */

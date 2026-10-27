@@ -4,7 +4,11 @@ import { TranslocoTestingModule } from '@jsverse/transloco';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { fireEvent, render, screen } from '@testing-library/angular';
 import { esperarSinViolaciones } from '../../../../../testing/axe';
-import { proveerAlmacenesCarrito, sembrarCarritoId } from '../../../../../testing/carrito';
+import {
+  proveerAlmacenesCarrito,
+  sembrarCarritoId,
+  sembrarLineasSinMarcar,
+} from '../../../../../testing/carrito';
 import en from '../../../../../assets/i18n/en.json';
 import es from '../../../../../assets/i18n/es.json';
 import esCheckout from '../../../../../assets/i18n/scopes/checkout/es.json';
@@ -18,6 +22,7 @@ import {
   CotizacionEnvio,
   ModalidadesDeEntrega,
   ResultadoCotizacion,
+  CotizarEnvioComando,
 } from '../../domain/envio.model';
 import { REPOSITORIO_ENVIOS, RepositorioEnvios } from '../../domain/repositorio-envios.puerto';
 import { DatosEntrega, MetodosDePagoDisponiblesComando } from '../../domain/pedido.comandos';
@@ -74,7 +79,10 @@ class RepositorioCarritoFalso implements RepositorioCarrito {
 class RepositorioEnviosFalso implements RepositorioEnvios {
   constructor(private readonly respuesta: ResultadoCotizacion) {}
 
-  async cotizar(): Promise<ResultadoCotizacion> {
+  readonly cotizados: CotizarEnvioComando[] = [];
+
+  async cotizar(comando: CotizarEnvioComando): Promise<ResultadoCotizacion> {
+    this.cotizados.push(comando);
     return this.respuesta;
   }
 
@@ -162,6 +170,7 @@ async function renderPagina(
     cotizacion: COTIZACION,
   }),
   pedidos: PedidosQueCuentan = new PedidosQueCuentan(),
+  carrito: Carrito = CARRITO_CON_LINEAS,
 ) {
   return render(AnfitrionDePrueba, {
     imports: [
@@ -178,7 +187,7 @@ async function renderPagina(
         { path: 'metodo-pago', component: RutaMuda },
       ]),
       provideTanStackQuery(new QueryClient({ defaultOptions: { queries: { retry: false } } })),
-      { provide: REPOSITORIO_CARRITO, useValue: new RepositorioCarritoFalso(CARRITO_CON_LINEAS) },
+      { provide: REPOSITORIO_CARRITO, useValue: new RepositorioCarritoFalso(carrito) },
       { provide: REPOSITORIO_ENVIOS, useValue: envios },
       { provide: REPOSITORIO_PEDIDOS, useValue: pedidos },
       // `CheckoutStore` lo pide al construirse; esta página no cobra.
@@ -236,6 +245,27 @@ describe('TransportadoraPage (ADR-0073)', () => {
       transportadora: 'Servientrega',
       telefono: '3138816711',
     });
+  });
+
+  /** Lo desmarcado no viaja: ni en el flete que se cotiza ni en los métodos que se precargan. */
+  it('cotiza el envío y precarga los métodos solo con lo marcado', async () => {
+    sembrarLineasSinMarcar(['linea-2']);
+    const envios = new RepositorioEnviosFalso({ tipo: 'TARIFA', cotizacion: COTIZACION });
+    const pedidos = new PedidosQueCuentan();
+    await renderPagina(envios, pedidos, {
+      ...CARRITO_CON_LINEAS,
+      lineas: [
+        { id: 'linea-1', varianteId: 'variante-1', cantidad: 1 },
+        { id: 'linea-2', varianteId: 'variante-2', cantidad: 2 },
+      ],
+    });
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Servientrega' }));
+
+    await vi.waitFor(() => expect(pedidos.consultas).toHaveLength(1));
+    const soloLaMarcada = [{ varianteId: 'variante-1', cantidad: 1 }];
+    expect(envios.cotizados.at(-1)?.lineas).toEqual(soloLaMarcada);
+    expect(pedidos.consultas[0].lineas).toEqual(soloLaMarcada);
   });
 
   it('continuar sin elegir lo dice y no sigue', async () => {

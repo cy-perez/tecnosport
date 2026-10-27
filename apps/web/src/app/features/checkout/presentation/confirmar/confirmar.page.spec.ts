@@ -71,23 +71,14 @@ function almacenDesde(query: Record<string, string> = {}): AlmacenCorreoEnMemori
 /** Qué carrito salió a pagarse en la pasarela, en memoria. */
 class CarritosPorPagarEnMemoria implements AlmacenCarritoPorPagar {
   readonly anotados = new Map<string, string>();
-  readonly lineas = new Map<string, readonly string[]>();
-  /** Sin `lineaIds`, como lo que se anotó antes de que existiera la selección. */
-  anotar(pedidoId: string, carritoId: string, lineaIds?: readonly string[]): void {
+  anotar(pedidoId: string, carritoId: string): void {
     this.anotados.set(pedidoId, carritoId);
-    if (lineaIds) {
-      this.lineas.set(pedidoId, lineaIds);
-    }
   }
   carritoDe(pedidoId: string): string | null {
     return this.anotados.get(pedidoId) ?? null;
   }
-  lineasDe(pedidoId: string): readonly string[] | null {
-    return this.lineas.get(pedidoId) ?? null;
-  }
   olvidar(pedidoId: string): void {
     this.anotados.delete(pedidoId);
-    this.lineas.delete(pedidoId);
   }
 }
 
@@ -1422,25 +1413,6 @@ describe('ConfirmarPage', () => {
     await vi.waitFor(() =>
       expect(carrito.consulta.data()?.lineas.map((linea) => linea.id)).toEqual(['linea-2']),
     );
-  });
-
-  it('al salir hacia Wompi anota solo las líneas que fueron al pedido', async () => {
-    sembrarCarritoId('carrito-1');
-    sembrarLineasSinMarcar(['linea-2']);
-    const pedidos = new RepositorioPedidosFalso(pedidoDePrueba({ metodoPago: 'WOMPI' }));
-
-    const { fixture } = await renderConDatos(
-      'WOMPI',
-      new RepositorioCarritoFalso(CARRITO_CON_DOS_LINEAS),
-      pedidos,
-    );
-    await screen.findByText('compra@ejemplo.co');
-    await esperarCarritoCargado(fixture);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
-
-    await vi.waitFor(() => expect(window.location.href).toContain('https://checkout.wompi.co/'));
-    expect(carritosPorPagar.lineasDe('pedido-1')).toEqual(['linea-1']);
   });
 
   /**

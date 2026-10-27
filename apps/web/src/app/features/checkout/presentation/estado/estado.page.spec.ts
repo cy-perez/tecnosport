@@ -53,23 +53,14 @@ function almacenDesde(query: Record<string, string> = {}): AlmacenCorreoEnMemori
 /** Qué carrito salió a pagarse en la pasarela, en memoria. */
 class CarritosPorPagarEnMemoria implements AlmacenCarritoPorPagar {
   readonly anotados = new Map<string, string>();
-  readonly lineas = new Map<string, readonly string[]>();
-  /** Sin `lineaIds`, como lo que se anotó antes de que existiera la selección. */
-  anotar(pedidoId: string, carritoId: string, lineaIds?: readonly string[]): void {
+  anotar(pedidoId: string, carritoId: string): void {
     this.anotados.set(pedidoId, carritoId);
-    if (lineaIds) {
-      this.lineas.set(pedidoId, lineaIds);
-    }
   }
   carritoDe(pedidoId: string): string | null {
     return this.anotados.get(pedidoId) ?? null;
   }
-  lineasDe(pedidoId: string): readonly string[] | null {
-    return this.lineas.get(pedidoId) ?? null;
-  }
   olvidar(pedidoId: string): void {
     this.anotados.delete(pedidoId);
-    this.lineas.delete(pedidoId);
   }
 }
 
@@ -81,6 +72,7 @@ let carritosPorPagar = new CarritosPorPagarEnMemoria();
  */
 let lineasDelCarrito: { id: string; varianteId: string; cantidad: number }[] = [];
 let eliminadas: string[] = [];
+let actualizadas: { lineaId: string; cantidad: number }[] = [];
 const repositorioCarrito: Partial<RepositorioCarrito> = {
   ver: async (id: string) => ({
     id,
@@ -91,6 +83,11 @@ const repositorioCarrito: Partial<RepositorioCarrito> = {
   eliminarLinea: async (id: string, lineaId: string) => {
     eliminadas.push(lineaId);
     lineasDelCarrito = lineasDelCarrito.filter((linea) => linea.id !== lineaId);
+    return { id, usuarioId: null, creadoEn: '2026-01-01T00:00:00Z', lineas: lineasDelCarrito };
+  },
+  actualizarCantidad: async (id: string, lineaId: string, cantidad: number) => {
+    actualizadas.push({ lineaId, cantidad });
+    lineasDelCarrito = lineasDelCarrito.map((l) => (l.id === lineaId ? { ...l, cantidad } : l));
     return { id, usuarioId: null, creadoEn: '2026-01-01T00:00:00Z', lineas: lineasDelCarrito };
   },
 };
@@ -321,6 +318,7 @@ describe('EstadoPage', () => {
     carritosPorPagar = new CarritosPorPagarEnMemoria();
     lineasDelCarrito = [];
     eliminadas = [];
+    actualizadas = [];
   });
 
   describe('el carrito que salió a pagarse en la pasarela', () => {
@@ -348,19 +346,32 @@ describe('EstadoPage', () => {
       expect(carritosPorPagar.carritoDe('pedido-1')).toBeNull();
     });
 
-    it('al volver pagado quita solo las líneas que fueron al pedido', async () => {
+    // El pedido de prueba lleva 2 unidades de `variante-1`.
+    it('al volver pagado quita solo lo que llevó el pedido', async () => {
       sembrarCarritoId('carrito-1');
       lineasDelCarrito = [
-        { id: 'linea-1', varianteId: 'variante-1', cantidad: 1 },
+        { id: 'linea-1', varianteId: 'variante-1', cantidad: 2 },
         { id: 'linea-2', varianteId: 'variante-2', cantidad: 1 },
       ];
-      carritosPorPagar.anotar('pedido-1', 'carrito-1', ['linea-1']);
+      carritosPorPagar.anotar('pedido-1', 'carrito-1');
 
       const carrito = await volverConElPedido('PAGADO');
 
       await vi.waitFor(() => expect(eliminadas).toEqual(['linea-1']));
       expect(carrito.carritoId()).toBe('carrito-1');
       expect(carritosPorPagar.carritoDe('pedido-1')).toBeNull();
+    });
+
+    it('si se agregaron unidades después de salir a pagar, se quedan', async () => {
+      sembrarCarritoId('carrito-1');
+      lineasDelCarrito = [{ id: 'linea-1', varianteId: 'variante-1', cantidad: 3 }];
+      carritosPorPagar.anotar('pedido-1', 'carrito-1');
+
+      const carrito = await volverConElPedido('PAGADO');
+
+      await vi.waitFor(() => expect(actualizadas).toEqual([{ lineaId: 'linea-1', cantidad: 1 }]));
+      expect(eliminadas).toEqual([]);
+      expect(carrito.carritoId()).toBe('carrito-1');
     });
 
     it('se queda lleno mientras el pago no ha entrado', async () => {

@@ -279,8 +279,8 @@ export class EstadoPage {
   private readonly carritosPorPagar = inject(ALMACEN_CARRITO_POR_PAGAR);
 
   constructor() {
-    // El carrito que salió a pagarse en la pasarela se vacía aquí, al volver pagado, y no al salir
-    // (`AlmacenCarritoPorPagar`). Solo si es el mismo carrito que originó el pedido: a esta
+    // Lo que llevó el pedido que salió a pagarse en la pasarela sale del carrito aquí, al volver
+    // pagado, y no al salir (`AlmacenCarritoPorPagar`); lo que se dejó sin marcar se queda. Solo si es el mismo carrito que originó el pedido: a esta
     // pantalla también se llega por el enlace de un correo, con otra compra a medias. `carritoId`
     // se lee en `afterNextRender`, así que hasta entonces vale `null` y no se decide nada.
     effect(() => {
@@ -294,9 +294,8 @@ export class EstadoPage {
         return;
       }
       if (delPedido === carritoId) {
-        // Solo las líneas que fueron al pedido: lo que se dejó sin marcar sigue en el carrito.
-        const pagadas = this.carritosPorPagar.lineasDe(pedido.id);
-        untracked(() => void this.carrito.quitarPagadas(pagadas));
+        // Solo lo que llevó el pedido: lo que se dejó sin marcar sigue en el carrito.
+        untracked(() => void this.carrito.quitarPagadas(pedido.lineas));
       }
       this.carritosPorPagar.olvidar(pedido.id);
     });

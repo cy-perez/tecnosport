@@ -17,8 +17,16 @@
         'checkout.resumen.ir_al_catalogo' | transloco
       }}</ts-boton>
     } @else if (carrito.lineasPorPagar().length === 0) {
-      <!-- Tiene productos pero ninguno marcado: se eligen en el carrito, no aquí. -->
-      <p class="mb-16 text-ts-texto-suave">{{ 'checkout.resumen.nada_por_pagar' | transloco }}</p>
+      <!-- Tiene productos pero ninguno que pagar: o no marcó ninguno, y se eligen en el carrito, o
+           ninguno se vende, y ahí no hay casilla que marcar. -->
+      <p class="mb-16 text-ts-texto-suave">
+        {{
+          (carrito.hayLineasVendibles()
+            ? 'checkout.resumen.nada_por_pagar'
+            : 'checkout.resumen.nada_a_la_venta'
+          ) | transloco
+        }}
+      </p>
       <ts-boton variante="primario" [enlace]="['../../carrito']">{{
         'checkout.resumen.volver_al_carrito' | transloco
       }}</ts-boton>

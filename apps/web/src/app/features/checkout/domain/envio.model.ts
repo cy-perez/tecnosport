@@ -56,9 +56,9 @@ export interface CotizacionEnvio {
 }
 
 /**
- * Qué formas de entrega tiene un carrito. La recogida en el punto la decide el servidor: con la
- * bandera `RETIRO_EN_PUNTO_HABILITADO` encendida, y solo si todo el carrito es de proveedores
- * locales (`ADR-0093`). La pantalla solo la deja de ofrecer.
+ * Qué formas de entrega tiene lo que se va a pagar —lo marcado del carrito—. La recogida en el
+ * punto la decide el servidor: con la bandera `RETIRO_EN_PUNTO_HABILITADO` encendida, y solo si
+ * todo lo que se paga es de proveedores locales (`ADR-0093`). La pantalla solo la deja de ofrecer.
  */
 export interface ModalidadesDeEntrega {
   readonly envioADomicilio: boolean;

@@ -388,8 +388,8 @@ export class ConfirmarPage {
   );
 
   /**
-   * La compra quedó hecha y ya se navegó a su pantalla final. Desde ahí el carrito se vacía y el
-   * store suelta los datos de entrega y el medio (`CheckoutStore.terminarCompra`), y la guarda de
+   * La compra quedó hecha y ya se navegó a su pantalla final. Desde ahí lo pagado sale del carrito
+   * y el store suelta los datos de entrega y el medio (`CheckoutStore.terminarCompra`), y la guarda de
    * abajo los vería faltar y mandaría al resumen, compitiendo con la navegación que ya va en vuelo.
    */
   private readonly terminado = signal(false);
@@ -436,12 +436,9 @@ export class ConfirmarPage {
     }
     const datos = this.checkout.datosEntrega();
     const metodoPago = this.checkout.metodoPago();
-    const lineasPorPagar = this.carrito.lineasPorPagar();
-    if (!datos || !metodoPago || lineasPorPagar.length === 0) {
+    if (!datos || !metodoPago || this.carrito.lineasPorPagar().length === 0) {
       return;
     }
-    // Las que van a este pedido: al terminar salen del carrito solo estas.
-    const pagadas = lineasPorPagar.map((linea) => linea.id);
     // Sin el precio fresco del medio no se confirma: mientras carga, el botón ya va ocupado, pero
     // un clic que llegue antes de pintarse, o con la consulta en error, no puede mandar un pedido
     // cuyo total nadie vio.
@@ -477,6 +474,13 @@ export class ConfirmarPage {
       return;
     }
 
+    // Lo marcado se lee aquí, después de las esperas, y no al principio: durante ellas la
+    // cotización del carrito puede volver con una línea que ya no se vende, y el pedido tiene que
+    // ser el de lo que la pantalla muestra ahora, el mismo con que se cotizó el envío.
+    const lineasPorPagar = this.carrito.lineasPorPagar();
+    if (lineasPorPagar.length === 0) {
+      return;
+    }
     const comando: CrearPedidoComando = {
       correo: datos.correo,
       contacto: datos.contacto,
@@ -500,24 +504,24 @@ export class ConfirmarPage {
       // cobraría el total viejo y después le borraría el carrito nuevo. La huella decide.
       const pedido =
         this.checkout.pedidoReutilizable(comando) ?? (await this.checkout.crearPedido(comando));
-      const continuo = await this.continuarSegunMetodoPago(pedido, pagadas);
+      const continuo = await this.continuarSegunMetodoPago(pedido);
       if (!continuo) {
         // No se pudo seguir y ya se navegó a donde falta algo. Limpiar el carrito aquí dejaría al
         // comprador con un pedido creado, sus líneas fuera de toda pantalla y la guarda del
         // principio de este método impidiéndole volver a intentarlo.
         return;
       }
-      // Aquí y no antes, y **solo sin pasarela**. Las líneas ya son del pedido, así que dejar el
-      // carrito lleno invita a comprarlas dos veces; pero limpiarlo apenas se crea el pedido
-      // rompería el reintento de arriba, porque la guarda del principio de este método exige un
-      // carrito con líneas.
+      // Aquí y no antes, y **solo sin pasarela**. Las líneas ya son del pedido, así que dejarlas en
+      // el carrito invita a comprarlas dos veces; pero quitarlas apenas se crea el pedido rompería
+      // el reintento de arriba, porque la guarda del principio de este método exige algo por pagar.
       //
       // Con Wompi o Sistecrédito el comprador sale del sitio con el pago todavía por hacer: vaciar
       // el carrito al salir dejaba con las manos vacías a quien cancelaba en la pasarela o a quien
-      // le negaban el crédito. Ese carrito lo vacía la pantalla de estado cuando el pedido vuelve
+      // le negaban el crédito. Lo pagado lo quita la pantalla de estado cuando el pedido vuelve
       // pagado (`AlmacenCarritoPorPagar`).
       if (this.terminado()) {
-        void this.carrito.quitarPagadas(pagadas);
+        // Lo que llevó este pedido; lo que se dejó sin marcar se queda en el carrito.
+        void this.carrito.quitarPagadas(comando.lineas);
         this.checkout.terminarCompra();
       }
     } catch (error) {
@@ -599,20 +603,17 @@ export class ConfirmarPage {
   }
 
   /**
-   * Para que la pantalla de estado quite de este carrito, y solo de este, las líneas que fueron al
-   * pedido cuando vuelva pagado.
+   * Para que la pantalla de estado quite de este carrito, y solo de este, lo que llevó el pedido
+   * cuando vuelva pagado.
    */
-  private anotarCarritoPorPagar(pedidoId: string, pagadas: readonly string[]): void {
+  private anotarCarritoPorPagar(pedidoId: string): void {
     const carritoId = this.carrito.carritoId();
     if (carritoId) {
-      this.carritosPorPagar.anotar(pedidoId, carritoId, pagadas);
+      this.carritosPorPagar.anotar(pedidoId, carritoId);
     }
   }
 
-  private async continuarSegunMetodoPago(
-    pedido: Pedido,
-    pagadas: readonly string[],
-  ): Promise<boolean> {
+  private async continuarSegunMetodoPago(pedido: Pedido): Promise<boolean> {
     // Antes de cualquier salida: la pasarela, la transferencia o el estado lo leen de aquí.
     this.correosDePedido.recordar(pedido.id, pedido.correo);
     if (esMetodoPagoSistecredito(pedido.metodoPago)) {
@@ -629,7 +630,7 @@ export class ConfirmarPage {
         documento,
         this.transloco.activeLang(),
       );
-      this.anotarCarritoPorPagar(pedido.id, pagadas);
+      this.anotarCarritoPorPagar(pedido.id);
       // La URL la arma la pasarela y es de un solo uso: no se compone nada aquí, solo se va. Y a
       // dónde vuelve el comprador NO se decide en esta llamada —va en `urlResponse`, que el
       // backend fija desde su configuración—, a diferencia de Wompi.
@@ -653,7 +654,7 @@ export class ConfirmarPage {
         pedidoId: pedido.id,
       });
       const urlRetorno = `${window.location.origin}/${idioma}/checkout/retorno-wompi?${parametrosRetorno.toString()}`;
-      this.anotarCarritoPorPagar(pedido.id, pagadas);
+      this.anotarCarritoPorPagar(pedido.id);
       window.location.href = urlWebCheckoutWompi(intento, urlRetorno);
       return true;
     }
