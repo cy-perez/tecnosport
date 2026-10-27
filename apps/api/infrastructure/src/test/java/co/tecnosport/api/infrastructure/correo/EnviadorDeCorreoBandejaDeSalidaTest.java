@@ -79,6 +79,9 @@ class EnviadorDeCorreoBandejaDeSalidaTest {
           return null;
         });
 
+    // UUID v7, como todo identificador del sistema (GeneradorIdentificador).
+    assertThat(correos.findAll()).allSatisfy(c -> assertThat(c.getId().version()).isEqualTo(7));
+
     assertThat(correos.findAll())
         .singleElement()
         .satisfies(

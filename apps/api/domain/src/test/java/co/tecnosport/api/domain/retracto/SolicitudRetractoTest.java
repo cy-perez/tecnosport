@@ -38,6 +38,8 @@ class SolicitudRetractoTest {
     assertEquals(EstadoSolicitudRetracto.RADICADA, solicitud.estado());
     assertTrue(solicitud.motivo().isEmpty());
     assertEquals(PEDIDO, solicitud.pedidoId());
+    // UUID v7, como todo identificador que nace en el dominio (GeneradorIdentificador).
+    assertEquals(7, solicitud.id().version());
   }
 
   @Test
