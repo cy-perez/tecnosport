@@ -15,6 +15,15 @@ import java.util.Objects;
 /**
  * Mismo error genérico si el correo no existe o si la clave es incorrecta
  * (docs/08-seguridad-legal.md, OWASP: no se filtra cuál de los dos fue).
+ *
+ * <p><b>Dos límites, y el cierre duro es el de la pareja cuenta+IP.</b> Hasta el 27 de octubre de
+ * 2026 había uno solo, por cuenta: cinco intentos fallidos cada quince minutos cerraban la cuenta
+ * para todo el mundo, clave correcta incluida. El correo del administrador es público —es el de
+ * contacto—, así que cualquiera dejaba fuera del panel al administrador con cinco peticiones cada
+ * cuarto de hora. Ahora el tope bajo se cuenta por cuenta <i>y</i> origen: quien adivina desde una
+ * IP se cierra a sí mismo, no al titular. Por cuenta sola queda un tope mucho mayor, que solo
+ * alcanza un ataque repartido entre muchos orígenes y que es el que frena la adivinanza
+ * distribuida.
  */
 public final class IniciarSesion {
 
@@ -25,6 +34,7 @@ public final class IniciarSesion {
   private final Reloj reloj;
   private final Duration vigenciaRefresco;
   private final LimitadorDeIntentos limitadorDeIntentos;
+  private final int maximoIntentosPorCuentaEIp;
   private final int maximoIntentosPorCuenta;
   private final Duration ventanaIntentosPorCuenta;
 
@@ -36,6 +46,7 @@ public final class IniciarSesion {
       Reloj reloj,
       Duration vigenciaRefresco,
       LimitadorDeIntentos limitadorDeIntentos,
+      int maximoIntentosPorCuentaEIp,
       int maximoIntentosPorCuenta,
       Duration ventanaIntentosPorCuenta) {
     this.repositorioUsuarios = Objects.requireNonNull(repositorioUsuarios);
@@ -45,6 +56,12 @@ public final class IniciarSesion {
     this.reloj = Objects.requireNonNull(reloj);
     this.vigenciaRefresco = Objects.requireNonNull(vigenciaRefresco);
     this.limitadorDeIntentos = Objects.requireNonNull(limitadorDeIntentos);
+    if (maximoIntentosPorCuenta < maximoIntentosPorCuentaEIp) {
+      throw new IllegalArgumentException(
+          "El tope por cuenta sola no puede ser menor que el de cuenta e IP: cerraría la cuenta"
+              + " antes que al origen que falla.");
+    }
+    this.maximoIntentosPorCuentaEIp = maximoIntentosPorCuentaEIp;
     this.maximoIntentosPorCuenta = maximoIntentosPorCuenta;
     this.ventanaIntentosPorCuenta = Objects.requireNonNull(ventanaIntentosPorCuenta);
   }
@@ -54,9 +71,17 @@ public final class IniciarSesion {
 
     CorreoElectronico correo = new CorreoElectronico(comando.correo());
     Instant ahora = reloj.ahora();
-    String llaveDelLimite = "cuenta:iniciar-sesion:" + correo.valor();
+    String llaveDeLaCuenta = "cuenta:iniciar-sesion:" + correo.valor();
+    String llaveDeCuentaEIp =
+        "cuenta-ip:iniciar-sesion:"
+            + correo.valor()
+            + ":"
+            + Objects.toString(comando.direccionIp(), "");
+    // La pareja primero: un origen que ya se cerró no sigue gastando el presupuesto de la cuenta.
     if (!limitadorDeIntentos.permitir(
-        llaveDelLimite, maximoIntentosPorCuenta, ventanaIntentosPorCuenta, ahora)) {
+            llaveDeCuentaEIp, maximoIntentosPorCuentaEIp, ventanaIntentosPorCuenta, ahora)
+        || !limitadorDeIntentos.permitir(
+            llaveDeLaCuenta, maximoIntentosPorCuenta, ventanaIntentosPorCuenta, ahora)) {
       throw new LimiteDeIntentosExcedidoException();
     }
 
@@ -75,7 +100,8 @@ public final class IniciarSesion {
     // veces agotaba los cinco sin que nadie se equivocara una sola vez. Medido el 22 de
     // septiembre de 2026 probando el cambio de clave del panel: trece intentos contados, la clave
     // correcta todas las veces, y la cuenta bloqueada quince minutos.
-    limitadorDeIntentos.olvidar(llaveDelLimite);
+    limitadorDeIntentos.olvidar(llaveDeCuentaEIp);
+    limitadorDeIntentos.olvidar(llaveDeLaCuenta);
 
     if (!usuario.correoVerificado()) {
       throw new CorreoSinVerificarException();

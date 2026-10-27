@@ -30,7 +30,7 @@ class ConfiguracionLimiteIntentosTest {
     rutas.addAll(
         rutas(
             configuracion.filtroLimiteIntentosAuth(
-                limitador(), reloj(), new PropiedadesLimiteAuth(5, 15, 5, 60))));
+                limitador(), reloj(), new PropiedadesLimiteAuth(5, 15, 5, 60, 100))));
     rutas.addAll(
         rutas(
             configuracion.filtroLimiteIntentosPedidos(

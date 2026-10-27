@@ -703,6 +703,7 @@ class AutenticacionControladorTest {
           VIGENCIA,
           limitadorDeIntentos,
           MAXIMO_INTENTOS_POR_CUENTA,
+          MAXIMO_INTENTOS_POR_CUENTA,
           VENTANA_INTENTOS_POR_CUENTA);
     }
 

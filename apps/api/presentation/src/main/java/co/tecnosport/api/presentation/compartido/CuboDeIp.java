@@ -17,14 +17,14 @@ import java.util.Locale;
  * <p>Sin {@code InetAddress}: con algo que no es un literal hace una consulta de DNS, y lo que
  * llega aquí viene de una cabecera.
  */
-final class CuboDeIp {
+public final class CuboDeIp {
 
   private static final int GRUPOS = 8;
   private static final int GRUPOS_DEL_PREFIJO = 4;
 
   private CuboDeIp() {}
 
-  static String de(String ip) {
+  public static String de(String ip) {
     if (ip == null || ip.indexOf(':') < 0) {
       return ip;
     }

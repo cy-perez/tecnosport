@@ -3,6 +3,7 @@ package co.tecnosport.api.application.usuario;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import co.tecnosport.api.application.compartido.LimitadorDeIntentos;
 import co.tecnosport.api.application.compartido.LimitadorDeIntentosFalso;
 import co.tecnosport.api.application.compartido.LimiteDeIntentosExcedidoException;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
@@ -11,6 +12,8 @@ import co.tecnosport.api.domain.usuario.Rol;
 import co.tecnosport.api.domain.usuario.Usuario;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 class IniciarSesionTest {
@@ -19,7 +22,9 @@ class IniciarSesionTest {
   private static final Duration VIGENCIA_REFRESCO = Duration.ofDays(30);
   private static final int MAXIMO_INTENTOS_POR_CUENTA = 5;
   private static final Duration VENTANA_INTENTOS_POR_CUENTA = Duration.ofMinutes(15);
+  private static final int MAXIMO_INTENTOS_POR_CUENTA_SOLA = 100;
   private static final CorreoElectronico CORREO = new CorreoElectronico("admin@tecnosport.co");
+  private static final String IP = "203.0.113.5";
 
   private RepositorioUsuariosFalso usuarios;
   private RepositorioSesionesFalso sesiones;
@@ -27,10 +32,17 @@ class IniciarSesionTest {
   private LimitadorDeIntentosFalso limitadorDeIntentos;
 
   private IniciarSesion crear() {
+    return crear(new LimitadorDeIntentosFalso());
+  }
+
+  private IniciarSesion crear(LimitadorDeIntentos limitador) {
     usuarios = new RepositorioUsuariosFalso();
     sesiones = new RepositorioSesionesFalso();
     codificador = new CodificadorDeClavesFalso();
-    limitadorDeIntentos = new LimitadorDeIntentosFalso();
+    limitadorDeIntentos =
+        limitador instanceof LimitadorDeIntentosFalso falso
+            ? falso
+            : new LimitadorDeIntentosFalso();
     return new IniciarSesion(
         usuarios,
         sesiones,
@@ -38,8 +50,9 @@ class IniciarSesionTest {
         new GeneradorDeTokensFalso(),
         new RelojFalso(AHORA),
         VIGENCIA_REFRESCO,
-        limitadorDeIntentos,
+        limitador,
         MAXIMO_INTENTOS_POR_CUENTA,
+        MAXIMO_INTENTOS_POR_CUENTA_SOLA,
         VENTANA_INTENTOS_POR_CUENTA);
   }
 
@@ -56,7 +69,7 @@ class IniciarSesionTest {
     conUsuarioAdmin("clave-correcta");
 
     TokensDeSesion tokens =
-        caso.ejecutar(new IniciarSesionComando("admin@tecnosport.co", "clave-correcta"));
+        caso.ejecutar(new IniciarSesionComando("admin@tecnosport.co", "clave-correcta", IP));
 
     assertEquals(Rol.ADMIN, tokens.rol());
     assertEquals(1, sesiones.todas().size());
@@ -71,10 +84,12 @@ class IniciarSesionTest {
     IniciarSesion caso = crear();
     conUsuarioAdmin("clave-correcta");
 
-    caso.ejecutar(new IniciarSesionComando("admin@tecnosport.co", "clave-correcta"));
+    caso.ejecutar(new IniciarSesionComando("admin@tecnosport.co", "clave-correcta", IP));
 
     assertEquals(
-        java.util.List.of("cuenta:iniciar-sesion:admin@tecnosport.co"),
+        java.util.List.of(
+            "cuenta-ip:iniciar-sesion:admin@tecnosport.co:" + IP,
+            "cuenta:iniciar-sesion:admin@tecnosport.co"),
         limitadorDeIntentos.olvidadas());
   }
 
@@ -85,7 +100,8 @@ class IniciarSesionTest {
 
     assertThrows(
         CredencialesInvalidasException.class,
-        () -> caso.ejecutar(new IniciarSesionComando("admin@tecnosport.co", "clave-incorrecta")));
+        () ->
+            caso.ejecutar(new IniciarSesionComando("admin@tecnosport.co", "clave-incorrecta", IP)));
 
     assertEquals(java.util.List.of(), limitadorDeIntentos.olvidadas());
   }
@@ -96,7 +112,7 @@ class IniciarSesionTest {
 
     assertThrows(
         CredencialesInvalidasException.class,
-        () -> caso.ejecutar(new IniciarSesionComando("no-existe@tecnosport.co", "cualquiera")));
+        () -> caso.ejecutar(new IniciarSesionComando("no-existe@tecnosport.co", "cualquiera", IP)));
   }
 
   @Test
@@ -106,7 +122,8 @@ class IniciarSesionTest {
 
     assertThrows(
         CredencialesInvalidasException.class,
-        () -> caso.ejecutar(new IniciarSesionComando("admin@tecnosport.co", "clave-incorrecta")));
+        () ->
+            caso.ejecutar(new IniciarSesionComando("admin@tecnosport.co", "clave-incorrecta", IP)));
   }
 
   @Test
@@ -118,7 +135,7 @@ class IniciarSesionTest {
 
     assertThrows(
         CorreoSinVerificarException.class,
-        () -> caso.ejecutar(new IniciarSesionComando("admin@tecnosport.co", "clave-correcta")));
+        () -> caso.ejecutar(new IniciarSesionComando("admin@tecnosport.co", "clave-correcta", IP)));
   }
 
   @Test
@@ -129,7 +146,7 @@ class IniciarSesionTest {
 
     assertThrows(
         LimiteDeIntentosExcedidoException.class,
-        () -> caso.ejecutar(new IniciarSesionComando("admin@tecnosport.co", "clave-correcta")));
+        () -> caso.ejecutar(new IniciarSesionComando("admin@tecnosport.co", "clave-correcta", IP)));
   }
 
   /** ADR-0074: una cuenta que solo entra con Google no tiene clave que adivinar. */
@@ -140,6 +157,83 @@ class IniciarSesionTest {
 
     assertThrows(
         CredencialesInvalidasException.class,
-        () -> caso.ejecutar(new IniciarSesionComando("admin@tecnosport.co", "")));
+        () -> caso.ejecutar(new IniciarSesionComando("admin@tecnosport.co", "", IP)));
+  }
+
+  /**
+   * El correo del administrador es público. Con el cierre por cuenta sola, cinco intentos desde
+   * cualquier sitio dejaban fuera al titular, clave correcta incluida.
+   */
+  @Test
+  void losFallosDesdeOtraIpNoCierranLaCuentaAlTitular() {
+    IniciarSesion caso = crear(new LimitadorQueCuenta());
+    conUsuarioAdmin("clave-correcta");
+    for (int i = 0; i < MAXIMO_INTENTOS_POR_CUENTA * 3; i++) {
+      assertThrows(
+          RuntimeException.class,
+          () ->
+              caso.ejecutar(
+                  new IniciarSesionComando("admin@tecnosport.co", "adivinanza", "198.51.100.66")));
+    }
+
+    TokensDeSesion tokens =
+        caso.ejecutar(new IniciarSesionComando("admin@tecnosport.co", "clave-correcta", IP));
+
+    assertEquals(Rol.ADMIN, tokens.rol());
+  }
+
+  @Test
+  void elOrigenQueFallaSeCierraASiMismo() {
+    IniciarSesion caso = crear(new LimitadorQueCuenta());
+    conUsuarioAdmin("clave-correcta");
+    for (int i = 0; i < MAXIMO_INTENTOS_POR_CUENTA; i++) {
+      assertThrows(
+          CredencialesInvalidasException.class,
+          () ->
+              caso.ejecutar(
+                  new IniciarSesionComando("admin@tecnosport.co", "adivinanza", "198.51.100.66")));
+    }
+
+    assertThrows(
+        LimiteDeIntentosExcedidoException.class,
+        () ->
+            caso.ejecutar(
+                new IniciarSesionComando(
+                    "admin@tecnosport.co", "clave-correcta", "198.51.100.66")));
+  }
+
+  /** La adivinanza repartida entre muchos orígenes sí la frena el tope por cuenta sola. */
+  @Test
+  void muchosOrigenesAgotanElTopePorCuentaSola() {
+    IniciarSesion caso = crear(new LimitadorQueCuenta());
+    conUsuarioAdmin("clave-correcta");
+    for (int i = 0; i < MAXIMO_INTENTOS_POR_CUENTA_SOLA; i++) {
+      String origen = "198.51.100." + (i % 250);
+      assertThrows(
+          RuntimeException.class,
+          () ->
+              caso.ejecutar(new IniciarSesionComando("admin@tecnosport.co", "adivinanza", origen)));
+    }
+
+    assertThrows(
+        LimiteDeIntentosExcedidoException.class,
+        () ->
+            caso.ejecutar(
+                new IniciarSesionComando("admin@tecnosport.co", "clave-correcta", "192.0.2.1")));
+  }
+
+  /** Cuenta de verdad por llave, sin ventana: dentro de una prueba no pasa el tiempo. */
+  private static final class LimitadorQueCuenta implements LimitadorDeIntentos {
+    private final Map<String, Integer> conteos = new HashMap<>();
+
+    @Override
+    public boolean permitir(String clave, int maximoIntentos, Duration ventana, Instant ahora) {
+      return conteos.merge(clave, 1, Integer::sum) <= maximoIntentos;
+    }
+
+    @Override
+    public void olvidar(String clave) {
+      conteos.remove(clave);
+    }
   }
 }

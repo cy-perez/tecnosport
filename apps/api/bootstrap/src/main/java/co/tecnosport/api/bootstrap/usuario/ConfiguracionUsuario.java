@@ -89,6 +89,7 @@ public class ConfiguracionUsuario {
         Duration.ofDays(propiedades.diasRefresco()),
         limitadorDeIntentos,
         propiedadesLimite.cuentaMaximo(),
+        propiedadesLimite.cuentaGlobalMaximo(),
         Duration.ofMinutes(propiedadesLimite.cuentaMinutos()));
   }
 

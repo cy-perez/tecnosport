@@ -29,6 +29,14 @@ el panel administrativo, el asistente de captura y la cuenta opcional del client
   primer valor de `X-Forwarded-For`, que lo escribe el cliente: hasta el 25 de
   octubre de 2026 eso dejaba evadir los cuatro límites y le dejaba al titular
   escribir la IP de su propia constancia de autorización (ADR-0087).
+  **En el inicio de sesión el cierre duro es por cuenta e IP, no por cuenta
+  sola** (desde el 27 de octubre de 2026): el correo del administrador es
+  público, y cinco intentos fallidos desde cualquier sitio cerraban el panel al
+  administrador aunque escribiera la clave correcta. Por cuenta sola queda un
+  tope mucho mayor (`cuenta-global-maximo`, 100 por ventana), que solo alcanza
+  un ataque repartido entre muchos orígenes. **Pendiente del usuario:** separar
+  el correo de administración del de contacto, para que el usuario del panel
+  deje de ser público.
 - El asistente de captura exige rol `ADMIN` y una sesión activa; las URL firmadas
   de subida se emiten con vencimiento corto y para un objeto específico.
 - **Entrar con Google, desde el 8 de octubre de 2026** (`ADR-0074`). Google prueba
