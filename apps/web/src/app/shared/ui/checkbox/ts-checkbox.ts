@@ -69,6 +69,12 @@ export class TsCheckbox {
   readonly idCasilla = input.required<string>();
   /** Texto visible, **ya traducido** por quien llama. */
   readonly etiqueta = input.required<string>();
+  /**
+   * El nombre accesible cuando el visible no alcanza: en el carrito hay una casilla «Incluir en el
+   * pago» por línea, y tres iguales no dicen de cuál producto es cada una. Va al `<input>` real,
+   * como el `etiquetaAccesible` de `ts-boton`. `null` deja el de la etiqueta.
+   */
+  readonly etiquetaAccesible = input<string | null>(null);
   readonly marcado = input.required<boolean>();
   readonly deshabilitado = input(false);
   /**

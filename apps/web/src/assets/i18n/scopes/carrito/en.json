@@ -25,5 +25,11 @@
   "error_agregar": "We couldn't add it to your cart. Check your connection and try again.",
   "error_agregar_maximo": "Your cart already has the maximum number of units of this product.",
   "envio_aparte": "Shipping is quoted at checkout, based on your destination.",
-  "seguir_comprando": "Continue shopping"
+  "seguir_comprando": "Continue shopping",
+  "incluir_en_el_pago": "Include in this payment",
+  "incluir_en_el_pago_de": "Include {{nombre}} in this payment",
+  "no_se_vende": "No longer for sale: it isn't included in this payment.",
+  "seleccionar_todos": "Select all",
+  "seleccionados": "{{marcados}} of {{total}} products in this payment",
+  "nada_por_pagar": "Select at least one product to check out."
 }

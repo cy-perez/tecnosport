@@ -1,14 +1,15 @@
-import { NgOptimizedImage } from '@angular/common';
+import { NgOptimizedImage, NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
+import { TsCheckbox } from '../../../../shared/ui/checkbox/ts-checkbox';
 import { TsPrecio } from '../../../../shared/ts-precio/ts-precio';
 import { LineaCarrito } from '../../domain/carrito.model';
 import { SnapshotLinea } from '../../domain/snapshot-linea.model';
 
 @Component({
   selector: 'app-linea-carrito',
-  imports: [NgOptimizedImage, TranslocoPipe, TsBoton, TsPrecio],
+  imports: [NgOptimizedImage, NgTemplateOutlet, TranslocoPipe, TsBoton, TsCheckbox, TsPrecio],
   templateUrl: './linea-carrito.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -23,8 +24,18 @@ export class LineaCarritoComponent {
    */
   readonly cantidadMaxima = input<number | null>(null);
 
+  /**
+   * Si se pinta la casilla de «incluir en el pago»: solo con dos líneas vendibles o más
+   * (`CarritoStore.seleccionHabilitada`), y nunca en una que ya no se vende.
+   */
+  readonly seleccionable = input(false);
+  readonly marcada = input(true);
+  /** `false` si la cotización la trae sin precio: no se paga y lo dice, en vez de una casilla. */
+  readonly seVende = input(true);
+
   readonly cantidadCambio = output<number>();
   readonly eliminar = output<void>();
+  readonly marcadaCambio = output<boolean>();
 
   /**
    * El precio de hoy, del servidor (`CarritoStore.precioDeLinea`). `null` mientras llega o si la

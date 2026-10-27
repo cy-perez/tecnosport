@@ -1,4 +1,5 @@
-import { provideRouter } from '@angular/router';
+import { TestBed } from '@angular/core/testing';
+import { Router, provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { fireEvent, render, screen } from '@testing-library/angular';
@@ -152,7 +153,9 @@ describe('CarritoPage', () => {
 
     expect(await screen.findByText('Morral urbano')).toBeTruthy();
     expect((await screen.findAllByText(/300\.000/)).length).toBeGreaterThan(0);
-    expect(screen.getByRole('link', { name: 'Ir a pagar' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Ir a pagar' })).toBeTruthy();
+    // Con una sola línea no hay nada que elegir.
+    expect(screen.queryByRole('checkbox')).toBeNull();
     expect(screen.getByRole('link', { name: 'Seguir comprando' })).toBeTruthy();
   });
 
@@ -361,5 +364,78 @@ describe('CarritoPage y el ahorro sin pasarela', () => {
       const anuncio = screen.getByRole('status').textContent!.replace(/\s+/g, ' ');
       expect(anuncio).toMatch(/Total: \$\s?450\.000\. Ahorras \$\s?15\.000 pagando/);
     });
+  });
+});
+
+/** Con varias líneas se elige qué se paga ahora; lo demás se queda en el carrito. */
+describe('CarritoPage y la selección de lo que se paga', () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea({ ...snapshotDePrueba('variante-1'), nombreProducto: 'Morral urbano' });
+    sembrarSnapshotLinea({ ...snapshotDePrueba('variante-2'), nombreProducto: 'Gorra plana' });
+  });
+
+  const carritoDeDos: Carrito = {
+    id: 'carrito-1',
+    usuarioId: null,
+    creadoEn: '2026-01-01T00:00:00Z',
+    lineas: [
+      { id: 'linea-1', varianteId: 'variante-1', cantidad: 1 },
+      { id: 'linea-2', varianteId: 'variante-2', cantidad: 1 },
+    ],
+  };
+
+  const casilla = (nombre: string) =>
+    screen.getByRole('checkbox', { name: nombre }) as HTMLInputElement;
+
+  it('todas arrancan marcadas y el total es el de las dos', async () => {
+    await renderCarrito(new RepositorioCarritoFalso(carritoDeDos));
+
+    expect(await screen.findByText('2 de 2 productos en este pago')).toBeTruthy();
+    expect(casilla('Incluir Morral urbano en este pago').checked).toBe(true);
+    expect(casilla('Incluir Gorra plana en este pago').checked).toBe(true);
+    expect(casilla('Seleccionar todos').checked).toBe(true);
+    expect((await screen.findAllByText(/300\.000/)).length).toBeGreaterThan(0);
+  });
+
+  it('desmarcar una baja el total al de lo marcado', async () => {
+    await renderCarrito(new RepositorioCarritoFalso(carritoDeDos));
+    await screen.findByText('2 de 2 productos en este pago');
+
+    fireEvent.click(casilla('Incluir Gorra plana en este pago'));
+
+    expect(await screen.findByText('1 de 2 productos en este pago')).toBeTruthy();
+    expect(casilla('Seleccionar todos').checked).toBe(false);
+    expect(screen.queryByText(/300\.000/)).toBeNull();
+    // Se anuncia: el total cambia lejos de la casilla que se tocó.
+    expect(screen.getByRole('status').textContent).toMatch(/1 de 2 productos en este pago/);
+  });
+
+  it('sin nada marcado, ir a pagar dice qué falta y no navega', async () => {
+    const { fixture } = await renderCarrito(new RepositorioCarritoFalso(carritoDeDos));
+    await screen.findByText('2 de 2 productos en este pago');
+    const navegar = vi.spyOn(fixture.debugElement.injector.get(Router), 'navigate');
+
+    fireEvent.click(casilla('Seleccionar todos'));
+    fireEvent.click(screen.getByRole('button', { name: 'Ir a pagar' }));
+
+    expect(await screen.findByRole('alert')).toHaveProperty(
+      'textContent',
+      expect.stringContaining('Marca al menos un producto para ir a pagar.'),
+    );
+    expect(navegar).not.toHaveBeenCalled();
+  });
+
+  it('con algo marcado, ir a pagar lleva al checkout', async () => {
+    await renderCarrito(new RepositorioCarritoFalso(carritoDeDos));
+    await screen.findByText('2 de 2 productos en este pago');
+    const navegar = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+
+    fireEvent.click(casilla('Incluir Morral urbano en este pago'));
+    fireEvent.click(screen.getByRole('button', { name: 'Ir a pagar' }));
+
+    expect(navegar).toHaveBeenCalledWith(['../checkout'], expect.anything());
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 });
