@@ -1170,7 +1170,8 @@ class PedidoControladorTest {
           repositorioInventario,
           reloj,
           Duration.ofMinutes(30),
-          recogidaDeProveedoresLocales(repositorioProductos));
+          recogidaDeProveedoresLocales(repositorioProductos),
+          new RepositorioEnlacesDeCompraDobleDePrueba());
     }
 
     @Bean

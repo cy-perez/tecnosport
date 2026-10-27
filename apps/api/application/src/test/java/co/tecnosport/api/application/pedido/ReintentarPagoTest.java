@@ -22,6 +22,8 @@ import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.domain.inventario.ExistenciaInsuficienteException;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.pedido.Direccion;
+import co.tecnosport.api.domain.pedido.EnlaceDeCompra;
+import co.tecnosport.api.domain.pedido.EnlaceDeCompraNoVigenteException;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
 import co.tecnosport.api.domain.pedido.LineaPedido;
 import co.tecnosport.api.domain.pedido.MetodoPago;
@@ -53,8 +55,10 @@ class ReintentarPagoTest {
   private UUID varianteId;
   private ModalidadesDeEntrega modalidadesDeEntrega = new ModalidadesDeEntrega(true);
   private RepositorioProveedoresFalso proveedores;
+  private RepositorioEnlacesDeCompraFalso enlaces;
 
   private ReintentarPago crear() {
+    enlaces = new RepositorioEnlacesDeCompraFalso();
     pedidos = new RepositorioPedidosFalso();
     productos = new RepositorioProductosFalso();
     inventarios = new RepositorioInventarioFalso();
@@ -65,7 +69,8 @@ class ReintentarPagoTest {
         inventarios,
         new RelojFalso(AHORA),
         RESERVA_PAGO_EN_LINEA,
-        new RecogidaEnPunto(modalidadesDeEntrega, productos, proveedores));
+        new RecogidaEnPunto(modalidadesDeEntrega, productos, proveedores),
+        enlaces);
   }
 
   /** Un producto de proveedor publicado con esa variante; agotado por el proveedor si se pide. */
@@ -74,6 +79,15 @@ class ReintentarPagoTest {
   }
 
   private Producto seVende(UUID varianteId, boolean agotadoPorElProveedor, UUID proveedorId) {
+    return seVende(varianteId, agotadoPorElProveedor, proveedorId, false, false);
+  }
+
+  private Producto seVende(
+      UUID varianteId,
+      boolean agotadoPorElProveedor,
+      UUID proveedorId,
+      boolean varianteAgotada,
+      boolean disponibilidadPorConfirmar) {
     Producto producto =
         Producto.crearDeProveedor(
             "Samsung Galaxy A17 5G",
@@ -105,7 +119,9 @@ class ReintentarPagoTest {
             null,
             EstadoVariante.ACTIVA,
             List.of(),
-            null));
+            null,
+            varianteAgotada,
+            disponibilidadPorConfirmar));
     producto.publicar();
     if (agotadoPorElProveedor) {
       producto.marcarAgotadoPorProveedor(AHORA.plusSeconds(60));
@@ -407,6 +423,87 @@ class ReintentarPagoTest {
         EstadoPedido.PAGO_FALLIDO, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
     assertEquals(
         5, inventarios.buscarPorVarianteId(varianteId).orElseThrow().saldoDisponible(AHORA));
+  }
+
+  /**
+   * Agotar la variante —una talla, un color— tampoco toca el libro. {@code CrearPedido} ya la
+   * rechazaba; el reintento la volvía a reservar y a cobrar.
+   */
+  @Test
+  void unaVarianteQueElProveedorAgotoNoSeVuelveACobrar() {
+    ReintentarPago caso = crear();
+    Pedido pedido = pedidoFallidoConInventario(5);
+    seVende(varianteId, false, UUID.randomUUID(), true, false);
+
+    assertThrows(
+        VarianteNoEncontradaException.class,
+        () -> caso.ejecutar(new ReintentarPagoComando(pedido.id(), "cliente@tecnosport.co")));
+
+    assertEquals(EstadoPedido.PAGO_FALLIDO, pedido.estado());
+    assertEquals(
+        5, inventarios.buscarPorVarianteId(varianteId).orElseThrow().saldoDisponible(AHORA));
+  }
+
+  /** El enlace con que se compró, usado en este pedido y emitido {@code horasAntes} atrás. */
+  private void compradoConEnlace(Pedido pedido, long horasAntes) {
+    Instant emitido = AHORA.minus(Duration.ofHours(horasAntes));
+    EnlaceDeCompra enlace =
+        EnlaceDeCompra.generar(varianteId, UUID.randomUUID(), Duration.ofHours(24), emitido);
+    enlace.usar(pedido.id(), emitido.plusSeconds(60));
+    enlaces.guardar(enlace);
+  }
+
+  /**
+   * Lo que el proveedor confirmó vale lo que dura el enlace. Dentro de su plazo se reintenta, y la
+   * unidad queda apartada hasta que el enlace habría vencido, no los 30 minutos del pago en línea.
+   */
+  @Test
+  void unaVariantePorConfirmarSeReintentaMientrasSuEnlaceSigaEnPlazo() {
+    ReintentarPago caso = crear();
+    Pedido pedido = pedidoFallidoConInventario(5);
+    seVende(varianteId, false, UUID.randomUUID(), false, true);
+    compradoConEnlace(pedido, 2);
+
+    Pedido reintentado =
+        caso.ejecutar(new ReintentarPagoComando(pedido.id(), "cliente@tecnosport.co"));
+
+    assertEquals(EstadoPedido.PAGO_PENDIENTE, reintentado.estado());
+    Inventario inventario = inventarios.buscarPorVarianteId(varianteId).orElseThrow();
+    assertEquals(4, inventario.saldoDisponible(AHORA.plus(Duration.ofHours(21))));
+  }
+
+  /**
+   * Decisión del 27/10/2026: con el enlace vencido no se reintenta; quien compra pide otro por
+   * WhatsApp. La misma excepción que {@code CrearPedido} con un enlace vencido.
+   */
+  @Test
+  void unaVariantePorConfirmarConElEnlaceVencidoNoSeReintentaNiReserva() {
+    ReintentarPago caso = crear();
+    Pedido pedido = pedidoFallidoConInventario(5);
+    seVende(varianteId, false, UUID.randomUUID(), false, true);
+    compradoConEnlace(pedido, 25);
+
+    assertThrows(
+        EnlaceDeCompraNoVigenteException.class,
+        () -> caso.ejecutar(new ReintentarPagoComando(pedido.id(), "cliente@tecnosport.co")));
+
+    assertEquals(EstadoPedido.PAGO_FALLIDO, pedido.estado());
+    assertEquals(
+        5, inventarios.buscarPorVarianteId(varianteId).orElseThrow().saldoDisponible(AHORA));
+  }
+
+  /** Pasó a «por confirmar» después de comprarse, sin enlace: lo mismo que crear el pedido. */
+  @Test
+  void unaVariantePorConfirmarSinEnlaceNoSeReintenta() {
+    ReintentarPago caso = crear();
+    Pedido pedido = pedidoFallidoConInventario(5);
+    seVende(varianteId, false, UUID.randomUUID(), false, true);
+
+    assertThrows(
+        DisponibilidadPorConfirmarException.class,
+        () -> caso.ejecutar(new ReintentarPagoComando(pedido.id(), "cliente@tecnosport.co")));
+
+    assertEquals(EstadoPedido.PAGO_FALLIDO, pedido.estado());
   }
 
   private static LineaPedido linea(UUID variante) {

@@ -477,16 +477,9 @@ public final class CrearPedido {
    * reproducen un estado que el adaptador real no produce.
    */
   private Variante buscarVarianteVendible(Producto producto, UUID varianteId) {
-    Variante variante =
-        producto.variantes().stream()
-            .filter(v -> v.id().equals(varianteId))
-            .findFirst()
-            .orElseThrow(() -> new VarianteNoEncontradaException(varianteId));
-    // Una prenda que el proveedor agotó no se vende, aunque el libro tenga saldo (ADR-0084).
-    if (!variante.seVende()) {
-      throw new VarianteNoEncontradaException(varianteId);
-    }
-    return variante;
+    // Una prenda que el proveedor agotó no se vende, aunque el libro tenga saldo (ADR-0084). La
+    // regla vive en ProductoVendible porque el reintento de pago la necesita igual.
+    return ProductoVendible.exigirVariante(producto, varianteId);
   }
 
   private Duration vigenciaReserva(MetodoPago metodoPago) {

@@ -359,13 +359,15 @@ public class ConfiguracionPedido {
       RepositorioInventario repositorioInventario,
       Reloj reloj,
       PropiedadesPedido propiedades,
-      RecogidaEnPunto recogidaEnPunto) {
+      RecogidaEnPunto recogidaEnPunto,
+      RepositorioEnlacesDeCompra repositorioEnlaces) {
     return new ReintentarPago(
         repositorioPedidos,
         repositorioProductos,
         repositorioInventario,
         reloj,
         Duration.ofMinutes(propiedades.minutosReservaInventario()),
-        recogidaEnPunto);
+        recogidaEnPunto,
+        repositorioEnlaces);
   }
 }
