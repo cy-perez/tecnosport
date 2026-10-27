@@ -37,6 +37,7 @@ import { fleteDelMedio } from '../../domain/flete-del-medio';
 import { urlWebCheckoutWompi } from '../../domain/wompi';
 import { ALMACEN_CORREO_DE_PEDIDO } from '../../domain/almacen-correo-de-pedido.puerto';
 import { ALMACEN_CARRITO_POR_PAGAR } from '../../domain/almacen-carrito-por-pagar.puerto';
+import { AvisoFueraDelPedido } from '../aviso-fuera-del-pedido/aviso-fuera-del-pedido';
 
 const CLAVE_ETIQUETA: Record<MetodoPago, string> = {
   WOMPI: 'checkout.metodoPago.wompi',
@@ -74,7 +75,16 @@ const CLAVE_MOTIVO_SISTECREDITO: Record<string, string> = {
  */
 @Component({
   selector: 'app-confirmar',
-  imports: [RouterLink, TranslocoPipe, TsBoton, TsEsqueleto, TsIcono, TsPrecio, TsSalidaSinEnvio],
+  imports: [
+    AvisoFueraDelPedido,
+    RouterLink,
+    TranslocoPipe,
+    TsBoton,
+    TsEsqueleto,
+    TsIcono,
+    TsPrecio,
+    TsSalidaSinEnvio,
+  ],
   templateUrl: './confirmar.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

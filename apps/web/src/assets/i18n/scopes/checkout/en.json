@@ -7,6 +7,7 @@
     "ir_al_catalogo": "Go to catalog",
     "nada_por_pagar": "You didn't select any product to pay for.",
     "volver_al_carrito": "Back to cart",
+    "fuera_del_pedido": "No longer for sale and not included in this order: {{productos}}. It stays in your cart.",
     "nada_a_la_venta": "None of the products in your cart are for sale right now.",
     "lo_demas_se_queda": "Whatever you didn't select stays in your cart for another purchase.",
     "error_carrito": "We couldn't load your cart. Please try again.",

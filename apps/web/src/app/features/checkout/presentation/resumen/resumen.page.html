@@ -11,6 +11,9 @@
   } @else if (carrito.consulta.isError()) {
     <p class="text-ts-error" role="alert">{{ 'checkout.resumen.error_carrito' | transloco }}</p>
   } @else if (carrito.consulta.data(); as datosCarrito) {
+    <!-- Antes de la cadena de casos: si lo único marcado dejó de venderse, «no marcaste nada»
+         solo se entiende con el nombre de lo que salió. -->
+    <app-aviso-fuera-del-pedido />
     @if (datosCarrito.lineas.length === 0) {
       <p class="mb-16 text-ts-texto-suave">{{ 'checkout.resumen.carrito_vacio' | transloco }}</p>
       <ts-boton variante="primario" [enlace]="['../../productos']">{{
