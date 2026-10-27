@@ -1,4 +1,4 @@
-package co.tecnosport.api.bootstrap.proveedores;
+package co.tecnosport.api.infrastructure.proveedores;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;

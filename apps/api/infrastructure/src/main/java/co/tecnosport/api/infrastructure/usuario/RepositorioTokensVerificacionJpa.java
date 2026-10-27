@@ -1,6 +1,7 @@
 package co.tecnosport.api.infrastructure.usuario;
 
 import co.tecnosport.api.application.usuario.RepositorioTokensVerificacion;
+import co.tecnosport.api.domain.usuario.HuellaDeToken;
 import co.tecnosport.api.domain.usuario.TokenVerificacionCorreo;
 import co.tecnosport.api.infrastructure.usuario.entidad.TokenVerificacionCorreoJpaEntity;
 import java.util.Objects;
@@ -19,7 +20,9 @@ public class RepositorioTokensVerificacionJpa implements RepositorioTokensVerifi
 
   @Override
   public Optional<TokenVerificacionCorreo> buscarPorId(UUID id) {
-    return tokens.findById(id).map(this::aDominio);
+    // Se busca por la huella y el token se le devuelve al agregado desde quien lo trajo: la base no
+    // lo tiene (HuellaDeToken).
+    return tokens.findById(HuellaDeToken.de(id)).map(entidad -> aDominio(id, entidad));
   }
 
   @Override
@@ -27,9 +30,9 @@ public class RepositorioTokensVerificacionJpa implements RepositorioTokensVerifi
     tokens.save(aEntidad(token));
   }
 
-  private TokenVerificacionCorreo aDominio(TokenVerificacionCorreoJpaEntity entidad) {
+  private TokenVerificacionCorreo aDominio(UUID token, TokenVerificacionCorreoJpaEntity entidad) {
     return new TokenVerificacionCorreo(
-        entidad.getId(),
+        token,
         entidad.getUsuarioId(),
         entidad.getCreadoEn(),
         entidad.getExpiraEn(),
@@ -38,7 +41,7 @@ public class RepositorioTokensVerificacionJpa implements RepositorioTokensVerifi
 
   private TokenVerificacionCorreoJpaEntity aEntidad(TokenVerificacionCorreo token) {
     return new TokenVerificacionCorreoJpaEntity(
-        token.id(),
+        HuellaDeToken.de(token.id()),
         token.usuarioId(),
         token.creadoEn(),
         token.expiraEn(),

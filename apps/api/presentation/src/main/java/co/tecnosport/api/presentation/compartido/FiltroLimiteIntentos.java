@@ -9,7 +9,9 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Objects;
+import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.util.UrlPathHelper;
 
 /**
  * Límite de intentos por IP (docs/08-seguridad-legal.md) — el límite por cuenta vive en cada caso
@@ -20,6 +22,14 @@ import org.springframework.web.filter.OncePerRequestFilter;
  *
  * <p>La llave incluye la ruta para que cada endpoint tenga su propio presupuesto — un aluvión
  * contra {@code /auth/registro} no consume el de {@code /auth/sesion} desde la misma IP.
+ *
+ * <p><b>La ruta de la llave es la canónica, nunca {@code getRequestURI()}.</b> La URI cruda llega
+ * sin decodificar: el contenedor sí decodifica y normaliza antes de decidir qué filtro aplica, así
+ * que {@code /api/v1/auth/%73esion}, {@code /api/v1/auth/sesion;x=1} o {@code
+ * /api/v1/auth/./sesion} pasaban por este filtro como {@code /sesion} y caían cada una en un cubo
+ * nuevo: cambiar un carácter por su escape bastaba para estrenar presupuesto. La llave usa la ruta
+ * tal como la emparejó el contenedor —decodificada, sin parámetros de ruta, sin barras dobles ni
+ * segmentos de punto— y conserva así un presupuesto por endpoint, que es lo que el diseño busca.
  *
  * <p>La IP real del cliente la resuelve {@link IpDelCliente}, compartida con la constancia de
  * autorización de datos.
@@ -62,7 +72,7 @@ public class FiltroLimiteIntentos extends OncePerRequestFilter {
       throws ServletException, IOException {
     // Por cubo y no por dirección: una IPv6 se cuenta por su /64, o cada dirección del mismo rango
     // estrenaría presupuesto (CuboDeIp, ADR-0087).
-    String ruta = grupo != null ? grupo : request.getRequestURI();
+    String ruta = grupo != null ? grupo : rutaCanonica(request);
     String clave = "ip:" + ruta + ":" + CuboDeIp.de(IpDelCliente.de(request));
     boolean permitido = limitador.permitir(clave, maximoIntentos, ventana, reloj.ahora());
     if (!permitido) {
@@ -70,6 +80,16 @@ public class FiltroLimiteIntentos extends OncePerRequestFilter {
       return;
     }
     filterChain.doFilter(request, response);
+  }
+
+  /**
+   * La ruta dentro de la aplicación, decodificada y sin {@code ;parametros} ({@link
+   * UrlPathHelper#defaultInstance}, que además colapsa las barras dobles), con los segmentos {@code
+   * .} y {@code ..} resueltos ({@link StringUtils#cleanPath}). Es la forma contra la que el
+   * contenedor emparejó el patrón exacto que registró este filtro.
+   */
+  static String rutaCanonica(HttpServletRequest request) {
+    return StringUtils.cleanPath(UrlPathHelper.defaultInstance.getPathWithinApplication(request));
   }
 
   private void responderLimiteExcedido(HttpServletRequest request, HttpServletResponse response)

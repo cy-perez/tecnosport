@@ -1,6 +1,5 @@
 import { DemasiadosIntentosError } from '../../../core/autenticacion/sesion.errores';
 import { ErrorHttp } from '../../../core/http/respuesta-http';
-import { CorreoYaRegistradoError } from '../domain/cuenta.errores';
 import { CuentaHttpRepositorio } from './cuenta-http.repositorio';
 
 /**
@@ -88,14 +87,6 @@ describe('CuentaHttpRepositorio', () => {
   });
 
   describe('registrar', () => {
-    it('el 409 sigue saliendo con su tipo propio', async () => {
-      const repositorio = conRespuesta(problema(409, 'CORREO_YA_REGISTRADO'));
-
-      await expect(repositorio.registrar('a@b.co', 'clave', true)).rejects.toBeInstanceOf(
-        CorreoYaRegistradoError,
-      );
-    });
-
     it('el 429 sale como DemasiadosIntentosError', async () => {
       const repositorio = conRespuesta(problema(429, 'LIMITE_DE_INTENTOS_EXCEDIDO'));
 

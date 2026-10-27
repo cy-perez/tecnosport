@@ -23,7 +23,6 @@ import {
 } from '../../../../core/autenticacion/sesion.errores';
 import { SesionStore } from '../../../../core/autenticacion/sesion.store';
 import { TsEntrarConGoogle } from '../entrar-con-google/ts-entrar-con-google';
-import { CorreoYaRegistradoError } from '../../domain/cuenta.errores';
 import { REPOSITORIO_CUENTA } from '../../domain/repositorio-cuenta.puerto';
 import { usarFocoEnPrimerInvalido } from '../../../../shared/foco/foco';
 
@@ -193,9 +192,10 @@ export class RegistroClientePage {
       );
       this.registrado.set(true);
     } catch (error) {
-      if (error instanceof CorreoYaRegistradoError) {
-        this.error.set(this.transloco.translate('cuenta.registro.error_correo_registrado'));
-      } else if (error instanceof DemasiadosIntentosError) {
+      // No hay rama para "ese correo ya tiene cuenta", y es a propósito: el servidor responde igual
+      // en los dos casos y le escribe al titular, para que este formulario no diga qué correos
+      // están registrados.
+      if (error instanceof DemasiadosIntentosError) {
         // El registro lleva techo por IP y por correo (`ConfiguracionLimiteIntentos`), y sin esta
         // rama el 429 se leía igual que una caída: "no se pudo crear la cuenta, intenta de nuevo",
         // que manda a reintentar justo lo único que garantiza otro 429. Las otras cuatro pantallas

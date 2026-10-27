@@ -10,7 +10,6 @@ import enCuenta from '../../../../../assets/i18n/scopes/cuenta/en.json';
 import esCuenta from '../../../../../assets/i18n/scopes/cuenta/es.json';
 import { DemasiadosIntentosError } from '../../../../core/autenticacion/sesion.errores';
 import { ErrorHttp } from '../../../../core/http/respuesta-http';
-import { CorreoYaRegistradoError } from '../../domain/cuenta.errores';
 import { REPOSITORIO_CUENTA, RepositorioCuenta } from '../../domain/repositorio-cuenta.puerto';
 import { RegistroClientePage } from './registro-cliente.page';
 import {
@@ -35,7 +34,6 @@ class RepositorioCuentaFalso implements RepositorioCuenta {
 
   constructor(
     private errorAlRegistrar:
-      | 'correo-registrado'
       | 'generico'
       | 'codigo-correo-invalido'
       | 'demasiados-intentos'
@@ -50,9 +48,6 @@ class RepositorioCuentaFalso implements RepositorioCuenta {
 
   async registrar(correo: string, clave: string, autorizaDatos: boolean): Promise<void> {
     this.llamadasRegistrar.push({ correo, clave, autorizaDatos });
-    if (this.errorAlRegistrar === 'correo-registrado') {
-      throw new CorreoYaRegistradoError();
-    }
     if (this.errorAlRegistrar === 'generico') {
       throw new Error('falló');
     }
@@ -181,12 +176,13 @@ describe('RegistroClientePage', () => {
     expect(await screen.findByText('Revisa tu correo')).toBeTruthy();
   });
 
-  it('con un correo ya registrado, muestra ese error específico', async () => {
-    await renderPagina(new RepositorioCuentaFalso('correo-registrado'));
+  /** El servidor responde igual exista o no la cuenta: el éxito tiene que servir para los dos. */
+  it('el mensaje de éxito no da por hecho que la cuenta es nueva', async () => {
+    await renderPagina(new RepositorioCuentaFalso());
 
     await llenarYEnviar();
 
-    expect(await screen.findByText('Ya existe una cuenta con ese correo.')).toBeTruthy();
+    expect(await screen.findByText(/si ya tenías una cuenta/i)).toBeTruthy();
   });
 
   it('con un error genérico del servidor, muestra el mensaje genérico', async () => {

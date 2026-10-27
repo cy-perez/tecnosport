@@ -11,7 +11,10 @@ import java.util.UUID;
 @Table(name = "sesion_refresco")
 public class SesionRefrescoJpaEntity {
 
-  @Id private UUID id;
+  /** SHA-256 del token en hexadecimal ({@code HuellaDeToken}); el token no se guarda. */
+  @Id
+  @Column(name = "huella", length = 64)
+  private String huella;
 
   @Column(name = "usuario_id", nullable = false)
   private UUID usuarioId;
@@ -34,14 +37,14 @@ public class SesionRefrescoJpaEntity {
   protected SesionRefrescoJpaEntity() {}
 
   public SesionRefrescoJpaEntity(
-      UUID id,
+      String huella,
       UUID usuarioId,
       UUID familiaId,
       Instant creadoEn,
       Instant expiraEn,
       Instant usadoEn,
       Instant revocadoEn) {
-    this.id = id;
+    this.huella = huella;
     this.usuarioId = usuarioId;
     this.familiaId = familiaId;
     this.creadoEn = creadoEn;
@@ -50,8 +53,8 @@ public class SesionRefrescoJpaEntity {
     this.revocadoEn = revocadoEn;
   }
 
-  public UUID getId() {
-    return id;
+  public String getHuella() {
+    return huella;
   }
 
   public UUID getUsuarioId() {

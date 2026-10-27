@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.application.pago.PasarelaSistecredito;
 import co.tecnosport.api.application.pago.SistecreditoNoRespondeException;
+import co.tecnosport.api.infrastructure.pago.SistecreditoApagado;
 import co.tecnosport.api.infrastructure.pago.SistecreditoClient;
 import java.math.BigDecimal;
 import org.junit.jupiter.api.Test;

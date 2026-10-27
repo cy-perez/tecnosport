@@ -9,6 +9,7 @@ import co.tecnosport.api.application.pago.PasarelaSistecredito;
 import co.tecnosport.api.application.pago.ProcesarNotificacionSistecredito;
 import co.tecnosport.api.application.pago.RepositorioPagos;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
+import co.tecnosport.api.infrastructure.pago.SistecreditoApagado;
 import co.tecnosport.api.infrastructure.pago.SistecreditoClient;
 import java.time.Duration;
 import java.util.Arrays;

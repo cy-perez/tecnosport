@@ -20,6 +20,7 @@ import co.tecnosport.api.application.usuario.SolicitarRecuperacionComando;
 import co.tecnosport.api.application.usuario.TokensDeSesion;
 import co.tecnosport.api.application.usuario.VerificarCorreo;
 import co.tecnosport.api.application.usuario.VerificarCorreoComando;
+import co.tecnosport.api.presentation.compartido.CuboDeIp;
 import co.tecnosport.api.presentation.compartido.IpDelCliente;
 import co.tecnosport.api.presentation.usuario.dto.CambiarClaveRequest;
 import co.tecnosport.api.presentation.usuario.dto.ConfirmarRecuperacionRequest;
@@ -170,11 +171,15 @@ public class AutenticacionControlador {
   }
 
   @PostMapping("/sesion")
-  public ResponseEntity<SesionRespuesta> iniciarSesion(@RequestBody IniciarSesionRequest cuerpo) {
+  public ResponseEntity<SesionRespuesta> iniciarSesion(
+      @RequestBody IniciarSesionRequest cuerpo, HttpServletRequest peticion) {
+    // Agrupada como en el filtro: una IPv6 nueva del mismo /64 no estrena el tope de cuenta+IP.
+    String origen = CuboDeIp.de(IpDelCliente.de(peticion));
     TokensDeSesion tokens =
         transaccion.execute(
             estado ->
-                iniciarSesion.ejecutar(new IniciarSesionComando(cuerpo.correo(), cuerpo.clave())));
+                iniciarSesion.ejecutar(
+                    new IniciarSesionComando(cuerpo.correo(), cuerpo.clave(), origen)));
     return respuestaConCookie(tokens);
   }
 

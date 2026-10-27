@@ -15,6 +15,15 @@ import java.util.Objects;
 /**
  * Mismo error genérico si el correo no existe o si la clave es incorrecta
  * (docs/08-seguridad-legal.md, OWASP: no se filtra cuál de los dos fue).
+ *
+ * <p><b>Dos límites, y el cierre duro es el de la pareja cuenta+IP.</b> Hasta el 27 de octubre de
+ * 2026 había uno solo, por cuenta: cinco intentos fallidos cada quince minutos cerraban la cuenta
+ * para todo el mundo, clave correcta incluida. El correo del administrador es público —es el de
+ * contacto—, así que cualquiera dejaba fuera del panel al administrador con cinco peticiones cada
+ * cuarto de hora. Ahora el tope bajo se cuenta por cuenta <i>y</i> origen: quien adivina desde una
+ * IP se cierra a sí mismo, no al titular. Por cuenta sola queda un tope mucho mayor, que solo
+ * alcanza un ataque repartido entre muchos orígenes y que es el que frena la adivinanza
+ * distribuida.
  */
 public final class IniciarSesion {
 
@@ -25,8 +34,17 @@ public final class IniciarSesion {
   private final Reloj reloj;
   private final Duration vigenciaRefresco;
   private final LimitadorDeIntentos limitadorDeIntentos;
+  private final int maximoIntentosPorCuentaEIp;
   private final int maximoIntentosPorCuenta;
   private final Duration ventanaIntentosPorCuenta;
+
+  /**
+   * Un hash cualquiera con el que comparar cuando no hay cuenta, o la cuenta no tiene clave. Sin
+   * él, el error era el mismo pero no tardaba lo mismo: sin cuenta no se calculaba ningún hash y la
+   * respuesta llegaba cientos de milisegundos antes, lo que bastaba para saber qué correos están
+   * registrados. Se calcula una vez, con el mismo codificador, para que cueste igual que uno real.
+   */
+  private final String hashDeRelleno;
 
   public IniciarSesion(
       RepositorioUsuarios repositorioUsuarios,
@@ -36,6 +54,7 @@ public final class IniciarSesion {
       Reloj reloj,
       Duration vigenciaRefresco,
       LimitadorDeIntentos limitadorDeIntentos,
+      int maximoIntentosPorCuentaEIp,
       int maximoIntentosPorCuenta,
       Duration ventanaIntentosPorCuenta) {
     this.repositorioUsuarios = Objects.requireNonNull(repositorioUsuarios);
@@ -45,8 +64,15 @@ public final class IniciarSesion {
     this.reloj = Objects.requireNonNull(reloj);
     this.vigenciaRefresco = Objects.requireNonNull(vigenciaRefresco);
     this.limitadorDeIntentos = Objects.requireNonNull(limitadorDeIntentos);
+    if (maximoIntentosPorCuenta < maximoIntentosPorCuentaEIp) {
+      throw new IllegalArgumentException(
+          "El tope por cuenta sola no puede ser menor que el de cuenta e IP: cerraría la cuenta"
+              + " antes que al origen que falla.");
+    }
+    this.maximoIntentosPorCuentaEIp = maximoIntentosPorCuentaEIp;
     this.maximoIntentosPorCuenta = maximoIntentosPorCuenta;
     this.ventanaIntentosPorCuenta = Objects.requireNonNull(ventanaIntentosPorCuenta);
+    this.hashDeRelleno = codificadorDeClaves.codificar(GeneradorIdentificador.nuevo().toString());
   }
 
   public TokensDeSesion ejecutar(IniciarSesionComando comando) {
@@ -54,20 +80,32 @@ public final class IniciarSesion {
 
     CorreoElectronico correo = new CorreoElectronico(comando.correo());
     Instant ahora = reloj.ahora();
-    String llaveDelLimite = "cuenta:iniciar-sesion:" + correo.valor();
+    String llaveDeLaCuenta = "cuenta:iniciar-sesion:" + correo.valor();
+    String llaveDeCuentaEIp =
+        "cuenta-ip:iniciar-sesion:"
+            + correo.valor()
+            + ":"
+            + Objects.toString(comando.direccionIp(), "");
+    // La pareja primero: un origen que ya se cerró no sigue gastando el presupuesto de la cuenta.
     if (!limitadorDeIntentos.permitir(
-        llaveDelLimite, maximoIntentosPorCuenta, ventanaIntentosPorCuenta, ahora)) {
+            llaveDeCuentaEIp, maximoIntentosPorCuentaEIp, ventanaIntentosPorCuenta, ahora)
+        || !limitadorDeIntentos.permitir(
+            llaveDeLaCuenta, maximoIntentosPorCuenta, ventanaIntentosPorCuenta, ahora)) {
       throw new LimiteDeIntentosExcedidoException();
     }
 
-    Usuario usuario =
-        repositorioUsuarios
-            .buscarPorCorreo(correo)
-            // Una cuenta que solo entra con Google no tiene clave que comparar: es el mismo
-            // error genérico, sin decir que la cuenta existe (ADR-0074).
-            .filter(u -> u.tieneClave())
-            .filter(u -> codificadorDeClaves.verificar(comando.claveTextoPlano(), u.claveHash()))
-            .orElseThrow(CredencialesInvalidasException::new);
+    // Una cuenta que solo entra con Google no tiene clave que comparar: es el mismo error
+    // genérico, sin decir que la cuenta existe (ADR-0074). Y el mismo tiempo: sin cuenta, o sin
+    // clave, se compara igual contra el hash de relleno.
+    Usuario candidato =
+        repositorioUsuarios.buscarPorCorreo(correo).filter(Usuario::tieneClave).orElse(null);
+    boolean claveCorrecta =
+        codificadorDeClaves.verificar(
+            comando.claveTextoPlano(), candidato == null ? hashDeRelleno : candidato.claveHash());
+    if (candidato == null || !claveCorrecta) {
+      throw new CredencialesInvalidasException();
+    }
+    Usuario usuario = candidato;
 
     // El límite cuenta intentos fallidos SEGUIDOS. Sin esta línea contaba intentos a secas,
     // aciertos incluidos —`permitir` cuenta antes de verificar, porque contar y comprobar en una
@@ -75,7 +113,8 @@ public final class IniciarSesion {
     // veces agotaba los cinco sin que nadie se equivocara una sola vez. Medido el 22 de
     // septiembre de 2026 probando el cambio de clave del panel: trece intentos contados, la clave
     // correcta todas las veces, y la cuenta bloqueada quince minutos.
-    limitadorDeIntentos.olvidar(llaveDelLimite);
+    limitadorDeIntentos.olvidar(llaveDeCuentaEIp);
+    limitadorDeIntentos.olvidar(llaveDeLaCuenta);
 
     if (!usuario.correoVerificado()) {
       throw new CorreoSinVerificarException();

@@ -700,6 +700,10 @@ tecnosport:
       ip-minutos: ${LIMITE_AUTH_IP_MINUTOS:15}
       cuenta-maximo: ${LIMITE_AUTH_CUENTA_MAXIMO:5}
       cuenta-minutos: ${LIMITE_AUTH_CUENTA_MINUTOS:15}
+      # Solo el inicio de sesión: por cuenta sola, desde cualquier IP. Tiene que ser mucho mayor
+      # que cuenta-maximo, que ahí se cuenta por cuenta e IP; si no, quien conozca el correo deja
+      # fuera al titular (IniciarSesion).
+      cuenta-global-maximo: ${LIMITE_AUTH_CUENTA_GLOBAL_MAXIMO:100}
     # La cotización llama a un proveedor externo con cuota y se paga: es el único endpoint
     # público con ese riesgo. Generoso a propósito — un comprador corrige la dirección varias
     # veces; el tope frena a un script, no a una persona indecisa.

@@ -89,6 +89,7 @@ public class ConfiguracionUsuario {
         Duration.ofDays(propiedades.diasRefresco()),
         limitadorDeIntentos,
         propiedadesLimite.cuentaMaximo(),
+        propiedadesLimite.cuentaGlobalMaximo(),
         Duration.ofMinutes(propiedadesLimite.cuentaMinutos()));
   }
 
@@ -203,6 +204,7 @@ public class ConfiguracionUsuario {
         reloj,
         Duration.ofHours(propiedades.horasVencimiento()),
         propiedadesApp.urlPublica() + "/es/cuenta/verificar-correo",
+        propiedadesApp.urlPublica() + "/es/cuenta/recuperar-clave",
         limitadorDeIntentos,
         propiedadesLimite.cuentaMaximo(),
         Duration.ofMinutes(propiedadesLimite.cuentaMinutos()),

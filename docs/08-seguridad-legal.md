@@ -16,8 +16,17 @@ el panel administrativo, el asistente de captura y la cuenta opcional del client
   reutilización: si un refresco ya usado reaparece, se invalida toda la familia de
   tokens de ese usuario.
 - **El token de acceso no va en `localStorage`.** Vive en memoria.
-- Roles: `CLIENTE` y `ADMIN`. Autorización por método en la capa de aplicación,
-  no solo por ruta.
+- Roles: `CLIENTE` y `ADMIN`. **La autorización es por ruta, no por método.**
+  Esta línea decía lo contrario y era falso: no hay `@PreAuthorize` ni
+  `EnableMethodSecurity`, y `application` no puede tenerlos porque no conoce
+  Spring. `ConfiguracionSeguridad` exige `ADMIN` en `/api/v1/admin/**`, exige
+  sesión en `POST /auth/clave`, y deja el resto en `permitAll()`; lo que es de
+  un cliente concreto lo comprueba el caso de uso contra el principal (ver
+  "autorización verificada por recurso" más abajo). Como todo el panel cuelga de
+  una sola regla de ruta, `ArquitecturaTest` exige que cada `Admin*` de
+  `presentation` monte su `@RequestMapping` bajo `/api/v1/admin` —leyendo
+  `value` y `path`, y sin aceptar un prefijo parecido como
+  `/api/v1/administracion`, que la regla de seguridad no cubre—.
 - Verificación de correo obligatoria al registrarse. Recuperación con token de un
   solo uso, válido 30 minutos, separado del token de verificación de correo por
   nivel de sensibilidad (`ADR-0015`). Confirmar la recuperación revoca **todas**
@@ -29,6 +38,14 @@ el panel administrativo, el asistente de captura y la cuenta opcional del client
   primer valor de `X-Forwarded-For`, que lo escribe el cliente: hasta el 25 de
   octubre de 2026 eso dejaba evadir los cuatro límites y le dejaba al titular
   escribir la IP de su propia constancia de autorización (ADR-0087).
+  **En el inicio de sesión el cierre duro es por cuenta e IP, no por cuenta
+  sola** (desde el 27 de octubre de 2026): el correo del administrador es
+  público, y cinco intentos fallidos desde cualquier sitio cerraban el panel al
+  administrador aunque escribiera la clave correcta. Por cuenta sola queda un
+  tope mucho mayor (`cuenta-global-maximo`, 100 por ventana), que solo alcanza
+  un ataque repartido entre muchos orígenes. **Pendiente del usuario:** separar
+  el correo de administración del de contacto, para que el usuario del panel
+  deje de ser público.
 - El asistente de captura exige rol `ADMIN` y una sesión activa; las URL firmadas
   de subida se emiten con vencimiento corto y para un objeto específico.
 - **Entrar con Google, desde el 8 de octubre de 2026** (`ADR-0074`). Google prueba
@@ -74,10 +91,29 @@ el panel administrativo, el asistente de captura y la cuenta opcional del client
 - Validación en el servidor de todo lo que llega, incluso de lo que el formulario
   ya validó.
 - CORS con lista explícita de orígenes, no comodín.
-- Cabeceras: `Content-Security-Policy` sin `unsafe-inline`, con nonce desde el
-  SSR, `Strict-Transport-Security`, `X-Content-Type-Options`, `Referrer-Policy` y
-  `Permissions-Policy`. La política de permisos declara explícitamente el uso de
-  cámara y sensores, y solo en la ruta del asistente de captura.
+- Cabeceras (`apps/web/src/server.ts` y `cabeceras-seguridad.ts`):
+  `Strict-Transport-Security`, `X-Content-Type-Options`, `X-Frame-Options: DENY`,
+  `Referrer-Policy`, `Permissions-Policy` y una CSP **en modo informe**. Esta
+  línea prometía una CSP con nonce desde el SSR y una política de permisos
+  acotada a la ruta del asistente, y hasta el 27 de octubre de 2026 no había
+  ninguna de las dos. Lo que hay:
+  - **`Permissions-Policy`**: cámara, `accelerometer`, `gyroscope`,
+    `magnetometer`, `screen-wake-lock` y `clipboard-write` en `(self)`;
+    micrófono, geolocalización, pagos, USB y captura de pantalla apagados.
+    **No se puede acotar a la ruta del asistente**: es una aplicación de una
+    sola página y la política es del documento que cargó primero, así que quien
+    entra por la portada y navega al asistente se quedaría sin cámara. `(self)`
+    impide que un marco ajeno las herede, que es lo que sí se puede.
+  - **`Content-Security-Policy-Report-Only`**, sin nonce: `'self'` más los
+    orígenes que el sitio usa de verdad (Google para entrar con Google, Cloud
+    Storage para imágenes y subidas firmadas). Wompi y Sistecrédito no
+    aparecen porque se abren con una navegación de primer nivel. No bloquea
+    nada y no tiene `report-uri`: lo que bloquearía se ve en la consola del
+    navegador, y hoy eso incluye el script en línea del tema de `index.html`.
+    **Pendiente**: un nonce por respuesta en `server.ts`, escrito a la vez en
+    la cabecera y en el HTML (`ngCspNonce` en `<app-root>`), comprobar en el
+    navegador que el CSS crítico y el script del tema lo llevan, y solo
+    entonces pasar a `Content-Security-Policy`.
 - Subida de imágenes: tipo verificado por contenido y no por extensión, tamaño
   máximo, nombre regenerado, servidas desde el dominio de estáticos. El backend
   valida los objetos subidos antes de publicar un set. **Todavía no se cumple
@@ -100,6 +136,36 @@ el panel administrativo, el asistente de captura y la cuenta opcional del client
 - Registros sin datos personales ni tokens. Nunca se registra el cuerpo completo
   de una petición de checkout.
 - Dependencias revisadas automáticamente y actualizadas.
+- **Los tokens de sesión, de recuperación y de verificación se guardan por su
+  SHA-256**, no en claro (`HuellaDeToken`, `V140`, desde el 27 de octubre de
+  2026). Una copia de la base ya no entrega sesiones ni enlaces de cambio de
+  clave listos para usar.
+- **El registro responde igual exista o no la cuenta**, y si existía le escribe
+  al titular; el inicio de sesión compara contra un hash de relleno cuando la
+  cuenta no existe, para que el tiempo tampoco lo diga.
+- **El proxy de `/api` del servidor de la web corta en 413** un cuerpo de más de
+  1 MiB (`TOPE_DEL_CUERPO_EN_BYTES` en `proxy-api.ts`).
+
+## El ambiente de dev no es un ensayo
+
+Hay que tenerlo presente al decidir qué se prueba ahí y con qué clave se entra:
+
+- **Es público.** La web y la API de dev se publican en `run.app` sin ninguna
+  barrera delante; cualquiera que tenga la URL usa el sitio y la API.
+- **Opera la cuenta real de Instagram** (`@tecnosport_co`). La Graph API no tiene
+  sandbox, y `META_PUBLICAR_DE_VERDAD` es lo único que separa una prueba de un
+  post en la cuenta del negocio (`infra/envs/dev/main.tf`).
+- **Usa credenciales productivas de Sistecrédito.** No existen otras: la pasarela
+  es la de verdad, y `SISTECREDITO_SANDBOX_ACTIVO` es lo único que separa una
+  prueba de una solicitud de crédito real a nombre de una persona.
+- **La clave del administrador de dev tiene que ser distinta de la de
+  producción**, y el panel tiene que llevar **segundo factor antes de abrir
+  producción**. Hoy no lo tiene: el inicio de sesión es correo y clave, y el
+  correo del administrador es el mismo público de contacto. Separar los dos
+  correos es una decisión pendiente del dueño.
+- La federación de GitHub con el proyecto exige desde el 27 de octubre de 2026
+  el repositorio **y** la rama `main` (`attribute_condition` en
+  `infra/envs/dev/main.tf`); hace falta el `terraform apply` para que rija.
 
 ## Marco legal colombiano
 
