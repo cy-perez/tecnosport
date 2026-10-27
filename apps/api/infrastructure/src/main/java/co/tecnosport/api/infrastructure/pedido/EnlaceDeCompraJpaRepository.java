@@ -28,4 +28,7 @@ public interface EnlaceDeCompraJpaRepository extends JpaRepository<EnlaceDeCompr
   Optional<EnlaceDeCompraJpaEntity> findByIdParaActualizar(@Param("id") UUID id);
 
   List<EnlaceDeCompraJpaEntity> findByCreadoEnGreaterThanEqualOrderByCreadoEnDesc(Instant desde);
+
+  Optional<EnlaceDeCompraJpaEntity> findFirstByPedidoIdAndVarianteIdOrderByExpiraEnDesc(
+      UUID pedidoId, UUID varianteId);
 }

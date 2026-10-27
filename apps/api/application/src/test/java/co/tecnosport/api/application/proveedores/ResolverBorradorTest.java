@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import co.tecnosport.api.application.compartido.RelojFalso;
 import co.tecnosport.api.application.proveedores.ApoyoDeCatalogoParaIngesta.CalculadorDePHashPorContenido;
 import co.tecnosport.api.application.proveedores.ApoyoDeCatalogoParaIngesta.RepositorioBorradoresEnMemoria;
+import co.tecnosport.api.application.proveedores.ApoyoDeCatalogoParaIngesta.RepositorioInventarioEnMemoria;
 import co.tecnosport.api.application.proveedores.ApoyoDeCatalogoParaIngesta.RepositorioProductosDeProveedorEnMemoria;
 import co.tecnosport.api.application.proveedores.ApoyoDeCatalogoParaIngesta.RepositorioProductosEnMemoria;
 import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.AlmacenEnMemoria;
@@ -277,6 +278,10 @@ class ResolverBorradorTest {
   }
 
   private static ExtraccionEvaluada tenis(List<String> tallas) {
+    return tenis(tallas, 65000);
+  }
+
+  private static ExtraccionEvaluada tenis(List<String> tallas, long precio) {
     ProductoExtraido extraido =
         new ProductoExtraido(
             true,
@@ -284,7 +289,7 @@ class ResolverBorradorTest {
             "Tenis para caballero importado",
             LineaCatalogo.CALZADO,
             TipoProductoProveedor.TENIS,
-            Dinero.deCop(65000),
+            Dinero.deCop(precio),
             Tallas.lista(tallas),
             null,
             List.of(),
@@ -296,7 +301,7 @@ class ResolverBorradorTest {
             null,
             null);
     return new ExtraccionEvaluada(
-        extraido, "{}", Dinero.deCop(65000), Set.of(), new UsoDelExtractor("falso", 1, 1, 1));
+        extraido, "{}", Dinero.deCop(precio), Set.of(), new UsoDelExtractor("falso", 1, 1, 1));
   }
 
   /**
@@ -429,6 +434,205 @@ class ResolverBorradorTest {
         Dinero.deCop(65000),
         Set.of(),
         new UsoDelExtractor("falso", 1, 1, 1));
+  }
+
+  /**
+   * Revisión adversarial del 27 de octubre de 2026: los gemelos de un anuncio unisex llevan el
+   * mismo título. Si el precio del proveedor cambia, la huella no se toca: recalcularla con el
+   * título y el precio dejaba las dos iguales —y el índice único revertía la resolución— y además
+   * rompía el vínculo de gemelo, así que el de caballero ya no se renovaba.
+   */
+  @Test
+  void unCambioDePrecioNoTocaLaHuellaDeLosGemelos() {
+    String texto =
+        "NIKE UNISEX ULTRALIVIANO🔥\nTallas disponibles en la foto!\n"
+            + "Horma normal Dama, Aumenta 1 Cab⚠️⚠️\n💰*$85,000*";
+    resolver(publicacion(texto, "foto-nike"), tenis(List.of("41", "42", "43")));
+    BorradorProducto dama =
+        borradores.enEstado(EstadoBorrador.EN_REVISION).stream()
+            .filter(b -> b.generoDeCalzado().equals(Optional.of(GeneroDeCalzado.DAMA)))
+            .findFirst()
+            .orElseThrow();
+    BorradorProducto caballero =
+        borradores.enEstado(EstadoBorrador.EN_REVISION).stream()
+            .filter(b -> b.generoDeCalzado().equals(Optional.of(GeneroDeCalzado.CABALLERO)))
+            .findFirst()
+            .orElseThrow();
+    HuellaProveedor deLaDama = dama.huella().orElseThrow();
+    HuellaProveedor delCaballero = caballero.huella().orElseThrow();
+    // El mismo título en los dos, como los tenis de Tenis Al Pie (ADR-0089), y el costo de antes.
+    Producto deDama =
+        productoExistente("Tenis Nike", 60000, deLaDama, EstadoDisponibilidad.DISPONIBLE);
+    Producto deCaballero =
+        productoExistente("Tenis Nike", 60000, delCaballero, EstadoDisponibilidad.DISPONIBLE);
+    PHash foto = dama.pHash().orElseThrow();
+    caballero.aprobar(deCaballero.id(), foto);
+    borradores.porId.remove(dama.id());
+    dama.aprobar(deDama.id(), foto);
+    borradores.guardar(dama);
+
+    Resolucion renovada =
+        resolver(
+            publicacion(texto, "foto-nike", FECHA_DEL_MENSAJE.plusSeconds(86_400)),
+            tenis(List.of("41", "42", "43")));
+
+    assertEquals(TipoDeResolucion.RENOVACION, renovada.tipo());
+    assertTrue(renovada.alertas().contains(AlertaBorrador.PRECIO_CAMBIO));
+    assertEquals(Optional.of(deLaDama), deDama.huellaProveedor());
+    assertEquals(Optional.of(delCaballero), deCaballero.huellaProveedor());
+    assertEquals(Optional.of(Dinero.deCop(65000)), deDama.precioProveedor());
+    assertEquals(
+        Optional.of(Dinero.deCop(65000)),
+        deCaballero.precioProveedor(),
+        "el gemelo sigue encontrándose y se renueva con el precio nuevo");
+  }
+
+  /**
+   * Revisión adversarial del 27 de octubre de 2026: con venta bajo confirmación, la renovación
+   * reponía la existencia nominal del de dama y al gemelo solo lo renovaba. El de caballero quedaba
+   * disponible y sin una sola unidad que vender.
+   */
+  @Test
+  void bajoConfirmacionLaRenovacionReponeTambienAlGemelo() {
+    proveedor.definirAjustesDeIngesta(new AjustesDeIngesta(false, true, null, null));
+    String texto =
+        "NIKE UNISEX ULTRALIVIANO🔥\nTallas disponibles en la foto!\n"
+            + "Horma normal Dama, Aumenta 1 Cab⚠️⚠️\n💰*$85,000*";
+    resolver(publicacion(texto, "foto-nike"), tenis(List.of("41", "42", "43")));
+    BorradorProducto dama =
+        borradores.enEstado(EstadoBorrador.EN_REVISION).stream()
+            .filter(b -> b.generoDeCalzado().equals(Optional.of(GeneroDeCalzado.DAMA)))
+            .findFirst()
+            .orElseThrow();
+    BorradorProducto caballero =
+        borradores.enEstado(EstadoBorrador.EN_REVISION).stream()
+            .filter(b -> b.generoDeCalzado().equals(Optional.of(GeneroDeCalzado.CABALLERO)))
+            .findFirst()
+            .orElseThrow();
+    Producto deDama =
+        productoExistente(
+            "Tenis Nike", 65000, dama.huella().orElseThrow(), EstadoDisponibilidad.DISPONIBLE);
+    Producto deCaballero =
+        productoExistente(
+            "Tenis Nike", 65000, caballero.huella().orElseThrow(), EstadoDisponibilidad.DISPONIBLE);
+    deDama.agregarVariante(varianteDeTalla("TEN-DAMA-38", 120000));
+    deCaballero.agregarVariante(varianteDeTalla("TEN-CAB-41", 120000));
+    PHash foto = dama.pHash().orElseThrow();
+    caballero.aprobar(deCaballero.id(), foto);
+    borradores.porId.remove(dama.id());
+    dama.aprobar(deDama.id(), foto);
+    borradores.guardar(dama);
+    RepositorioInventarioEnMemoria inventario = new RepositorioInventarioEnMemoria();
+    ResolverBorrador conExistencia =
+        new ResolverBorrador(
+            borradores,
+            productosDeProveedor,
+            productos,
+            publicaciones,
+            almacen,
+            new CalculadorDePHashPorContenido(),
+            new RelojFalso(AHORA),
+            FACTORES,
+            new TopesDeGanancia(Dinero.deCop(20000), Dinero.deCop(30000)),
+            6,
+            new ExistenciaBajoConfirmacion(
+                inventario, productosDeProveedor, new RelojFalso(AHORA), 2));
+
+    conExistencia.ejecutar(
+        publicacion(texto, "foto-nike", FECHA_DEL_MENSAJE.plusSeconds(86_400)),
+        mensajes,
+        proveedor,
+        List.of(tenis(List.of("41", "42", "43"))));
+
+    UUID delCaballero = deCaballero.variantes().getFirst().id();
+    assertEquals(
+        2,
+        inventario.buscarPorVarianteId(delCaballero).orElseThrow().saldoTotal(),
+        "el gemelo vuelve a la existencia nominal, como el de dama");
+  }
+
+  /**
+   * Revisión adversarial del 27 de octubre de 2026: el costo nuevo de un anuncio que deja menos del
+   * 10 % sobre el contado solo ponía PRECIO_CAMBIO, y bajo confirmación además se reponía. Ahora
+   * las variantes de los dos gemelos quedan agotadas por el proveedor, no se reponen y el panel lo
+   * avisa; con el margen de vuelta, vuelven a la venta.
+   */
+  @Test
+  void unCostoQueQuitaElMargenAgotaLasVariantesDeLosDosGemelos() {
+    proveedor.definirAjustesDeIngesta(new AjustesDeIngesta(false, true, null, null));
+    String texto =
+        "NIKE UNISEX ULTRALIVIANO🔥\nTallas disponibles en la foto!\n"
+            + "Horma normal Dama, Aumenta 1 Cab⚠️⚠️\n💰*$85,000*";
+    resolver(publicacion(texto, "foto-nike"), tenis(List.of("41", "42", "43")));
+    BorradorProducto dama =
+        borradores.enEstado(EstadoBorrador.EN_REVISION).stream()
+            .filter(b -> b.generoDeCalzado().equals(Optional.of(GeneroDeCalzado.DAMA)))
+            .findFirst()
+            .orElseThrow();
+    BorradorProducto caballero =
+        borradores.enEstado(EstadoBorrador.EN_REVISION).stream()
+            .filter(b -> b.generoDeCalzado().equals(Optional.of(GeneroDeCalzado.CABALLERO)))
+            .findFirst()
+            .orElseThrow();
+    Producto deDama =
+        productoExistente(
+            "Tenis Nike", 60000, dama.huella().orElseThrow(), EstadoDisponibilidad.DISPONIBLE);
+    Producto deCaballero =
+        productoExistente(
+            "Tenis Nike", 60000, caballero.huella().orElseThrow(), EstadoDisponibilidad.DISPONIBLE);
+    // Contado 70.000: sobre el costo de antes (60.000) le gana un 16 %; sobre el de hoy (65.000),
+    // un 7,7 %.
+    deDama.agregarVariante(varianteDeTalla("TEN-DAMA-38", 70000));
+    deCaballero.agregarVariante(varianteDeTalla("TEN-CAB-41", 70000));
+    PHash foto = dama.pHash().orElseThrow();
+    caballero.aprobar(deCaballero.id(), foto);
+    borradores.porId.remove(dama.id());
+    dama.aprobar(deDama.id(), foto);
+    borradores.guardar(dama);
+    RepositorioInventarioEnMemoria inventario = new RepositorioInventarioEnMemoria();
+    ResolverBorrador conExistencia =
+        new ResolverBorrador(
+            borradores,
+            productosDeProveedor,
+            productos,
+            publicaciones,
+            almacen,
+            new CalculadorDePHashPorContenido(),
+            new RelojFalso(AHORA),
+            FACTORES,
+            new TopesDeGanancia(Dinero.deCop(20000), Dinero.deCop(30000)),
+            6,
+            new ExistenciaBajoConfirmacion(
+                inventario, productosDeProveedor, new RelojFalso(AHORA), 2));
+
+    conExistencia.ejecutar(
+        publicacion(texto, "foto-nike", FECHA_DEL_MENSAJE.plusSeconds(86_400)),
+        mensajes,
+        proveedor,
+        List.of(tenis(List.of("41", "42", "43"))));
+
+    UUID laDeDama = deDama.variantes().getFirst().id();
+    UUID laDelCaballero = deCaballero.variantes().getFirst().id();
+    assertTrue(productosDeProveedor.retiradas.containsAll(List.of(laDeDama, laDelCaballero)));
+    assertEquals(2, productosDeProveedor.variantesSinMargen().size(), "el panel lo avisa");
+    assertTrue(inventario.buscarPorVarianteId(laDeDama).isEmpty(), "no se repone");
+    assertTrue(inventario.buscarPorVarianteId(laDelCaballero).isEmpty(), "no se repone");
+
+    // El proveedor baja el costo a 62.000 (un 12,9 %): el anuncio siguiente lo devuelve a la venta.
+    conExistencia.ejecutar(
+        publicacion(texto, "foto-nike", FECHA_DEL_MENSAJE.plusSeconds(2 * 86_400)),
+        mensajes,
+        proveedor,
+        List.of(tenis(List.of("41", "42", "43"), 62000)));
+
+    assertFalse(productosDeProveedor.retiradas.contains(laDeDama));
+    assertFalse(productosDeProveedor.retiradas.contains(laDelCaballero));
+    assertTrue(productosDeProveedor.variantesSinMargen().isEmpty());
+  }
+
+  private static Variante varianteDeTalla(String sku, long precio) {
+    return Variante.crear(
+        new Sku(sku), Dinero.deCop(precio), BigDecimal.ZERO, null, null, List.of());
   }
 
   /** Un bolso del mismo anuncio no talla: ni se corre ni se parte. */

@@ -16,6 +16,7 @@ import co.tecnosport.api.domain.proveedores.BorradorTecnologia;
 import co.tecnosport.api.domain.proveedores.ConfiguracionTecnologia;
 import co.tecnosport.api.domain.proveedores.ConfirmacionDeColor;
 import co.tecnosport.api.domain.proveedores.HuellaProveedor;
+import co.tecnosport.api.domain.proveedores.MargenMinimo;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.domain.proveedores.VarianteDeProveedor;
 import java.time.Instant;
@@ -56,6 +57,10 @@ import java.util.UUID;
  * <p>Lo que el inventario no propone lo devuelve en {@link Resultado#modelosPorProponer()} y {@link
  * Resultado#configuracionesPorProponer()}: solo esta API sabe qué se vende, y es lo que la skill de
  * fotos necesita para saber a qué modelos les toca.
+ *
+ * <p>Lo que con el costo de hoy deja menos del margen mínimo ({@link MargenMinimo}) sobre el precio
+ * de contado tampoco se repone: queda agotado por el proveedor, que el panel avisa, y vuelve con la
+ * lista que le devuelva el margen.
  *
  * <p>Lo desaparecido deja de ofrecerse sin borrar nada: una configuración pierde su existencia
  * libre —<b>nunca la reservada</b>, que es de un pedido en curso— y un modelo queda agotado por el
@@ -146,6 +151,8 @@ public final class ImportarListaDeTecnologia {
     Map<UUID, Integer> objetivos = new TreeMap<>();
     // Variante → si su color hay que confirmarlo con el proveedor antes de venderla (ADR-0086).
     Map<UUID, Boolean> disponibilidadPorConfirmar = new HashMap<>();
+    // Variante → si su contado deja el margen mínimo sobre el costo de hoy.
+    Map<UUID, Boolean> margenPorVariante = new HashMap<>();
 
     for (String desaparecida : comando.configuracionesDesaparecidas()) {
       for (VarianteDeProveedor v :
@@ -174,6 +181,19 @@ public final class ImportarListaDeTecnologia {
         }
         Map<String, List<VarianteDeProveedor>> conocidas = porConfiguracion(existente.id());
         Map<UUID, Dinero> precioPorVariante = preciosDe(existente);
+        if (inventario) {
+          // El modelo vino y esta configuración no: deja de ofrecerse aunque la skill no la haya
+          // mandado como desaparecida —conocidos.json pudo verla «ausente» antes— (27 de octubre
+          // de 2026). Si viene más abajo, el ciclo siguiente le pone su objetivo.
+          Set<String> queVinieron = new HashSet<>();
+          entrada.configuraciones().forEach(c -> queVinieron.add(c.sku()));
+          conocidas.forEach(
+              (configuracion, suyas) -> {
+                if (!queVinieron.contains(configuracion)) {
+                  suyas.forEach(v -> objetivos.put(v.varianteId(), 0));
+                }
+              });
+        }
         for (ConfiguracionTecnologia c : entrada.configuraciones()) {
           List<VarianteDeProveedor> variantes = conocidas.get(c.sku());
           if (variantes == null) {
@@ -191,9 +211,15 @@ public final class ImportarListaDeTecnologia {
             disponibilidadPorConfirmar.put(
                 v.varianteId(),
                 ConfirmacionDeColor.requiere(existente.paleta(), marcados, v.color()));
-            objetivos.put(v.varianteId(), hoyLoTiene(c, v.color()) ? existenciaPorVariante : 0);
+            // Un costo que deja menos del margen mínimo sobre el contado no se repone: la variante
+            // queda agotada por el proveedor hasta que una lista le devuelva el margen (27 de
+            // octubre de 2026). La lista no mueve el precio; subirlo es del panel.
             Dinero precio = precioPorVariante.get(v.varianteId());
-            if (precio != null && precio.valor().compareTo(c.costoProveedor().valor()) <= 0) {
+            boolean alcanza = precio == null || MargenMinimo.alcanza(precio, c.costoProveedor());
+            margenPorVariante.put(v.varianteId(), alcanza);
+            objetivos.put(
+                v.varianteId(), alcanza && hoyLoTiene(c, v.color()) ? existenciaPorVariante : 0);
+            if (!alcanza) {
               cuenta.sinMargen.add(c.titulo() + " · " + v.color());
             }
           }
@@ -250,6 +276,7 @@ public final class ImportarListaDeTecnologia {
 
     listas.registrar(proveedor.id(), comando.fechaLista(), huellaDeLista, ahora);
     productosDeProveedor.marcarDisponibilidadesPorConfirmar(disponibilidadPorConfirmar);
+    productosDeProveedor.marcarMargenDeVariantes(margenPorVariante);
 
     for (Map.Entry<UUID, Integer> objetivo : objetivos.entrySet()) {
       Inventario libro = repositorioInventario.abrirLibroConBloqueo(objetivo.getKey());
@@ -394,8 +421,9 @@ public final class ImportarListaDeTecnologia {
    *     libre
    * @param modelosYaDecididos los modelos nuevos que no se volvieron a proponer porque alguien ya
    *     los rechazó
-   * @param sinMargen configuración y color que ahora cuestan lo mismo o más que su precio de venta:
-   *     la lista no mueve el precio, así que alguien tiene que mirarlo
+   * @param sinMargen configuración y color cuyo contado ya no deja el margen mínimo sobre el costo
+   *     de hoy: quedaron agotados por el proveedor y sin existencia libre, y el panel los avisa. La
+   *     lista no mueve el precio, así que alguien tiene que mirarlo
    * @param coloresSinVariante colores que la lista trae de una configuración que ya se vende y que
    *     el producto no tiene: no se proponen solos, se añaden desde el panel del producto
    * @param modelosPorProponer en el inventario, los ids de modelo que no se venden y esperan su

@@ -15,6 +15,7 @@ import { Sesion } from '../../../core/autenticacion/sesion.model';
 import {
   ExistenciasDelCatalogo,
   InventarioSinMedir,
+  VariantesSinMargen,
 } from '../productos/domain/producto-admin.model';
 import { REPOSITORIO_PRODUCTOS_ADMIN } from '../productos/domain/repositorio-productos-admin.puerto';
 import { RepositorioMedicionFalso } from '../../../../testing/productos-admin';
@@ -40,8 +41,13 @@ class RepositorioSesionFalso implements RepositorioSesion {
     return null;
   }
 
+  falloAlCerrar = false;
+
   async cerrarSesion(): Promise<void> {
     this.llamadasCerrar++;
+    if (this.falloAlCerrar) {
+      throw new Error('sin conexión');
+    }
   }
 }
 
@@ -56,6 +62,7 @@ const TODO_CON_EXISTENCIA: ExistenciasDelCatalogo = {
 async function renderPanel(
   inventario: InventarioSinMedir = NADA_SIN_MEDIR,
   existencias: ExistenciasDelCatalogo = TODO_CON_EXISTENCIA,
+  sinMargen: VariantesSinMargen = { total: 0, items: [] },
 ) {
   const sesion = new RepositorioSesionFalso();
   const resultado = await render(PanelAdminPage, {
@@ -72,7 +79,7 @@ async function renderPanel(
       { provide: REPOSITORIO_SESION, useValue: sesion },
       {
         provide: REPOSITORIO_PRODUCTOS_ADMIN,
-        useValue: new RepositorioMedicionFalso(inventario, existencias),
+        useValue: new RepositorioMedicionFalso(inventario, existencias, undefined, sinMargen),
       },
     ],
   });
@@ -95,6 +102,29 @@ describe('PanelAdminPage', () => {
       expect(sesion.llamadasCerrar).toBe(1);
       expect(navegar).toHaveBeenCalledWith(['/es', 'admin', 'iniciar-sesion']);
     });
+  });
+
+  /**
+   * Con el POST de cierre caído, el panel dejaba una promesa rechazada sin manejar y no se movía,
+   * con la sesión todavía abierta en pantalla. Ahora sale igual y la pantalla de entrada lo dice.
+   */
+  it('si el servidor no confirma el cierre, sale igual y avisa en la pantalla de entrada', async () => {
+    const { fixture, sesion } = await renderPanel();
+    sesion.falloAlCerrar = true;
+    const sesionStore = fixture.debugElement.injector.get(SesionStore);
+    sesionStore.sesion.set({ usuarioId: 'u1', rol: 'ADMIN', accessToken: 'jwt' });
+    fixture.detectChanges();
+    const router = fixture.debugElement.injector.get(Router);
+    const navegar = vi.spyOn(router, 'navigate');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cerrar sesión' }));
+
+    await vi.waitFor(() =>
+      expect(navegar).toHaveBeenCalledWith(['/es', 'admin', 'iniciar-sesion'], {
+        queryParams: { cierre: 'sin-confirmar' },
+      }),
+    );
+    expect(sesionStore.sesion()).toBeNull();
   });
 
   /**
@@ -152,6 +182,27 @@ describe('PanelAdminPage', () => {
    * septiembre de 2026 es `marco/pestanas-admin.spec.ts`. Hasta entonces el enlace permanente
    * vivía en esta pantalla y esta prueba comprobaba las dos cosas a la vez.
    */
+  /**
+   * El tercero (27 de octubre de 2026): lo que el costo del proveedor dejó con menos del 10 % de
+   * margen. La lista y la ingesta lo agotan solas, así que sin este aviso nadie se entera. Un
+   * renglón por producto, con su enlace a la ficha, donde se sube el contado.
+   */
+  it('avisa de lo que el costo dejó sin margen, un producto por renglón', async () => {
+    await renderPanel(NADA_SIN_MEDIR, TODO_CON_EXISTENCIA, {
+      total: 2,
+      items: [
+        { productoId: 'p1', nombreProducto: 'Samsung Galaxy A17 5G', varianteId: 'v1', sku: 'A' },
+        { productoId: 'p1', nombreProducto: 'Samsung Galaxy A17 5G', varianteId: 'v2', sku: 'B' },
+      ],
+    });
+
+    const enlace = await screen.findByRole('link', { name: 'Samsung Galaxy A17 5G' });
+    expect(enlace.getAttribute('href')).toMatch(/\/productos\/p1\/editar$/);
+    expect(screen.getAllByRole('link', { name: 'Samsung Galaxy A17 5G' })).toHaveLength(1);
+    expect(screen.getByRole('status').textContent).toContain('2 variante(s) dejaron de venderse');
+    expect(screen.getByRole('status').textContent).toContain('(A, B)');
+  });
+
   it('con todo con existencia no hay aviso', async () => {
     await renderPanel();
 

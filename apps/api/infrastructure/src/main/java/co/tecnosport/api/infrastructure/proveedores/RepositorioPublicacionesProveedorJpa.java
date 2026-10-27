@@ -73,6 +73,13 @@ public class RepositorioPublicacionesProveedorJpa implements RepositorioPublicac
   }
 
   @Override
+  public Optional<PublicacionProveedor> buscarPorIdParaActualizar(UUID id) {
+    return publicaciones
+        .buscarConBloqueo(id)
+        .map(fila -> aDominio(fila, composicionDe(List.of(fila))));
+  }
+
+  @Override
   public List<PublicacionProveedor> listarDeLote(UUID loteId) {
     List<PublicacionProveedorJpaEntity> filas =
         publicaciones.findByLoteIdOrderByFechaAscCreadoEnAsc(loteId);

@@ -279,6 +279,15 @@ describe('DetalleTecnologiaAdminPage', () => {
     expect(screen.getByText('Samsung Galaxy A17 5G sobre fondo blanco 2')).toBeTruthy();
   });
 
+  /** Aprobar borra los originales privados: pintarlos daría imágenes rotas. */
+  it('un borrador aprobado no pinta sus fotos y lleva al producto', async () => {
+    await renderPagina(borradorTecnologiaDePrueba({ estado: 'APROBADO', productoId: 'prod-1' }));
+
+    expect(screen.queryAllByRole('img')).toHaveLength(0);
+    expect(screen.getByText(esAdmin.tecnologia.detalle.fotosEnElProducto)).toBeTruthy();
+    expect(screen.getByRole('link', { name: esAdmin.tecnologia.detalle.verProducto })).toBeTruthy();
+  });
+
   it('un modelo nuevo sin sus cuatro fotos no se aprueba, y no se envía', async () => {
     const { repositorio } = await renderPagina(
       borradorTecnologiaDePrueba({ cantidadDeFotos: 1, fotosQueFaltan: 3, fotos: [] }),

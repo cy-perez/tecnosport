@@ -12,8 +12,6 @@ import co.tecnosport.api.application.proveedores.CrearProveedor;
 import co.tecnosport.api.application.proveedores.DetenerIngesta;
 import co.tecnosport.api.application.proveedores.EditarProveedor;
 import co.tecnosport.api.application.proveedores.EjecutorDeIngestas;
-import co.tecnosport.api.application.proveedores.EliminacionDeProductos;
-import co.tecnosport.api.application.proveedores.EliminacionDeProductosDelCatalogo;
 import co.tecnosport.api.application.proveedores.EliminarLoteDeIngesta;
 import co.tecnosport.api.application.proveedores.EliminarProveedor;
 import co.tecnosport.api.application.proveedores.EncolarIngesta;
@@ -39,6 +37,8 @@ import co.tecnosport.api.application.proveedores.ResolverBorrador;
 import co.tecnosport.api.application.proveedores.SolicitarSubidaDeExportacion;
 import co.tecnosport.api.application.proveedores.VerificadorDeTareasDeIngesta;
 import co.tecnosport.api.infrastructure.proveedores.AlmacenDeArchivosDeProveedorGcs;
+import co.tecnosport.api.infrastructure.proveedores.EjecutorDeIngestasEnHilo;
+import co.tecnosport.api.infrastructure.proveedores.MarcapasosConTemporizador;
 import co.tecnosport.api.infrastructure.proveedores.tareas.ColaDeIngestasCloudTasks;
 import co.tecnosport.api.infrastructure.proveedores.tareas.TokenDeAccesoDeGoogle;
 import co.tecnosport.api.infrastructure.proveedores.tareas.VerificadorDeTareasDeIngestaGoogleJwt;
@@ -115,16 +115,11 @@ public class ConfiguracionProveedores {
   }
 
   @Bean
-  public EliminacionDeProductos eliminacionDeProductos(EliminarProducto eliminarProducto) {
-    return new EliminacionDeProductosDelCatalogo(eliminarProducto);
-  }
-
-  @Bean
   public EliminarLoteDeIngesta eliminarLoteDeIngesta(
       RepositorioLotesIngesta repositorio,
-      EliminacionDeProductos eliminacionDeProductos,
+      EliminarProducto eliminarProducto,
       AlmacenDeArchivosDeProveedor almacen) {
-    return new EliminarLoteDeIngesta(repositorio, eliminacionDeProductos, almacen);
+    return new EliminarLoteDeIngesta(repositorio, eliminarProducto, almacen);
   }
 
   @Bean

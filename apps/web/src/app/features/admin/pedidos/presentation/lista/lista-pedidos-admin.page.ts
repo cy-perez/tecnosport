@@ -40,6 +40,7 @@ import { usarListarPedidosAdmin } from '../../application/listar-pedidos-admin.c
 import { MEDIO_POR_METODO, MEDIOS_DE_REINTEGRO } from '../../domain/medio-de-reintegro';
 import { CLAVE_MEDIO } from '../clave-medio';
 import { BandejaPagosSinPedido } from '../pagos-sin-pedido/bandeja-pagos-sin-pedido';
+import { AlertasDePedidos } from '../alertas/alertas-de-pedidos';
 import { MedioReintegro } from '../../../retractos/domain/retracto.model';
 import {
   EmisionDeGuiaAdmin,
@@ -57,6 +58,7 @@ import {
   PedidoAdmin,
 } from '../../domain/pedido-admin.model';
 import { filtroDesdeQueryParams, queryParamsDesdeFiltro } from '../../domain/query-params-filtro';
+import { recogidaVencida } from '../../domain/recogida-vencida';
 import { mensajeDeError } from '../../../../../core/errores/mensaje-de-error';
 import { fechaConHora, ultimoDia } from '../../../../../core/i18n/fecha-colombia';
 
@@ -157,6 +159,7 @@ interface FormularioEntregaEnPunto {
   selector: 'app-lista-pedidos-admin',
   imports: [
     BandejaPagosSinPedido,
+    AlertasDePedidos,
     PanelGarantia,
     PaquetesParaGuia,
     PanelRetracto,
@@ -444,11 +447,12 @@ export class ListaPedidosAdminPage {
   );
 
   /**
-   * Si una recogida lista ya pasó sus 48 horas. Lo decide el reloj de quien mira, y está bien: es
-   * para avisar y para ofrecer el motivo; quien cancela de verdad, y lo comprueba, es el servidor.
+   * Si una recogida lista ya pasó sus 48 horas, con la regla del dominio y el reloj de quien mira:
+   * es para avisar y para ofrecer el motivo; quien cancela de verdad, y lo comprueba, es el
+   * servidor.
    */
   protected recogidaVencida(pedido: PedidoAdmin): boolean {
-    return pedido.recogidaVenceEn !== null && Date.parse(pedido.recogidaVenceEn) <= Date.now();
+    return recogidaVencida(pedido, Date.now());
   }
 
   /**
@@ -476,10 +480,9 @@ export class ListaPedidosAdminPage {
 
   /** Con guarda de reentrada: el botón usa `ocupado` y no se deshabilita (foco de fila). */
   protected async marcarListoParaRecoger(pedidoId: string): Promise<void> {
-    if (this.acciones.marcarListoParaRecoger.isPending()) {
-      return;
-    }
-    await this.ejecutar(() => this.acciones.marcarListoParaRecoger.mutateAsync(pedidoId));
+    await this.unaALaVez('marcarListoParaRecoger', () =>
+      this.ejecutar(() => this.acciones.marcarListoParaRecoger.mutateAsync(pedidoId)),
+    );
   }
 
   protected marcandoListo(pedidoId: string): boolean {
@@ -643,8 +646,11 @@ export class ListaPedidosAdminPage {
     );
   }
 
+  /** Con guarda de reentrada: el botón usa `ocupado` y no se deshabilita (foco de fila). */
   protected async confirmarInventario(pedidoId: string): Promise<void> {
-    await this.ejecutar(() => this.acciones.confirmarInventario.mutateAsync(pedidoId));
+    await this.unaALaVez('confirmarInventario', () =>
+      this.ejecutar(() => this.acciones.confirmarInventario.mutateAsync(pedidoId)),
+    );
   }
 
   protected confirmandoInventario(pedidoId: string): boolean {
@@ -687,6 +693,26 @@ export class ListaPedidosAdminPage {
         comisionRecaudo: valores.comisionRecaudo ?? 0,
       }),
     );
+  }
+
+  /**
+   * Guarda de reentrada para las acciones cuyo botón usa `ocupado`, que **no** deshabilita.
+   *
+   * Una marca propia y no `isPending()`: la mutación no pasa a pendiente en el mismo tic del
+   * `mutateAsync`, así que dos clics seguidos pasaban los dos la guarda y mandaban dos POST.
+   */
+  private readonly accionesEnVuelo = new Set<string>();
+
+  private async unaALaVez(accion: string, hacer: () => Promise<void>): Promise<void> {
+    if (this.accionesEnVuelo.has(accion)) {
+      return;
+    }
+    this.accionesEnVuelo.add(accion);
+    try {
+      await hacer();
+    } finally {
+      this.accionesEnVuelo.delete(accion);
+    }
   }
 
   private async ejecutar(accion: () => Promise<unknown>): Promise<void> {

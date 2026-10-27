@@ -25,6 +25,20 @@ type Buscar = typeof fetch;
 const SIN_CUERPO = new Set(['GET', 'HEAD']);
 
 /**
+ * El cuerpo más grande que este proxy junta en memoria: 1 MiB. Sin tope, cualquiera podía mandarle
+ * un cuerpo de cientos de megas a cualquier ruta de `/api` y el servidor de la web lo guardaba
+ * entero antes de reenviarlo: unas pocas peticiones así agotan la memoria de la instancia, y con
+ * ella cae el SSR de todo el sitio.
+ *
+ * Ninguna ruta legítima se acerca: por aquí pasa JSON. Las fotos, los zips de WhatsApp y las fotos
+ * de los borradores van a Cloud Storage con URL firmada, y la lista de tecnología más grande vista
+ * (22 de octubre de 2026) son 9,5 KB de texto que salen como unas decenas de KB de JSON —y además
+ * la manda `tools/importar-lista-tecnologia.mjs` a la API, no a este proxy—. Si un día una ruta
+ * necesita más, se le da su propio tope aquí y no se sube este.
+ */
+export const TOPE_DEL_CUERPO_EN_BYTES = 1024 * 1024;
+
+/**
  * Un `POST` sin cuerpo —el refresco silencioso de cada visita anónima lo es— se reenvía **sin**
  * cuerpo, no como un flujo vacío: así la petición conserva la longitud que declaró el cliente
  * (`Content-Length: 0`, que es lo que manda `fetch`) en vez de salir troceada. El frontend de
@@ -153,10 +167,51 @@ export function crearProxyApi(
   };
 }
 
-async function recolectar(req: Request): Promise<Buffer[]> {
-  const trozos: Buffer[] = [];
-  for await (const trozo of req) trozos.push(trozo as Buffer);
-  return trozos;
+class CuerpoDemasiadoGrande extends Error {}
+
+/**
+ * Junta el cuerpo y se rinde en cuanto pasa del tope, sin esperar al final: el `content-length`
+ * lo escribe el cliente y puede mentir, o no venir (`transfer-encoding: chunked`), así que se
+ * cuenta lo que de verdad llega. Con escuchas y no con `for await`, porque salir de un `for await`
+ * destruye la petición —y con ella el socket— antes de poder contestar el 413.
+ */
+function recolectar(req: Request, tope: number): Promise<Buffer<ArrayBuffer>> {
+  return new Promise((resolver, rechazar) => {
+    const trozos: Buffer[] = [];
+    let total = 0;
+    const alDato = (trozo: Buffer): void => {
+      total += trozo.length;
+      if (total > tope) {
+        soltar();
+        req.pause();
+        rechazar(new CuerpoDemasiadoGrande());
+        return;
+      }
+      trozos.push(trozo);
+    };
+    const alFin = (): void => {
+      soltar();
+      resolver(Buffer.concat(trozos));
+    };
+    const alError = (error: unknown): void => {
+      soltar();
+      rechazar(error);
+    };
+    function soltar(): void {
+      req.off('data', alDato);
+      req.off('end', alFin);
+      req.off('error', alError);
+    }
+    req.on('data', alDato);
+    req.on('end', alFin);
+    req.on('error', alError);
+  });
+}
+
+/** 413 y la conexión cerrada: lo que el cliente siga mandando no se lee. */
+function responderDemasiadoGrande(res: Response): void {
+  res.setHeader('connection', 'close');
+  res.status(413).json({ codigo: 'CUERPO_DEMASIADO_GRANDE' });
 }
 
 async function reenviar(
@@ -169,8 +224,22 @@ async function reenviar(
   // El cuerpo se junta en memoria en vez de reenviarse en flujo, y es a propósito: por aquí solo
   // pasa JSON de tamaño modesto —las imágenes van directo a Cloud Storage con URL firmada, nunca
   // por el backend— y a cambio la petición sale con `Content-Length` en vez de troceada, que es
-  // lo que todo intermediario acepta sin discutir. El flujo no compraba nada.
-  const cuerpo = tieneCuerpo(req) ? Buffer.concat(await recolectar(req)) : undefined;
+  // lo que todo intermediario acepta sin discutir. El flujo no compraba nada. Con tope, eso sí
+  // (`TOPE_DEL_CUERPO_EN_BYTES`): primero por lo que declara, después por lo que llega.
+  let cuerpo: Buffer<ArrayBuffer> | undefined;
+  if (tieneCuerpo(req)) {
+    if (Number(req.headers['content-length'] ?? 0) > TOPE_DEL_CUERPO_EN_BYTES) {
+      responderDemasiadoGrande(res);
+      return;
+    }
+    try {
+      cuerpo = await recolectar(req, TOPE_DEL_CUERPO_EN_BYTES);
+    } catch (error) {
+      if (!(error instanceof CuerpoDemasiadoGrande)) throw error;
+      responderDemasiadoGrande(res);
+      return;
+    }
+  }
 
   const respuesta = await buscar(origen + req.originalUrl, {
     method: req.method,

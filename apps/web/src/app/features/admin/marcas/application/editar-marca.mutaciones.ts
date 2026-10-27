@@ -1,5 +1,6 @@
 import { inject } from '@angular/core';
 import { injectMutation, QueryClient } from '@tanstack/angular-query-experimental';
+import { ErrorHttp } from '../../../../core/http/respuesta-http';
 import {
   REPOSITORIO_MARCAS_ADMIN,
   ResultadoRenombrarMarca,
@@ -14,6 +15,16 @@ import { CLAVE_MARCAS_ADMIN } from './listar-marcas-admin.consulta';
 async function invalidarMarcas(queryClient: QueryClient): Promise<void> {
   await queryClient.invalidateQueries({ queryKey: CLAVE_MARCAS_ADMIN });
   await queryClient.invalidateQueries({ queryKey: ['catalogo', 'marcas'] });
+}
+
+/**
+ * Un 404 dice que otra pestaña la borró: reintentar daría 404 para siempre, así que la lista se
+ * vuelve a pedir y la fila desaparece.
+ */
+async function invalidarSiYaNoExiste(queryClient: QueryClient, error: unknown): Promise<void> {
+  if (error instanceof ErrorHttp && error.estado === 404) {
+    await invalidarMarcas(queryClient);
+  }
 }
 
 export interface ComandoRenombrarMarca {
@@ -33,6 +44,7 @@ export function usarRenombrarMarca() {
         await invalidarMarcas(queryClient);
       }
     },
+    onError: (error: unknown) => invalidarSiYaNoExiste(queryClient, error),
   }));
 }
 
@@ -43,5 +55,6 @@ export function usarEliminarMarca() {
   return injectMutation(() => ({
     mutationFn: (id: string): Promise<void> => repositorio.eliminar(id),
     onSuccess: () => invalidarMarcas(queryClient),
+    onError: (error: unknown) => invalidarSiYaNoExiste(queryClient, error),
   }));
 }

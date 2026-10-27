@@ -134,8 +134,7 @@ export interface Pedido {
 
 /**
  * Un medio de pago que el servidor ofrece para este carrito y esta entrega, con lo que costaría la
- * mercancía pagando con él (`POST /pedidos/metodos-de-pago-con-precio`, ADR-0095). Sin el flete:
- * el envío cuesta lo mismo con cualquier medio.
+ * mercancía pagando con él (`POST /pedidos/metodos-de-pago-con-precio`, ADR-0095).
  *
  * Es lo que la pantalla de confirmar enseña como subtotal, descuento y total. Lo calcula el
  * servidor con la misma regla que aplica al crear el pedido; el navegador no suma precios.
@@ -146,6 +145,13 @@ export interface MetodoDePagoConPrecio {
   readonly subtotal: Dinero;
   /** Cero con los medios que pagan el publicado. */
   readonly descuento: Dinero;
+  /**
+   * El flete que se cobrará con este medio, cuando el servidor lo manda: con contraentrega no es
+   * el de la cotización, porque la transportadora cobra el recaudo. **Opcional mientras el contrato
+   * no lo traiga** —`mapeador-pedido.ts` todavía no lo llena—; sin él, confirmar se queda con el de
+   * la cotización (`fleteDelMedio`).
+   */
+  readonly costoEnvio?: Dinero | null;
 }
 
 export type EstadoRetracto = 'RADICADA' | 'PRODUCTO_RECIBIDO' | 'REEMBOLSADA' | 'RECHAZADA';

@@ -43,8 +43,14 @@ class RepositorioSesionFalso implements RepositorioSesion {
     return this.sesionAlRefrescar;
   }
 
+  /** Si está, el POST de cierre falla con este error. */
+  falloAlCerrar: Error | null = null;
+
   async cerrarSesion(): Promise<void> {
     this.llamadasCerrar++;
+    if (this.falloAlCerrar) {
+      throw this.falloAlCerrar;
+    }
   }
 }
 
@@ -182,6 +188,21 @@ describe('SesionStore', () => {
     await store.cerrarSesion();
 
     expect(repositorio.llamadasCerrar).toBe(1);
+    expect(store.sesion()).toBeNull();
+  });
+
+  /**
+   * Con el `set` después del `await`, un POST caído dejaba la sesión abierta en pantalla. Se suelta
+   * igual, y el fallo llega a quien llama: el servidor no revocó la cookie de refresco.
+   */
+  it('si el servidor no confirma el cierre, suelta la sesión igual y avisa a quien llama', async () => {
+    const repositorio = new RepositorioSesionFalso(SESION_DE_PRUEBA);
+    repositorio.falloAlCerrar = new Error('sin conexión');
+    const { store } = await renderConRepositorio(repositorio);
+    await store.listo;
+
+    await expect(store.cerrarSesion()).rejects.toThrow('sin conexión');
+
     expect(store.sesion()).toBeNull();
   });
 });

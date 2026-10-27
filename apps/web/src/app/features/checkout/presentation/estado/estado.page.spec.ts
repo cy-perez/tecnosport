@@ -1,6 +1,6 @@
 import { ErrorHttp } from '../../../../core/http/respuesta-http';
-import { Component, inject } from '@angular/core';
-import { ActivatedRoute, convertToParamMap, Router } from '@angular/router';
+import { Component, inject, PLATFORM_ID } from '@angular/core';
+import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { fireEvent, render, screen } from '@testing-library/angular';
@@ -10,7 +10,7 @@ import es from '../../../../../assets/i18n/es.json';
 import esCheckout from '../../../../../assets/i18n/scopes/checkout/es.json';
 import { CheckoutStore } from '../../application/checkout.store';
 import { IntentoDePago } from '../../domain/intento-pago.model';
-import { IntentoSistecredito } from '../../domain/intento-sistecredito.model';
+import { DocumentoComprador, IntentoSistecredito } from '../../domain/intento-sistecredito.model';
 import { MetodoDePagoConPrecio, Pedido, Seguimiento } from '../../domain/pedido.model';
 import { REPOSITORIO_PAGOS, RepositorioPagos } from '../../domain/repositorio-pagos.puerto';
 import { REPOSITORIO_PEDIDOS, RepositorioPedidos } from '../../domain/repositorio-pedidos.puerto';
@@ -19,6 +19,16 @@ import {
   ALMACEN_CORREO_DE_PEDIDO,
   AlmacenCorreoDePedido,
 } from '../../domain/almacen-correo-de-pedido.puerto';
+import {
+  ALMACEN_CARRITO_POR_PAGAR,
+  AlmacenCarritoPorPagar,
+} from '../../domain/almacen-carrito-por-pagar.puerto';
+import {
+  REPOSITORIO_CARRITO,
+  RepositorioCarrito,
+} from '../../../carrito/domain/repositorio-carrito.puerto';
+import { CarritoStore } from '../../../carrito/application/carrito.store';
+import { proveerAlmacenesCarrito, sembrarCarritoId } from '../../../../../testing/carrito';
 
 /** El navegador que recordó el correo antes de ir a la pasarela, en memoria. */
 class AlmacenCorreoEnMemoria implements AlmacenCorreoDePedido {
@@ -38,6 +48,41 @@ function almacenDesde(query: Record<string, string> = {}): AlmacenCorreoEnMemori
     almacen.recordar(query['pedidoId'], query['correo']);
   }
   return almacen;
+}
+
+/** Qué carrito salió a pagarse en la pasarela, en memoria. */
+class CarritosPorPagarEnMemoria implements AlmacenCarritoPorPagar {
+  readonly anotados = new Map<string, string>();
+  anotar(pedidoId: string, carritoId: string): void {
+    this.anotados.set(pedidoId, carritoId);
+  }
+  carritoDe(pedidoId: string): string | null {
+    return this.anotados.get(pedidoId) ?? null;
+  }
+  olvidar(pedidoId: string): void {
+    this.anotados.delete(pedidoId);
+  }
+}
+
+let carritosPorPagar = new CarritosPorPagarEnMemoria();
+
+/** El carrito del navegador: solo hace falta que exista, la pantalla no pinta sus líneas. */
+const repositorioCarrito: Partial<RepositorioCarrito> = {
+  ver: async (id: string) => ({
+    id,
+    usuarioId: null,
+    creadoEn: '2026-01-01T00:00:00Z',
+    lineas: [],
+  }),
+};
+
+/** Lo que toda pantalla con `CarritoStore` necesita, más el almacén de carritos por pagar. */
+function proveedoresDelCarrito() {
+  return [
+    ...proveerAlmacenesCarrito(),
+    { provide: REPOSITORIO_CARRITO, useValue: repositorioCarrito },
+    { provide: ALMACEN_CARRITO_POR_PAGAR, useValue: carritosPorPagar },
+  ];
 }
 
 function pedidoDePrueba(overrides: Partial<Pedido> = {}): Pedido {
@@ -99,8 +144,13 @@ class RepositorioPedidosFalso implements RepositorioPedidos {
     throw new Error('no usado en esta prueba');
   }
 
+  falloDeReintento: unknown = null;
+
   async reintentarPago(): Promise<Pedido> {
     this.llamadasReintentar++;
+    if (this.falloDeReintento) {
+      throw this.falloDeReintento;
+    }
     return this.pedidoReintentado;
   }
 
@@ -135,8 +185,24 @@ class RepositorioPagosFalso implements RepositorioPagos {
     };
   }
 
-  async crearIntentoSistecredito(): Promise<IntentoSistecredito> {
-    throw new Error('no usado en esta prueba');
+  readonly intentosSistecredito: { pedidoId: string; documento: DocumentoComprador }[] = [];
+  /** Cuántas veces falla la pasarela antes de entregar la URL. */
+  fallosSistecredito = 0;
+
+  async crearIntentoSistecredito(
+    pedidoId: string,
+    documento: DocumentoComprador,
+  ): Promise<IntentoSistecredito> {
+    this.intentosSistecredito.push({ pedidoId, documento });
+    if (this.fallosSistecredito > 0) {
+      this.fallosSistecredito--;
+      throw new Error('la pasarela no respondió');
+    }
+    return {
+      referencia: 'TS-2026-000001-2',
+      monto: { valor: 300_000, moneda: 'COP' },
+      urlRedireccion: 'https://pagos.sistecredito.test/pago/abc',
+    };
   }
 
   async registrarIdTransaccion(): Promise<void> {
@@ -167,6 +233,7 @@ async function renderConProviders(
   pedidos: RepositorioPedidos,
   pagos: RepositorioPagos,
   query: Record<string, string> = {},
+  plataforma: 'browser' | 'server' = 'browser',
 ) {
   return render(EstadoPage, {
     imports: [
@@ -178,6 +245,8 @@ async function renderConProviders(
     ],
     providers: [
       { provide: ALMACEN_CORREO_DE_PEDIDO, useValue: almacenDesde(query) },
+      { provide: PLATFORM_ID, useValue: plataforma },
+      ...proveedoresDelCarrito(),
       provideTanStackQuery(new QueryClient()),
       { provide: REPOSITORIO_PEDIDOS, useValue: pedidos },
       { provide: REPOSITORIO_PAGOS, useValue: pagos },
@@ -204,6 +273,7 @@ async function renderConPedidoEnMemoria(
     ],
     providers: [
       { provide: ALMACEN_CORREO_DE_PEDIDO, useValue: almacenDesde() },
+      ...proveedoresDelCarrito(),
       provideTanStackQuery(new QueryClient()),
       { provide: REPOSITORIO_PEDIDOS, useValue: pedidos },
       { provide: REPOSITORIO_PAGOS, useValue: pagos },
@@ -227,6 +297,57 @@ function cifraDe(rotulo: string): string {
 }
 
 describe('EstadoPage', () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+    carritosPorPagar = new CarritosPorPagarEnMemoria();
+  });
+
+  describe('el carrito que salió a pagarse en la pasarela', () => {
+    async function volverConElPedido(estado: Pedido['estado']) {
+      const { fixture } = await renderConProviders(
+        new RepositorioPedidosFalso(seguimientoDePrueba({ estado, metodoPago: 'WOMPI' })),
+        new RepositorioPagosFalso(),
+        { pedidoId: 'pedido-1', correo: 'cliente@tecnosport.co' },
+      );
+      await screen.findByText('Pedido TS-2026-000001');
+      const carrito = fixture.debugElement.injector.get(CarritoStore);
+      // `carritoId` se lee en `afterNextRender`: primero que exista, luego se mira si se vació.
+      fixture.detectChanges();
+      await fixture.whenStable();
+      return carrito;
+    }
+
+    it('se vacía al volver con el pedido pagado', async () => {
+      sembrarCarritoId('carrito-1');
+      carritosPorPagar.anotar('pedido-1', 'carrito-1');
+
+      const carrito = await volverConElPedido('PAGADO');
+
+      await vi.waitFor(() => expect(carrito.carritoId()).toBeNull());
+      expect(carritosPorPagar.carritoDe('pedido-1')).toBeNull();
+    });
+
+    it('se queda lleno mientras el pago no ha entrado', async () => {
+      sembrarCarritoId('carrito-1');
+      carritosPorPagar.anotar('pedido-1', 'carrito-1');
+
+      const carrito = await volverConElPedido('PAGO_FALLIDO');
+
+      await vi.waitFor(() => expect(carrito.carritoId()).toBe('carrito-1'));
+      expect(carritosPorPagar.carritoDe('pedido-1')).toBe('carrito-1');
+    });
+
+    it('no toca otro carrito: el del navegador ya es una compra distinta', async () => {
+      sembrarCarritoId('carrito-nuevo');
+      carritosPorPagar.anotar('pedido-1', 'carrito-1');
+
+      const carrito = await volverConElPedido('PAGADO');
+
+      await vi.waitFor(() => expect(carritosPorPagar.carritoDe('pedido-1')).toBeNull());
+      expect(carrito.carritoId()).toBe('carrito-nuevo');
+    });
+  });
+
   it('con el pedido ya en memoria, lo muestra sin consultar al servidor', async () => {
     const pedidos = new RepositorioPedidosFalso();
     await renderConPedidoEnMemoria(pedidoDePrueba(), pedidos, new RepositorioPagosFalso());
@@ -338,6 +459,31 @@ describe('EstadoPage', () => {
    * `id` —es un UUID— así que no tenía forma de llegar con parámetros. Ahora se le pregunta por el
    * número de su comprobante.
    */
+  /**
+   * En el servidor el correo no se puede saber —va en el fragmento o en el `sessionStorage`—, y el
+   * SSR servía el formulario de «pide el enlace» a quien llegaba por el enlace de un correo.
+   */
+  it('en el servidor, con pedidoId en la URL, sirve el esqueleto y no el formulario', async () => {
+    await renderConProviders(
+      new RepositorioPedidosFalso(),
+      new RepositorioPagosFalso(),
+      { pedidoId: 'pedido-1' },
+      'server',
+    );
+
+    expect(screen.queryByRole('heading', { name: 'Consulta tu pedido' })).toBeNull();
+    expect(screen.queryByLabelText('Número del pedido')).toBeNull();
+  });
+
+  /** En el navegador, si tampoco aparece el correo, el formulario sigue siendo la salida. */
+  it('en el navegador, con pedidoId pero sin correo, pide el número y el correo', async () => {
+    await renderConProviders(new RepositorioPedidosFalso(), new RepositorioPagosFalso(), {
+      pedidoId: 'pedido-1',
+    });
+
+    expect(await screen.findByRole('heading', { name: 'Consulta tu pedido' })).toBeTruthy();
+  });
+
   it('sin pedido en memoria ni datos en la URL, pide el número y el correo', async () => {
     await renderConProviders(new RepositorioPedidosFalso(), new RepositorioPagosFalso());
 
@@ -451,6 +597,22 @@ describe('EstadoPage', () => {
     expect(screen.queryByRole('button', { name: 'Reintentar pago' })).toBeFalsy();
   });
 
+  /** Con el enlace de compra vencido el servidor no reabre el pedido: hay que pedir otro. */
+  it('reintentar con el enlace de compra vencido dice que se pida otro por WhatsApp', async () => {
+    const pedidos = new RepositorioPedidosFalso();
+    pedidos.falloDeReintento = new ErrorHttp(409, 'enlace vencido', 'ENLACE_DE_COMPRA_NO_VIGENTE');
+    await renderConPedidoEnMemoria(
+      pedidoDePrueba({ estado: 'PAGO_FALLIDO', metodoPago: 'WOMPI' }),
+      pedidos,
+      new RepositorioPagosFalso(),
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Reintentar pago' }));
+
+    expect(await screen.findByText(esCheckout.confirmar.disponibilidad_por_confirmar)).toBeTruthy();
+    expect(screen.queryByText(esCheckout.estado.error_reintento)).toBeNull();
+  });
+
   it('reintentar con un método de Wompi crea el intento de pago', async () => {
     const ubicacionOriginal = window.location;
     Object.defineProperty(window, 'location', {
@@ -463,7 +625,7 @@ describe('EstadoPage', () => {
       pedidoDePrueba({ estado: 'PAGO_PENDIENTE', metodoPago: 'WOMPI' }),
     );
     const pagos = new RepositorioPagosFalso();
-    await renderConPedidoEnMemoria(
+    const { fixture } = await renderConPedidoEnMemoria(
       pedidoDePrueba({ estado: 'PAGO_FALLIDO', metodoPago: 'WOMPI' }),
       pedidos,
       pagos,
@@ -474,6 +636,13 @@ describe('EstadoPage', () => {
     await vi.waitFor(() => expect(pedidos.llamadasReintentar).toBe(1));
     expect(pagos.llamadasCrearIntento).toBe(1);
     expect(window.location.href).toContain('https://checkout.wompi.co/p/?');
+    // El correo no viaja en la URL de retorno —ni codificado—: lo recuerda el navegador.
+    const href = decodeURIComponent(window.location.href);
+    expect(href).toContain('pedidoId=pedido-1');
+    expect(href).not.toContain('correo');
+    expect(href).not.toContain('cliente@tecnosport.co');
+    const correos = fixture.debugElement.injector.get(ALMACEN_CORREO_DE_PEDIDO);
+    expect(correos.correoDe('pedido-1')).toBe('cliente@tecnosport.co');
 
     Object.defineProperty(window, 'location', { configurable: true, value: ubicacionOriginal });
   });
@@ -487,33 +656,112 @@ describe('EstadoPage', () => {
    * —sin intento vivo—, el spinner terminaba y no pasaba absolutamente nada más: ni redirección,
    * ni mensaje, ni error. El pedido quedaba peor que antes.
    *
-   * <p>Va al paso del método de pago y no directo a la pasarela porque hace falta el documento,
-   * que vive solo en memoria y no sobrevive a la recarga de la SPA al volver de un dominio
-   * externo — y a esta pantalla se llega justo después de ese viaje.
+   * <p>Después la rama mandaba a la pantalla de método de pago a pedir el documento, y esa, sin
+   * datos de entrega —tras volver de la pasarela no los hay—, redirigía al resumen: el pedido ya
+   * reabierto quedaba en `PAGO_PENDIENTE` y sin botón. El documento se pide aquí, antes de reabrir.
    */
-  it('reintentar con Sistecrédito vuelve a pedir el documento en vez de no hacer nada', async () => {
-    const navegar = vi.spyOn(Router.prototype, 'navigate');
-    const pedidos = new RepositorioPedidosFalso(
-      null,
-      pedidoDePrueba({ estado: 'PAGO_PENDIENTE', metodoPago: 'SISTECREDITO' }),
-    );
-    const pagos = new RepositorioPagosFalso();
-    await renderConPedidoEnMemoria(
-      pedidoDePrueba({ estado: 'PAGO_FALLIDO', metodoPago: 'SISTECREDITO' }),
-      pedidos,
-      pagos,
-    );
-    await screen.findByRole('button', { name: 'Reintentar pago' });
+  describe('reintentar con Sistecrédito', () => {
+    let ubicacionOriginal: Location;
 
-    fireEvent.click(screen.getByRole('button', { name: 'Reintentar pago' }));
+    beforeEach(() => {
+      ubicacionOriginal = window.location;
+      Object.defineProperty(window, 'location', {
+        configurable: true,
+        value: { ...ubicacionOriginal, href: '', origin: 'https://tecnosport.co' },
+      });
+    });
 
-    await vi.waitFor(() => expect(pedidos.llamadasReintentar).toBe(1));
-    await vi.waitFor(() =>
-      expect(navegar).toHaveBeenCalledWith(['/', 'es', 'checkout', 'metodo-pago']),
-    );
-    // Y NO se crea un intento a ciegas: sin documento la pasarela no puede encontrar al cliente.
-    expect(pagos.llamadasCrearIntento).toBe(0);
-    navegar.mockRestore();
+    afterEach(() => {
+      Object.defineProperty(window, 'location', { configurable: true, value: ubicacionOriginal });
+    });
+
+    async function conPedidoFallido(pagos = new RepositorioPagosFalso()) {
+      const pedidos = new RepositorioPedidosFalso(
+        null,
+        pedidoDePrueba({ estado: 'PAGO_PENDIENTE', metodoPago: 'SISTECREDITO' }),
+      );
+      const { fixture } = await renderConPedidoEnMemoria(
+        pedidoDePrueba({ estado: 'PAGO_FALLIDO', metodoPago: 'SISTECREDITO' }),
+        pedidos,
+        pagos,
+      );
+      await screen.findByRole('button', { name: 'Reintentar pago' });
+      return { pedidos, pagos, fixture };
+    }
+
+    it('el primer clic pide el documento aquí y todavía no reabre el pedido', async () => {
+      const { pedidos, pagos } = await conPedidoFallido();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Reintentar pago' }));
+
+      expect(await screen.findByLabelText('Número de documento')).toBeTruthy();
+      expect(
+        screen.getByRole('button', { name: 'Reintentar pago' }).getAttribute('aria-expanded'),
+      ).toBe('true');
+      expect(pedidos.llamadasReintentar).toBe(0);
+      expect(pagos.intentosSistecredito).toEqual([]);
+    });
+
+    it('sin documento válido no reabre el pedido y dice qué falta', async () => {
+      const { pedidos } = await conPedidoFallido();
+      fireEvent.click(screen.getByRole('button', { name: 'Reintentar pago' }));
+      await screen.findByLabelText('Número de documento');
+
+      fireEvent.click(screen.getByRole('button', { name: 'Reintentar pago' }));
+
+      expect(await screen.findByText(esCheckout.metodoPago.documento.invalido)).toBeTruthy();
+      expect(pedidos.llamadasReintentar).toBe(0);
+    });
+
+    it('con el documento, reabre el pedido, abre el intento y va a la pasarela', async () => {
+      const { pedidos, pagos, fixture } = await conPedidoFallido();
+      fireEvent.click(screen.getByRole('button', { name: 'Reintentar pago' }));
+      fireEvent.input(await screen.findByLabelText('Número de documento'), {
+        target: { value: '1017254896' },
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Reintentar pago' }));
+
+      await vi.waitFor(() =>
+        expect(window.location.href).toBe('https://pagos.sistecredito.test/pago/abc'),
+      );
+      expect(pedidos.llamadasReintentar).toBe(1);
+      expect(pagos.intentosSistecredito).toEqual([
+        { pedidoId: 'pedido-1', documento: { tipoDocumento: 'CC', documento: '1017254896' } },
+      ]);
+      // El retorno de Sistecrédito lee el correo de aquí, no de la URL.
+      const correos = fixture.debugElement.injector.get(ALMACEN_CORREO_DE_PEDIDO);
+      expect(correos.correoDe('pedido-1')).toBe('cliente@tecnosport.co');
+    });
+
+    /**
+     * Reabierto el pedido, si la pasarela falla queda en `PAGO_PENDIENTE`: el botón no puede
+     * desaparecer, y el segundo intento no vuelve a reabrirlo.
+     */
+    it('si la pasarela falla, el botón sigue y el siguiente intento no reabre otra vez', async () => {
+      const pagos = new RepositorioPagosFalso();
+      pagos.fallosSistecredito = 1;
+      const { pedidos } = await conPedidoFallido(pagos);
+      fireEvent.click(screen.getByRole('button', { name: 'Reintentar pago' }));
+      fireEvent.input(await screen.findByLabelText('Número de documento'), {
+        target: { value: '1017254896' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Reintentar pago' }));
+      expect(await screen.findByText(esCheckout.estado.error_reintento)).toBeTruthy();
+
+      await vi.waitFor(() =>
+        expect(
+          (screen.getByRole('button', { name: 'Reintentar pago' }) as HTMLButtonElement).disabled,
+        ).toBe(false),
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Reintentar pago' }));
+
+      await vi.waitFor(() =>
+        expect(window.location.href).toBe('https://pagos.sistecredito.test/pago/abc'),
+      );
+      expect(pedidos.llamadasReintentar).toBe(1);
+      expect(pagos.intentosSistecredito).toHaveLength(2);
+    });
   });
 
   // Es la última pantalla del recorrido y la que alguien vuelve a abrir días después para ver

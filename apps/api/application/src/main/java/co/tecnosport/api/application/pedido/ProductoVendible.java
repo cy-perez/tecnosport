@@ -3,6 +3,7 @@ package co.tecnosport.api.application.pedido;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.domain.catalogo.EstadoProducto;
 import co.tecnosport.api.domain.catalogo.Producto;
+import co.tecnosport.api.domain.catalogo.Variante;
 import java.util.UUID;
 
 /**
@@ -28,5 +29,23 @@ final class ProductoVendible {
       throw new VarianteNoEncontradaException(varianteId);
     }
     return producto;
+  }
+
+  /**
+   * La variante de ese producto, si quien compra la puede elegir hoy: activa y sin agotar por el
+   * proveedor (ADR-0084). Una prenda agotada sigue con saldo en el libro —agotar no toca el
+   * inventario—, así que sin esto se reservaba y se cobraba. La misma excepción que una variante
+   * inexistente, a propósito: no se le confirma a nadie que esa variante existe.
+   */
+  static Variante exigirVariante(Producto producto, UUID varianteId) {
+    Variante variante =
+        producto.variantes().stream()
+            .filter(v -> v.id().equals(varianteId))
+            .findFirst()
+            .orElseThrow(() -> new VarianteNoEncontradaException(varianteId));
+    if (!variante.seVende()) {
+      throw new VarianteNoEncontradaException(varianteId);
+    }
+    return variante;
   }
 }

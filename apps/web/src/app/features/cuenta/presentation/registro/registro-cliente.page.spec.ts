@@ -1,7 +1,7 @@
 import { ConfiguracionGoogle } from '../../domain/boton-google.puerto';
 import { vi } from 'vitest';
 import { provideRouter, Router } from '@angular/router';
-import { TranslocoTestingModule } from '@jsverse/transloco';
+import { TranslocoService, TranslocoTestingModule } from '@jsverse/transloco';
 import { fireEvent, render, screen } from '@testing-library/angular';
 import { esperarSinViolaciones } from '../../../../../testing/axe';
 import en from '../../../../../assets/i18n/en.json';
@@ -10,7 +10,6 @@ import enCuenta from '../../../../../assets/i18n/scopes/cuenta/en.json';
 import esCuenta from '../../../../../assets/i18n/scopes/cuenta/es.json';
 import { DemasiadosIntentosError } from '../../../../core/autenticacion/sesion.errores';
 import { ErrorHttp } from '../../../../core/http/respuesta-http';
-import { CorreoYaRegistradoError } from '../../domain/cuenta.errores';
 import { REPOSITORIO_CUENTA, RepositorioCuenta } from '../../domain/repositorio-cuenta.puerto';
 import { RegistroClientePage } from './registro-cliente.page';
 import {
@@ -35,11 +34,7 @@ class RepositorioCuentaFalso implements RepositorioCuenta {
 
   constructor(
     private errorAlRegistrar:
-      | 'correo-registrado'
-      | 'generico'
-      | 'codigo-correo-invalido'
-      | 'demasiados-intentos'
-      | null = null,
+      'generico' | 'codigo-correo-invalido' | 'demasiados-intentos' | null = null,
   ) {}
 
   /** Lo que de verdad importa comprobar: que la autorización viaja, y no que el servidor la
@@ -50,9 +45,6 @@ class RepositorioCuentaFalso implements RepositorioCuenta {
 
   async registrar(correo: string, clave: string, autorizaDatos: boolean): Promise<void> {
     this.llamadasRegistrar.push({ correo, clave, autorizaDatos });
-    if (this.errorAlRegistrar === 'correo-registrado') {
-      throw new CorreoYaRegistradoError();
-    }
     if (this.errorAlRegistrar === 'generico') {
       throw new Error('falló');
     }
@@ -167,6 +159,21 @@ describe('RegistroClientePage', () => {
     expect(await screen.findByText('Escribe tu correo.')).toBeTruthy();
   });
 
+  /**
+   * `transloco.translate()` dentro de un `computed` no lee ninguna señal: el error se quedaba en el
+   * idioma en que se pintó por primera vez aunque el visitante cambiara de idioma.
+   */
+  it('el error de un campo cambia de idioma con el sitio', async () => {
+    const { fixture } = await renderPagina(new RepositorioCuentaFalso());
+    fireEvent.click(screen.getByRole('button', { name: 'Crear cuenta' }));
+    expect(await screen.findByText(esCuenta.registro.errores.correo_requerido)).toBeTruthy();
+
+    fixture.debugElement.injector.get(TranslocoService).setActiveLang('en');
+
+    expect(await screen.findByText(enCuenta.registro.errores.correo_requerido)).toBeTruthy();
+    expect(screen.queryByText(esCuenta.registro.errores.correo_requerido)).toBeNull();
+  });
+
   it('registrar exitosamente muestra el mensaje de revisa tu correo', async () => {
     const repositorio = new RepositorioCuentaFalso();
     await renderPagina(repositorio);
@@ -181,12 +188,13 @@ describe('RegistroClientePage', () => {
     expect(await screen.findByText('Revisa tu correo')).toBeTruthy();
   });
 
-  it('con un correo ya registrado, muestra ese error específico', async () => {
-    await renderPagina(new RepositorioCuentaFalso('correo-registrado'));
+  /** El servidor responde igual exista o no la cuenta: el éxito tiene que servir para los dos. */
+  it('el mensaje de éxito no da por hecho que la cuenta es nueva', async () => {
+    await renderPagina(new RepositorioCuentaFalso());
 
     await llenarYEnviar();
 
-    expect(await screen.findByText('Ya existe una cuenta con ese correo.')).toBeTruthy();
+    expect(await screen.findByText(/si ya tenías una cuenta/i)).toBeTruthy();
   });
 
   it('con un error genérico del servidor, muestra el mensaje genérico', async () => {

@@ -1,11 +1,19 @@
-import { Params } from '@angular/router';
 import { ESTADOS_BORRADOR, EstadoBorrador, FiltroBorradores } from './borrador.model';
+
+/**
+ * Los query params tal como los entrega el router, declarados aquí y no importando `Params` de
+ * `@angular/router`: domain va sin Angular. Un parámetro repetido en la URL llega como lista.
+ */
+export type ParametrosDeConsulta = Readonly<Record<string, string | readonly string[] | undefined>>;
+
+/** Lo que vuelve a la URL. Un campo ausente no aparece. */
+export type ParametrosDeUrl = Record<string, string | number>;
 
 /**
  * Params del router -> filtro. Un estado que no exista se ignora en vez de mandarse: el servidor
  * respondería 422 y la lista quedaría en error por una URL escrita a mano.
  */
-export function filtroBorradoresDesdeQueryParams(params: Params): FiltroBorradores {
+export function filtroBorradoresDesdeQueryParams(params: ParametrosDeConsulta): FiltroBorradores {
   const paginaUrl = Number(params['pagina']);
   const estado = params['estado'];
   return {
@@ -15,8 +23,8 @@ export function filtroBorradoresDesdeQueryParams(params: Params): FiltroBorrador
   };
 }
 
-export function queryParamsDesdeFiltroBorradores(filtro: FiltroBorradores): Params {
-  const params: Params = {};
+export function queryParamsDesdeFiltroBorradores(filtro: FiltroBorradores): ParametrosDeUrl {
+  const params: ParametrosDeUrl = {};
   if (filtro.estado) {
     params['estado'] = filtro.estado;
   }

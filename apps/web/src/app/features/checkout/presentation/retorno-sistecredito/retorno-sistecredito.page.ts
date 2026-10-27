@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { afterNextRender, ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { TsEsqueleto } from '../../../../shared/ts-esqueleto/ts-esqueleto';
@@ -48,6 +48,13 @@ export class RetornoSistecreditoPage {
       this.sinDatos.set(true);
       return;
     }
+    // Solo en el navegador, y una sola vez: en el constructor corría también durante el SSR —el
+    // servidor navegaba, y recordar el correo allí no recordaba nada— y al hidratar se repetía.
+    // `afterNextRender` no corre en el servidor (mismo patrón que `VerificarCorreoPage`).
+    afterNextRender(() => this.irAlEstado(pedidoId, correo));
+  }
+
+  private irAlEstado(pedidoId: string, correo: string | null): void {
     if (correo) {
       this.correosDePedido.recordar(pedidoId, correo);
     }

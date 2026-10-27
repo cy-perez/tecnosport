@@ -33,8 +33,10 @@ import { CrearPedidoComando, MetodosDePagoDisponiblesComando } from '../../domai
 import { MetodoDePagoConPrecio, MetodoPago, Pedido } from '../../domain/pedido.model';
 import { ErrorHttp } from '../../../../core/http/respuesta-http';
 import { esMetodoPagoSistecredito, esMetodoPagoWompi } from '../../domain/reglas-pedido';
+import { fleteDelMedio } from '../../domain/flete-del-medio';
 import { urlWebCheckoutWompi } from '../../domain/wompi';
 import { ALMACEN_CORREO_DE_PEDIDO } from '../../domain/almacen-correo-de-pedido.puerto';
+import { ALMACEN_CARRITO_POR_PAGAR } from '../../domain/almacen-carrito-por-pagar.puerto';
 
 const CLAVE_ETIQUETA: Record<MetodoPago, string> = {
   WOMPI: 'checkout.metodoPago.wompi',
@@ -87,6 +89,7 @@ export class ConfirmarPage {
   protected readonly carrito = inject(CarritoStore);
   protected readonly checkout = inject(CheckoutStore);
   private readonly correosDePedido = inject(ALMACEN_CORREO_DE_PEDIDO);
+  private readonly carritosPorPagar = inject(ALMACEN_CARRITO_POR_PAGAR);
 
   protected readonly error = signal<string | null>(null);
 
@@ -155,7 +158,16 @@ export class ConfirmarPage {
     () => this.tarifa() !== null && this.envioElegido() === null,
   );
 
-  protected readonly costoEnvio = computed(() => this.envioElegido()?.costoEnvio ?? 0);
+  /**
+   * El flete que se cobra con el medio elegido: el que manda el servidor para ese medio —con
+   * contraentrega, el que lleva el recaudo— y, mientras el contrato no lo traiga, el de la
+   * cotización (`fleteDelMedio`). Sin tarifa sigue en cero, y `totalConocido` no deja pintar total.
+   */
+  protected readonly costoEnvio = computed(() =>
+    this.muestraEnvio() && this.envioElegido() === null
+      ? 0
+      : fleteDelMedio(this.eleccionVigente(), this.envioElegido()?.costoEnvio ?? 0),
+  );
 
   /**
    * Lo que se cobra: la mercancía **con el medio elegido**, del servidor, más el flete (ADR-0095).
@@ -375,8 +387,18 @@ export class ConfirmarPage {
     () => this.checkout.creando() || this.checkout.iniciandoPago() || this.esperandoCotizacion(),
   );
 
+  /**
+   * La compra quedó hecha y ya se navegó a su pantalla final. Desde ahí el carrito se vacía y el
+   * store suelta los datos de entrega y el medio (`CheckoutStore.terminarCompra`), y la guarda de
+   * abajo los vería faltar y mandaría al resumen, compitiendo con la navegación que ya va en vuelo.
+   */
+  private readonly terminado = signal(false);
+
   constructor() {
     effect(() => {
+      if (this.terminado()) {
+        return;
+      }
       const datosCarrito = this.carrito.consulta.data();
       const sinDatosEntrega = this.checkout.datosEntrega() === null;
       const sinMetodoPago = this.checkout.metodoPago() === null;
@@ -468,12 +490,13 @@ export class ConfirmarPage {
     };
 
     try {
-      // Un reintento tras un fallo a mitad de camino (p. ej. creando el
-      // intento de pago) no vuelve a crear el pedido: ya existe, `POST
-      // /pedidos` no es el paso a repetir. `CheckoutStore.guardarDatosEntrega`
-      // y `elegirMetodoPago` limpian `pedido` cada vez que cambia algo que lo
-      // volvería inválido, así que si sigue ahí es el mismo intento.
-      const pedido = this.checkout.pedido() ?? (await this.checkout.crearPedido(comando));
+      // Un reintento tras un fallo a mitad de camino (p. ej. creando el intento de pago) no vuelve
+      // a crear el pedido: ya existe, `POST /pedidos` no es el paso a repetir. **Pero solo si es el
+      // mismo pedido**: el carrito no pasa por `CheckoutStore`, así que quien cambió una cantidad
+      // después del fallo y volvió con «Atrás» trae otro comando, y reutilizar el pedido viejo le
+      // cobraría el total viejo y después le borraría el carrito nuevo. La huella decide.
+      const pedido =
+        this.checkout.pedidoReutilizable(comando) ?? (await this.checkout.crearPedido(comando));
       const continuo = await this.continuarSegunMetodoPago(pedido);
       if (!continuo) {
         // No se pudo seguir y ya se navegó a donde falta algo. Limpiar el carrito aquí dejaría al
@@ -481,12 +504,19 @@ export class ConfirmarPage {
         // principio de este método impidiéndole volver a intentarlo.
         return;
       }
-      // Aquí y no antes. Las líneas ya son del pedido, así que dejar el carrito lleno invita a
-      // comprarlas dos veces; pero limpiarlo apenas se crea el pedido rompería el reintento de
-      // arriba, porque la guarda del principio de este método exige un carrito con líneas. Si
-      // `continuarSegunMetodoPago` falla —el intento de pago de Wompi, por ejemplo— no se llega
-      // hasta acá y el carrito queda intacto para volver a intentarlo.
-      this.carrito.limpiar();
+      // Aquí y no antes, y **solo sin pasarela**. Las líneas ya son del pedido, así que dejar el
+      // carrito lleno invita a comprarlas dos veces; pero limpiarlo apenas se crea el pedido
+      // rompería el reintento de arriba, porque la guarda del principio de este método exige un
+      // carrito con líneas.
+      //
+      // Con Wompi o Sistecrédito el comprador sale del sitio con el pago todavía por hacer: vaciar
+      // el carrito al salir dejaba con las manos vacías a quien cancelaba en la pasarela o a quien
+      // le negaban el crédito. Ese carrito lo vacía la pantalla de estado cuando el pedido vuelve
+      // pagado (`AlmacenCarritoPorPagar`).
+      if (this.terminado()) {
+        this.carrito.limpiar();
+        this.checkout.terminarCompra();
+      }
     } catch (error) {
       this.error.set(this.mensajeDeError(error));
     }
@@ -538,6 +568,14 @@ export class ConfirmarPage {
       this.rechazoDeCredito.set(false);
       return this.transloco.translate('checkout.confirmar.disponibilidad_por_confirmar');
     }
+    // El pedido se creó, pero su reserva venció antes del intento de pago (30 minutos) y la unidad
+    // pudo venderse. Ese pedido ya no se cobra: se olvida, y el siguiente clic crea uno nuevo que
+    // vuelve a reservar. El carrito sigue lleno porque `confirmar()` no llegó a limpiarlo.
+    if (error instanceof ErrorHttp && error.codigo === 'RESERVA_DEL_PEDIDO_VENCIDA') {
+      this.rechazoDeCredito.set(false);
+      this.checkout.olvidarPedido();
+      return this.transloco.translate('checkout.confirmar.reserva_vencida');
+    }
     const datos = error instanceof ErrorHttp ? error.datos : {};
     // El servidor ya clasificó el rechazo (`motivoSistecredito`); aquí solo se elige el texto. La
     // tabla de códigos y estados de la pasarela vivía en este componente, distinta de la del
@@ -557,6 +595,14 @@ export class ConfirmarPage {
     void this.router.navigate(['../metodo-pago'], { relativeTo: this.route });
   }
 
+  /** Para que la pantalla de estado vacíe este carrito, y solo este, cuando el pedido vuelva pagado. */
+  private anotarCarritoPorPagar(pedidoId: string): void {
+    const carritoId = this.carrito.carritoId();
+    if (carritoId) {
+      this.carritosPorPagar.anotar(pedidoId, carritoId);
+    }
+  }
+
   private async continuarSegunMetodoPago(pedido: Pedido): Promise<boolean> {
     // Antes de cualquier salida: la pasarela, la transferencia o el estado lo leen de aquí.
     this.correosDePedido.recordar(pedido.id, pedido.correo);
@@ -574,6 +620,7 @@ export class ConfirmarPage {
         documento,
         this.transloco.activeLang(),
       );
+      this.anotarCarritoPorPagar(pedido.id);
       // La URL la arma la pasarela y es de un solo uso: no se compone nada aquí, solo se va. Y a
       // dónde vuelve el comprador NO se decide en esta llamada —va en `urlResponse`, que el
       // backend fija desde su configuración—, a diferencia de Wompi.
@@ -597,10 +644,13 @@ export class ConfirmarPage {
         pedidoId: pedido.id,
       });
       const urlRetorno = `${window.location.origin}/${idioma}/checkout/retorno-wompi?${parametrosRetorno.toString()}`;
+      this.anotarCarritoPorPagar(pedido.id);
       window.location.href = urlWebCheckoutWompi(intento, urlRetorno);
       return true;
     }
 
+    // Sin pasarela, la compra termina aquí: lo que sigue es su pantalla final.
+    this.terminado.set(true);
     if (pedido.metodoPago === 'TRANSFERENCIA_MANUAL') {
       // Con parámetros, igual que el retorno de Wompi: un refresh en la
       // pantalla de transferencia (el comprador copiando el número de
@@ -612,7 +662,11 @@ export class ConfirmarPage {
       return true;
     }
 
-    void this.router.navigate(['../estado'], { relativeTo: this.route });
+    // Con el pedido en la URL por lo mismo que la transferencia: un refresh no lo pierde.
+    void this.router.navigate(['../estado'], {
+      relativeTo: this.route,
+      queryParams: { pedidoId: pedido.id },
+    });
     return true;
   }
 }

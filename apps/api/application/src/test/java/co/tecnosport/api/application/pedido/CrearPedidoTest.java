@@ -174,7 +174,8 @@ class CrearPedidoTest {
         autorizaciones,
         VERSION_POLITICA,
         new RecogidaEnPunto(modalidadesDeEntrega, productos, proveedores),
-        enlaces);
+        enlaces,
+        new co.tecnosport.api.domain.compartido.TopeDeUnidadesPorLinea(5));
   }
 
   /**
@@ -323,6 +324,21 @@ class CrearPedidoTest {
 
   private CrearPedidoComando comandoConEnlace(String token, int cantidad) {
     return comandoCon(List.of(new CrearPedidoComando.LineaComando(variante.id(), cantidad, token)));
+  }
+
+  /** Más de cinco unidades en una línea no se piden: ni se reserva nada ni se crea el pedido. */
+  @Test
+  void unaLineaPorEncimaDelTopeNoReservaNiCreaElPedido() {
+    CrearPedido caso = crear();
+    publicarProductoConVarianteYExistencia(50);
+
+    assertThrows(
+        co.tecnosport.api.domain.compartido.CantidadPorLineaExcedidaException.class,
+        () -> caso.ejecutar(comando(MetodoPago.WOMPI, 6)));
+
+    assertEquals(
+        50, inventarios.buscarPorVarianteId(variante.id()).orElseThrow().saldoDisponible(AHORA));
+    assertTrue(pedidos.todos().isEmpty());
   }
 
   @Test

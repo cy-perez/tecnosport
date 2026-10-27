@@ -287,6 +287,36 @@ class WompiClientTest {
     assertEquals("Bearer pub_test", cabecera.get());
   }
 
+  /**
+   * El id se pega a la ruta de la consulta, que sale con nuestra llave. Uno con barras, signos de
+   * interrogación o espacios no se consulta: ni siquiera llega al servidor.
+   */
+  @Test
+  void consultarTransaccionNoLlamaAWompiConUnIdFueraDeSuForma() throws IOException {
+    java.util.concurrent.atomic.AtomicInteger llamadas =
+        new java.util.concurrent.atomic.AtomicInteger();
+    servidor = HttpServer.create(new InetSocketAddress("localhost", 0), 0);
+    servidor.createContext(
+        "/",
+        intercambio -> {
+          llamadas.incrementAndGet();
+          intercambio.sendResponseHeaders(404, -1);
+          intercambio.close();
+        });
+    servidor.start();
+    WompiClient cliente =
+        new WompiClient(
+            "secreto-integridad-de-prueba",
+            "secreto-eventos-de-prueba",
+            "pub_test",
+            URI.create("http://localhost:" + servidor.getAddress().getPort()));
+
+    for (String id : List.of("../merchants/pub_test", "1234?x=1", "a%2Fb", "x".repeat(65))) {
+      assertEquals(Optional.empty(), cliente.consultarTransaccion(id));
+    }
+    assertEquals(0, llamadas.get());
+  }
+
   @Test
   void consultarTransaccionDevuelveVacioSiLaRespuestaNoEs200() throws IOException {
     WompiClient cliente = clienteContra("{\"error\":{\"type\":\"NOT_FOUND_ERROR\"}}", 404);

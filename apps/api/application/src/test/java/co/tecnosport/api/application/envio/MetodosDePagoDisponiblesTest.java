@@ -2,6 +2,7 @@ package co.tecnosport.api.application.envio;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -680,6 +681,45 @@ class MetodosDePagoDisponiblesTest {
         assertEquals(Dinero.deCop(100_000), medio.subtotal());
         assertEquals(Dinero.deCop(6_000), medio.descuento());
       }
+    }
+  }
+
+  /**
+   * Contraentrega congela la tarifa con recaudo, y confirmar mostraba la de sin recaudo: el total
+   * que se veía no era el que el mensajero cobraba. Ahora contraentrega trae su flete —el de la
+   * tarifa con recaudo, la misma que {@code CrearPedido} congelará— y los medios que se cobran con
+   * el flete de la cotización sin recaudo no traen ninguno.
+   */
+  @Test
+  void contraentregaTraeElFleteConRecaudoQueSeVaACobrar() {
+    MetodosDePagoDisponibles caso = crear(CRITERIOS_PERMISIVOS);
+    publicarConDosPrecios(50_000, 53_000);
+    cotizador.conTarifaQueRecauda();
+
+    List<MedioDePagoConPrecio> medios =
+        caso.conPrecios(comando(TipoEntrega.ENVIO_A_DOMICILIO, DIRECCION_MEDELLIN, 2));
+
+    for (MedioDePagoConPrecio medio : medios) {
+      if (medio.metodo() == MetodoPago.CONTRAENTREGA) {
+        assertEquals(Dinero.deCop(14_900), medio.costoEnvio());
+      } else {
+        assertNull(medio.costoEnvio(), medio.metodo() + " se cobra con la cotización sin recaudo");
+      }
+    }
+  }
+
+  /** En el punto no hay flete, con ningún medio. */
+  @Test
+  void unRetiroEnPuntoTraeFleteCero() {
+    MetodosDePagoDisponibles caso = crear(CRITERIOS_PERMISIVOS);
+    publicarConDosPrecios(50_000, 53_000);
+
+    List<MedioDePagoConPrecio> medios =
+        caso.conPrecios(comando(TipoEntrega.RETIRO_EN_PUNTO, null, 1));
+
+    assertFalse(medios.isEmpty());
+    for (MedioDePagoConPrecio medio : medios) {
+      assertEquals(Dinero.deCop(0), medio.costoEnvio());
     }
   }
 

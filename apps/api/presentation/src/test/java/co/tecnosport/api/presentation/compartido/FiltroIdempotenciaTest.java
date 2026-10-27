@@ -102,6 +102,46 @@ class FiltroIdempotenciaTest {
    * Un 4xx no deja efecto —la transacción revirtió—, y el frontend reutiliza la llave hasta que la
    * creación sale bien. Cachearlo devolvía el mismo error 24 horas a quien ya lo había corregido.
    */
+  /**
+   * La llave la elige el cliente. Reenviada a otra ruta, devolvía la respuesta guardada del otro
+   * recurso —un intento de pago donde se esperaba un pedido— con un 2xx y sin crear nada.
+   */
+  @Test
+  void unaLlaveDeOtraRutaNoRepiteSuRespuestaNiLlegaAlControlador() throws Exception {
+    MockHttpServletRequest intento = new MockHttpServletRequest("POST", "/api/v1/pagos/intentos");
+    intento.addHeader("Idempotency-Key", "llave-compartida");
+    filtro.doFilter(
+        intento,
+        new MockHttpServletResponse(),
+        cadenaQueResponde(200, "application/json", "{\"referencia\":\"TS-1\"}"));
+    AtomicInteger llamadasACadena = new AtomicInteger();
+
+    MockHttpServletResponse respuesta = new MockHttpServletResponse();
+    filtro.doFilter(peticion("llave-compartida"), respuesta, cadenaContando(llamadasACadena, 201));
+
+    assertThat(llamadasACadena.get()).isZero();
+    assertThat(respuesta.getStatus()).isEqualTo(422);
+    assertThat(respuesta.getContentAsString())
+        .contains("LLAVE_DE_IDEMPOTENCIA_REUTILIZADA")
+        .doesNotContain("TS-1");
+  }
+
+  /** Mismo recurso, otro método: tampoco es la misma operación. */
+  @Test
+  void unaLlaveDeOtroMetodoNoRepiteSuRespuesta() throws Exception {
+    filtro.doFilter(
+        peticion("llave-metodo"),
+        new MockHttpServletResponse(),
+        cadenaQueResponde(201, "application/json", "{\"id\":\"abc\"}"));
+    MockHttpServletRequest otroMetodo = new MockHttpServletRequest("PUT", "/api/v1/pedidos");
+    otroMetodo.addHeader("Idempotency-Key", "llave-metodo");
+
+    MockHttpServletResponse respuesta = new MockHttpServletResponse();
+    filtro.doFilter(otroMetodo, respuesta, cadenaContando(new AtomicInteger(), 200));
+
+    assertThat(respuesta.getStatus()).isEqualTo(422);
+  }
+
   @Test
   void unErrorDeNegocioNoSeCacheaYElReintentoCorregidoEntra() throws Exception {
     filtro.doFilter(

@@ -10,7 +10,8 @@ import java.util.UUID;
 /**
  * Un solo uso, sin rotación ni familia — mismo criterio que {@link TokenVerificacionCorreo}, del
  * que se mantiene separado a propósito: uno solo confirma un buzón, este cambia la clave. El {@code
- * id} es también el valor opaco que viaja en el enlace del correo.
+ * id} es también el valor opaco que viaja en el enlace del correo, y por eso no se guarda: la base
+ * guarda su {@link HuellaDeToken}.
  */
 public final class TokenRecuperacionClave {
 

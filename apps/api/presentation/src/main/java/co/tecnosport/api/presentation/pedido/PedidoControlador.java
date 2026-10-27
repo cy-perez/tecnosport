@@ -14,7 +14,6 @@ import co.tecnosport.api.application.pedido.SolicitarEnlaceDeSeguimientoComando;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.pedido.Contacto;
 import co.tecnosport.api.domain.pedido.Direccion;
-import co.tecnosport.api.domain.pedido.MetodoPago;
 import co.tecnosport.api.domain.pedido.Pedido;
 import co.tecnosport.api.domain.pedido.TipoEntrega;
 import co.tecnosport.api.presentation.compartido.IpDelCliente;
@@ -29,7 +28,6 @@ import co.tecnosport.api.presentation.pedido.dto.SeguimientoPorIdRequest;
 import co.tecnosport.api.presentation.pedido.dto.SeguimientoPorNumeroRequest;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Duration;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -98,31 +96,9 @@ public class PedidoControlador {
   }
 
   /**
-   * Los medios que se ofrecen, sin el precio de cada uno.
-   *
-   * @deprecated lo reemplazó {@code POST /pedidos/metodos-de-pago-con-precio}, que trae además lo
-   *     que el comprador pagaría con cada medio (ADR-0095). El checkout web ya no la llama; se
-   *     conserva mientras pueda haber un cliente que sí, y se retira cuando ninguno la use.
-   */
-  @Deprecated
-  @PostMapping("/metodos-de-pago-disponibles")
-  public List<MetodoPago> metodosDePagoDisponibles(
-      @RequestBody MetodosDePagoDisponiblesRequest cuerpo) {
-    MetodosDePagoDisponiblesComando comando = aComando(cuerpo);
-    // Por NOMBRE y no por el orden del enum. Es lo que hacia `map(Enum::name).sorted()` cuando
-    // la lista viajaba como cadenas, y este es el orden en que el checkout pinta los botones:
-    // dejar que Jackson serialice el enum en su orden de declaracion los habria movido de sitio
-    // sin que nadie lo pidiera.
-    return metodosDePagoDisponibles.ejecutar(comando).stream()
-        .sorted(Comparator.comparing(Enum::name))
-        .toList();
-  }
-
-  /**
-   * La misma consulta que {@code /metodos-de-pago-disponibles}, con lo que el comprador pagaría de
-   * mercancía con cada medio (ADR-0095). Una ruta aparte y no otra forma de la de arriba: aquélla
-   * devuelve un arreglo de nombres que el checkout ya lee, y cambiarle la forma lo rompería hasta
-   * que el frontend se ponga al día. El cuerpo es el mismo, y el límite de intentos también.
+   * Los medios que se le ofrecen a este carrito, con lo que el comprador pagaría con cada uno
+   * (ADR-0095). Nació como ruta aparte de {@code /metodos-de-pago-disponibles}, que devolvía solo
+   * los nombres; aquélla se retiró el 27/10/2026, cuando ya nadie la llamaba.
    */
   @PostMapping("/metodos-de-pago-con-precio")
   public MetodosDePagoConPrecioRespuesta metodosDePagoConPrecio(
@@ -136,7 +112,10 @@ public class PedidoControlador {
   private static MetodosDePagoConPrecioRespuesta.MetodoDePagoConPrecioRespuesta aRespuesta(
       MedioDePagoConPrecio medio) {
     return new MetodosDePagoConPrecioRespuesta.MetodoDePagoConPrecioRespuesta(
-        medio.metodo(), dinero(medio.subtotal()), dinero(medio.descuento()));
+        medio.metodo(),
+        dinero(medio.subtotal()),
+        dinero(medio.descuento()),
+        medio.costoEnvio() == null ? null : dinero(medio.costoEnvio()));
   }
 
   private static DineroRespuesta dinero(Dinero valor) {

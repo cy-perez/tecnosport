@@ -5,6 +5,7 @@ import { TsBoton } from '../../../shared/ui/boton/ts-boton';
 import { SesionStore } from '../../../core/autenticacion/sesion.store';
 import { usarExistencias } from '../productos/application/listar-existencias.consulta';
 import { usarVariantesSinMedir } from '../productos/application/listar-variantes-sin-medir.consulta';
+import { usarVariantesSinMargen } from '../productos/application/listar-variantes-sin-margen.consulta';
 
 /**
  * Placeholder: solo confirma que la sesión y `adminGuard` funcionan. El
@@ -74,9 +75,50 @@ export class PanelAdminPage {
    */
   protected readonly haySinExistencia = computed(() => this.sinExistenciaEnPublicados() > 0);
 
+  /**
+   * El tercero (27 de octubre de 2026): lo que el costo nuevo del proveedor dejó con menos del
+   * margen mínimo. La lista de tecnología y la renovación de un anuncio lo agotan solas, sin
+   * preguntar, así que nadie más que este aviso lo cuenta. Nombra cada producto con su enlace: lo
+   * que hay que hacer —subir el contado o esperar a que el costo baje— se decide en su ficha.
+   */
+  private readonly sinMargen = usarVariantesSinMargen();
+
+  protected readonly totalSinMargen = computed(() => this.sinMargen.data()?.total ?? 0);
+  protected readonly haySinMargen = computed(() => this.totalSinMargen() > 0);
+  /** Un producto por renglón aunque se le hayan agotado varias variantes. */
+  protected readonly productosSinMargen = computed(() => {
+    const vistos = new Map<
+      string,
+      { productoId: string; nombreProducto: string; skus: string[] }
+    >();
+    for (const item of this.sinMargen.data()?.items ?? []) {
+      const producto = vistos.get(item.productoId) ?? {
+        productoId: item.productoId,
+        nombreProducto: item.nombreProducto,
+        skus: [],
+      };
+      producto.skus.push(item.sku);
+      vistos.set(item.productoId, producto);
+    }
+    return [...vistos.values()];
+  });
+
+  /**
+   * Se navega pase lo que pase: la sesión ya se soltó en esta pestaña (`SesionStore.cerrarSesion`).
+   * Antes, un POST caído dejaba una promesa rechazada sin manejar y el panel quieto. Si el servidor
+   * no confirmó el cierre, la pantalla de entrada lo dice: la cookie de refresco sigue viva y la
+   * sesión podría reabrirse sola al recargar, que en un equipo compartido importa.
+   */
   protected async cerrarSesion(): Promise<void> {
-    await this.sesionStore.cerrarSesion();
-    const idioma = this.transloco.activeLang();
-    void this.router.navigate(['/' + idioma, 'admin', 'iniciar-sesion']);
+    const confirmado = await this.sesionStore.cerrarSesion().then(
+      () => true,
+      () => false,
+    );
+    const destino = ['/' + this.transloco.activeLang(), 'admin', 'iniciar-sesion'];
+    if (confirmado) {
+      void this.router.navigate(destino);
+    } else {
+      void this.router.navigate(destino, { queryParams: { cierre: 'sin-confirmar' } });
+    }
   }
 }

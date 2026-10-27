@@ -126,6 +126,20 @@ function archivosDelFrontend(directorio = FUENTE_WEB) {
 const palabras = (texto) => texto.split(/\s+/).filter(Boolean);
 
 /**
+ * Un valor arbitrario con una medida escrita a mano: `min-w-[2ch]`, `h-[72px]`, `p-[1.5rem]`.
+ *
+ * **Que la clase exista no la hace válida.** Tailwind genera `min-w-[20ch]` sin protestar, así que
+ * la comprobación de existencia la daba por buena, y la regla dura #2 no: la única escapatoria es
+ * `[var(--token)]`. Tres sobrevivieron así hasta el 27 de octubre de 2026 —la cantidad del carrito,
+ * el contador del visor 360 y el botón del carrusel de portada— defendidas en un comentario como
+ * "lo que la regla prohíbe es el píxel suelto". Hoy salen de `anchos_min_ch` del kit.
+ *
+ * Se miran las unidades de longitud que son una decisión de diseño. `%`, `vw` y `vh` no: son una
+ * proporción de lo que hay alrededor, no un tamaño (`h-[min(100%,100vw)]`).
+ */
+const MEDIDA_LITERAL = /\[[^\]]*\d(?:px|rem|em|ch)\b[^\]]*\]/;
+
+/**
  * El archivo sin sus comentarios.
  *
  * Este proyecto los escribe largos y citando código: el javadoc de `ts-galeria.ts` dice *"no una
@@ -162,7 +176,12 @@ function barrer() {
   for (const archivo of archivosDelFrontend()) {
     const texto = sinComentarios(readFileSync(archivo, "utf8"));
     for (const comilla of ['"', "'"]) {
-      const atributo = new RegExp(`\\bclass\\s*=\\s*${comilla}([^${comilla}]*)${comilla}`, "g");
+      // `clase=` es la entrada de `ts-boton` y compañía: también son clases, y sin mirarla el
+      // `min-w-[20ch]` del carrusel de portada pasaba sin que nadie lo leyera.
+      const atributo = new RegExp(
+        `\\b(?:class|clase)\\s*=\\s*${comilla}([^${comilla}]*)${comilla}`,
+        "g",
+      );
       for (const encontrado of texto.matchAll(atributo)) {
         // Una interpolación no es una clase: `class="{{ x }}"` lo decide el componente.
         for (const palabra of palabras(encontrado[1])) {
@@ -242,6 +261,35 @@ if (preguntadas.length > 0) {
       if (existen.has(parte) || AJENAS.some((patron) => patron.test(parte))) continue;
       apuntar(parte, [archivo]);
     }
+  }
+
+  const conMedida = new Map();
+  const apuntarMedida = (clase, donde) => {
+    const sitios = conMedida.get(clase) ?? new Set();
+    for (const sitio of donde) sitios.add(sitio);
+    conMedida.set(clase, sitios);
+  };
+  for (const [clase, donde] of seguros) {
+    if (MEDIDA_LITERAL.test(clase)) apuntarMedida(clase, donde);
+  }
+  for (const { partes, archivo } of literales) {
+    const validas = partes.filter((parte) => existen.has(parte)).length;
+    if (validas < 2 || validas * 2 < partes.length) continue;
+    for (const parte of partes) {
+      if (MEDIDA_LITERAL.test(parte)) apuntarMedida(parte, [archivo]);
+    }
+  }
+  if (conMedida.size > 0) {
+    console.error("Hay valores arbitrarios con una medida escrita a mano.\n");
+    for (const [clase, donde] of [...conMedida].sort()) {
+      console.error(`  ${clase}`);
+      for (const sitio of [...donde].sort()) console.error(`      ${sitio}`);
+    }
+    console.error(
+      "\nLa clase existe y funciona, y aun así rompe la regla dura #2: la medida tiene que salir" +
+        "\ndel kit. Se agrega a `tokens.json`, se regenera y se usa `[var(--token)]`.\n",
+    );
+    process.exitCode = 1;
   }
 
   const cuantas = seguros.size + deLiterales.length;

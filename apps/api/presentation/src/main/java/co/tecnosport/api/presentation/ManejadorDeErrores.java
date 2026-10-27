@@ -47,21 +47,22 @@ import co.tecnosport.api.application.garantia.ReclamacionGarantiaNoEncontradaExc
 import co.tecnosport.api.application.pago.MetodoDePagoNoEsDeSistecreditoException;
 import co.tecnosport.api.application.pago.MetodoDePagoNoSoportadoPorWompiException;
 import co.tecnosport.api.application.pago.PagoConPedidoQueLoEsperaException;
+import co.tecnosport.api.application.pago.PagoConTransaccionOResueltoException;
 import co.tecnosport.api.application.pago.PagoNoEncontradoException;
 import co.tecnosport.api.application.pago.PagoSinPedidoYaDevueltoException;
 import co.tecnosport.api.application.pago.PedidoNoEstaEnPagoPendienteException;
 import co.tecnosport.api.application.pago.ReferenciaDePagoYaExisteException;
+import co.tecnosport.api.application.pago.ReservaDelPedidoVencidaException;
 import co.tecnosport.api.application.pago.SistecreditoNoEntregoLaUrlDePagoException;
 import co.tecnosport.api.application.pago.SistecreditoNoRespondeException;
 import co.tecnosport.api.application.pago.TransaccionDeOtroPagoException;
 import co.tecnosport.api.application.pedido.ContraentregaNoDisponibleException;
+import co.tecnosport.api.application.pedido.ContraentregaNoVerificableException;
 import co.tecnosport.api.application.pedido.DisponibilidadPorConfirmarException;
 import co.tecnosport.api.application.pedido.EnlaceDeCompraNoEncontradoException;
-import co.tecnosport.api.application.pedido.EntregaNoAplicaException;
 import co.tecnosport.api.application.pedido.InventarioSinConfirmarException;
 import co.tecnosport.api.application.pedido.MetodoDePagoNoEsTransferenciaManualException;
 import co.tecnosport.api.application.pedido.MetodoDePagoNoHabilitadoException;
-import co.tecnosport.api.application.pedido.NumeroDePedidoNoCoincideException;
 import co.tecnosport.api.application.pedido.PagoEnPuntoNoDisponibleException;
 import co.tecnosport.api.application.pedido.PedidoNoEliminableException;
 import co.tecnosport.api.application.pedido.PedidoNoEncontradoException;
@@ -129,8 +130,9 @@ import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.difusion.ProductoNoDifundibleException;
 import co.tecnosport.api.domain.inventario.ExistenciaInsuficienteException;
 import co.tecnosport.api.domain.pedido.EnlaceDeCompraNoVigenteException;
+import co.tecnosport.api.domain.pedido.EntregaNoAplicaException;
+import co.tecnosport.api.domain.pedido.NumeroDePedidoNoCoincideException;
 import co.tecnosport.api.domain.usuario.CorreoSinVerificarException;
-import co.tecnosport.api.domain.usuario.CorreoYaRegistradoException;
 import java.net.URI;
 import java.util.List;
 import java.util.Locale;
@@ -202,8 +204,8 @@ public class ManejadorDeErrores {
     return problema(HttpStatus.NOT_FOUND, "Imagen no encontrada", excepcion);
   }
 
-  // 409, mismo criterio que CorreoYaRegistradoException: la solicitud está bien formada, el
-  // conflicto es que el SKU ya está en uso en otro producto.
+  // 409: la solicitud está bien formada, el conflicto es que el SKU ya está en uso en otro
+  // producto.
   @ExceptionHandler(SetRotacionNoEncontradoException.class)
   public ProblemDetail setRotacionNoEncontrado(SetRotacionNoEncontradoException excepcion) {
     return problema(HttpStatus.NOT_FOUND, "Set de rotación no encontrado", excepcion);
@@ -684,6 +686,12 @@ public class ManejadorDeErrores {
         HttpStatus.UNPROCESSABLE_CONTENT, "La transacción no es de este pago", excepcion);
   }
 
+  // La alerta del panel estaba vieja: el pago ya tiene su transacción o ya se resolvió.
+  @ExceptionHandler(PagoConTransaccionOResueltoException.class)
+  public ProblemDetail pagoConTransaccionOResuelto(PagoConTransaccionOResueltoException excepcion) {
+    return problema(HttpStatus.CONFLICT, "El pago ya no está sin transacción", excepcion);
+  }
+
   @ExceptionHandler(PagoNoEncontradoException.class)
   public ProblemDetail pagoNoEncontrado(PagoNoEncontradoException excepcion) {
     return problema(HttpStatus.NOT_FOUND, "Pago no encontrado", excepcion);
@@ -701,6 +709,14 @@ public class ManejadorDeErrores {
   @ExceptionHandler(PedidoNoEstaEnPagoPendienteException.class)
   public ProblemDetail pedidoNoEstaEnPagoPendiente(PedidoNoEstaEnPagoPendienteException excepcion) {
     return problema(HttpStatus.CONFLICT, "Pedido no admite un intento de pago", excepcion);
+  }
+
+  // Mismo criterio que ExistenciaInsuficienteException: la reserva de alguna línea venció o se
+  // liberó y la unidad pudo venderse a otro. El checkout olvida el pedido y crea uno nuevo, que
+  // vuelve a reservar contra la existencia de ahora.
+  @ExceptionHandler(ReservaDelPedidoVencidaException.class)
+  public ProblemDetail reservaDelPedidoVencida(ReservaDelPedidoVencidaException excepcion) {
+    return problema(HttpStatus.CONFLICT, "La reserva del pedido venció", excepcion);
   }
 
   // Mismo criterio que ExistenciaInsuficienteException: la solicitud está bien formada, pero
@@ -992,6 +1008,14 @@ public class ManejadorDeErrores {
     return problema(HttpStatus.CONFLICT, "Método de pago no soportado por Wompi", excepcion);
   }
 
+  // Verificar un pedido que no se cobra al recibir, o que ya no espera la verificación. 409, como
+  // la
+  // conciliación de transferencia: el pedido existe, no está en el estado que esa acción pide.
+  @ExceptionHandler(ContraentregaNoVerificableException.class)
+  public ProblemDetail contraentregaNoVerificable(ContraentregaNoVerificableException excepcion) {
+    return problema(HttpStatus.CONFLICT, "El pedido no espera verificación", excepcion);
+  }
+
   @ExceptionHandler(MetodoDePagoNoEsTransferenciaManualException.class)
   public ProblemDetail metodoDePagoNoEsTransferenciaManual(
       MetodoDePagoNoEsTransferenciaManualException excepcion) {
@@ -1001,13 +1025,6 @@ public class ManejadorDeErrores {
   @ExceptionHandler(CredencialesInvalidasException.class)
   public ProblemDetail credencialesInvalidas(CredencialesInvalidasException excepcion) {
     return problema(HttpStatus.UNAUTHORIZED, "Credenciales inválidas", excepcion);
-  }
-
-  // 409, mismo criterio que ExistenciaInsuficienteException: la solicitud está bien formada, el
-  // conflicto es que ya existe una cuenta con ese correo.
-  @ExceptionHandler(CorreoYaRegistradoException.class)
-  public ProblemDetail correoYaRegistrado(CorreoYaRegistradoException excepcion) {
-    return problema(HttpStatus.CONFLICT, "Correo ya registrado", excepcion);
   }
 
   // 403, no 401: las credenciales sí son correctas, pero la cuenta no puede iniciar sesión hasta

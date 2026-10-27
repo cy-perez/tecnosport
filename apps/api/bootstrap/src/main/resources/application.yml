@@ -97,6 +97,10 @@ tecnosport:
     # El enlace de compra de un color de tecnologia confirmado con el proveedor, y la unidad que
     # aparta (ADR-0086). Dato del negocio, decidido el 24 de octubre de 2026.
     horas-vigencia-enlace-compra: ${ENLACE_COMPRA_HORAS_VIGENCIA:24}
+    # Cuantas unidades de una misma variante caben en una linea del carrito o del pedido: sin tope,
+    # pedidos anonimos que nunca se pagan apartaban todas las unidades de una variante. Dato del
+    # negocio, decidido el 27 de octubre de 2026.
+    maximo-unidades-por-linea: ${PEDIDO_MAXIMO_UNIDADES_POR_LINEA:5}
     vigilancia-plazo:
       # El plazo vigilado es de 30 dias calendario (Ley 1480 de 2011, art. 18), asi que medio dia de
       # retraso en detectarlo no le cuesta nada a nadie. No es un dato de negocio: el 30 vive en
@@ -685,6 +689,12 @@ tecnosport:
   ip-cliente:
     clave-proxy: ${PROXY_WEB_CLAVE:}
     saltos-confiables: ${IP_CLIENTE_SALTOS_CONFIABLES:1}
+  # Umbrales de las alertas del panel de pedidos (AdminAlertasControlador). Dato de operacion: a
+  # partir de cuando conviene que alguien mire. 12 h decidido el 27/10/2026.
+  alertas:
+    pago-sin-transaccion-horas: ${ALERTA_PAGO_SIN_TRANSACCION_HORAS:12}
+    # Pedidos en EN_PREPARACION desde hace mas de esto. 3 dias decidido el 27/10/2026.
+    en-preparacion-dias: ${ALERTA_EN_PREPARACION_DIAS:3}
   limite-intentos:
     # docs/08-seguridad-legal.md pide el límite, pero no da números — dato de seguridad, no de
     # negocio, ajustable. "auth" agrupa sesión/registro/recuperación (mismo tipo de abuso);
@@ -694,6 +704,10 @@ tecnosport:
       ip-minutos: ${LIMITE_AUTH_IP_MINUTOS:15}
       cuenta-maximo: ${LIMITE_AUTH_CUENTA_MAXIMO:5}
       cuenta-minutos: ${LIMITE_AUTH_CUENTA_MINUTOS:15}
+      # Solo el inicio de sesión: por cuenta sola, desde cualquier IP. Tiene que ser mucho mayor
+      # que cuenta-maximo, que ahí se cuenta por cuenta e IP; si no, quien conozca el correo deja
+      # fuera al titular (IniciarSesion).
+      cuenta-global-maximo: ${LIMITE_AUTH_CUENTA_GLOBAL_MAXIMO:100}
     # La cotización llama a un proveedor externo con cuota y se paga: es el único endpoint
     # público con ese riesgo. Generoso a propósito — un comprador corrige la dirección varias
     # veces; el tope frena a un script, no a una persona indecisa.

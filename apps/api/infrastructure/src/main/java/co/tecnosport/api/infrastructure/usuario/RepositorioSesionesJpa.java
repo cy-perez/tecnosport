@@ -1,6 +1,7 @@
 package co.tecnosport.api.infrastructure.usuario;
 
 import co.tecnosport.api.application.usuario.RepositorioSesiones;
+import co.tecnosport.api.domain.usuario.HuellaDeToken;
 import co.tecnosport.api.domain.usuario.SesionRefresco;
 import co.tecnosport.api.infrastructure.usuario.entidad.SesionRefrescoJpaEntity;
 import java.time.Instant;
@@ -25,7 +26,9 @@ public class RepositorioSesionesJpa implements RepositorioSesiones {
 
   @Override
   public Optional<SesionRefresco> buscarPorId(UUID id) {
-    return sesiones.findById(id).map(this::aDominio);
+    // Se busca por la huella y el token se le devuelve al agregado desde quien lo trajo: la base no
+    // lo tiene (HuellaDeToken).
+    return sesiones.findById(HuellaDeToken.de(id)).map(entidad -> aDominio(id, entidad));
   }
 
   @Override
@@ -38,9 +41,9 @@ public class RepositorioSesionesJpa implements RepositorioSesiones {
     sesiones.revocarTodasDeUsuario(usuarioId, ahora);
   }
 
-  private SesionRefresco aDominio(SesionRefrescoJpaEntity entidad) {
+  private SesionRefresco aDominio(UUID token, SesionRefrescoJpaEntity entidad) {
     return new SesionRefresco(
-        entidad.getId(),
+        token,
         entidad.getUsuarioId(),
         entidad.getFamiliaId(),
         entidad.getCreadoEn(),
@@ -51,7 +54,7 @@ public class RepositorioSesionesJpa implements RepositorioSesiones {
 
   private SesionRefrescoJpaEntity aEntidad(SesionRefresco sesion) {
     return new SesionRefrescoJpaEntity(
-        sesion.id(),
+        HuellaDeToken.de(sesion.id()),
         sesion.usuarioId(),
         sesion.familiaId(),
         sesion.creadoEn(),

@@ -42,6 +42,10 @@ import {
   ALMACEN_CORREO_DE_PEDIDO,
   AlmacenCorreoDePedido,
 } from '../../domain/almacen-correo-de-pedido.puerto';
+import {
+  ALMACEN_CARRITO_POR_PAGAR,
+  AlmacenCarritoPorPagar,
+} from '../../domain/almacen-carrito-por-pagar.puerto';
 
 /** El navegador que recordó el correo antes de ir a la pasarela, en memoria. */
 class AlmacenCorreoEnMemoria implements AlmacenCorreoDePedido {
@@ -62,6 +66,22 @@ function almacenDesde(query: Record<string, string> = {}): AlmacenCorreoEnMemori
   }
   return almacen;
 }
+
+/** Qué carrito salió a pagarse en la pasarela, en memoria. */
+class CarritosPorPagarEnMemoria implements AlmacenCarritoPorPagar {
+  readonly anotados = new Map<string, string>();
+  anotar(pedidoId: string, carritoId: string): void {
+    this.anotados.set(pedidoId, carritoId);
+  }
+  carritoDe(pedidoId: string): string | null {
+    return this.anotados.get(pedidoId) ?? null;
+  }
+  olvidar(pedidoId: string): void {
+    this.anotados.delete(pedidoId);
+  }
+}
+
+let carritosPorPagar = new CarritosPorPagarEnMemoria();
 
 /** El precio que el servidor da hoy en estas pruebas. */
 const PRECIO_DE_HOY = 150_000;
@@ -202,6 +222,34 @@ class RepositorioPedidosQueFalla implements RepositorioPedidos {
 class RepositorioPagosQueFalla implements RepositorioPagos {
   async crearIntento(): Promise<IntentoDePago> {
     throw new Error('el proveedor de pagos no respondió');
+  }
+
+  async crearIntentoSistecredito(): Promise<IntentoSistecredito> {
+    throw new Error('no usado en esta prueba');
+  }
+
+  async registrarIdTransaccion(): Promise<void> {
+    throw new Error('no usado en esta prueba');
+  }
+}
+
+/** El servidor dice que la reserva venció la primera vez; la segunda, con un pedido nuevo, cobra. */
+class RepositorioPagosConReservaVencida implements RepositorioPagos {
+  pedidosPedidos: string[] = [];
+
+  async crearIntento(pedidoId: string): Promise<IntentoDePago> {
+    this.pedidosPedidos.push(pedidoId);
+    if (this.pedidosPedidos.length === 1) {
+      throw new ErrorHttp(409, 'reserva vencida', 'RESERVA_DEL_PEDIDO_VENCIDA');
+    }
+    return {
+      referencia: 'TS-2026-000002-1',
+      monto: { valor: 150_000, moneda: 'COP' },
+      firmaIntegridad: 'firma',
+      llavePublica: 'pub_test_xyz',
+      ambiente: 'sandbox',
+      montoEnCentavos: 18_990_000,
+    };
   }
 
   async crearIntentoSistecredito(): Promise<IntentoSistecredito> {
@@ -462,6 +510,7 @@ async function renderConDatos(
     ],
     providers: [
       { provide: ALMACEN_CORREO_DE_PEDIDO, useValue: almacenDesde() },
+      { provide: ALMACEN_CARRITO_POR_PAGAR, useValue: carritosPorPagar },
       ...proveerAlmacenesCarrito(),
       provideRouter([
         { path: 'metodo-pago', component: RutaMuda },
@@ -496,6 +545,7 @@ describe('ConfirmarPage', () => {
 
   beforeEach(() => {
     window.localStorage.clear();
+    carritosPorPagar = new CarritosPorPagarEnMemoria();
     ubicacionOriginal = window.location;
     // jsdom no navega de verdad ("Not implemented: navigation") — se
     // reemplaza por un objeto mutable para poder verificar a dónde se
@@ -581,6 +631,34 @@ describe('ConfirmarPage', () => {
     expect(screen.getByText(/-\s?\$\s?5\.000/)).toBeTruthy();
     // El total del publicado (159.540) no se pinta en ningún sitio.
     expect(screen.queryByText(/159\.540/)).toBeFalsy();
+  });
+
+  /**
+   * Con contraentrega la transportadora cobra además el recaudo, y el flete de la cotización —sin
+   * recaudo— no es el que se cobra. Cuando el medio trae el suyo, la fila y el total salen de ese.
+   * Pendiente de integrar con el contrato: hoy el mapeador no lo llena y esto no se ejercita.
+   */
+  it('con un medio que trae su propio flete, la fila y el total salen de ese', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+
+    await renderConDatos(
+      {
+        metodo: 'CONTRAENTREGA',
+        subtotal: { valor: 150_000, moneda: 'COP' },
+        descuento: { valor: 0, moneda: 'COP' },
+        costoEnvio: { valor: 14_200, moneda: 'COP' },
+      },
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioPedidosFalso(),
+      new RepositorioPagosFalso(),
+      DATOS_ENTREGA_A_DOMICILIO,
+    );
+
+    expect((await screen.findAllByText(/164\.200/)).length).toBeGreaterThan(0);
+    expect(screen.getByText(/14\.200/)).toBeTruthy();
+    expect(screen.queryByText(/9\.540/)).toBeNull();
+    expect(screen.queryByText(/159\.540/)).toBeNull();
   });
 
   /**
@@ -1199,6 +1277,79 @@ describe('ConfirmarPage', () => {
     await vi.waitFor(() => expect(pedidos.llamadasCrear).toBe(1));
   });
 
+  /**
+   * La otra cara del reintento: el pedido que quedó de un intento fallido se creó con dos unidades,
+   * el comprador volvió al carrito, dejó una y regresó con «Atrás». Reutilizarlo cobraba las dos y
+   * después borraba el carrito de una.
+   */
+  it('si el carrito cambió desde el pedido creado, crea otro con el carrito de ahora', async () => {
+    sembrarCarritoId('carrito-1');
+    const pedidos = new RepositorioPedidosFalso(pedidoDePrueba({ metodoPago: 'CONTRAENTREGA' }));
+
+    const { fixture } = await renderConDatos(
+      'CONTRAENTREGA',
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      pedidos,
+    );
+    await screen.findByText('compra@ejemplo.co');
+    await esperarCarritoCargado(fixture);
+    const checkout = fixture.debugElement.injector.get(CheckoutStore);
+    await checkout.crearPedido({
+      correo: 'compra@ejemplo.co',
+      lineas: [{ varianteId: 'variante-1', cantidad: 2 }],
+      tipoEntrega: 'RETIRO_EN_PUNTO',
+      direccion: null,
+      metodoPago: 'CONTRAENTREGA',
+      contacto: { nombre: 'Ana Pérez', telefono: '3138816711' },
+      autorizaDatos: true,
+      transportadora: null,
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
+
+    await vi.waitFor(() => expect(pedidos.llamadasCrear).toBe(2));
+    expect(pedidos.ultimoComando?.lineas).toEqual([
+      { varianteId: 'variante-1', cantidad: 1, enlaceCompra: undefined },
+    ]);
+  });
+
+  /**
+   * Terminada la compra, el checkout no guarda con qué volver a cobrarla: sin esto, una segunda
+   * compra idéntica en la misma visita reutilizaba el pedido ya confirmado en vez de crear otro.
+   */
+  it('con la contraentrega confirmada, suelta los datos de entrega, el medio y el pedido', async () => {
+    sembrarCarritoId('carrito-1');
+    const pedidos = new RepositorioPedidosFalso(pedidoDePrueba({ metodoPago: 'CONTRAENTREGA' }));
+
+    const { fixture } = await renderConDatos(
+      'CONTRAENTREGA',
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      pedidos,
+    );
+    await screen.findByText('compra@ejemplo.co');
+    await esperarCarritoCargado(fixture);
+    const checkout = fixture.debugElement.injector.get(CheckoutStore);
+    const router = fixture.debugElement.injector.get(Router);
+    const navegar = vi.spyOn(router, 'navigate');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
+
+    await vi.waitFor(() => {
+      expect(checkout.datosEntrega()).toBeNull();
+      expect(checkout.metodoPago()).toBeNull();
+    });
+    expect(pedidos.ultimoComando).not.toBeNull();
+    expect(checkout.pedidoReutilizable(pedidos.ultimoComando!)).toBeNull();
+    // Y la pantalla de estado, no el resumen al que mandaría la guarda al ver faltar los datos.
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(navegar).toHaveBeenCalledTimes(1);
+    expect(navegar).toHaveBeenCalledWith(
+      ['../estado'],
+      expect.objectContaining({ queryParams: { pedidoId: 'pedido-1' } }),
+    );
+  });
+
   // Las dos caras de la misma decisión: el carrito se limpia cuando ya no hay vuelta atrás, no
   // cuando se crea el pedido. Ver el comentario en `confirmar()`.
   it('al terminar el pedido, el carrito queda limpio', async () => {
@@ -1220,6 +1371,59 @@ describe('ConfirmarPage', () => {
       expect(carrito.carritoId()).toBeNull();
       expect(new CarritoIdLocalStorageAlmacen().leer()).toBeNull();
     });
+  });
+
+  /**
+   * Salir a la pasarela no es haber pagado: quien cancela en Wompi vuelve a un carrito vacío si se
+   * vacía aquí. Se anota cuál carrito salió a pagarse, y lo vacía la pantalla de estado.
+   */
+  it('al salir hacia Wompi, el carrito queda lleno y anotado para vaciarlo al volver pagado', async () => {
+    sembrarCarritoId('carrito-1');
+    const pedidos = new RepositorioPedidosFalso(pedidoDePrueba({ metodoPago: 'WOMPI' }));
+
+    const { fixture } = await renderConDatos(
+      'WOMPI',
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      pedidos,
+    );
+    await screen.findByText('compra@ejemplo.co');
+    await esperarCarritoCargado(fixture);
+    const carrito = fixture.debugElement.injector.get(CarritoStore);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
+
+    await vi.waitFor(() => expect(window.location.href).toContain('https://checkout.wompi.co/'));
+    expect(carrito.carritoId()).toBe('carrito-1');
+    expect(new CarritoIdLocalStorageAlmacen().leer()).toBe('carrito-1');
+    expect(carritosPorPagar.carritoDe('pedido-1')).toBe('carrito-1');
+  });
+
+  /**
+   * Un pedido en PAGO_PENDIENTE cuya reserva venció ya no se cobra (el servidor responde 409
+   * `RESERVA_DEL_PEDIDO_VENCIDA`). Reintentar con el mismo pedido repetiría ese 409 para siempre:
+   * lo que sirve es crear otro, que vuelve a reservar.
+   */
+  it('con la reserva vencida lo dice, y el siguiente clic crea un pedido nuevo', async () => {
+    sembrarCarritoId('carrito-1');
+    const pedidos = new RepositorioPedidosFalso(pedidoDePrueba({ metodoPago: 'WOMPI' }));
+    const pagos = new RepositorioPagosConReservaVencida();
+
+    const { fixture } = await renderConDatos(
+      'WOMPI',
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      pedidos,
+      pagos,
+    );
+    await screen.findByText('compra@ejemplo.co');
+    await esperarCarritoCargado(fixture);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
+    expect(await screen.findByText(esCheckout.confirmar.reserva_vencida)).toBeTruthy();
+    expect(pedidos.llamadasCrear).toBe(1);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
+    await vi.waitFor(() => expect(pedidos.llamadasCrear).toBe(2));
+    await vi.waitFor(() => expect(pagos.pedidosPedidos.length).toBe(2));
   });
 
   it('si el intento de pago falla, el carrito queda intacto para reintentar', async () => {

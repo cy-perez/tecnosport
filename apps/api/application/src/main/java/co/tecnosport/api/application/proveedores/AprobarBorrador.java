@@ -32,6 +32,7 @@ import co.tecnosport.api.domain.proveedores.BorradorProducto;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
 import co.tecnosport.api.domain.proveedores.FotoSubida;
 import co.tecnosport.api.domain.proveedores.HuellaProveedor;
+import co.tecnosport.api.domain.proveedores.MargenMinimo;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
 import co.tecnosport.api.domain.proveedores.PHash;
 import co.tecnosport.api.domain.proveedores.Proveedor;
@@ -192,6 +193,9 @@ public final class AprobarBorrador {
     }
     Dinero precioProveedor =
         borrador.precioProveedor().orElseThrow(BorradorSinPrecioException::new);
+    // Cualquier precio mayor que cero se aprobaba (27 de octubre de 2026): el de contado tiene que
+    // dejar el margen mínimo de la regla 18 sobre el costo, como en tecnología.
+    MargenMinimo.exigir(Dinero.deCop(comando.precioVenta()), precioProveedor, "este producto");
     Proveedor proveedor =
         repositorioProveedores
             .buscarPorId(borrador.proveedorId())

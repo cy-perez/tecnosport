@@ -55,12 +55,7 @@ public final class MarcarEntregado {
         repositorioPedidos
             .buscarPorIdParaModificar(comando.pedidoId())
             .orElseThrow(() -> new PedidoNoEncontradoException(comando.pedidoId()));
-    // La recogida llega a ENTREGADO por EntregarEnPunto, que pide el número de pedido: por aquí
-    // bastaría un clic para saltárselo (ADR-0094).
-    if (pedido.estado() == EstadoPedido.LISTO_PARA_RECOGER) {
-      throw new EntregaNoAplicaException(
-          pedido.id(), "se recoge en el punto y se entrega con el número de pedido");
-    }
+    // Una recogida no se entrega por aquí sino con su número (ADR-0094): lo rechaza el agregado.
     Instant ahora = reloj.ahora();
     pedido.transicionar(EstadoPedido.ENTREGADO, comando.actor(), "entregado", ahora);
     boolean inventarioConfirmado = true;

@@ -30,9 +30,7 @@ import co.tecnosport.api.application.envio.TransportadoraNoDisponibleException;
 import co.tecnosport.api.application.garantia.LineaNoEsDelPedidoException;
 import co.tecnosport.api.application.pago.SistecreditoNoEntregoLaUrlDePagoException;
 import co.tecnosport.api.application.pedido.ContraentregaNoDisponibleException;
-import co.tecnosport.api.application.pedido.EntregaNoAplicaException;
 import co.tecnosport.api.application.pedido.MetodoDePagoNoEsTransferenciaManualException;
-import co.tecnosport.api.application.pedido.NumeroDePedidoNoCoincideException;
 import co.tecnosport.api.application.pedido.PedidoNoEliminableException;
 import co.tecnosport.api.application.pedido.RetiroEnPuntoNoDisponibleException;
 import co.tecnosport.api.application.proveedores.AjustesDeTallaDistintosException;
@@ -83,6 +81,8 @@ import co.tecnosport.api.domain.catalogo.ProductoSinImagenPrincipalException;
 import co.tecnosport.api.domain.catalogo.TallaRepetidaException;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.inventario.ExistenciaInsuficienteException;
+import co.tecnosport.api.domain.pedido.EntregaNoAplicaException;
+import co.tecnosport.api.domain.pedido.NumeroDePedidoNoCoincideException;
 import co.tecnosport.api.domain.pedido.TransicionDeEstadoInvalidaException;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -140,6 +140,11 @@ class CodigosDeCableTest {
               SistecreditoNoEntregoLaUrlDePagoException.class,
               "SISTECREDITO_NO_ENTREGO_LA_URL_DE_PAGO"),
           Map.entry(MontoDeReintegroInvalidoException.class, "MONTO_DE_REINTEGRO_INVALIDO"),
+          // `confirmar.page.ts` lo usa para olvidar el pedido viejo y crear uno que vuelva a
+          // reservar: con el genérico, el siguiente clic repetía el mismo 409 para siempre.
+          Map.entry(
+              co.tecnosport.api.application.pago.ReservaDelPedidoVencidaException.class,
+              "RESERVA_DEL_PEDIDO_VENCIDA"),
           // Los siete rechazos del árbol de categorías, que `categorias-admin-http.repositorio.ts`
           // traduce a un resultado con nombre para que la pantalla diga qué hacer: "mueve primero
           // sus productos", "borra antes sus subcategorías". Sin esto, renombrar la excepción deja
@@ -157,6 +162,9 @@ class CodigosDeCableTest {
   private static final Map<Class<? extends Exception>, String> CABLEADOS_EN_TRADUCCIONES =
       Map.ofEntries(
           Map.entry(AcuseNoAplicableException.class, "ACUSE_NO_APLICABLE"),
+          Map.entry(
+              co.tecnosport.api.application.pago.PagoConTransaccionOResueltoException.class,
+              "PAGO_CON_TRANSACCION_O_RESUELTO"),
           Map.entry(ContraentregaNoDisponibleException.class, "CONTRAENTREGA_NO_DISPONIBLE"),
           Map.entry(EmisionNoEncontradaException.class, "EMISION_NO_ENCONTRADA"),
           Map.entry(ExcepcionDeDominio.class, "EXCEPCION_DE_DOMINIO"),
@@ -196,6 +204,9 @@ class CodigosDeCableTest {
               ListaDeTecnologiaDesactualizadaException.class, "LISTA_DE_TECNOLOGIA_DESACTUALIZADA"),
           Map.entry(
               ListaDeTecnologiaYaImportadaException.class, "LISTA_DE_TECNOLOGIA_YA_IMPORTADA"),
+          Map.entry(
+              co.tecnosport.api.domain.proveedores.PrecioSinMargenMinimoException.class,
+              "PRECIO_SIN_MARGEN_MINIMO"),
           Map.entry(ExportacionNoEncontradaException.class, "EXPORTACION_NO_ENCONTRADA"),
           Map.entry(ExportacionDemasiadoGrandeException.class, "EXPORTACION_DEMASIADO_GRANDE"),
           Map.entry(TipoDeExportacionNoAdmitidoException.class, "TIPO_DE_EXPORTACION_NO_ADMITIDO"),

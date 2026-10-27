@@ -4,6 +4,54 @@
  */
 
 export interface paths {
+    "/api/v1/admin/alertas/pagos-sin-transaccion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["pagosSinTransaccion"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/alertas/pagos-sin-transaccion/{pagoId}/revision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["marcarRevisado"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/alertas/pedidos-en-preparacion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["pedidosDetenidosEnPreparacion"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/atencion": {
         parameters: {
             query?: never;
@@ -1684,6 +1732,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/variantes/sin-margen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["sinMargen"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/variantes/sin-medir": {
         parameters: {
             query?: never;
@@ -2244,23 +2308,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/pedidos/metodos-de-pago-disponibles": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** @deprecated */
-        post: operations["metodosDePagoDisponibles"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/pedidos/seguimiento": {
         parameters: {
             query?: never;
@@ -2657,6 +2704,8 @@ export interface components {
             subtotalContado: components["schemas"]["DineroRespuesta"];
         };
         CarritoRespuesta: {
+            /** Format: int32 */
+            cantidadMaximaPorLinea: number;
             /** Format: date-time */
             creadoEn?: string;
             /** Format: uuid */
@@ -3230,6 +3279,14 @@ export interface components {
             referencia?: string;
             urlRedireccion?: string;
         };
+        Item: {
+            nombreProducto?: string;
+            /** Format: uuid */
+            productoId?: string;
+            sku?: string;
+            /** Format: uuid */
+            varianteId?: string;
+        };
         Linea: {
             /** Format: int32 */
             cantidad: number;
@@ -3366,6 +3423,7 @@ export interface components {
             pesoGramos?: number;
         };
         MetodoDePagoConPrecioRespuesta: {
+            costoEnvio?: components["schemas"]["DineroRespuesta"];
             descuento: components["schemas"]["DineroRespuesta"];
             /** @enum {string} */
             metodo: "WOMPI" | "SISTECREDITO" | "TRANSFERENCIA_MANUAL" | "CONTRAENTREGA" | "PAGO_EN_PUNTO";
@@ -3426,6 +3484,24 @@ export interface components {
             pedidoId: string;
             referencia: string;
         };
+        PagoSinTransaccionRespuesta: {
+            correo: string;
+            /** Format: date-time */
+            creadoEn: string;
+            estadoPedido: string;
+            monto: components["schemas"]["DineroRespuesta"];
+            numeroPedido: string;
+            /** Format: uuid */
+            pagoId: string;
+            /** Format: uuid */
+            pedidoId: string;
+            referencia: string;
+        };
+        PagosSinTransaccionRespuesta: {
+            pagos: components["schemas"]["PagoSinTransaccionRespuesta"][];
+            /** Format: int64 */
+            umbralHoras: number;
+        };
         PaletaDefinidaRespuesta: {
             /** Format: int32 */
             variantesNuevas: number;
@@ -3452,6 +3528,16 @@ export interface components {
         };
         PartirBorradorPeticion: {
             fotos: string[];
+        };
+        PedidoDetenidoRespuesta: {
+            correo: string;
+            /** Format: date-time */
+            desde: string;
+            metodoPago: string;
+            numeroPedido: string;
+            /** Format: uuid */
+            pedidoId: string;
+            tipoEntrega: string;
         };
         PedidoRespuesta: {
             contacto?: components["schemas"]["ContactoRespuesta"];
@@ -3506,6 +3592,11 @@ export interface components {
             tipoEntrega?: string;
             total?: components["schemas"]["DineroRespuesta"];
             transportadora?: string;
+        };
+        PedidosDetenidosRespuesta: {
+            pedidos: components["schemas"]["PedidoDetenidoRespuesta"][];
+            /** Format: int64 */
+            umbralDias: number;
         };
         PedidosPaginadosRespuesta: {
             items?: components["schemas"]["PedidoRespuesta"][];
@@ -4156,6 +4247,11 @@ export interface components {
             ancho?: number;
             objectKey?: string;
         };
+        VariantesSinMargenRespuesta: {
+            items?: components["schemas"]["Item"][];
+            /** Format: int32 */
+            total?: number;
+        };
         VariantesSinMedirRespuesta: {
             items?: components["schemas"]["VarianteSinMedirRespuesta"][];
             /** Format: int32 */
@@ -4178,6 +4274,66 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    pagosSinTransaccion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PagosSinTransaccionRespuesta"];
+                };
+            };
+        };
+    };
+    marcarRevisado: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pagoId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    pedidosDetenidosEnPreparacion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PedidosDetenidosRespuesta"];
+                };
+            };
+        };
+    };
     listar_8: {
         parameters: {
             query?: {
@@ -7278,6 +7434,26 @@ export interface operations {
             };
         };
     };
+    sinMargen: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["VariantesSinMargenRespuesta"];
+                };
+            };
+        };
+    };
     sinMedir: {
         parameters: {
             query?: never;
@@ -8099,30 +8275,6 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["MetodosDePagoConPrecioRespuesta"];
-                };
-            };
-        };
-    };
-    metodosDePagoDisponibles: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MetodosDePagoDisponiblesRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": ("WOMPI" | "SISTECREDITO" | "TRANSFERENCIA_MANUAL" | "CONTRAENTREGA" | "PAGO_EN_PUNTO")[];
                 };
             };
         };

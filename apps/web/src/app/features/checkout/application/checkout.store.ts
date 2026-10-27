@@ -2,6 +2,7 @@ import { computed, inject, Injectable, signal } from '@angular/core';
 import { injectMutation } from '@tanstack/angular-query-experimental';
 import { IntentoDePago } from '../domain/intento-pago.model';
 import { DocumentoComprador, IntentoSistecredito } from '../domain/intento-sistecredito.model';
+import { huellaDePedido } from '../domain/huella-pedido';
 import { CrearPedidoComando, DatosEntrega } from '../domain/pedido.comandos';
 import { MetodoPago, Pedido } from '../domain/pedido.model';
 import { REPOSITORIO_PAGOS } from '../domain/repositorio-pagos.puerto';
@@ -30,6 +31,39 @@ export class CheckoutStore {
   private readonly repositorioPagos = inject(REPOSITORIO_PAGOS);
 
   readonly pedido = signal<Pedido | null>(null);
+
+  /**
+   * La huella del comando con el que se creó `pedido` (`huellaDePedido`), o `null` si ese pedido ya
+   * no se puede reutilizar: llegó por un reintento desde la pantalla de estado, o la compra terminó.
+   *
+   * <p>Confirmar reutilizaba `pedido` con solo que existiera, confiando en que todo cambio que lo
+   * invalidara pasaba por `guardarDatosEntrega` o `elegirMetodoPago`. El carrito no pasa por aquí:
+   * si el intento de pago fallaba y el comprador cambiaba el carrito y volvía con «Atrás», se
+   * cobraba el pedido viejo con su total viejo y después se borraba el carrito nuevo.
+   */
+  private readonly huellaDelPedido = signal<string | null>(null);
+
+  /** El pedido ya creado, solo si se creó con exactamente este comando. */
+  pedidoReutilizable(comando: CrearPedidoComando): Pedido | null {
+    const pedido = this.pedido();
+    return pedido !== null && this.huellaDelPedido() === huellaDePedido(comando) ? pedido : null;
+  }
+
+  /**
+   * La compra terminó —contraentrega o pago en el punto confirmados, transferencia con sus datos en
+   * pantalla—: se suelta todo lo que serviría para volver a cobrar. El pedido se queda para que la
+   * pantalla de estado o la de transferencia lo enseñen sin pedirlo otra vez al servidor —y sin
+   * depender de que el navegador haya podido recordar el correo—, pero ya sin huella: ningún
+   * comando lo vuelve a reutilizar. Los datos de entrega se van con él, así que la próxima compra
+   * empieza por el resumen.
+   */
+  terminarCompra(): void {
+    this.huellaDelPedido.set(null);
+    this.metodoPago.set(null);
+    this.datosEntrega.set(null);
+    this.documentoComprador.set(null);
+    this.medioYaNoDisponible.set(false);
+  }
 
   /**
    * Lo que la página de dirección/resumen recoge, para que la de selección
@@ -82,6 +116,15 @@ export class CheckoutStore {
    * devolvió al comprador a elegir otro: la página de métodos de pago lo dice.
    */
   readonly medioYaNoDisponible = signal(false);
+
+  /**
+   * El servidor respondió que la reserva del pedido venció (`RESERVA_DEL_PEDIDO_VENCIDA`): ese
+   * pedido ya no se puede cobrar, y reintentarlo repetiría el mismo 409. Olvidarlo hace que el
+   * siguiente "Confirmar" cree uno nuevo, que vuelve a reservar contra la existencia de ahora.
+   */
+  olvidarPedido(): void {
+    this.pedido.set(null);
+  }
 
   /** Lo llama confirmar cuando la consulta fresca ya no trae el medio elegido. */
   descartarMetodoNoDisponible(): void {
@@ -156,12 +199,15 @@ export class CheckoutStore {
   async crearPedido(comando: CrearPedidoComando): Promise<Pedido> {
     const pedido = await this.mutacionCrear.mutateAsync(comando);
     this.pedido.set(pedido);
+    this.huellaDelPedido.set(huellaDePedido(comando));
     return pedido;
   }
 
   async reintentarPago(pedidoId: string, correo: string): Promise<Pedido> {
     const pedido = await this.mutacionReintentar.mutateAsync({ pedidoId, correo });
     this.pedido.set(pedido);
+    // De la pantalla de estado, sin comando: no hay con qué compararlo, y confirmar no lo reutiliza.
+    this.huellaDelPedido.set(null);
     return pedido;
   }
 

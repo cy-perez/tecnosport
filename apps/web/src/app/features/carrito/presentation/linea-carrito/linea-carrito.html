@@ -36,11 +36,21 @@
         <p class="m-0 text-sm text-ts-texto">{{ foto.detalleVariante }}</p>
       }
       <p class="m-0 text-sm text-ts-texto-suave">{{ foto.sku }}</p>
+      @if (enElMaximo()) {
+        <p class="m-0 text-sm text-ts-texto-suave">
+          {{ 'carrito.maximo_por_linea' | transloco: { maximo: cantidadMaxima() } }}
+        </p>
+      }
     </div>
   } @else {
     <div class="block size-96 bg-ts-superficie-alt object-cover" aria-hidden="true"></div>
     <div class="flex min-w-0 flex-col gap-4">
       <p class="m-0 font-medio">{{ 'carrito.producto_sin_foto' | transloco }}</p>
+      @if (enElMaximo()) {
+        <p class="m-0 text-sm text-ts-texto-suave">
+          {{ 'carrito.maximo_por_linea' | transloco: { maximo: cantidadMaxima() } }}
+        </p>
+      }
     </div>
   }
 
@@ -58,11 +68,18 @@
     >
       −
     </ts-boton>
-    <span class="min-w-[2ch] text-center">{{ linea().cantidad }}</span>
+    <span class="min-w-[var(--ancho-min-cifra)] text-center">{{ linea().cantidad }}</span>
+    <!-- En el tope, `inactivo` por lo mismo que el de restar en 1; el aviso de al lado dice por
+         qué no sube, y la etiqueta lo repite para quien no lo ve. -->
     <ts-boton
       variante="secundario"
       [deshabilitado]="deshabilitado()"
-      [etiquetaAccesible]="'carrito.aumentar_de' | transloco: { nombre }"
+      [inactivo]="enElMaximo()"
+      [etiquetaAccesible]="
+        enElMaximo()
+          ? ('carrito.aumentar_de_en_el_maximo' | transloco: { nombre, maximo: cantidadMaxima() })
+          : ('carrito.aumentar_de' | transloco: { nombre })
+      "
       (click)="sumar()"
     >
       +

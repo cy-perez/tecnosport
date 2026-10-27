@@ -13,6 +13,7 @@
     "transicion_de_estado_invalida": "That step is not possible from the current state. Reload and check again.",
     "metodo_de_pago_no_es_transferencia_manual": "This order was not paid by transfer, so it cannot be reconciled by hand.",
     "contraentrega_no_disponible": "Cash on delivery is not available for this order.",
+    "contraentrega_no_verificable": "This order is not awaiting verification: only an order paid on receipt that is still confirmed without payment can be verified. Reload and check again.",
     "excepcion_de_dominio": "The operation breaks a business rule and the server does not say which. Check the data again.",
     "sesion_de_refresco_invalida": "Your session expired. Sign in again: retrying will not help.",
     "credenciales_invalidas": "Wrong email or password.",
@@ -31,6 +32,7 @@
     "proveedor_de_listas": "This is a technology supplier: its catalog comes in through the price list, not through the chat export.",
     "proveedor_sin_listas": "This supplier is not a technology supplier: its catalog comes in through the chat export, not through a price list.",
     "lista_de_tecnologia_desactualizada": "That list is older than the last one imported: only import a list from that date or later.",
+    "precio_sin_margen_minimo": "The cash price leaves less than a 10 % margin over the supplier cost: raise it before approving.",
     "lista_de_tecnologia_ya_importada": "That list was already imported with this same content: repeating it would restock what was sold.",
     "proveedor_con_productos": "The supplier has products in the catalogue. Deactivate it instead of deleting it.",
     "proveedor_con_ingesta_en_curso": "The supplier has an export being processed. Wait for it to finish and try again.",
@@ -71,7 +73,8 @@
     "talla_del_proveedor_desconocida": "The supplier names these sizes shifted, and one of them has no name to order it by, like an XXXL one size up. Remove it from the sizes before approving.",
     "ajustes_de_talla_distintos": "The supplier names the sizes of the two differently, like the women's and men's drafts of the same post: merged, there would be no way to know which size to order.",
     "entrega_no_aplica": "That is not how this order is delivered: a pickup is marked ready and handed over at our location, and a home delivery is shipped with a tracking number.",
-    "numero_de_pedido_no_coincide": "That number is not this order’s. Ask the person picking up to show the number from their email or order page. Do not hand it over."
+    "numero_de_pedido_no_coincide": "That number is not this order’s. Ask the person picking up to show the number from their email or order page. Do not hand it over.",
+    "pago_con_transaccion_o_resuelto": "The payment already has its transaction or was resolved: reload the page."
   },
   "iniciarSesion": {
     "titulo": "Admin panel",
@@ -82,6 +85,7 @@
     "error": "Incorrect email or password.",
     "no_es_admin": "This account doesn't have access to the panel.",
     "error_demasiados_intentos": "Too many attempts in a row. Wait a few minutes and try again - your password is not the problem.",
+    "cierre_sin_confirmar": "You signed out in this tab, but the server didn't confirm it and the session could reopen on its own in this browser. If this is a shared computer, sign in again and sign out once you're back online.",
     "errores": {
       "correo_requerido": "Enter the email.",
       "correo_invalido": "That email address isn't valid.",
@@ -102,6 +106,10 @@
       "enlace": "Review and measure"
     },
     "ir_a_marcas": "Brands",
+    "sinMargen": {
+      "aviso": "{{total}} variant(s) stopped selling because the supplier's new cost leaves them less than a 10 % margin over the cash price. Raise the cash price on the product page, or they come back on their own when the cost drops.",
+      "skus": "({{skus}})"
+    },
     "existencias": {
       "aviso": "{{total}} catalog variant(s) have not a single unit in the inventory ledger, {{publicados}} of them on published products. Anyone seeing them in the shop sees them sold out.",
       "enlace": "Review stock and count"
@@ -219,6 +227,23 @@
       "pagado_sin_inventario": "The payment arrived after the reservation expired and there was no stock. Once you restock, confirm it to prepare it; if there will be none, cancel it with a refund.",
       "confirmar_inventario": "Confirm stock and prepare",
       "guia_en_plataforma": "The label is created by hand in Skydropx (Quote and create) with the packages below, and recorded here with its number."
+    },
+    "alertas": {
+      "pagos_sin_transaccion": {
+        "titulo": "Wompi payments without a transaction ({{cuantos}})",
+        "ayuda": "Wompi payment attempts pending for more than {{horas}} hours without a transaction id: Wompi's notification never arrived and the buyer didn't come back to the site, so reconciliation can't look them up. It's almost always an abandoned payment, but it could be a charged one whose notification was lost. Look them up by reference in the Wompi dashboard and mark them as reviewed.",
+        "resumen": "Reference {{referencia}} · order {{numero}} · {{correo}} · created {{fecha}} ·",
+        "revisado": "Reviewed in Wompi",
+        "revisado_de": "Mark payment {{referencia}} as reviewed in Wompi"
+      },
+      "en_preparacion": {
+        "titulo": "Orders stuck in preparation ({{cuantos}})",
+        "ayuda": "Orders that have been in preparation for more than {{dias}} days. Pickup and cash-on-delivery orders hold their unit with no expiry: if nobody moves them, it never goes back on sale. Ship them, mark them ready for pickup or cancel them from the list below.",
+        "resumen": "Order {{numero}} · {{correo}} · {{entrega}} · in preparation since {{fecha}}",
+        "entrega_recogida": "pickup at our location",
+        "entrega_domicilio": "home delivery",
+        "entrega_contraentrega": "cash on delivery"
+      }
     },
     "pagos_sin_pedido": {
       "titulo": "Payments to refund ({{cuantos}})",
@@ -1279,6 +1304,7 @@
       "errorCarga": "The model could not be loaded. Reload the page.",
       "de": "From {{proveedor}} · model {{modelo}}",
       "completaProducto": "This model is already on sale: what you approve here is added to its product.",
+      "fotosEnElProducto": "Approved: its photos are now on the published product.",
       "verProducto": "See the product",
       "motivoRechazo": "Rejected: {{motivo}}",
       "ficha": "Product sheet prepared by the skill",

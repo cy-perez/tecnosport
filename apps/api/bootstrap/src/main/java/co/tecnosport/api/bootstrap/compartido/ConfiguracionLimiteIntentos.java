@@ -77,13 +77,40 @@ public class ConfiguracionLimiteIntentos {
   }
 
   /**
+   * El retorno del Web Checkout de Wompi ({@code PATCH /pagos/intentos/{referencia}}), con el
+   * perfil de pedidos: es público, anónimo, la referencia es predecible y cada llamada con un id
+   * nuevo consulta a Wompi con nuestra llave. Filtro aparte y no una ruta más del de pedidos por la
+   * clave: el patrón lleva comodín, y contado por URI cada referencia estrenaría presupuesto. Con
+   * grupo fijo, todas comparten uno por IP.
+   *
+   * <p>El patrón {@code /api/v1/pagos/intentos/*} cubre también la ruta sin sufijo (especificación
+   * de servlets), así que {@code POST /pagos/intentos} entra en el mismo presupuesto. Es lo que se
+   * quiere: crear el intento y registrar su id son el mismo acto del comprador.
+   */
+  @Bean
+  public FilterRegistrationBean<FiltroLimiteIntentos> filtroLimiteIntentosPagosWompi(
+      LimitadorDeIntentos limitadorDeIntentos, Reloj reloj, PropiedadesLimitePedidos propiedades) {
+    FilterRegistrationBean<FiltroLimiteIntentos> registro =
+        new FilterRegistrationBean<>(
+            new FiltroLimiteIntentos(
+                limitadorDeIntentos,
+                reloj,
+                propiedades.ipMaximo(),
+                Duration.ofMinutes(propiedades.ipMinutos()),
+                "/api/v1/pagos/intentos"));
+    registro.addUrlPatterns("/api/v1/pagos/intentos/*");
+    return registro;
+  }
+
+  /**
    * La cotización tiene su propio perfil porque su riesgo es distinto: no crea nada, pero cada
    * llamada gasta cuota de un proveedor externo que se paga y que admite dos peticiones por
    * segundo. El resto de endpoints públicos solo cuestan base de datos propia.
    *
    * <p><b>Son dos rutas, no una</b>, y la segunda faltaba: {@code
-   * /api/v1/pedidos/metodos-de-pago-disponibles} cotiza igual —con recaudo, así que crea una
-   * cotización y la sondea— y quedaba fuera de los tres filtros. El patrón {@code /api/v1/pedidos}
+   * /api/v1/pedidos/metodos-de-pago-con-precio} cotiza igual —con recaudo, así que crea una
+   * cotización y la sondea—. Su antecesora sin precios, {@code metodos-de-pago-disponibles},
+   * quedaba fuera de los tres filtros; se retiró el 27/10/2026. El patrón {@code /api/v1/pedidos}
    * de arriba es exacto y no cubre subrutas. Agotar las dos peticiones por segundo de la cuenta
    * deja a los compradores reales con un checkout que solo ofrece recogida en el punto y sin
    * contraentrega: la venta con envío se pierde entera mientras dure. Lo levantó una revisión
@@ -103,8 +130,7 @@ public class ConfiguracionLimiteIntentos {
                 Duration.ofMinutes(propiedades.ipMinutos())));
     registro.addUrlPatterns(
         "/api/v1/envios/cotizacion",
-        "/api/v1/pedidos/metodos-de-pago-disponibles",
-        // ADR-0095: la misma consulta con el precio de cada medio; cotiza igual con recaudo.
+        // ADR-0095: los medios con el precio de cada uno; cotiza con recaudo.
         "/api/v1/pedidos/metodos-de-pago-con-precio",
         // ADR-0093: no llama a terceros, pero cada variante de la lista es una lectura del
         // catálogo.

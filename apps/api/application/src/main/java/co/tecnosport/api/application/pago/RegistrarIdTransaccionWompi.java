@@ -4,6 +4,7 @@ import co.tecnosport.api.domain.pago.Pago;
 import co.tecnosport.api.domain.pago.ReferenciaPago;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 /**
  * El id de transacción de Wompi llega en la URL de retorno del Web Checkout
@@ -20,6 +21,14 @@ import java.util.Optional;
  */
 public final class RegistrarIdTransaccionWompi {
 
+  /**
+   * La forma de un id de transacción de Wompi ({@code 1234-1610641025-49201}), con holgura. El id
+   * viaja después a la URL de la consulta ({@code /transactions/{id}}): sin esta guarda, un {@code
+   * ../} o un {@code ?} que llegara por este endpoint público le cambiaba la ruta a la petición que
+   * la API le hace a Wompi con nuestra llave.
+   */
+  static final Pattern FORMA_DEL_ID = Pattern.compile("^[0-9A-Za-z-]{1,64}$");
+
   private final RepositorioPagos repositorioPagos;
   private final PasarelaDePagos pasarelaDePagos;
 
@@ -31,6 +40,10 @@ public final class RegistrarIdTransaccionWompi {
 
   public void ejecutar(RegistrarIdTransaccionWompiComando comando) {
     Objects.requireNonNull(comando, "El comando no puede ser nulo.");
+    if (comando.idTransaccionPasarela() == null
+        || !FORMA_DEL_ID.matcher(comando.idTransaccionPasarela()).matches()) {
+      throw new TransaccionDeOtroPagoException(comando.referencia());
+    }
     Pago pago =
         repositorioPagos
             .buscarPorReferencia(new ReferenciaPago(comando.referencia()))

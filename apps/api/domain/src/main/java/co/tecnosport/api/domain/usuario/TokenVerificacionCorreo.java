@@ -11,7 +11,8 @@ import java.util.UUID;
  * Un solo uso, sin rotación ni familia (a diferencia de {@link SesionRefresco}): verificar el
  * correo no necesita esa cadena, solo confirmar una vez que quien recibió el enlace es dueño de la
  * casilla. El {@code id} es también el valor opaco que viaja en el enlace del correo — mismo
- * criterio ya usado para el {@code id} de {@link SesionRefresco} como valor de su cookie.
+ * criterio ya usado para el {@code id} de {@link SesionRefresco} como valor de su cookie. Por eso
+ * no se guarda: la base guarda su {@link HuellaDeToken}.
  */
 public final class TokenVerificacionCorreo {
 

@@ -16,6 +16,7 @@ import java.util.Set;
 final class RepositorioIdempotenciaFalso implements RepositorioIdempotencia {
 
   private final Set<String> reclamadas = new HashSet<>();
+  private final Map<String, String[]> operaciones = new HashMap<>();
   private final Map<String, RespuestaIdempotente> completadas = new HashMap<>();
 
   @Override
@@ -25,12 +26,25 @@ final class RepositorioIdempotenciaFalso implements RepositorioIdempotencia {
 
   @Override
   public boolean reclamar(String llave, String metodo, String ruta, Instant ahora) {
-    return reclamadas.add(llave);
+    boolean reclamada = reclamadas.add(llave);
+    if (reclamada) {
+      operaciones.put(llave, new String[] {metodo, ruta});
+    }
+    return reclamada;
   }
 
+  /** Como el adaptador real: el método y la ruta salen de lo que se reclamó. */
   @Override
   public void completar(String llave, RespuestaIdempotente respuesta, Instant ahora) {
-    completadas.put(llave, respuesta);
+    String[] operacion = operaciones.get(llave);
+    completadas.put(
+        llave,
+        new RespuestaIdempotente(
+            respuesta.estadoHttp(),
+            respuesta.tipoContenido(),
+            respuesta.cuerpo(),
+            operacion[0],
+            operacion[1]));
   }
 
   @Override
@@ -41,6 +55,7 @@ final class RepositorioIdempotenciaFalso implements RepositorioIdempotencia {
   @Override
   public void liberar(String llave) {
     reclamadas.remove(llave);
+    operaciones.remove(llave);
     completadas.remove(llave);
   }
 }

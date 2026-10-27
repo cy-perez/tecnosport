@@ -30,10 +30,14 @@ class ConfiguracionLimiteIntentosTest {
     rutas.addAll(
         rutas(
             configuracion.filtroLimiteIntentosAuth(
-                limitador(), reloj(), new PropiedadesLimiteAuth(5, 15, 5, 60))));
+                limitador(), reloj(), new PropiedadesLimiteAuth(5, 15, 5, 60, 100))));
     rutas.addAll(
         rutas(
             configuracion.filtroLimiteIntentosPedidos(
+                limitador(), reloj(), new PropiedadesLimitePedidos(10, 60, 10, 60))));
+    rutas.addAll(
+        rutas(
+            configuracion.filtroLimiteIntentosPagosWompi(
                 limitador(), reloj(), new PropiedadesLimitePedidos(10, 60, 10, 60))));
     rutas.addAll(
         rutas(
@@ -58,12 +62,22 @@ class ConfiguracionLimiteIntentosTest {
         "el endpoint que abre solicitudes de crédito no puede quedar sin límite por IP");
   }
 
+  /**
+   * El retorno de Wompi es público, la referencia predecible, y cada id nuevo consulta a Wompi con
+   * nuestra llave. Con comodín: la referencia va en la ruta.
+   */
+  @Test
+  void elRetornoDeWompiTieneTecho() {
+    assertTrue(
+        rutasConTecho().contains("/api/v1/pagos/intentos/*"),
+        "PATCH /pagos/intentos/{referencia} no puede quedar sin límite por IP");
+  }
+
   @Test
   void lasRutasQueYaLoTenianLoSiguenTeniendo() {
     Set<String> rutas = rutasConTecho();
 
     assertTrue(rutas.contains("/api/v1/pedidos"));
-    assertTrue(rutas.contains("/api/v1/pedidos/metodos-de-pago-disponibles"));
     assertTrue(rutas.contains("/api/v1/pedidos/metodos-de-pago-con-precio"));
     assertTrue(rutas.contains("/api/v1/envios/cotizacion"));
     assertTrue(rutas.contains("/api/v1/auth/sesion"));

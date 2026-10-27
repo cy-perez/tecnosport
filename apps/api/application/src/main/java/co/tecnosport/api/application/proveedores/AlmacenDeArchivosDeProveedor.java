@@ -29,4 +29,14 @@ public interface AlmacenDeArchivosDeProveedor {
 
   /** Borrar lo que ya no está no falla: reintentar un borrado a medias tiene que poder terminar. */
   void borrar(String objectKey);
+
+  /**
+   * Borra todo lo que cuelga de este prefijo, lo nombre una fila o no: lo que se subió y nunca se
+   * registró —una subida firmada que el panel no confirmó— también es del borrador (27 de octubre
+   * de 2026). Como {@link #borrar}, repetirlo no falla.
+   *
+   * @param prefijo termina en {@code /}, para no llevarse lo de un vecino cuyo id empiece igual
+   * @return cuántos objetos borró
+   */
+  int borrarPorPrefijo(String prefijo);
 }

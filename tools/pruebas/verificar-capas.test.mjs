@@ -117,3 +117,59 @@ test("domain hacia application es una violación; application hacia domain no", 
     },
   );
 });
+
+// La quinta regla mira paquetes, no rutas: `import { Params } from '@angular/router'` en domain no
+// tiene ningún `../` que resolver, y por eso cinco archivos pasaron sin que el guardián lo viera.
+test("domain importando un paquete de framework es una violación", () => {
+  conArbol(
+    {
+      "features/catalogo/domain/filtro.ts": "import { Params } from '@angular/router';\n",
+      "features/catalogo/domain/consulta.ts":
+        "import { injectQuery } from '@tanstack/angular-query-experimental';\n",
+      "features/catalogo/domain/flujo.ts": "import { Observable } from 'rxjs';\n",
+      "features/catalogo/domain/texto.ts": "export const t = () => import('@jsverse/transloco');\n",
+    },
+    (raiz) => {
+      const { violaciones } = revisar(raiz);
+      assert.deepEqual(violaciones.map((v) => v.especificador).sort(), [
+        "@angular/router",
+        "@jsverse/transloco",
+        "@tanstack/angular-query-experimental",
+        "rxjs",
+      ]);
+      assert.ok(violaciones.every((v) => v.desde === "domain" && v.destino === "framework"));
+    },
+  );
+});
+
+test("el token del puerto sí cabe en domain; cualquier otra cosa de @angular/core, no", () => {
+  conArbol(
+    {
+      "features/carrito/domain/repositorio.puerto.ts":
+        "import { InjectionToken } from '@angular/core';\n",
+      "features/carrito/domain/estado.ts":
+        "import { InjectionToken, signal } from '@angular/core';\n",
+      "features/carrito/domain/todo.ts": "import * as core from '@angular/core';\n",
+    },
+    (raiz) => {
+      const archivos = revisar(raiz).violaciones.map((v) => v.archivo.split("/").pop());
+      assert.deepEqual(archivos.sort(), ["estado.ts", "todo.ts"]);
+    },
+  );
+});
+
+test("fuera de domain la regla de paquetes no aplica, y en una prueba solo se informa", () => {
+  conArbol(
+    {
+      "features/carrito/application/store.ts":
+        "import { injectQuery } from '@tanstack/angular-query-experimental';\n",
+      "features/carrito/domain/modelo.spec.ts":
+        "import { TestBed } from '@angular/core/testing';\n",
+    },
+    (raiz) => {
+      const { violaciones, enPruebas } = revisar(raiz);
+      assert.equal(violaciones.length, 0);
+      assert.equal(enPruebas.length, 1);
+    },
+  );
+});

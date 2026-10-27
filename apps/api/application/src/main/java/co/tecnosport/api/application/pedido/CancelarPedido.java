@@ -160,8 +160,7 @@ public final class CancelarPedido {
   }
 
   private boolean recogidaVencida(Pedido pedido) {
-    Instant ahora = reloj.ahora();
-    return pedido.recogidaVenceEn().map(vence -> !vence.isAfter(ahora)).orElse(false);
+    return pedido.recogidaVencida(reloj.ahora());
   }
 
   private void devolverAlInventario(LineaPedido linea, MotivoCancelacion motivo, Instant ahora) {

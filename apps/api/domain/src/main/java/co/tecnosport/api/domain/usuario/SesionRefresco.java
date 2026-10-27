@@ -12,6 +12,9 @@ import java.util.UUID;
  * vigencia, con rotación y detección de reutilización. {@code familiaId} agrupa toda la cadena de
  * un mismo login — revocar una familia entera cuando se detecta reutilización es una operación
  * sobre varias filas, así que vive en {@code RepositorioSesiones}, no en este agregado.
+ *
+ * <p>El {@code id} es el token que viaja en la cookie, y por eso no se guarda: la base guarda su
+ * {@link HuellaDeToken} y se busca por ella.
  */
 public final class SesionRefresco {
 

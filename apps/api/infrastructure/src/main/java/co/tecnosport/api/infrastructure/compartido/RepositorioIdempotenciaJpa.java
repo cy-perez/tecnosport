@@ -47,7 +47,14 @@ public class RepositorioIdempotenciaJpa implements RepositorioIdempotencia {
         .findById(llave)
         .filter(e -> COMPLETADA.equals(e.getEstado()))
         .filter(e -> e.getCompletadoEn() != null && !vencida(e.getCompletadoEn(), ahora))
-        .map(e -> new RespuestaIdempotente(e.getEstadoHttp(), e.getTipoContenido(), e.getCuerpo()));
+        .map(
+            e ->
+                new RespuestaIdempotente(
+                    e.getEstadoHttp(),
+                    e.getTipoContenido(),
+                    e.getCuerpo(),
+                    e.getMetodo(),
+                    e.getRuta()));
   }
 
   @Override

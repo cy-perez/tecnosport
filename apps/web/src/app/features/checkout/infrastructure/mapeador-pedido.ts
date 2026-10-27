@@ -84,6 +84,8 @@ export function aMetodoDePagoConPrecio(dto: MetodoConPrecioDto): MetodoDePagoCon
     metodo: dto.metodo,
     subtotal: aDinero(dto.subtotal),
     descuento: aDinero(dto.descuento),
+    // Con contraentrega, el flete con recaudo; con recogida, cero; sin él, el de la cotización.
+    costoEnvio: dto.costoEnvio ? aDinero(dto.costoEnvio) : null,
   };
 }
 

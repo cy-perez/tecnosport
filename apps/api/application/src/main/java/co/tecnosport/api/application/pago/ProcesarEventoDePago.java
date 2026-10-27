@@ -11,6 +11,7 @@ import co.tecnosport.api.domain.pago.ReferenciaPago;
 import co.tecnosport.api.domain.pedido.Pedido;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -23,7 +24,21 @@ import java.util.Optional;
  */
 public final class ProcesarEventoDePago {
 
-  private static final String PROPIEDAD_ESTADO = "transaction.status";
+  /**
+   * Lo que este caso de uso lee del evento y por eso tiene que venir firmado. La documentación de
+   * eventos de Wompi (docs.wompi.co/docs/colombia/eventos, leída el 27/10/2026) publica justo estas
+   * tres en su ejemplo, y advierte que {@code properties} "pueden variar" y no deben suponerse un
+   * arreglo fijo. Por eso se exige que las tres estén, no que sean las únicas: un evento con una
+   * propiedad firmada de más sigue autenticando lo que se lee, y rechazarlo dejaría de aplicar
+   * webhooks legítimos el día que Wompi añada una.
+   *
+   * <p>La referencia no está en la lista porque Wompi no la firma; por eso un APPROVED se confirma
+   * consultando a la pasarela antes de aplicarlo.
+   */
+  private static final List<String> PROPIEDADES_REQUERIDAS =
+      List.of("transaction.id", "transaction.status", "transaction.amount_in_cents");
+
+  private static final String ESTADO_APROBADO = "APPROVED";
   private static final BigDecimal CENTAVOS_POR_PESO = BigDecimal.valueOf(100);
 
   private final RepositorioPagos repositorioPagos;
@@ -54,10 +69,10 @@ public final class ProcesarEventoDePago {
     if (!firmaValida) {
       return ResultadoEventoDePago.FIRMA_INVALIDA;
     }
-    // La firma solo autentica las propiedades que el evento declara firmadas. Si el estado no está
-    // entre ellas, el APPROVED que se leería no lo respalda nadie.
-    if (!comando.propiedadesFirmadas().contains(PROPIEDAD_ESTADO)) {
-      return ResultadoEventoDePago.ESTADO_SIN_FIRMAR;
+    // La firma solo autentica las propiedades que el evento declara firmadas. Si el estado, el id o
+    // el monto no están entre ellas, lo que se leería de ahí no lo respalda nadie.
+    if (!comando.propiedadesFirmadas().containsAll(PROPIEDADES_REQUERIDAS)) {
+      return ResultadoEventoDePago.PROPIEDADES_SIN_FIRMAR;
     }
 
     Optional<Pago> pagoEncontrado =
@@ -87,6 +102,33 @@ public final class ProcesarEventoDePago {
     Pago pago = pagoEncontrado.get();
     if (!elMontoEsElDelPago(comando, pago)) {
       return ResultadoEventoDePago.MONTO_NO_COINCIDE;
+    }
+    // El pago ya tiene una transacción, verificada contra la pasarela al registrarla: un evento de
+    // otra no es de este pago, aunque traiga su referencia —la referencia no va firmada—.
+    if (comando.idTransaccion() == null
+        || comando.idTransaccion().isBlank()
+        || pago.idTransaccionPasarela()
+            .filter(id -> !id.equals(comando.idTransaccion()))
+            .isPresent()) {
+      return ResultadoEventoDePago.TRANSACCION_DE_OTRO_PAGO;
+    }
+    // Un APPROVED mueve mercancía: antes de creerlo se le pregunta a la pasarela, igual que hace la
+    // conciliación. La firma autentica el id, el estado y el monto, pero no la referencia, así que
+    // sin esto un evento firmado de otra transacción con el mismo importe podía pagar este pedido.
+    if (ESTADO_APROBADO.equals(comando.estadoWompi())) {
+      Optional<TransaccionDePasarela> consultada =
+          pasarelaDePagos.consultarTransaccion(comando.idTransaccion());
+      if (consultada.isPresent()
+          && !consultada.get().correspondeA(pago.referencia().valor(), pago.monto())) {
+        return ResultadoEventoDePago.TRANSACCION_DE_OTRO_PAGO;
+      }
+      if (consultada.isEmpty() || !ESTADO_APROBADO.equals(consultada.get().estado())) {
+        // El id sí es de este pago (o no se pudo saber): se deja registrado para que la
+        // conciliación, que consulta por él, cierre el pago en su siguiente corrida.
+        registrarIdTransaccion(pago, comando.idTransaccion());
+        repositorioPagos.guardar(pago);
+        return ResultadoEventoDePago.APROBACION_SIN_CONFIRMAR;
+      }
     }
     registrarIdTransaccion(pago, comando.idTransaccion());
 

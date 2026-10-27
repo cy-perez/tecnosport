@@ -33,7 +33,10 @@ para y dime por qué antes de escribir el código.
    plugin v7 **la acepta sin aplicarla** — se comprobó metiendo violaciones a
    propósito y el lint pasaba. Un guardián que nunca dispara da confianza falsa.
    `tools/verificar-capas.mjs` aplica las mismas cuatro reglas sobre los imports
-   relativos, en 90 líneas y sin dependencias.
+   relativos, en 90 líneas y sin dependencias, y desde el 27 de octubre de 2026
+   una quinta por nombre de paquete: `domain` no importa `@angular/*`,
+   `@tanstack/*`, `@jsverse/*` ni `rxjs` —salvo `InjectionToken`, que es como se
+   declaran los puertos—, que los imports relativos no veían.
    Dos excepciones, las dos porque el enunciado de la regla las pide:
    `*.routes.ts` sí puede importar `infrastructure` —es el proveedor de la ruta
    el que elige la implementación— y los `*.spec.ts` se informan aparte sin

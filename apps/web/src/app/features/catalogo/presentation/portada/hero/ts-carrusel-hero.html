@@ -217,13 +217,14 @@
 
                        `ch` y no píxeles a propósito: es el ancho de un carácter de la propia fuente
                        del botón, así que esto sigue midiendo lo que tiene que medir si alguien
-                       amplía el texto. Es la misma escapatoria de la regla dura #2 que ya usan
-                       `min-w-[12ch]` en el visor 360 y `min-w-[2ch]` en la línea del carrito: lo que
-                       la regla prohíbe es el píxel suelto. -->
+                       amplía el texto. El valor vive en el kit (`--ancho-min-boton-hero`, de
+                       `anchos_min_ch` en `tokens.json`), como el contador del visor 360 y la
+                       cantidad de la línea del carrito: la regla dura #2 tampoco admite un `ch`
+                       literal, solo `[var(--token)]`. -->
 
                   <ts-boton
                     variante="acento"
-                    clase="min-w-[20ch]"
+                    clase="min-w-[var(--ancho-min-boton-hero)]"
                     [enlace]="['/', idioma(), 'productos']"
                     [parametrosEnlace]="{ linea: diapositiva.linea }"
                   >

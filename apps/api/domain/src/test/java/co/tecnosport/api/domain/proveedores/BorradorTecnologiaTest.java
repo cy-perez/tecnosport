@@ -123,6 +123,26 @@ class BorradorTecnologiaTest {
     assertEquals(producto, borrador.productoId().orElseThrow());
   }
 
+  /**
+   * Revisión adversarial del 27 de octubre de 2026: bastaba superar el costo. Ahora hace falta el
+   * margen mínimo de la regla 18 —el 10 % sobre el costo—, medido sobre el precio de contado.
+   */
+  @Test
+  void noSeApruebaConMenosDelMargenMinimo() {
+    BorradorTecnologia borrador = conCuatroFotos(nuevo());
+    // Costo 675.000: 740.000 le gana un 9,6 %.
+    borrador.elegir(
+        List.of(
+            new BorradorTecnologia.Eleccion("a17-256", List.of("Negro"), Dinero.deCop(740_000))));
+    assertThrows(PrecioSinMargenMinimoException.class, () -> borrador.aprobar(UUID.randomUUID()));
+
+    borrador.elegir(
+        List.of(
+            new BorradorTecnologia.Eleccion("a17-256", List.of("Negro"), Dinero.deCop(742_500))));
+    borrador.aprobar(UUID.randomUUID());
+    assertEquals(EstadoBorrador.APROBADO, borrador.estado());
+  }
+
   @Test
   void loQueQuedoSinColoresAlAprobarYaEstaDecidido() {
     BorradorTecnologia borrador = conCuatroFotos(nuevo());

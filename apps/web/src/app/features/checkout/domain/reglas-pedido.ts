@@ -34,6 +34,21 @@ export function puedeReintentarPago(estado: EstadoPedido): boolean {
   return estado === 'PAGO_FALLIDO';
 }
 
+/**
+ * El pago de una pasarela ya entró: `PAGADO` o cualquier estado de operación que solo se alcanza
+ * después de él. Es cuando el carrito que originó el pedido deja de hacer falta. La contraentrega y
+ * el pago en el punto no están: esos no pasan por pasarela y el carrito se vacía al confirmar.
+ */
+export function pagoConfirmado(estado: EstadoPedido): boolean {
+  return (
+    estado === 'PAGADO' ||
+    estado === 'EN_PREPARACION' ||
+    estado === 'DESPACHADO' ||
+    estado === 'LISTO_PARA_RECOGER' ||
+    estado === 'ENTREGADO'
+  );
+}
+
 /** `datosTransferencia` solo llega poblado cuando el pedido se pagó por
  * transferencia manual — la respuesta lo trae en `null` en cualquier otro caso. */
 export function datosTransferenciaDelPedido(pedido: Pedido): DatosTransferencia | null {

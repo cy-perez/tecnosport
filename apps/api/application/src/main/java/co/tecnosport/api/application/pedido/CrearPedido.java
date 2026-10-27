@@ -18,6 +18,8 @@ import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
+import co.tecnosport.api.domain.compartido.TopeDeUnidadesPorLinea;
+import co.tecnosport.api.domain.compartido.ZonaDelNegocio;
 import co.tecnosport.api.domain.envio.TarifaEnvio;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.inventario.MovimientoInventario;
@@ -31,7 +33,6 @@ import co.tecnosport.api.domain.pedido.Pedido;
 import co.tecnosport.api.domain.pedido.TipoEntrega;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -60,8 +61,6 @@ import java.util.UUID;
  */
 public final class CrearPedido {
 
-  private static final ZoneId ZONA_COLOMBIA = ZoneId.of("America/Bogota");
-
   private final RepositorioProductos repositorioProductos;
   private final RepositorioInventario repositorioInventario;
   private final RepositorioPedidos repositorioPedidos;
@@ -78,6 +77,7 @@ public final class CrearPedido {
 
   private final RecogidaEnPunto recogidaEnPunto;
   private final RepositorioEnlacesDeCompra repositorioEnlaces;
+  private final TopeDeUnidadesPorLinea topePorLinea;
 
   public CrearPedido(
       RepositorioProductos repositorioProductos,
@@ -94,7 +94,10 @@ public final class CrearPedido {
       RepositorioAutorizaciones repositorioAutorizaciones,
       String versionPolitica,
       RecogidaEnPunto recogidaEnPunto,
-      RepositorioEnlacesDeCompra repositorioEnlaces) {
+      RepositorioEnlacesDeCompra repositorioEnlaces,
+      TopeDeUnidadesPorLinea topePorLinea) {
+    this.topePorLinea =
+        Objects.requireNonNull(topePorLinea, "El tope de unidades por línea no puede ser nulo.");
     this.repositorioProductos =
         Objects.requireNonNull(
             repositorioProductos, "El repositorio de productos no puede ser nulo.");
@@ -162,6 +165,9 @@ public final class CrearPedido {
     // libro. El agregado lo vuelve a exigir al crearse; aquí se adelanta para no reservar nada.
     Pedido.exigirVariantesSinRepetir(
         comando.lineas().stream().map(CrearPedidoComando.LineaComando::varianteId).toList());
+    // Tampoco más unidades por línea de las que se venden: sin tope, pedidos anónimos que nunca se
+    // pagan apartaban todas las unidades de una variante. Antes de reservar, por lo mismo.
+    comando.lineas().forEach(linea -> topePorLinea.exigir(linea.cantidad()));
 
     // Antes de reservar, y después de lo de arriba: la recogida lee el catálogo por cada línea
     // (ADR-0093), así que va detrás del límite por cuenta y del rechazo barato de los repetidos.
@@ -232,7 +238,7 @@ public final class CrearPedido {
             .map(lineaComando -> congeladasPorVariante.get(lineaComando.varianteId()))
             .toList();
 
-    int anio = ahora.atZone(ZONA_COLOMBIA).getYear();
+    int anio = ahora.atZone(ZonaDelNegocio.ZONA).getYear();
     NumeroPedido numeroPedido = repositorioPedidos.siguienteNumero(anio);
 
     Pedido pedido =
@@ -352,6 +358,13 @@ public final class CrearPedido {
     Producto producto = buscarProductoVendible(lineaComando.varianteId());
     Variante variante = buscarVarianteVendible(producto, lineaComando.varianteId());
     Optional<EnlaceDeCompra> enlace = enlaceDeLaLinea(lineaComando, producto, variante, ahora);
+    // Lo que se cobra con este medio tiene que ser un precio. `Variante` ya no admite un contado en
+    // cero ni la base tampoco (V135), así que hoy esto no dispara; queda como la última guarda
+    // antes de reservar, porque el daño de que falle es vender regalado. Misma excepción que lo
+    // que no se vende, para no decirle a nadie por qué.
+    if (metodoPago.precioDe(variante).valor().signum() <= 0) {
+      throw new VarianteNoEncontradaException(variante.id());
+    }
 
     Inventario inventario =
         repositorioInventario
@@ -477,16 +490,9 @@ public final class CrearPedido {
    * reproducen un estado que el adaptador real no produce.
    */
   private Variante buscarVarianteVendible(Producto producto, UUID varianteId) {
-    Variante variante =
-        producto.variantes().stream()
-            .filter(v -> v.id().equals(varianteId))
-            .findFirst()
-            .orElseThrow(() -> new VarianteNoEncontradaException(varianteId));
-    // Una prenda que el proveedor agotó no se vende, aunque el libro tenga saldo (ADR-0084).
-    if (!variante.seVende()) {
-      throw new VarianteNoEncontradaException(varianteId);
-    }
-    return variante;
+    // Una prenda que el proveedor agotó no se vende, aunque el libro tenga saldo (ADR-0084). La
+    // regla vive en ProductoVendible porque el reintento de pago la necesita igual.
+    return ProductoVendible.exigirVariante(producto, varianteId);
   }
 
   private Duration vigenciaReserva(MetodoPago metodoPago) {

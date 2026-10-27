@@ -10,7 +10,6 @@ import co.tecnosport.api.domain.envio.Envio;
 import co.tecnosport.api.domain.envio.GuiaEnvio;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
 import co.tecnosport.api.domain.pedido.Pedido;
-import co.tecnosport.api.domain.pedido.TipoEntrega;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
@@ -64,12 +63,8 @@ public final class DespacharPedido {
         repositorioPedidos
             .buscarPorIdParaModificar(comando.pedidoId())
             .orElseThrow(() -> new PedidoNoEncontradoException(comando.pedidoId()));
-    // La recogida no lleva guía ni transportadora: se marca lista para recoger (ADR-0094). Antes
-    // pasaba por aquí con una guía inventada y el comprador recibía el correo de "despachado".
-    if (pedido.tipoEntrega() == TipoEntrega.RETIRO_EN_PUNTO) {
-      throw new EntregaNoAplicaException(
-          pedido.id(), "se recoge en el punto y no se despacha con transportadora");
-    }
+    // Una recogida no se despacha (ADR-0094): lo rechaza `Pedido.transicionar`, antes de que
+    // exista el envío.
     Instant ahora = reloj.ahora();
     pedido.transicionar(
         EstadoPedido.DESPACHADO,

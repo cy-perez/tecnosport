@@ -142,16 +142,21 @@ public final class MetodosDePagoDisponibles {
    * si lo elige (ADR-0095): el subtotal publicado con pasarela, el de contado sin ella, y el
    * descuento que eso supone. Ordenados por nombre, que es el orden en que el checkout los pinta.
    *
-   * <p>Sin flete: aquí solo se cotiza el envío con recaudo, y el flete de los demás medios lo
-   * cotiza el checkout aparte. El flete se cobra igual con cualquier medio (decisión 7), así que el
-   * subtotal basta para comparar.
+   * <p><b>Y con el flete cuando el medio lo cambia.</b> Hasta el 27/10/2026 esto decía que el flete
+   * se cobra igual con cualquier medio, y no era cierto: contraentrega se cotiza con recaudo y el
+   * pedido congela esa tarifa —otra transportadora, otro valor declarado—, mientras la pantalla de
+   * confirmar sumaba la que se cotizó sin recaudo. Ahora contraentrega lleva aquí la tarifa con
+   * recaudo que ya se cotizó para decidir si se ofrece, la misma pregunta que {@code CrearPedido}
+   * repetirá al congelarla. Un retiro en punto lleva cero. Los demás medios van sin flete: se cobra
+   * el de la cotización sin recaudo que el checkout ya pidió, y cotizarlo otra vez aquí sería una
+   * llamada más al proveedor en cada carga.
    */
   public List<MedioDePagoConPrecio> conPrecios(MetodosDePagoDisponiblesComando comando) {
     Objects.requireNonNull(comando, "El comando no puede ser nulo.");
     CarritoPerezoso carrito = new CarritoPerezoso(comando.lineas());
-    Set<MetodoPago> disponibles = disponibles(comando, carrito);
+    Disponibilidad disponibilidad = disponibilidad(comando, carrito);
     DatosCarrito datos = carrito.datos();
-    return disponibles.stream()
+    return disponibilidad.metodos().stream()
         .sorted(Comparator.comparing(Enum::name))
         .map(
             metodo -> {
@@ -160,12 +165,30 @@ public final class MetodosDePagoDisponibles {
               return new MedioDePagoConPrecio(
                   metodo,
                   subtotal,
-                  Dinero.deCop(datos.subtotalPublicado().valor().subtract(subtotal.valor())));
+                  Dinero.deCop(datos.subtotalPublicado().valor().subtract(subtotal.valor())),
+                  fleteDe(metodo, comando, disponibilidad));
             })
         .toList();
   }
 
+  /** El flete que se cobra con ese medio, si no es el de la cotización sin recaudo; ver arriba. */
+  private static Dinero fleteDe(
+      MetodoPago metodo, MetodosDePagoDisponiblesComando comando, Disponibilidad disponibilidad) {
+    if (comando.tipoEntrega() == TipoEntrega.RETIRO_EN_PUNTO) {
+      return Dinero.deCop(0);
+    }
+    if (metodo == MetodoPago.CONTRAENTREGA) {
+      return disponibilidad.tarifaContraentrega().map(TarifaEnvio::costo).orElse(null);
+    }
+    return null;
+  }
+
   private Set<MetodoPago> disponibles(
+      MetodosDePagoDisponiblesComando comando, CarritoPerezoso carrito) {
+    return disponibilidad(comando, carrito).metodos();
+  }
+
+  private Disponibilidad disponibilidad(
       MetodosDePagoDisponiblesComando comando, CarritoPerezoso carrito) {
     Set<MetodoPago> disponibles = habilitados();
     // Perezoso y memorizado, no resuelto de entrada. Las dos cosas importan: resolverlo hace un
@@ -174,7 +197,8 @@ public final class MetodosDePagoDisponibles {
     // calcularlo siempre se las cobraría también a un retiro en punto sin contraentrega, que no
     // lo mira nunca. Y no es solo coste: resolver el carrito puede lanzar
     // `VarianteNoEncontradaException`, así que adelantarlo cambiaría cuándo falla.
-    if (!contraentregaElegible(comando, carrito)) {
+    Optional<TarifaEnvio> tarifaContraentrega = tarifaDeContraentrega(comando, carrito);
+    if (tarifaContraentrega.isEmpty()) {
       disponibles.remove(MetodoPago.CONTRAENTREGA);
     }
     // El pago en el punto es de quien viene al punto (ADR-0094). Que la recogida aplique a este
@@ -185,8 +209,14 @@ public final class MetodosDePagoDisponibles {
     if (disponibles.contains(MetodoPago.SISTECREDITO) && !alcanzaElMinimoDeSistecredito(carrito)) {
       disponibles.remove(MetodoPago.SISTECREDITO);
     }
-    return disponibles;
+    return new Disponibilidad(disponibles, tarifaContraentrega);
   }
+
+  /**
+   * Los medios que se ofrecen y, si contraentrega es uno, la tarifa con recaudo que la sostiene.
+   */
+  private record Disponibilidad(
+      Set<MetodoPago> metodos, Optional<TarifaEnvio> tarifaContraentrega) {}
 
   /**
    * Se compara contra <b>la mercancía sola</b>, sin flete, y es una decisión conservadora tomada a
@@ -222,15 +252,16 @@ public final class MetodosDePagoDisponibles {
     }
   }
 
-  private boolean contraentregaElegible(
+  /** La tarifa con recaudo si contraentrega se le ofrece a este pedido; vacío si no. */
+  private Optional<TarifaEnvio> tarifaDeContraentrega(
       MetodosDePagoDisponiblesComando comando, CarritoPerezoso carrito) {
     if (comando.tipoEntrega() != TipoEntrega.ENVIO_A_DOMICILIO || comando.direccion() == null) {
-      return false;
+      return Optional.empty();
     }
     Optional<TarifaEnvio> conRecaudo =
         tarifaCotizadaConRecaudo(comando).filter(TarifaEnvio::admiteContraentrega);
     if (conRecaudo.isEmpty()) {
-      return false;
+      return Optional.empty();
     }
     DatosCarrito datos = carrito.datos();
     // Al precio de contado: contraentrega no pasa por pasarela y lleva el descuento (ADR-0095), así
@@ -238,7 +269,7 @@ public final class MetodosDePagoDisponibles {
     Dinero aRecaudar =
         Dinero.deCop(datos.subtotalContado().valor().add(conRecaudo.get().costo().valor()));
     if (!elRecaudoCuadra(comando.lineas(), aRecaudar)) {
-      return false;
+      return Optional.empty();
     }
     // Por correo normalizado y por teléfono, como promete docs/11: "si un correo o un teléfono ya
     // rechazó pedidos en la entrega". Se comparaba el correo tal cual llegaba, y bastaba escribirlo
@@ -248,15 +279,18 @@ public final class MetodosDePagoDisponibles {
         repositorioPedidos.tieneRechazoEnEntrega(correo)
             || (comando.telefono() != null
                 && repositorioPedidos.tieneRechazoEnEntregaPorTelefono(comando.telefono()));
-    return PoliticaContraentrega.disponible(
-        criteriosContraentrega,
-        // Lo que el transportador recauda es el total, flete incluido (adr/0023), así que el tope
-        // se compara contra eso y no contra la mercancía sola: el límite existe por cuánto
-        // efectivo carga el mensajero, y el flete también lo carga.
-        aRecaudar,
-        datos.categorias(),
-        true,
-        rechazoPrevio);
+    boolean disponible =
+        PoliticaContraentrega.disponible(
+            criteriosContraentrega,
+            // Lo que el transportador recauda es el total, flete incluido (adr/0023), así que el
+            // tope
+            // se compara contra eso y no contra la mercancía sola: el límite existe por cuánto
+            // efectivo carga el mensajero, y el flete también lo carga.
+            aRecaudar,
+            datos.categorias(),
+            true,
+            rechazoPrevio);
+    return disponible ? conRecaudo : Optional.empty();
   }
 
   /**

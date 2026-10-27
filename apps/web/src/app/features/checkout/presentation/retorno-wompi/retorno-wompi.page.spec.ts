@@ -145,6 +145,31 @@ describe('RetornoWompiPage', () => {
     navegar.mockRestore();
   });
 
+  /**
+   * En el constructor corría también en el SSR: el servidor mandaba el PATCH y navegaba, y al
+   * hidratar el navegador lo repetía. `ngServerMode` es lo que Angular mira para saber que está en
+   * el servidor, y con él `afterNextRender` no corre.
+   */
+  it('en el servidor no registra nada ni navega: eso le toca al navegador', async () => {
+    const pagos = new RepositorioPagosFalso();
+    const navegar = vi.spyOn(Router.prototype, 'navigate');
+    const global = globalThis as { ngServerMode?: boolean };
+    global.ngServerMode = true;
+    try {
+      await renderConQuery(
+        { id: '01-1531231271-19365', referencia: 'TS-2026-000001-1', pedidoId: 'pedido-1' },
+        pagos,
+      );
+      await new Promise((resolver) => setTimeout(resolver, 0));
+    } finally {
+      delete global.ngServerMode;
+    }
+
+    expect(pagos.llamadas).toEqual([]);
+    expect(navegar).not.toHaveBeenCalled();
+    navegar.mockRestore();
+  });
+
   it('si registrar el id falla, igual navega al estado del pedido (best-effort)', async () => {
     const pagos = new RepositorioPagosFalso();
     pagos.fallar = true;

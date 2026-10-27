@@ -273,6 +273,43 @@ export const ESTADOS_QUE_ADMITEN_CANCELACION = [
  * estaba cancelado o fallido cuando entró. `monto` es lo que se devuelve, entero; lo decide el
  * servidor y el panel solo lo muestra.
  */
+export interface PagoSinTransaccionAdmin {
+  readonly pagoId: string;
+  /** Lo que se busca en el portal de Wompi. */
+  readonly referencia: string;
+  readonly monto: Dinero;
+  readonly creadoEn: string;
+  readonly pedidoId: string;
+  readonly numeroPedido: string;
+  readonly estadoPedido: EstadoPedido;
+  readonly correo: string;
+}
+
+/**
+ * Los pagos de Wompi pendientes y sin id de transacción que nadie concilia, con el umbral que el
+ * servidor aplicó para elegirlos: el texto dice "más de N horas" con ese número, no con uno fijo.
+ */
+export interface AlertaPagosSinTransaccion {
+  readonly umbralHoras: number;
+  readonly pagos: readonly PagoSinTransaccionAdmin[];
+}
+
+/** Un pedido que lleva más del umbral en preparación; `desde` es su llegada a ese estado. */
+export interface PedidoDetenidoAdmin {
+  readonly pedidoId: string;
+  readonly numeroPedido: string;
+  readonly correo: string;
+  readonly tipoEntrega: TipoEntrega;
+  readonly metodoPago: MetodoPago;
+  readonly desde: string;
+}
+
+/** Los pedidos detenidos en preparación, con el umbral en días que aplicó el servidor. */
+export interface AlertaPedidosDetenidos {
+  readonly umbralDias: number;
+  readonly pedidos: readonly PedidoDetenidoAdmin[];
+}
+
 export interface PagoSinPedidoAdmin {
   readonly pagoId: string;
   readonly referencia: string;

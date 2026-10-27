@@ -63,6 +63,17 @@ necesita algo de infraestructura, falta un caso de uso.
 Esto lo verifica ArchUnit, no la buena voluntad. La prueba vive en
 `bootstrap/src/test/java/.../ArquitecturaTest.java` y falla el build.
 
+`bootstrap` **elige** el adaptador —por perfil o por variable de entorno— pero
+no lo **implementa**: ninguna clase suya implementa un puerto de `application`
+(`bootstrapNoImplementaPuertos`). Hasta el 27 de octubre de 2026 cuatro lo
+hacían —`EnTransaccionPropiaSpring`, `SistecreditoApagado`,
+`EjecutorDeIngestasEnHilo` y `MarcapasosConTemporizador`— y se movieron a los
+paquetes equivalentes de `infrastructure` sin dependencias nuevas: Spring,
+`spring-tx` y SLF4J ya venían con `spring-boot-starter-data-jpa`.
+`SistecreditoApagado` es un objeto nulo que se elige con
+`tecnosport.sistecredito.habilitado`, y la elección se queda en
+`ConfiguracionSistecredito`; la clase es un adaptador como los demás.
+
 ### Puertos declarados en `application`
 
 | Puerto | Adaptador de producción | Adaptador de prueba |

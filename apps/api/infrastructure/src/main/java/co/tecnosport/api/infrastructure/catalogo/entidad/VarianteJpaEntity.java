@@ -72,6 +72,14 @@ public class VarianteJpaEntity {
   private boolean agotadaPorProveedor;
 
   /**
+   * Agotada por el proveedor porque su costo le quitó el margen mínimo (V125): la que vuelve a la
+   * venta cuando el margen vuelve, y no una prenda agotada por su SKU. Fuera del constructor, como
+   * {@link #agotadaPorProveedor}, y por lo mismo.
+   */
+  @Column(name = "agotada_por_margen", nullable = false)
+  private boolean agotadaPorMargen;
+
+  /**
    * Su color de tecnología no está confirmado con el proveedor (V117): no se compra sin enlace de
    * compra. Fuera del constructor, como {@link #agotadaPorProveedor}, y por lo mismo.
    */
@@ -178,6 +186,16 @@ public class VarianteJpaEntity {
   /** Esta misma entidad, agotada por el proveedor o de nuevo a la venta. */
   public VarianteJpaEntity conAgotadaPorProveedor(boolean agotada) {
     this.agotadaPorProveedor = agotada;
+    return this;
+  }
+
+  public boolean isAgotadaPorMargen() {
+    return agotadaPorMargen;
+  }
+
+  /** Esta misma entidad, con la marca de agotada por el margen puesta o quitada. */
+  public VarianteJpaEntity conAgotadaPorMargen(boolean porMargen) {
+    this.agotadaPorMargen = porMargen;
     return this;
   }
 

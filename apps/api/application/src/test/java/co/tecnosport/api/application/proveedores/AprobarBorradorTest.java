@@ -50,6 +50,7 @@ import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
 import co.tecnosport.api.domain.proveedores.OrigenDelCostoDeSet;
 import co.tecnosport.api.domain.proveedores.PHash;
+import co.tecnosport.api.domain.proveedores.PrecioSinMargenMinimoException;
 import co.tecnosport.api.domain.proveedores.PrendaAcompanante;
 import co.tecnosport.api.domain.proveedores.ProductoExtraido;
 import co.tecnosport.api.domain.proveedores.Proveedor;
@@ -188,6 +189,34 @@ class AprobarBorradorTest {
         "Bolso de dama mediano",
         "Medium ladies bag",
         fotos);
+  }
+
+  /**
+   * Revisión adversarial del 27 de octubre de 2026: se aprobaba con cualquier precio mayor que
+   * cero. El de contado tiene que dejar el 10 % sobre el costo (regla 18), y el rechazo llega antes
+   * de subir una sola foto.
+   */
+  @Test
+  void noSeApruebaConMenosDelMargenMinimoSobreElCosto() {
+    // Costo 53.000: 58.000 le gana un 9,4 %.
+    AprobarBorradorComando sinMargen =
+        new AprobarBorradorComando(
+            borrador.id(),
+            "Bolso de dama mediano",
+            null,
+            ApoyoDeCatalogoParaIngesta.BOLSOS_DE_MANO.id(),
+            ApoyoDeCatalogoParaIngesta.MARCA.id(),
+            58000,
+            null,
+            1,
+            "Bolso de dama mediano",
+            "Medium ladies bag",
+            List.of(new FotoAprobada(foto1.id(), "Negro", "#000000")));
+
+    assertThrows(PrecioSinMargenMinimoException.class, () -> caso().ejecutar(sinMargen));
+    assertTrue(productos.porId.isEmpty());
+    assertTrue(almacenPublico.objetos.isEmpty());
+    assertEquals(EstadoBorrador.EN_REVISION, borrador.estado());
   }
 
   /**
@@ -1009,7 +1038,7 @@ class AprobarBorradorTest {
         null,
         ApoyoDeCatalogoParaIngesta.BOLSOS_DE_MANO.id(),
         ApoyoDeCatalogoParaIngesta.MARCA.id(),
-        58000,
+        60000,
         tallas,
         1,
         "Blusa",

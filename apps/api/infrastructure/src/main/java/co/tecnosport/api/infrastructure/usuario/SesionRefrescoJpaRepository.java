@@ -8,7 +8,8 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface SesionRefrescoJpaRepository extends JpaRepository<SesionRefrescoJpaEntity, UUID> {
+public interface SesionRefrescoJpaRepository
+    extends JpaRepository<SesionRefrescoJpaEntity, String> {
 
   /**
    * Revoca de una sola sentencia toda una familia (docs/08-seguridad-legal.md: detección de

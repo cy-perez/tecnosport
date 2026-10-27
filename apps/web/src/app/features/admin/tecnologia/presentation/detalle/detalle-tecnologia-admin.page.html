@@ -50,8 +50,18 @@
       </p>
     }
 
-    <!-- Las fotos son del modelo nuevo: uno de configuraciones nuevas usa las del producto. -->
-    @if (!completaExistente()) {
+    <!-- Las fotos son del modelo nuevo: uno de configuraciones nuevas usa las del producto. Al
+         aprobarse, los originales privados se borran y las fotos viven en el producto. -->
+    @if (borrador.estado === 'APROBADO' && borrador.productoId) {
+      <p class="mb-24 text-ts-texto-suave">
+        {{ 'admin.tecnologia.detalle.fotosEnElProducto' | transloco }}
+        <a
+          class="anillo-foco text-ts-primario"
+          [routerLink]="['/', idioma(), 'admin', 'productos', borrador.productoId, 'editar']"
+          >{{ 'admin.tecnologia.detalle.verProducto' | transloco }}</a
+        >
+      </p>
+    } @else if (!completaExistente()) {
       <ts-fotos-borrador-tecnologia [borrador]="borrador" [editable]="editable()" />
     }
 

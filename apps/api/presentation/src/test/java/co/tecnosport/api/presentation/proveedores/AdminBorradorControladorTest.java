@@ -784,6 +784,11 @@ class AdminBorradorControladorTest {
         public void borrar(String objectKey) {
           objetosBorrados.claves.add(objectKey);
         }
+
+        @Override
+        public int borrarPorPrefijo(String prefijo) {
+          throw new UnsupportedOperationException();
+        }
       };
     }
 
@@ -1029,6 +1034,11 @@ class AdminBorradorControladorTest {
     @Override
     public void actualizar(PublicacionProveedor publicacion) {
       porId.put(publicacion.id(), publicacion);
+    }
+
+    @Override
+    public Optional<PublicacionProveedor> buscarPorIdParaActualizar(UUID id) {
+      return buscarPorId(id);
     }
 
     @Override

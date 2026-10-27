@@ -102,11 +102,58 @@ class FiltroLimiteIntentosTest {
     assertThat(limitador.ultimaClave()).isEqualTo(clavePrimera).endsWith("2800:e2:1f00:12::/64");
   }
 
+  /** Con grupo, dos referencias distintas desde la misma IP gastan el mismo presupuesto. */
+  @Test
+  void conGrupoDosRutasDistintasCompartenElPresupuesto() throws Exception {
+    FiltroLimiteIntentos agrupado =
+        new FiltroLimiteIntentos(
+            limitador, RELOJ_FIJO, 10, Duration.ofMinutes(15), "pagos-intentos");
+    MockHttpServletRequest una =
+        new MockHttpServletRequest("PATCH", "/api/v1/pagos/intentos/TS-2026-000001-1");
+    una.setRemoteAddr("203.0.113.5");
+    MockHttpServletRequest otra =
+        new MockHttpServletRequest("PATCH", "/api/v1/pagos/intentos/TS-2026-000002-1");
+    otra.setRemoteAddr("203.0.113.5");
+
+    agrupado.doFilter(una, new MockHttpServletResponse(), (req, res) -> {});
+    String primera = limitador.ultimaClave();
+    agrupado.doFilter(otra, new MockHttpServletResponse(), (req, res) -> {});
+
+    assertThat(limitador.ultimaClave()).isEqualTo(primera).doesNotContain("TS-2026");
+  }
+
   @Test
   void caeAGetRemoteAddrSinXForwardedFor() throws Exception {
     filtro.doFilter(
         peticion("198.51.100.7", null), new MockHttpServletResponse(), (req, res) -> {});
 
     assertThat(limitador.ultimaClave()).contains("198.51.100.7");
+  }
+
+  /**
+   * La URI cruda no se decodifica: con ella en la llave, escapar un carácter estrenaba presupuesto
+   * mientras el contenedor seguía llevando la petición al mismo endpoint.
+   */
+  @Test
+  void laMismaRutaConUnCaracterEscapadoCompartePresupuesto() throws Exception {
+    String claveLimpia = claveDe("/api/v1/auth/sesion");
+
+    assertThat(claveDe("/api/v1/auth/%73esion")).isEqualTo(claveLimpia);
+    assertThat(claveDe("/api/v1/auth/sesion;jsessionid=x")).isEqualTo(claveLimpia);
+    assertThat(claveDe("/api/v1//auth/./sesion")).isEqualTo(claveLimpia);
+    assertThat(claveLimpia).isEqualTo("ip:/api/v1/auth/sesion:203.0.113.5");
+  }
+
+  /** El diseño quiere un presupuesto por endpoint: el registro no gasta el del inicio de sesión. */
+  @Test
+  void cadaEndpointConservaSuPropioPresupuesto() throws Exception {
+    assertThat(claveDe("/api/v1/auth/registro")).isNotEqualTo(claveDe("/api/v1/auth/sesion"));
+  }
+
+  private String claveDe(String uri) throws Exception {
+    MockHttpServletRequest request = new MockHttpServletRequest("POST", uri);
+    request.setRemoteAddr("203.0.113.5");
+    filtro.doFilter(request, new MockHttpServletResponse(), (req, res) -> {});
+    return limitador.ultimaClave();
   }
 }

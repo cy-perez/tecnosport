@@ -13,6 +13,7 @@
     "transicion_de_estado_invalida": "Ese paso no se puede dar desde el estado actual. Recarga y vuelve a mirar.",
     "metodo_de_pago_no_es_transferencia_manual": "Este pedido no se pagó por transferencia, así que no se concilia a mano.",
     "contraentrega_no_disponible": "La contraentrega no está disponible para este pedido.",
+    "contraentrega_no_verificable": "Este pedido no espera verificación: solo se verifica uno que se paga al recibir y sigue confirmado sin pago. Recarga y vuelve a mirar.",
     "excepcion_de_dominio": "La operación no cumple una regla del negocio y el servidor no dice cuál. Vuelve a mirar los datos.",
     "sesion_de_refresco_invalida": "Tu sesión expiró. Vuelve a iniciar sesión: reintentar no va a servir.",
     "credenciales_invalidas": "Correo o clave incorrectos.",
@@ -31,6 +32,7 @@
     "proveedor_de_listas": "Este proveedor es de tecnología: su catálogo entra por la lista de precios, no por la exportación del chat.",
     "proveedor_sin_listas": "Este proveedor no es de tecnología: su catálogo entra por la exportación del chat, no por una lista de precios.",
     "lista_de_tecnologia_desactualizada": "Esa lista es más vieja que la última que entró: impórtala solo si es de esa fecha o posterior.",
+    "precio_sin_margen_minimo": "El precio de contado deja menos del 10 % de margen sobre el costo del proveedor: súbelo antes de aprobar.",
     "lista_de_tecnologia_ya_importada": "Esa lista ya entró con este mismo contenido: repetirla volvería a reponer lo vendido.",
     "proveedor_con_productos": "El proveedor tiene productos en el catálogo. Desactívalo en vez de eliminarlo.",
     "proveedor_con_ingesta_en_curso": "El proveedor tiene una exportación en proceso. Espera a que termine e inténtalo de nuevo.",
@@ -71,7 +73,8 @@
     "talla_del_proveedor_desconocida": "El proveedor nombra estas tallas corridas y una de ellas no tiene con qué nombre pedírsela, como la XXXL una talla más arriba. Quítala de las tallas antes de aprobar.",
     "ajustes_de_talla_distintos": "El proveedor nombra distinto las tallas de los dos, como el de dama y el de caballero de un mismo anuncio: unidos, no se sabría qué talla pedirle.",
     "entrega_no_aplica": "Ese no es el camino de entrega de este pedido: una recogida se marca lista y se entrega en el punto, y un envío a domicilio se despacha con guía.",
-    "numero_de_pedido_no_coincide": "Ese número no es el de este pedido. Pídele a quien vino que te muestre el número del correo o de la pantalla de su pedido. No lo entregues."
+    "numero_de_pedido_no_coincide": "Ese número no es el de este pedido. Pídele a quien vino que te muestre el número del correo o de la pantalla de su pedido. No lo entregues.",
+    "pago_con_transaccion_o_resuelto": "El pago ya tiene su transacción o ya se resolvió: recarga la página."
   },
   "iniciarSesion": {
     "titulo": "Panel administrativo",
@@ -82,6 +85,7 @@
     "error": "Correo o clave incorrectos.",
     "no_es_admin": "Esta cuenta no tiene acceso al panel.",
     "error_demasiados_intentos": "Demasiados intentos seguidos. Espera unos minutos y vuelve a probar: tu clave no es el problema.",
+    "cierre_sin_confirmar": "Saliste en esta pestaña, pero el servidor no confirmó el cierre y la sesión podría reabrirse sola en este navegador. Si el equipo es compartido, entra otra vez y cierra sesión cuando tengas conexión.",
     "errores": {
       "correo_requerido": "Escribe el correo.",
       "correo_invalido": "Ese correo no tiene una forma válida.",
@@ -102,6 +106,10 @@
       "enlace": "Ver y medir"
     },
     "ir_a_marcas": "Marcas",
+    "sinMargen": {
+      "aviso": "{{total}} variante(s) dejaron de venderse porque el costo nuevo del proveedor les deja menos del 10 % de margen sobre el precio de contado. Sube el contado en la ficha del producto, o vuelven solas cuando el costo baje.",
+      "skus": "({{skus}})"
+    },
     "existencias": {
       "aviso": "{{total}} variante(s) no tienen una sola unidad en el libro de inventario, {{publicados}} de ellas en productos publicados. Quien las vea en la tienda las ve agotadas.",
       "enlace": "Ver las existencias y contar"
@@ -219,6 +227,23 @@
       "pagado_sin_inventario": "El pago entró cuando la reserva ya había vencido y no había existencia. Cuando repongas, confírmalo para prepararlo; si no va a haber, cancélalo con reintegro.",
       "confirmar_inventario": "Confirmar inventario y preparar",
       "guia_en_plataforma": "La guía se crea a mano en Skydropx (Cotizar y crear) con los paquetes de abajo, y se registra aquí con su número."
+    },
+    "alertas": {
+      "pagos_sin_transaccion": {
+        "titulo": "Pagos de Wompi sin transacción ({{cuantos}})",
+        "ayuda": "Intentos de pago con Wompi que llevan más de {{horas}} horas pendientes sin id de transacción: no llegó el aviso de Wompi y el comprador no volvió al sitio, así que la conciliación no puede consultarlos. Casi siempre es un pago abandonado, pero puede ser uno cobrado cuyo aviso se perdió. Búscalos por su referencia en el portal de Wompi y márcalos como revisados.",
+        "resumen": "Referencia {{referencia}} · pedido {{numero}} · {{correo}} · creado {{fecha}} ·",
+        "revisado": "Ya lo revisé en Wompi",
+        "revisado_de": "Marcar como revisado en Wompi el pago {{referencia}}"
+      },
+      "en_preparacion": {
+        "titulo": "Pedidos detenidos en preparación ({{cuantos}})",
+        "ayuda": "Pedidos que llevan más de {{dias}} días en preparación. Los de recogida y los de contraentrega tienen su unidad apartada sin vencimiento: si nadie los mueve, no vuelve a la venta. Despáchalos, márcalos listos para recoger o cancélalos desde la lista de abajo.",
+        "resumen": "Pedido {{numero}} · {{correo}} · {{entrega}} · en preparación desde {{fecha}}",
+        "entrega_recogida": "recogida en el punto",
+        "entrega_domicilio": "envío a domicilio",
+        "entrega_contraentrega": "contraentrega"
+      }
     },
     "pagos_sin_pedido": {
       "titulo": "Pagos por devolver ({{cuantos}})",
@@ -1279,6 +1304,7 @@
       "errorCarga": "No se pudo cargar el modelo. Recarga la página.",
       "de": "De {{proveedor}} · modelo {{modelo}}",
       "completaProducto": "Este modelo ya se vende: lo que apruebes aquí se añade a su producto.",
+      "fotosEnElProducto": "Aprobado: sus fotos ya están en el producto publicado.",
       "verProducto": "Ver el producto",
       "motivoRechazo": "Rechazado: {{motivo}}",
       "ficha": "Ficha que preparó la skill",

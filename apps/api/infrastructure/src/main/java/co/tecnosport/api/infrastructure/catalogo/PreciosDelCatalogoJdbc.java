@@ -44,13 +44,18 @@ public class PreciosDelCatalogoJdbc implements PreciosDelCatalogo {
    * Condicional en el mismo {@code update}: Postgres toma el candado de la fila y vuelve a evaluar
    * el {@code where} con lo que dejó la transacción que la tenía, así que un cambio de precio
    * concurrente desde la ficha no se pisa, aunque llegue un instante antes.
+   *
+   * <p>Y el {@code where} exige también lo que {@code Variante.validarPrecios} exige, porque este
+   * SQL no pasa por el dominio (27 de octubre de 2026): un publicado menor que el contado no se
+   * graba, y quien llama lo ve en el {@code false}.
    */
   @Override
   public boolean actualizarPublicado(
       UUID varianteId, Dinero contado, Dinero publicadoActual, Dinero publicadoNuevo) {
     return jdbc.update(
             "update variante set precio = :nuevo "
-                + "where id = :id and precio_contado = :contado and precio = :actual",
+                + "where id = :id and precio_contado = :contado and precio = :actual"
+                + " and :nuevo >= precio_contado",
             new MapSqlParameterSource()
                 .addValue("nuevo", publicadoNuevo.valor())
                 .addValue("id", varianteId)

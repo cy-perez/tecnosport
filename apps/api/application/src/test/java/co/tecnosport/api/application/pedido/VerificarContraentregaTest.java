@@ -14,7 +14,6 @@ import co.tecnosport.api.domain.pedido.MetodoPago;
 import co.tecnosport.api.domain.pedido.NumeroPedido;
 import co.tecnosport.api.domain.pedido.Pedido;
 import co.tecnosport.api.domain.pedido.TipoEntrega;
-import co.tecnosport.api.domain.pedido.TransicionDeEstadoInvalidaException;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -93,10 +92,26 @@ class VerificarContraentregaTest {
     Pedido pedido = pedidoConMetodo(MetodoPago.WOMPI);
 
     assertThrows(
-        TransicionDeEstadoInvalidaException.class,
+        ContraentregaNoVerificableException.class,
         () ->
             caso.ejecutar(
                 new VerificarContraentregaComando(pedido.id(), "admin:test", "verificado")));
+  }
+
+  @Test
+  void unPedidoPagadoNoPasaAPreparacionPorLaVerificacion() {
+    // El grafo admite PAGADO → EN_PREPARACION: sin la guarda, verificar saltaba la confirmación
+    // del inventario que hace ConfirmarInventarioDePedidoPagado.
+    VerificarContraentrega caso = crear();
+    Pedido pedido = pedidoConMetodo(MetodoPago.WOMPI);
+    pedido.transicionar(EstadoPedido.PAGADO, "wompi", "pago aprobado", AHORA);
+
+    assertThrows(
+        ContraentregaNoVerificableException.class,
+        () ->
+            caso.ejecutar(
+                new VerificarContraentregaComando(pedido.id(), "admin:test", "verificado")));
+    assertEquals(EstadoPedido.PAGADO, pedido.estado());
   }
 
   @Test

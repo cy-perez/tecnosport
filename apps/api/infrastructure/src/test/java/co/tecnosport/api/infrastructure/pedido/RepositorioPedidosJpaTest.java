@@ -850,4 +850,38 @@ class RepositorioPedidosJpaTest {
                 EstadoPedido.LISTO_PARA_RECOGER, MetodoPago.WOMPI, Instant.now(), 10))
         .doesNotContain(pedido.id());
   }
+
+  /**
+   * La alerta de pedidos detenidos en preparación: como la de arriba, sin filtrar por método, y
+   * contando desde la llegada al estado según el historial.
+   */
+  @Test
+  void buscarIdsEnEstadoDesdeAntesDeSinMetodoCuentaDesdeLaLlegada() {
+    Instant creado = Instant.now().minusSeconds(10 * 24 * 3600);
+    Instant enPreparacion = Instant.now().minusSeconds(4 * 24 * 3600);
+    Pedido pedido =
+        Pedido.crear(
+            NUMERO,
+            null,
+            new CorreoElectronico("cliente@tecnosport.co"),
+            List.of(linea()),
+            TipoEntrega.RETIRO_EN_PUNTO,
+            null,
+            MetodoPago.PAGO_EN_PUNTO,
+            "cliente@tecnosport.co",
+            creado);
+    pedido.transicionar(EstadoPedido.EN_PREPARACION, "admin:1", "verificado", enPreparacion);
+    repositorio.guardar(pedido);
+
+    assertThat(
+            repositorio.buscarIdsEnEstadoDesdeAntesDe(
+                EstadoPedido.EN_PREPARACION, Instant.now().minusSeconds(3 * 24 * 3600), 10))
+        .contains(pedido.id());
+    assertThat(
+            repositorio.buscarIdsEnEstadoDesdeAntesDe(
+                EstadoPedido.EN_PREPARACION, Instant.now().minusSeconds(5 * 24 * 3600), 10))
+        .doesNotContain(pedido.id());
+    assertThat(repositorio.buscarIdsEnEstadoDesdeAntesDe(EstadoPedido.PAGADO, Instant.now(), 10))
+        .doesNotContain(pedido.id());
+  }
 }

@@ -165,7 +165,9 @@
           <p
             class="m-0 basis-full text-sm"
             [class.text-ts-exito]="resultadoAgregar()?.tipo === 'agregado'"
-            [class.text-ts-error]="resultadoAgregar()?.tipo === 'error'"
+            [class.text-ts-error]="
+              resultadoAgregar()?.tipo === 'error' || resultadoAgregar()?.tipo === 'maximo'
+            "
             role="status"
           >
             @let resultado = resultadoAgregar();
@@ -173,6 +175,8 @@
               {{ 'carrito.agregado' | transloco: { nombre: resultado.nombre } }}
             } @else if (resultado?.tipo === 'error') {
               {{ 'carrito.error_agregar' | transloco }}
+            } @else if (resultado?.tipo === 'maximo') {
+              {{ 'carrito.error_agregar_maximo' | transloco }}
             }
           </p>
         </div>

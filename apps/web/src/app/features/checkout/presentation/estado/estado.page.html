@@ -197,10 +197,46 @@
     </p>
 
     @if (puedeReintentar()) {
+      <!-- Sistecrédito pide el documento antes de reabrir el pedido, y aquí mismo: la pantalla de
+           método de pago no sirve tras volver de la pasarela, porque sin datos de entrega manda al
+           resumen. El primer clic abre el formulario y el botón lo declara con `expandido`. -->
+      @if (pideDocumento()) {
+        <fieldset
+          id="reintento-documento"
+          class="mt-0 mb-24 border-0 p-0"
+          [formGroup]="formularioDocumento"
+        >
+          <legend class="mb-8 p-0 font-display text-lg">
+            {{ 'checkout.metodoPago.documento.titulo' | transloco }}
+          </legend>
+          <p class="mt-0 mb-16 text-sm text-ts-texto-suave">
+            {{ 'checkout.metodoPago.documento.explicacion' | transloco }}
+          </p>
+          <div class="grid grid-cols-1 gap-16 desde-tableta:grid-cols-2">
+            <ts-select
+              idCampo="reintento-tipo-documento"
+              [obligatorio]="true"
+              formControlName="tipoDocumento"
+              [label]="'checkout.metodoPago.documento.tipo.label' | transloco"
+              [opciones]="opcionesTipoDocumento()"
+            />
+            <ts-campo
+              idCampo="reintento-numero-documento"
+              [obligatorio]="true"
+              formControlName="documento"
+              tipo="text"
+              [label]="'checkout.metodoPago.documento.numero' | transloco"
+              [error]="errorDocumento()"
+            />
+          </div>
+        </fieldset>
+      }
       <ts-boton
         variante="primario"
         [cargando]="reintentando()"
         [etiquetaCargando]="'checkout.estado.reintentando' | transloco"
+        [expandido]="esSistecredito() ? pideDocumento() : null"
+        [controla]="esSistecredito() && pideDocumento() ? 'reintento-documento' : null"
         (click)="reintentar()"
       >
         {{ 'checkout.estado.reintentar' | transloco }}

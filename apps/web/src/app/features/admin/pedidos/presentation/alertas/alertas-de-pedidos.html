@@ -1,0 +1,81 @@
+@if (detenidos().length > 0) {
+  <section
+    class="mb-24 border border-ts-borde bg-ts-superficie p-16 rounded-md"
+    aria-labelledby="titulo-pedidos-detenidos"
+  >
+    <h2 id="titulo-pedidos-detenidos" class="mt-0 mb-8 text-base font-medio">
+      {{
+        'admin.pedidos.alertas.en_preparacion.titulo' | transloco: { cuantos: detenidos().length }
+      }}
+    </h2>
+    <p class="mt-0 mb-16 text-ts-texto-suave">
+      {{ 'admin.pedidos.alertas.en_preparacion.ayuda' | transloco: { dias: umbralDias() } }}
+    </p>
+    <ul class="m-0 list-none p-0">
+      @for (pedido of detenidos(); track pedido.pedidoId) {
+        <li class="mb-8">
+          {{
+            'admin.pedidos.alertas.en_preparacion.resumen'
+              | transloco
+                : {
+                    numero: pedido.numeroPedido,
+                    correo: pedido.correo,
+                    entrega: claveEntrega(pedido) | transloco,
+                    fecha: formatearFecha(pedido.desde),
+                  }
+          }}
+        </li>
+      }
+    </ul>
+  </section>
+}
+
+@if (pagos().length > 0) {
+  <section
+    class="mb-24 border border-ts-borde bg-ts-superficie p-16 rounded-md"
+    aria-labelledby="titulo-pagos-sin-transaccion"
+  >
+    <h2 id="titulo-pagos-sin-transaccion" class="mt-0 mb-8 text-base font-medio">
+      {{
+        'admin.pedidos.alertas.pagos_sin_transaccion.titulo'
+          | transloco: { cuantos: pagos().length }
+      }}
+    </h2>
+    <p class="mt-0 mb-16 text-ts-texto-suave">
+      {{
+        'admin.pedidos.alertas.pagos_sin_transaccion.ayuda' | transloco: { horas: umbralHoras() }
+      }}
+    </p>
+    <ul class="m-0 list-none p-0">
+      @for (pago of pagos(); track pago.pagoId) {
+        <li class="mb-16">
+          <p class="mt-0 mb-8">
+            {{
+              'admin.pedidos.alertas.pagos_sin_transaccion.resumen'
+                | transloco
+                  : {
+                      referencia: pago.referencia,
+                      numero: pago.numeroPedido,
+                      correo: pago.correo,
+                      fecha: formatearFecha(pago.creadoEn),
+                    }
+            }}
+            <ts-precio [valor]="pago.monto.valor" [moneda]="pago.monto.moneda" />
+          </p>
+          <ts-boton
+            variante="secundario"
+            [ocupado]="revisando(pago.pagoId)"
+            [etiquetaAccesible]="
+              'admin.pedidos.alertas.pagos_sin_transaccion.revisado_de'
+                | transloco: { referencia: pago.referencia }
+            "
+            (click)="marcarRevisado(pago)"
+          >
+            {{ 'admin.pedidos.alertas.pagos_sin_transaccion.revisado' | transloco }}
+          </ts-boton>
+        </li>
+      }
+    </ul>
+    <p role="status" class="m-0 text-ts-error">{{ error() ?? '' }}</p>
+  </section>
+}

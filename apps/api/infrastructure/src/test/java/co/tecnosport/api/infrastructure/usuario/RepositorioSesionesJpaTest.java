@@ -3,16 +3,20 @@ package co.tecnosport.api.infrastructure.usuario;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
+import co.tecnosport.api.domain.usuario.HuellaDeToken;
 import co.tecnosport.api.domain.usuario.Rol;
 import co.tecnosport.api.domain.usuario.SesionRefresco;
 import co.tecnosport.api.domain.usuario.Usuario;
+import jakarta.persistence.EntityManager;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -30,6 +34,8 @@ class RepositorioSesionesJpaTest {
 
   @Autowired private RepositorioSesionesJpa repositorio;
   @Autowired private RepositorioUsuariosJpa repositorioUsuarios;
+  @Autowired private EntityManager entityManager;
+  @Autowired private JdbcTemplate jdbc;
 
   private static final Duration VIGENCIA = Duration.ofDays(30);
 
@@ -128,5 +134,22 @@ class RepositorioSesionesJpaTest {
     assertThat(repositorio.buscarPorId(familiaA.id()).orElseThrow().revocadoEn()).isPresent();
     assertThat(repositorio.buscarPorId(familiaB.id()).orElseThrow().revocadoEn()).isPresent();
     assertThat(repositorio.buscarPorId(deOtroUsuario.id()).orElseThrow().revocadoEn()).isEmpty();
+  }
+
+  /** Una copia de la base no debe entregar sesiones listas para usar (HuellaDeToken, V140). */
+  @Test
+  void laBaseGuardaLaHuellaYNoElToken() {
+    UUID usuarioId = crearYGuardarUsuario();
+    SesionRefresco sesion =
+        SesionRefresco.crear(usuarioId, UUID.randomUUID(), Instant.now(), VIGENCIA);
+
+    repositorio.guardar(sesion);
+    entityManager.flush();
+
+    List<String> guardadas =
+        jdbc.queryForList(
+            "select huella from sesion_refresco where usuario_id = ?", String.class, usuarioId);
+    assertThat(guardadas).containsExactly(HuellaDeToken.de(sesion.id()));
+    assertThat(guardadas.get(0)).doesNotContain(sesion.id().toString());
   }
 }

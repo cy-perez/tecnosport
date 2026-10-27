@@ -14,6 +14,7 @@ import {
   resumenDeLista,
   huellaDeArchivo,
   mensajeDeListaCambiada,
+  mensajeDeOtraApi,
   mismasFotos,
   nombreDeLaQueEntro,
   seleccionParaBorradores,
@@ -48,7 +49,7 @@ test("el informe avisa lo que quedó sin margen y lo que ya estaba decidido", ()
   });
   assert.match(informe, /3 productos renovados, 7 variantes repuestas/);
   assert.match(informe, /ya rechazados\): JBL Go 4/);
-  assert.match(informe, /OJO, el costo alcanzó el precio de venta/);
+  assert.match(informe, /OJO, quedaron agotadas: el costo nuevo les deja menos del 10 %/);
   assert.match(informe, /- Samsung Galaxy A17 5G 8GB RAM 256GB 1 SIM · Negro/);
   assert.match(informe, /colores que el producto no tiene[\s\S]*· Azul/);
 });
@@ -101,9 +102,10 @@ test("el inventario entrega lo que espera borrador y lo dice", () => {
     fechaLista: "2026-10-10",
     modelos: [{ idModelo: "xiaomi-poco-f9-ultra-5g" }, { idModelo: "apple-airpods-pro-3" }],
   };
-  assert.deepEqual(porProponerDe(lista, resultado, "h"), {
+  assert.deepEqual(porProponerDe(lista, resultado, "h", "http://localhost:8080"), {
     fechaLista: "2026-10-10",
     huellaLista: "h",
+    api: "http://localhost:8080",
     modelos: ["xiaomi-poco-f9-ultra-5g", "apple-airpods-pro-3"],
     sinFicha: [],
     configuraciones: ["samsung-galaxy-a17-5g-8gb-ram-256gb-dual-sim"],
@@ -111,6 +113,21 @@ test("el inventario entrega lo que espera borrador y lo dice", () => {
   assert.match(
     informeDeImportacion(resultado),
     /Esperan borrador: 2 modelos[\s\S]*y 1 configuraciones/,
+  );
+});
+
+test("los borradores se niegan con la entrega del inventario de otra API", () => {
+  // Revisión adversarial del 27/10/2026: el inventario contra dev y los borradores contra local
+  // proponían lo que esperaba la base de dev en la de local.
+  const entrega = { fechaLista: "2026-10-27", api: "https://api-dev.tecnosport.co" };
+  const mensaje = mensajeDeOtraApi(entrega, "http://localhost:8080");
+  assert.match(mensaje, /api-dev\.tecnosport\.co/);
+  assert.match(mensaje, /localhost:8080/);
+  assert.equal(mensajeDeOtraApi(entrega, "https://api-dev.tecnosport.co"), null);
+  assert.equal(
+    mensajeDeOtraApi({ fechaLista: "2026-10-20" }, "http://localhost:8080"),
+    null,
+    "uno de antes, sin api, se acepta",
   );
 });
 

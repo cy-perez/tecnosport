@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import co.tecnosport.api.application.compartido.RelojFalso;
 import co.tecnosport.api.application.compartido.TextosDeCorreoFalso;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
+import co.tecnosport.api.domain.pedido.MedioDePagoEnPunto;
 import co.tecnosport.api.domain.pedido.MetodoPago;
 import co.tecnosport.api.domain.pedido.Pedido;
 import java.time.Duration;
@@ -81,7 +82,8 @@ class VencerRecogidasSinRetirarTest {
     Pedido pedido =
         recogidas.lista(
             MetodoPago.PAGO_EN_PUNTO, HACE_UNA_SEMANA, AHORA.minus(Duration.ofHours(50)));
-    pedido.transicionar(EstadoPedido.ENTREGADO, "admin:1", "entregado en el punto", AHORA);
+    pedido.entregarEnPunto(
+        pedido.numeroPedido().valor(), MedioDePagoEnPunto.EFECTIVO, "admin:1", AHORA);
     pedidos.guardar(pedido);
 
     assertFalse(casoDeUso().ejecutar(pedido.id()));

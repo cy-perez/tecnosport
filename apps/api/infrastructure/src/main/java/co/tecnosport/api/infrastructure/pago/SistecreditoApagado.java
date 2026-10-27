@@ -1,4 +1,4 @@
-package co.tecnosport.api.bootstrap.pago;
+package co.tecnosport.api.infrastructure.pago;
 
 import co.tecnosport.api.application.pago.PasarelaSistecredito;
 import co.tecnosport.api.application.pago.SistecreditoNoRespondeException;
@@ -17,7 +17,7 @@ import java.util.Optional;
  * CrearPedido}, y eso tiene que verse en los registros, no disimularse como una caída del
  * proveedor.
  */
-final class SistecreditoApagado implements PasarelaSistecredito {
+public final class SistecreditoApagado implements PasarelaSistecredito {
 
   @Override
   public TransaccionSistecredito crear(SolicitudTransaccionSistecredito solicitud) {

@@ -16,6 +16,7 @@ import co.tecnosport.api.application.catalogo.RepositorioMarcas;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.catalogo.ValorAtributoComando;
 import co.tecnosport.api.application.catalogo.VarianteCreada;
+import co.tecnosport.api.application.compartido.EnTransaccionPropia;
 import co.tecnosport.api.application.proveedores.AlmacenDeArchivosDeProveedor;
 import co.tecnosport.api.application.proveedores.AtributoDeCatalogoNoDefinidoException;
 import co.tecnosport.api.application.proveedores.BorradorNoEditableException;
@@ -73,7 +74,12 @@ import java.util.UUID;
  * las filas, no los archivos. Es el mismo precio que paga la aprobación de prendas, y los recoge
  * {@code npm run huerfanos}.
  *
- * <p>Quien llama abre la transacción.
+ * <p><b>Abre su propia transacción</b> ({@link EnTransaccionPropia}), y quien llama no la abre:
+ * confirmada la aprobación, los originales del borrador se borran del bucket privado —el producto
+ * ya tiene sus copias en el público—, y borrarlos antes del commit los perdería con una aprobación
+ * revertida (27 de octubre de 2026). Si ese borrado falla, quedan huérfanos en el bucket privado,
+ * sin fila que los nombre, y los recoge {@code npm run huerfanos}: la aprobación ya está hecha y no
+ * se deshace por eso.
  */
 public final class AprobarBorradorTecnologia {
 
@@ -94,6 +100,7 @@ public final class AprobarBorradorTecnologia {
   private final AlmacenDeArchivosDeProveedor almacenPrivado;
   private final AlmacenDeImagenes almacenDeImagenes;
   private final int existenciaPorVariante;
+  private final EnTransaccionPropia enTransaccionPropia;
 
   public AprobarBorradorTecnologia(
       RepositorioBorradoresTecnologia repositorioBorradores,
@@ -107,7 +114,9 @@ public final class AprobarBorradorTecnologia {
       AgregarVariante agregarVariante,
       AlmacenDeArchivosDeProveedor almacenPrivado,
       AlmacenDeImagenes almacenDeImagenes,
+      EnTransaccionPropia enTransaccionPropia,
       int existenciaPorVariante) {
+    this.enTransaccionPropia = Objects.requireNonNull(enTransaccionPropia);
     this.repositorioBorradores = Objects.requireNonNull(repositorioBorradores);
     this.variantesDeProveedor = Objects.requireNonNull(variantesDeProveedor);
     this.repositorioProductos = Objects.requireNonNull(repositorioProductos);
@@ -128,6 +137,22 @@ public final class AprobarBorradorTecnologia {
   /** Devuelve el producto que nació, o el que ya existía con sus variantes nuevas. */
   public Producto ejecutar(AprobarBorradorTecnologiaComando comando) {
     Objects.requireNonNull(comando, "El comando no puede ser nulo.");
+    String[] prefijo = {null};
+    Producto producto = enTransaccionPropia.ejecutar(() -> aprobar(comando, prefijo));
+    try {
+      almacenPrivado.borrarPorPrefijo(prefijo[0]);
+    } catch (RuntimeException e) {
+      // Huérfanos en el bucket privado, que recoge `npm run huerfanos`: la aprobación ya se
+      // confirmó.
+    }
+    return producto;
+  }
+
+  /**
+   * @param prefijo donde deja el prefijo del borrador en el bucket privado, para borrarlo después
+   *     del commit
+   */
+  private Producto aprobar(AprobarBorradorTecnologiaComando comando, String[] prefijo) {
     UUID borradorId = comando.borradorId();
     UUID marcaId = comando.marcaId();
     UUID categoriaId = comando.categoriaId();
@@ -138,6 +163,7 @@ public final class AprobarBorradorTecnologia {
     if (borrador.estado() != EstadoBorrador.EN_REVISION) {
       throw new BorradorNoEditableException(borrador.estado());
     }
+    prefijo[0] = ClavesDeFotosDeTecnologia.prefijo(borrador.proveedorId(), borradorId);
     // Antes de tocar el catálogo: lo que impide aprobar se sabe sin crear nada.
     borrador.exigirAprobable();
     LocalDate deLaLista = LocalDate.ofInstant(borrador.vistoEn(), ZonaDelNegocio.ZONA);

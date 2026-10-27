@@ -1,5 +1,5 @@
 import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
-import { TranslocoTestingModule } from '@jsverse/transloco';
+import { TranslocoService, TranslocoTestingModule } from '@jsverse/transloco';
 import { fireEvent, render, screen } from '@testing-library/angular';
 import en from '../../../../assets/i18n/en.json';
 import es from '../../../../assets/i18n/es.json';
@@ -58,7 +58,11 @@ class RepositorioSesionFalso implements RepositorioSesion {
   }
 }
 
-async function renderPagina(repositorio: RepositorioSesion, destino?: string) {
+async function renderPagina(
+  repositorio: RepositorioSesion,
+  destino?: string,
+  otros: Record<string, string> = {},
+) {
   return render(IniciarSesionAdminPage, {
     imports: [
       TranslocoTestingModule.forRoot({
@@ -74,7 +78,7 @@ async function renderPagina(repositorio: RepositorioSesion, destino?: string) {
         provide: ActivatedRoute,
         useValue: {
           snapshot: {
-            queryParamMap: convertToParamMap(destino === undefined ? {} : { destino }),
+            queryParamMap: convertToParamMap(destino === undefined ? otros : { ...otros, destino }),
           },
         },
       },
@@ -106,6 +110,34 @@ describe('IniciarSesionAdminPage', () => {
     fireEvent.click(boton);
 
     expect(await screen.findByText('Escribe el correo.')).toBeTruthy();
+  });
+
+  /** El panel salió sin que el servidor confirmara el cierre: la cookie de refresco sigue viva. */
+  it('avisa cuando el panel no pudo confirmar el cierre de sesión con el servidor', async () => {
+    await renderPagina(new RepositorioSesionFalso(), undefined, { cierre: 'sin-confirmar' });
+
+    expect(screen.getByText(esAdmin.iniciarSesion.cierre_sin_confirmar)).toBeTruthy();
+  });
+
+  it('sin ese aviso en la URL no dice nada del cierre', async () => {
+    await renderPagina(new RepositorioSesionFalso());
+
+    expect(screen.queryByText(esAdmin.iniciarSesion.cierre_sin_confirmar)).toBeNull();
+  });
+
+  /**
+   * `transloco.translate()` dentro de un `computed` no lee ninguna señal: el error se quedaba en el
+   * idioma en que se pintó por primera vez aunque el visitante cambiara de idioma.
+   */
+  it('el error de un campo cambia de idioma con el sitio', async () => {
+    const { fixture } = await renderPagina(new RepositorioSesionFalso());
+    fireEvent.click(screen.getByRole('button', { name: 'Entrar' }));
+    expect(await screen.findByText(esAdmin.iniciarSesion.errores.correo_requerido)).toBeTruthy();
+
+    fixture.debugElement.injector.get(TranslocoService).setActiveLang('en');
+
+    expect(await screen.findByText(enAdmin.iniciarSesion.errores.correo_requerido)).toBeTruthy();
+    expect(screen.queryByText(esAdmin.iniciarSesion.errores.correo_requerido)).toBeNull();
   });
 
   it('con credenciales válidas de ADMIN, navega al panel', async () => {

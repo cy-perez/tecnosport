@@ -17,6 +17,11 @@ export class LineaCarritoComponent {
   /** `null` si no hay foto guardada para esta variante (otro dispositivo, localStorage borrado). */
   readonly snapshot = input<SnapshotLinea | null>(null);
   readonly deshabilitado = input(false);
+  /**
+   * El tope de unidades por línea que manda el servidor (`Carrito.cantidadMaximaPorLinea`). `null`
+   * mientras no se conoce: entonces no se limita aquí, y el servidor sigue rechazando lo que pase.
+   */
+  readonly cantidadMaxima = input<number | null>(null);
 
   readonly cantidadCambio = output<number>();
   readonly eliminar = output<void>();
@@ -39,7 +44,15 @@ export class LineaCarritoComponent {
     }
   }
 
+  protected readonly enElMaximo = computed(() => {
+    const maximo = this.cantidadMaxima();
+    return maximo !== null && this.linea().cantidad >= maximo;
+  });
+
   protected sumar(): void {
+    if (this.enElMaximo()) {
+      return;
+    }
     this.cantidadCambio.emit(this.linea().cantidad + 1);
   }
 }

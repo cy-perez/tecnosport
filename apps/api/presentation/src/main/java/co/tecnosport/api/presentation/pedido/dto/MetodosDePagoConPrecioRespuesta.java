@@ -24,11 +24,15 @@ public record MetodosDePagoConPrecioRespuesta(
    * @param subtotal la mercancía al precio de este medio, sin flete: el publicado con pasarela, el
    *     de contado sin ella
    * @param descuento lo que este medio ahorra frente al precio publicado; cero con pasarela
+   * @param costoEnvio el flete que se cobra con este medio cuando no es el de la cotización sin
+   *     recaudo: el de la tarifa con recaudo en {@code CONTRAENTREGA}, cero en un retiro en punto.
+   *     Ausente con los demás medios: ahí se cobra el de {@code POST /envios/cotizacion}
    */
   // Con un nombre único y no `Metodo`: springdoc nombra el esquema por el nombre simple del record,
   // y uno tan genérico choca con el primero que se llame igual en otro paquete.
   public record MetodoDePagoConPrecioRespuesta(
       @Schema(requiredMode = RequiredMode.REQUIRED) MetodoPago metodo,
       @Schema(requiredMode = RequiredMode.REQUIRED) DineroRespuesta subtotal,
-      @Schema(requiredMode = RequiredMode.REQUIRED) DineroRespuesta descuento) {}
+      @Schema(requiredMode = RequiredMode.REQUIRED) DineroRespuesta descuento,
+      DineroRespuesta costoEnvio) {}
 }

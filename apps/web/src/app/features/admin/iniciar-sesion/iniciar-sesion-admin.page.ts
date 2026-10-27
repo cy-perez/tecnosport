@@ -4,6 +4,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { correoValido } from '../../../shared/formularios/validadores';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
+import { usarTraductor } from '../../../core/i18n/traductor';
 import { TsBoton } from '../../../shared/ui/boton/ts-boton';
 import { TsPaginaFormulario } from '../../../shared/ui/pagina-formulario/ts-pagina-formulario';
 import { TsCampo } from '../../../shared/ui/campo/ts-campo';
@@ -27,10 +28,18 @@ export class IniciarSesionAdminPage {
   private readonly router = inject(Router);
   private readonly ruta = inject(ActivatedRoute);
   private readonly transloco = inject(TranslocoService);
+  private readonly traducir = usarTraductor();
   protected readonly sesionStore = inject(SesionStore);
 
   protected readonly error = signal<string | null>(null);
   protected readonly enviando = signal(false);
+
+  /**
+   * El panel cerró la sesión en la pestaña pero el servidor no lo confirmó (`PanelAdminPage`): la
+   * cookie de refresco sigue viva. Se dice aquí porque es adonde el panel navega.
+   */
+  protected readonly cierreSinConfirmar =
+    this.ruta.snapshot.queryParamMap.get('cierre') === 'sin-confirmar';
 
   protected readonly form = new FormGroup({
     correo: new FormControl('', {
@@ -65,9 +74,9 @@ export class IniciarSesionAdminPage {
       return null;
     }
     if (control.hasError('required')) {
-      return this.transloco.translate('admin.iniciarSesion.errores.correo_requerido');
+      return this.traducir()('admin.iniciarSesion.errores.correo_requerido');
     }
-    return this.transloco.translate('admin.iniciarSesion.errores.correo_invalido');
+    return this.traducir()('admin.iniciarSesion.errores.correo_invalido');
   });
 
   private readonly tickClave = toSignal(this.form.controls.clave.events, {
@@ -79,7 +88,7 @@ export class IniciarSesionAdminPage {
     if (!control.touched || control.valid) {
       return null;
     }
-    return this.transloco.translate('admin.iniciarSesion.errores.clave_requerida');
+    return this.traducir()('admin.iniciarSesion.errores.clave_requerida');
   });
 
   /**
@@ -129,7 +138,9 @@ export class IniciarSesionAdminPage {
         this.form.controls.clave.value,
       );
       if (sesion.rol !== 'ADMIN') {
-        await this.sesionStore.cerrarSesion();
+        // Si el cierre falla, el mensaje sigue siendo este: decir "correo o clave incorrectos" a
+        // quien acaba de entrar bien sería falso. La sesión ya se soltó en la pestaña.
+        await this.sesionStore.cerrarSesion().catch(() => undefined);
         this.error.set(this.transloco.translate('admin.iniciarSesion.no_es_admin'));
         return;
       }

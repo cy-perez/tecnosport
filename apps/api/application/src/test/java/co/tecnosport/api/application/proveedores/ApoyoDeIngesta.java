@@ -343,6 +343,13 @@ final class ApoyoDeIngesta {
     public void borrar(String objectKey) {
       objetos.remove(objectKey);
     }
+
+    @Override
+    public int borrarPorPrefijo(String prefijo) {
+      List<String> suyas = objetos.keySet().stream().filter(k -> k.startsWith(prefijo)).toList();
+      suyas.forEach(objetos::remove);
+      return suyas.size();
+    }
   }
 
   /** Devuelve siempre la misma lista, o revienta si se le dijo que reviente. */
@@ -438,6 +445,11 @@ final class ApoyoDeIngesta {
     @Override
     public Optional<PublicacionProveedor> buscarPorId(UUID id) {
       return Optional.ofNullable(porId.get(id));
+    }
+
+    @Override
+    public Optional<PublicacionProveedor> buscarPorIdParaActualizar(UUID id) {
+      return buscarPorId(id);
     }
 
     @Override

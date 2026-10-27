@@ -11,6 +11,7 @@ import { crearClienteContratos } from '@tecnosport/contratos';
 import { baseUrl } from './app/core/http/base-url';
 import { origenPublico } from './app/core/seo/origen-publico';
 import { cabeceraDeCache } from './cache-estaticos';
+import { POLITICA_DE_CONTENIDO, POLITICA_DE_PERMISOS } from './cabeceras-seguridad';
 import { crearProxyApi } from './proxy-api';
 import { construirRobots, construirSitemap, PaginaDelSitio } from './sitemap/constructor';
 import legalesEs from './assets/i18n/scopes/legales/es.json';
@@ -33,8 +34,10 @@ const angularApp = new AngularNodeAppEngine();
  * `X-Frame-Options: DENY` es sobre quién puede enmarcarnos, no sobre a quién enmarcamos nosotros:
  * el checkout de Wompi lo abre el navegador con la llave pública y no depende de esto.
  *
- * Sin CSP todavía, y a propósito: una política que sirva para Angular necesita nonces por
- * respuesta, y media a medias es peor que ninguna porque invita a confiar en ella.
+ * La política de permisos y la CSP viven en `cabeceras-seguridad.ts`, que explica cada origen. La
+ * CSP va **en modo informe**: una que bloquee necesita nonces por respuesta, y una a medias que
+ * bloquee rompe el sitio o invita a confiar en ella. En modo informe no rompe nada y deja en la
+ * consola el inventario de lo que el nonce tiene que cubrir.
  */
 app.disable('x-powered-by');
 app.use((_req, res, next) => {
@@ -42,6 +45,8 @@ app.use((_req, res, next) => {
   res.setHeader('x-content-type-options', 'nosniff');
   res.setHeader('x-frame-options', 'DENY');
   res.setHeader('referrer-policy', 'strict-origin-when-cross-origin');
+  res.setHeader('permissions-policy', POLITICA_DE_PERMISOS);
+  res.setHeader('content-security-policy-report-only', POLITICA_DE_CONTENIDO);
   next();
 });
 

@@ -13,7 +13,6 @@ import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.legal.AutorizacionDatos;
 import co.tecnosport.api.domain.legal.AutorizacionRequeridaException;
 import co.tecnosport.api.domain.legal.OrigenAutorizacion;
-import co.tecnosport.api.domain.usuario.CorreoYaRegistradoException;
 import co.tecnosport.api.domain.usuario.Rol;
 import co.tecnosport.api.domain.usuario.Usuario;
 import java.time.Duration;
@@ -25,6 +24,7 @@ class RegistrarUsuarioTest {
   private static final Instant AHORA = Instant.parse("2026-09-03T12:00:00Z");
   private static final Duration VIGENCIA_TOKEN = Duration.ofHours(24);
   private static final String URL_BASE = "http://localhost:4200/es/cuenta/verificar-correo";
+  private static final String URL_RECUPERAR = "http://localhost:4200/es/cuenta/recuperar-clave";
   private static final int MAXIMO_INTENTOS_POR_CUENTA = 5;
   private static final Duration VENTANA_INTENTOS_POR_CUENTA = Duration.ofMinutes(15);
   private static final String VERSION_POLITICA = "2026-09-07";
@@ -51,6 +51,7 @@ class RegistrarUsuarioTest {
         new RelojFalso(AHORA),
         VIGENCIA_TOKEN,
         URL_BASE,
+        URL_RECUPERAR,
         limitadorDeIntentos,
         MAXIMO_INTENTOS_POR_CUENTA,
         VENTANA_INTENTOS_POR_CUENTA,
@@ -113,14 +114,30 @@ class RegistrarUsuarioTest {
     assertEquals(0, enviador.enviados().size());
   }
 
+  /**
+   * Responder distinto a un correo ya registrado convertía el formulario público en un oráculo de
+   * cuentas. Ahora responde igual, no toca la cuenta y le escribe al titular.
+   */
   @Test
-  void registrarConCorreoYaExistenteLanzaCorreoYaRegistrado() {
+  void unCorreoYaRegistradoRespondeIgualYAvisaAlTitular() {
     RegistrarUsuario caso = crear();
     caso.ejecutar(comando("cliente@tecnosport.co", "clave-segura"));
+    Usuario original =
+        usuarios.buscarPorCorreo(new CorreoElectronico("cliente@tecnosport.co")).orElseThrow();
 
-    assertThrows(
-        CorreoYaRegistradoException.class,
-        () -> caso.ejecutar(comando("cliente@tecnosport.co", "otra-clave")));
+    caso.ejecutar(comando("cliente@tecnosport.co", "otra-clave"));
+
+    Usuario despues =
+        usuarios.buscarPorCorreo(new CorreoElectronico("cliente@tecnosport.co")).orElseThrow();
+    assertEquals(original.id(), despues.id());
+    assertEquals(original.claveHash(), despues.claveHash(), "la clave del titular no cambia");
+    assertEquals(1, tokens.todos().size(), "no se emite otro token de verificación");
+    assertEquals(1, autorizaciones.todas().size(), "ni otra constancia");
+    assertEquals(2, enviador.enviados().size());
+    EnviadorDeCorreoFalso.CorreoEnviado aviso = enviador.enviados().get(1);
+    assertEquals(new CorreoElectronico("cliente@tecnosport.co"), aviso.destinatario());
+    assertTrue(aviso.cuerpoHtml().contains(URL_RECUPERAR));
+    assertTrue(aviso.cuerpoHtml().contains("usuario.cuenta_existente.cuerpo"));
   }
 
   @Test

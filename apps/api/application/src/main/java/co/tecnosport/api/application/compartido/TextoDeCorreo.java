@@ -105,6 +105,8 @@ public enum TextoDeCorreo {
   USUARIO_VERIFICACION_CUERPO("usuario.verificacion.cuerpo"),
   USUARIO_RECUPERACION_ASUNTO("usuario.recuperacion.asunto"),
   USUARIO_RECUPERACION_CUERPO("usuario.recuperacion.cuerpo"),
+  USUARIO_CUENTA_EXISTENTE_ASUNTO("usuario.cuenta_existente.asunto"),
+  USUARIO_CUENTA_EXISTENTE_CUERPO("usuario.cuenta_existente.cuerpo"),
   SUGERENCIA_ASUNTO("sugerencia.asunto"),
   SUGERENCIA_CUERPO("sugerencia.cuerpo"),
   SUGERENCIA_ANONIMA("sugerencia.anonima");

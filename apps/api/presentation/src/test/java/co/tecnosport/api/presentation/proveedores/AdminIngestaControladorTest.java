@@ -7,6 +7,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import co.tecnosport.api.application.catalogo.AlmacenDeImagenes;
+import co.tecnosport.api.application.catalogo.EliminarProducto;
+import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.catalogo.UrlFirmada;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.proveedores.AlmacenDeArchivosDeProveedor;
@@ -16,7 +19,6 @@ import co.tecnosport.api.application.proveedores.DependenciasDeLote;
 import co.tecnosport.api.application.proveedores.DependenciasDeProveedor;
 import co.tecnosport.api.application.proveedores.DetenerIngesta;
 import co.tecnosport.api.application.proveedores.EjecutorDeIngestas;
-import co.tecnosport.api.application.proveedores.EliminacionDeProductos;
 import co.tecnosport.api.application.proveedores.EliminarLoteDeIngesta;
 import co.tecnosport.api.application.proveedores.EncolarIngesta;
 import co.tecnosport.api.application.proveedores.IniciarIngesta;
@@ -565,7 +567,7 @@ class AdminIngestaControladorTest {
     @Bean
     EliminarLoteDeIngesta eliminarLote(
         RepositorioLotesDoble lotes, EliminacionDoble eliminacion, AlmacenDoble almacen) {
-      return new EliminarLoteDeIngesta(lotes, eliminacion, almacen);
+      return new EliminarLoteDeIngesta(lotes, eliminacion.comoCasoDeUso(), almacen);
     }
 
     @Bean
@@ -740,6 +742,11 @@ class AdminIngestaControladorTest {
     }
 
     @Override
+    public Optional<PublicacionProveedor> buscarPorIdParaActualizar(UUID id) {
+      return buscarPorId(id);
+    }
+
+    @Override
     public Optional<PublicacionProveedor> buscarPorId(UUID id) {
       return Optional.ofNullable(porId.get(id));
     }
@@ -796,18 +803,89 @@ class AdminIngestaControladorTest {
     }
   }
 
-  /** Los productos de esta lista se quedan, como si estuvieran publicados. */
-  static final class EliminacionDoble implements EliminacionDeProductos {
+  /**
+   * El catálogo detrás de {@link EliminarProducto}, el de verdad: los productos de {@code
+   * publicados} están publicados y se quedan; los demás, en borrador y sin variantes, se borran.
+   */
+  static final class EliminacionDoble {
     final java.util.Set<UUID> publicados = new java.util.HashSet<>();
     final List<UUID> eliminados = new ArrayList<>();
 
-    @Override
-    public boolean eliminarSiSePuede(UUID productoId) {
-      if (publicados.contains(productoId)) {
-        return false;
-      }
-      eliminados.add(productoId);
-      return true;
+    EliminarProducto comoCasoDeUso() {
+      return new EliminarProducto(
+          doble(
+              RepositorioProductos.class,
+              (metodo, args) ->
+                  switch (metodo) {
+                    case "buscarPorId" ->
+                        Optional.of(publicados.contains(args[0]) ? publicado() : enBorrador());
+                    case "eliminar" -> {
+                      eliminados.add((UUID) args[0]);
+                      yield null;
+                    }
+                    default -> throw new UnsupportedOperationException(metodo);
+                  }),
+          doble(
+              co.tecnosport.api.application.pedido.RepositorioPedidos.class,
+              (metodo, args) -> {
+                throw new UnsupportedOperationException(metodo);
+              }),
+          doble(
+              AlmacenDeImagenes.class,
+              (metodo, args) -> {
+                if (!metodo.equals("eliminarPorPrefijo")) {
+                  throw new UnsupportedOperationException(metodo);
+                }
+                return 0;
+              }));
+    }
+
+    private static co.tecnosport.api.domain.catalogo.Producto enBorrador() {
+      return co.tecnosport.api.domain.catalogo.Producto.crear(
+          "Bolso",
+          new co.tecnosport.api.domain.compartido.Slug("bolso"),
+          "",
+          co.tecnosport.api.domain.catalogo.Marca.crear("Genérica"),
+          co.tecnosport.api.domain.catalogo.Categoria.crear(
+              "Morrales",
+              new co.tecnosport.api.domain.compartido.Slug("bolsos-dama-morrales"),
+              LineaCatalogo.BOLSOS));
+    }
+
+    private static co.tecnosport.api.domain.catalogo.Producto publicado() {
+      co.tecnosport.api.domain.catalogo.Producto producto = enBorrador();
+      producto.agregarVariante(
+          co.tecnosport.api.domain.catalogo.Variante.crear(
+              new co.tecnosport.api.domain.compartido.Sku("PRV-1"),
+              co.tecnosport.api.domain.compartido.Dinero.deCop(60000),
+              java.math.BigDecimal.ZERO,
+              null,
+              null,
+              List.of()));
+      producto.asignarImagenPrincipal(
+          co.tecnosport.api.domain.catalogo.ImagenProducto.crear(
+              co.tecnosport.api.domain.catalogo.TipoImagen.PRINCIPAL,
+              0,
+              List.of(
+                  new co.tecnosport.api.domain.catalogo.VarianteDeImagen(
+                      800, "https://x/0.jpg", 1000)),
+              null,
+              600,
+              new co.tecnosport.api.domain.compartido.HashContenido("%064x".formatted(0)),
+              "alt es",
+              "alt en"));
+      producto.publicar();
+      return producto;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> T doble(
+        Class<T> tipo, java.util.function.BiFunction<String, Object[], Object> respuesta) {
+      return (T)
+          java.lang.reflect.Proxy.newProxyInstance(
+              tipo.getClassLoader(),
+              new Class<?>[] {tipo},
+              (proxy, metodo, args) -> respuesta.apply(metodo.getName(), args));
     }
   }
 
@@ -842,6 +920,13 @@ class AdminIngestaControladorTest {
     @Override
     public void borrar(String objectKey) {
       objetos.remove(objectKey);
+    }
+
+    @Override
+    public int borrarPorPrefijo(String prefijo) {
+      List<String> suyas = objetos.keySet().stream().filter(k -> k.startsWith(prefijo)).toList();
+      suyas.forEach(objetos::remove);
+      return suyas.size();
     }
   }
 

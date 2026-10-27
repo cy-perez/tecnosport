@@ -1,4 +1,4 @@
-package co.tecnosport.api.bootstrap.proveedores;
+package co.tecnosport.api.infrastructure.proveedores;
 
 import co.tecnosport.api.application.proveedores.ColaDeIngestasLlenaException;
 import co.tecnosport.api.application.proveedores.EjecutorDeIngestas;
