@@ -8,6 +8,7 @@
 | **`SISTECREDITO`** | — | Sistecrédito (pasarela propia) | Al aprobar el crédito |
 | `TRANSFERENCIA_MANUAL` | Nequi, Daviplata, BBVA | Ninguno | Al conciliar el comprobante |
 | **`CONTRAENTREGA`** | — | Transportadora con recaudo, vía Skydropx | Días después de la entrega |
+| `PAGO_EN_PUNTO` | Efectivo o transferencia, al recoger (`adr/0094`) | Ninguno | Al entregar en el punto |
 
 ### Por qué los medios de Wompi son un solo método
 

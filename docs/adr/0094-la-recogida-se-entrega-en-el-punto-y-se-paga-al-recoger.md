@@ -54,8 +54,16 @@ listo, no desde la compra, y el pago en el punto se verifica igual que la contra
 - El vigilante del plazo legal de entrega no mira `LISTO_PARA_RECOGER`. Un pedido listo dura como
   mucho 48 horas antes de cancelarse; si el plazo se cumple al dejarlo listo o al entregarlo es una
   de las preguntas al abogado (`docs/14` punto 11).
-- Entregar a quien muestre el número no pide documento. Es la decisión del negocio y también está
-  en `docs/14`.
+- Entregar a quien muestre el número no pide documento, y el número es consecutivo: quien tenga
+  uno puede adivinar el del pedido anterior. Es la decisión del negocio; el panel pide comparar
+  además el nombre de quien recibe, y está en `docs/14`.
+- La transferencia en el punto queda como texto del historial, sin referencia ni comprobante: el
+  panel pide revisar que el dinero llegó antes de entregar. Un retracto posterior propone devolver
+  en efectivo, y quien lo registra elige el medio.
+- Las 48 horas para verificar el pago en el punto salen de `CONTRAENTREGA_HORAS_PARA_VERIFICAR`,
+  configurable, mientras los términos dicen 48: cambiar la variable exige cambiar el texto.
+- El panel sigue calculando el veredicto del plazo legal de un pedido listo para recoger, aunque
+  el vigilante no lo mire.
 - La recogida pagada y vencida depende de que alguien mire el panel: no hay aviso al negocio
   aparte. Si se acumulan, el aviso es el siguiente paso.
 - La bandera se enciende con `terraform apply` sobre `infra/envs/dev`; el despliegue de la API no

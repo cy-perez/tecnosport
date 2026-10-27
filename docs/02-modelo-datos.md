@@ -424,7 +424,6 @@ CREADO
   |        +-> PAGO_FALLIDO -> (reintento)            +-> DEVUELTO
   |
   +-> CONFIRMADO_CONTRAENTREGA -> EN_PREPARACION -> DESPACHADO
-  |   (contraentrega o pago en el punto)
                                                       |
                                        +--------------+--------------+
                                        |                             |
@@ -439,7 +438,8 @@ CREADO
                                    DEVUELTO
 ```
 
-La recogida en el punto (`adr/0094`) no pasa por `DESPACHADO`:
+`CONFIRMADO_CONTRAENTREGA` lo alcanzan la contraentrega y el pago en el punto: los dos
+se pagan al recibir. La recogida en el punto (`adr/0094`) no pasa por `DESPACHADO`:
 `EN_PREPARACION -> LISTO_PARA_RECOGER -> ENTREGADO`, o `-> CANCELADO` si nadie la
 recoge en las 48 horas siguientes al aviso.
 
