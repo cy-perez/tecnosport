@@ -10,11 +10,13 @@ import co.tecnosport.api.application.usuario.CerrarSesion;
 import co.tecnosport.api.application.usuario.CodificadorDeClaves;
 import co.tecnosport.api.application.usuario.ConfirmarRecuperacion;
 import co.tecnosport.api.application.usuario.GeneradorDeTokens;
+import co.tecnosport.api.application.usuario.IniciarActivacionSegundoFactor;
 import co.tecnosport.api.application.usuario.IniciarSesion;
 import co.tecnosport.api.application.usuario.IniciarSesionConGoogle;
 import co.tecnosport.api.application.usuario.ReenviarVerificacion;
 import co.tecnosport.api.application.usuario.RefrescarToken;
 import co.tecnosport.api.application.usuario.RegistrarUsuario;
+import co.tecnosport.api.application.usuario.RepositorioSegundosFactores;
 import co.tecnosport.api.application.usuario.RepositorioSesiones;
 import co.tecnosport.api.application.usuario.RepositorioTokensRecuperacion;
 import co.tecnosport.api.application.usuario.RepositorioTokensVerificacion;
@@ -26,6 +28,7 @@ import co.tecnosport.api.application.usuario.VerificarCorreo;
 import co.tecnosport.api.bootstrap.compartido.PropiedadesApp;
 import co.tecnosport.api.bootstrap.compartido.PropiedadesLimiteAuth;
 import co.tecnosport.api.bootstrap.legal.PropiedadesLegal;
+import co.tecnosport.api.infrastructure.usuario.CifradorAesGcm;
 import co.tecnosport.api.infrastructure.usuario.CodificadorDeClavesBCrypt;
 import co.tecnosport.api.infrastructure.usuario.GeneradorDeTokensJwt;
 import co.tecnosport.api.infrastructure.usuario.VerificadorDeCredencialGoogleJwt;
@@ -45,7 +48,8 @@ import org.springframework.context.annotation.Configuration;
   PropiedadesAdminSemilla.class,
   PropiedadesVerificacionCorreo.class,
   PropiedadesRecuperacionClave.class,
-  PropiedadesGoogle.class
+  PropiedadesGoogle.class,
+  PropiedadesSegundoFactor.class
 })
 public class ConfiguracionUsuario {
 
@@ -286,5 +290,36 @@ public class ConfiguracionUsuario {
         repositorioSesiones,
         codificadorDeClaves,
         reloj);
+  }
+
+  /**
+   * La llave AES-256 de los segundos factores (ADR-0096). Lo construye este módulo y no un
+   * componente de {@code infrastructure} porque la llave es configuración, y la configuración se
+   * lee aquí.
+   */
+  @Bean
+  public CifradorAesGcm cifradorAesGcm(PropiedadesSegundoFactor propiedades) {
+    return new CifradorAesGcm(propiedades.llaveEnBytes());
+  }
+
+  /** Mismo límite que el cambio de clave: el abuso que frena es el mismo, probar claves. */
+  @Bean
+  public IniciarActivacionSegundoFactor iniciarActivacionSegundoFactor(
+      RepositorioUsuarios repositorioUsuarios,
+      RepositorioSegundosFactores repositorioSegundosFactores,
+      CodificadorDeClaves codificadorDeClaves,
+      Reloj reloj,
+      LimitadorDeIntentos limitadorDeIntentos,
+      PropiedadesLimiteAuth propiedadesLimite,
+      PropiedadesSegundoFactor propiedades) {
+    return new IniciarActivacionSegundoFactor(
+        repositorioUsuarios,
+        repositorioSegundosFactores,
+        codificadorDeClaves,
+        reloj,
+        limitadorDeIntentos,
+        propiedadesLimite.cuentaMaximo(),
+        Duration.ofMinutes(propiedadesLimite.cuentaMinutos()),
+        propiedades.emisor());
   }
 }

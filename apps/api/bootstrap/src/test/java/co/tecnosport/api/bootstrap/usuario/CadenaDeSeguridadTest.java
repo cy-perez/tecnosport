@@ -104,6 +104,37 @@ class CadenaDeSeguridadTest {
   }
 
   /**
+   * ADR-0096. El segundo factor es del panel: sin sesión es un 401 —para que el frontend refresque—
+   * y con la de un cliente, un 403. Con la de un administrador la cadena deja pasar y responde el
+   * caso de uso: el token de la prueba no es de nadie que exista, así que la clave no coincide.
+   */
+  @Test
+  void elSegundoFactorEsDelPanel() throws Exception {
+    String cuerpo = "{\"claveActual\":\"x\"}";
+    mockMvc
+        .perform(
+            post("/api/v1/auth/segundo-factor/activacion")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(cuerpo))
+        .andExpect(status().isUnauthorized());
+    mockMvc
+        .perform(
+            post("/api/v1/auth/segundo-factor/activacion")
+                .header("Authorization", "Bearer " + tokenDe(Rol.CLIENTE))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(cuerpo))
+        .andExpect(status().isForbidden());
+    mockMvc
+        .perform(
+            post("/api/v1/auth/segundo-factor/activacion")
+                .header("Authorization", "Bearer " + tokenDe(Rol.ADMIN))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(cuerpo))
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.codigo").value("CREDENCIALES_INVALIDAS"));
+  }
+
+  /**
    * El endpoint de Cloud Tasks (ADR-0080) no lo abre una sesión del panel, ni siquiera la de un
    * administrador: solo el token de la cuenta de las tareas. Sin cola configurada —como aquí—, no
    * lo abre nada. Si esta regla se cayera, el {@code anyRequest().permitAll()} lo dejaría abierto a

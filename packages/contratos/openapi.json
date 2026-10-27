@@ -20,6 +20,31 @@
         },
         "type" : "object"
       },
+      "ActivacionSegundoFactorRespuesta" : {
+        "properties" : {
+          "digitos" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "periodoSegundos" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "secreto" : {
+            "type" : "string"
+          },
+          "uri" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "digitos",
+          "periodoSegundos",
+          "secreto",
+          "uri"
+        ],
+        "type" : "object"
+      },
       "ActualizarCantidadRequest" : {
         "properties" : {
           "cantidad" : {
@@ -2444,6 +2469,17 @@
           "fechaLista",
           "modelos",
           "modo"
+        ],
+        "type" : "object"
+      },
+      "IniciarActivacionSegundoFactorRequest" : {
+        "properties" : {
+          "claveActual" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "claveActual"
         ],
         "type" : "object"
       },
@@ -10337,6 +10373,36 @@
         },
         "tags" : [
           "autenticacion-controlador"
+        ]
+      }
+    },
+    "/api/v1/auth/segundo-factor/activacion" : {
+      "post" : {
+        "operationId" : "iniciarActivacionSegundoFactor",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/IniciarActivacionSegundoFactorRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ActivacionSegundoFactorRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "segundo-factor-controlador"
         ]
       }
     },

@@ -54,6 +54,10 @@ public class ConfiguracionSeguridad {
                     .hasRole("ADMIN")
                     .requestMatchers(HttpMethod.POST, "/api/v1/auth/clave")
                     .authenticated()
+                    // ADR-0096. El segundo factor es del panel: sin sesión, 401; con la de un
+                    // cliente, 403.
+                    .requestMatchers("/api/v1/auth/segundo-factor/**")
+                    .hasRole("ADMIN")
                     .requestMatchers(FiltroTareasDeIngesta.RUTA + "**")
                     .hasRole(FiltroTareasDeIngesta.ROL)
                     .anyRequest()

@@ -133,6 +133,7 @@ import co.tecnosport.api.domain.pedido.EnlaceDeCompraNoVigenteException;
 import co.tecnosport.api.domain.pedido.EntregaNoAplicaException;
 import co.tecnosport.api.domain.pedido.NumeroDePedidoNoCoincideException;
 import co.tecnosport.api.domain.usuario.CorreoSinVerificarException;
+import co.tecnosport.api.domain.usuario.SegundoFactorYaActivoException;
 import java.net.URI;
 import java.util.List;
 import java.util.Locale;
@@ -1033,6 +1034,13 @@ public class ManejadorDeErrores {
   @ExceptionHandler(CorreoSinVerificarException.class)
   public ProblemDetail correoSinVerificar(CorreoSinVerificarException excepcion) {
     return problema(HttpStatus.FORBIDDEN, "Correo sin verificar", excepcion);
+  }
+
+  // ADR-0096. 409: la cuenta ya tiene el segundo factor activo; para cambiar de teléfono, primero
+  // se desactiva.
+  @ExceptionHandler(SegundoFactorYaActivoException.class)
+  public ProblemDetail segundoFactorYaActivo(SegundoFactorYaActivoException excepcion) {
+    return problema(HttpStatus.CONFLICT, "El segundo factor ya está activo", excepcion);
   }
 
   // 429, mismo código que ya escribe a mano FiltroLimiteIntentos para el límite por IP — el

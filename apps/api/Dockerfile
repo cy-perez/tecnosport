@@ -61,6 +61,9 @@ WORKDIR /app
 # No se activa `local` para conseguirlos: ese perfil trae el sembrador y el resto del comportamiento
 # de desarrollo, y el archivo se entrenaría con clases que en un despliegue no se cargan.
 #
+# La llave del segundo factor (ADR-0096) es Base64 de "solo-para-entrenar-cds-no-cifra!": 32 bytes,
+# porque `PropiedadesSegundoFactor` rechaza cualquier otro tamaño y esta corrida tiene que arrancar.
+#
 # Ninguna de estas propiedades sobrevive a la etapa siguiente: son argumentos de esta corrida, no
 # configuración de la aplicación. Un despliegue que arranque sin su JWT_SECRETO sigue fallando.
 RUN java -XX:ArchiveClassesAtExit=aplicacion.jsa \
@@ -74,6 +77,7 @@ RUN java -XX:ArchiveClassesAtExit=aplicacion.jsa \
       -Dtecnosport.wompi.secreto-eventos=solo-para-entrenar-cds \
       -Dtecnosport.skydropx.webhook.secreto=solo-para-entrenar-cds \
       -Dtecnosport.admin-semilla.clave=solo-para-entrenar-cds \
+      -Dtecnosport.segundo-factor.llave=c29sby1wYXJhLWVudHJlbmFyLWNkcy1uby1jaWZyYSE= \
       -jar app.jar
 
 FROM eclipse-temurin:21-jre AS ejecucion

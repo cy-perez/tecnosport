@@ -661,6 +661,29 @@ tecnosport:
   recuperacion-clave:
     # docs/08-seguridad-legal.md: "token de un solo uso, válido 30 minutos".
     minutos-vencimiento: ${RECUPERACION_CLAVE_MINUTOS_VENCIMIENTO:30}
+  # ADR-0096. El segundo factor TOTP del panel.
+  segundo-factor:
+    # La llave AES-256 con la que se cifra la clave TOTP de cada factor: 32 bytes en Base64
+    # estándar. Sin valor por omisión, como los secretos de JWT y Wompi: un despliegue que arrancara
+    # con una llave inventada cifraría con ella, y el siguiente, con la de verdad, no podría leer
+    # nada. La de desarrollo vive en application-local.yml (ClavesSinValorDeEjemploTest).
+    llave: ${SEGUNDO_FACTOR_LLAVE}
+    # Con true, un ADMIN sin segundo factor entra con una sesión que solo sirve para activarlo.
+    # false por omisión; dev lo enciende en infra/envs/dev/main.tf.
+    admin-obligatorio: ${ADMIN_EXIGE_SEGUNDO_FACTOR:false}
+    # Cuánto vive el segundo paso del inicio de sesión: la clave ya fue correcta y falta el código.
+    minutos-desafio: ${SEGUNDO_FACTOR_MINUTOS_DESAFIO:5}
+    # Códigos equivocados que aguanta un mismo desafío; agotados, hay que volver a escribir la clave.
+    intentos-por-desafio: ${SEGUNDO_FACTOR_INTENTOS_POR_DESAFIO:5}
+    # Los del segundo paso por cuenta e IP y por cuenta sola, en la misma ventana. Dato de
+    # seguridad, no de negocio. Por cuenta sola no puede ser menor que por cuenta e IP.
+    intentos-cuenta-ip: ${SEGUNDO_FACTOR_INTENTOS_CUENTA_IP:5}
+    intentos-cuenta: ${SEGUNDO_FACTOR_INTENTOS_CUENTA:10}
+    minutos-ventana: ${SEGUNDO_FACTOR_MINUTOS_VENTANA:15}
+    # Cuánto espera una activación sin confirmar antes de que haya que empezarla otra vez.
+    minutos-activacion-pendiente: ${SEGUNDO_FACTOR_MINUTOS_ACTIVACION_PENDIENTE:15}
+    # El nombre con que la cuenta aparece en la aplicación de autenticación.
+    emisor: ${SEGUNDO_FACTOR_EMISOR:TecnoSport}
   garantia:
     # Doce meses para producto nuevo, que es lo que prometen los terminos publicados. Un productor
     # puede anunciar uno mayor: eso va en meses-por-categoria.

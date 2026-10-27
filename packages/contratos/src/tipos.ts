@@ -1940,6 +1940,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/segundo-factor/activacion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["iniciarActivacionSegundoFactor"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/sesion": {
         parameters: {
             query?: never;
@@ -2431,6 +2447,14 @@ export interface components {
             /** Format: uuid */
             productoId?: string;
             versionAsistente?: string;
+        };
+        ActivacionSegundoFactorRespuesta: {
+            /** Format: int32 */
+            digitos: number;
+            /** Format: int32 */
+            periodoSegundos: number;
+            secreto: string;
+            uri: string;
         };
         ActualizarCantidadRequest: {
             /** Format: int32 */
@@ -3252,6 +3276,9 @@ export interface components {
             modelosDesaparecidos?: string[];
             /** @enum {string} */
             modo: "INVENTARIO" | "BORRADORES";
+        };
+        IniciarActivacionSegundoFactorRequest: {
+            claveActual: string;
         };
         IniciarIngestaPeticion: {
             nombreArchivo?: string;
@@ -7726,6 +7753,30 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    iniciarActivacionSegundoFactor: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IniciarActivacionSegundoFactorRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ActivacionSegundoFactorRespuesta"];
+                };
             };
         };
     };

@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import co.tecnosport.api.bootstrap.pago.PropiedadesWompi;
 import co.tecnosport.api.bootstrap.usuario.PropiedadesAdminSemilla;
 import co.tecnosport.api.bootstrap.usuario.PropiedadesJwt;
+import co.tecnosport.api.bootstrap.usuario.PropiedadesSegundoFactor;
 import co.tecnosport.api.presentation.envio.PropiedadesWebhookEnvio;
 import java.io.IOException;
 import java.util.List;
@@ -45,7 +46,8 @@ class ClavesSinValorDeEjemploTest {
           "tecnosport.wompi.secreto-eventos", "WOMPI_SECRETO_EVENTOS",
           "tecnosport.skydropx.webhook.secreto", "SKYDROPX_SECRETO_WEBHOOK",
           "tecnosport.jwt.secreto", "JWT_SECRETO",
-          "tecnosport.admin-semilla.clave", "ADMIN_CLAVE");
+          "tecnosport.admin-semilla.clave", "ADMIN_CLAVE",
+          "tecnosport.segundo-factor.llave", "SEGUNDO_FACTOR_LLAVE");
 
   private static PropertySource<?> cargar(String archivo) throws IOException {
     List<PropertySource<?>> fuentes =
@@ -96,6 +98,9 @@ class ClavesSinValorDeEjemploTest {
     assertThrows(
         Exception.class,
         () -> binder.bind("tecnosport.skydropx.webhook", PropiedadesWebhookEnvio.class));
+    assertThrows(
+        Exception.class,
+        () -> binder.bind("tecnosport.segundo-factor", PropiedadesSegundoFactor.class));
   }
 
   /**
