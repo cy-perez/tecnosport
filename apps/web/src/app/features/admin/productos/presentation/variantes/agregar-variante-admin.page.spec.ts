@@ -287,6 +287,19 @@ describe('AgregarVarianteAdminPage', () => {
     expect(repositorio.llamadasAgregarVariante).toHaveLength(0);
   });
 
+  it('con el precio de contado en cero no se crea', async () => {
+    const repositorio = new RepositorioProductosAdminFalso();
+    await renderPagina(repositorio);
+
+    fireEvent.input(screen.getByLabelText('SKU'), { target: { value: 'TS-1' } });
+    fireEvent.input(screen.getByLabelText('Precio de contado'), { target: { value: '0' } });
+    llenarPaquete();
+    fireEvent.click(screen.getByRole('button', { name: 'Crear variante' }));
+
+    expect(await screen.findByText(/Faltan datos obligatorios/)).toBeTruthy();
+    expect(repositorio.llamadasAgregarVariante).toHaveLength(0);
+  });
+
   it('con una dimensión en cero tampoco se crea', async () => {
     const repositorio = new RepositorioProductosAdminFalso();
     await renderPagina(repositorio);

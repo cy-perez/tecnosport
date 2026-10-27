@@ -454,7 +454,7 @@
       "titulo": "Agregar variante",
       "sku": "SKU",
       "precioContado": "Precio de contado",
-      "precioContadoAyuda": "En pesos. El precio publicado se calcula sumándole la comisión de Wompi.",
+      "precioContadoAyuda": "En pesos, mayor que cero. El precio publicado se calcula sumándole la comisión de Wompi.",
       "tasaIva": "Tasa de IVA",
       "codigoBarras": "Código de barras",
       "existenciaInicial": "Existencia inicial",

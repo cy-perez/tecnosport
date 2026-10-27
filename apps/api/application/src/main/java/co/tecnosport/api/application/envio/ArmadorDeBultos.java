@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -235,7 +236,7 @@ public final class ArmadorDeBultos {
   private List<BultoDespachable> armar(
       List<LineaAEmpacar> lineas,
       Dinero totalARecaudar,
-      java.util.function.Function<Variante, Dinero> precioDelCatalogo) {
+      Function<Variante, Dinero> precioDelCatalogo) {
     Objects.requireNonNull(lineas, "Las líneas a empacar no pueden ser nulas.");
     List<Unidad> unidades = new ArrayList<>();
     for (LineaAEmpacar linea : lineas) {

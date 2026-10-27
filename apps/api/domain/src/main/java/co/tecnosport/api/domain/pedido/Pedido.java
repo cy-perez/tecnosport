@@ -17,6 +17,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 
 /**
  * Raíz transaccional (docs/02-modelo-datos.md). El número legible ({@link NumeroPedido}) no lo
@@ -453,7 +454,7 @@ public final class Pedido {
     return sumar(LineaPedido::descuento);
   }
 
-  private Dinero sumar(java.util.function.Function<LineaPedido, Dinero> cifra) {
+  private Dinero sumar(Function<LineaPedido, Dinero> cifra) {
     BigDecimal suma =
         lineas.stream().map(l -> cifra.apply(l).valor()).reduce(BigDecimal.ZERO, BigDecimal::add);
     return Dinero.deCop(suma);

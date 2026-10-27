@@ -198,6 +198,7 @@ public final class Variante {
       String codigoBarras,
       Paquete paquete,
       List<ValorAtributo> atributos) {
+    exigirMayorQueCero(sku, precioContado);
     return new Variante(
         GeneradorIdentificador.nuevo(),
         sku,
@@ -241,23 +242,16 @@ public final class Variante {
   }
 
   /**
-   * La misma variante con otro precio publicado y el mismo de contado. Copia, como {@link #medida},
-   * y por lo mismo. Los pedidos ya creados no cambian: cada línea congeló su precio.
-   */
-  public Variante conPrecio(Dinero nuevo) {
-    Objects.requireNonNull(nuevo, "El precio no puede ser nulo.");
-    return conPrecios(precioContado, nuevo);
-  }
-
-  /**
    * La misma variante con otro precio de contado y otro publicado. Copia, como {@link #medida}. El
    * publicado lo calcula quien llama con {@link ComisionDePasarela#publicadoDesde}: la variante no
    * sabe de pasarelas, solo exige que el contado sea mayor que cero y que el publicado no quede por
-   * debajo de él.
+   * debajo de él. Es la única puerta para cambiar el precio: no hay una que cambie el publicado
+   * solo, porque escribirlo sin la comisión es justo lo que el ADR-0095 quiere evitar.
    */
   public Variante conPrecios(Dinero contado, Dinero publicado) {
     Objects.requireNonNull(contado, "El precio de contado no puede ser nulo.");
     Objects.requireNonNull(publicado, "El precio publicado no puede ser nulo.");
+    exigirMayorQueCero(sku, contado);
     return new Variante(
         id,
         sku,
@@ -345,16 +339,13 @@ public final class Variante {
   }
 
   /**
-   * Cero no es un precio: {@link Dinero} lo admite, pero un precio en cero desde el panel solo
-   * puede ser un error de digitación, y lo que se publicaría es un producto regalado. Y el
-   * publicado es el máximo que alguien paga (ADR-0095): por debajo del contado, el descuento por
-   * pagar sin pasarela sería un recargo.
+   * Lo que vale siempre, también al reconstruir desde la base: el publicado es el máximo que
+   * alguien paga (ADR-0095) —por debajo del contado, el descuento por pagar sin pasarela sería un
+   * recargo—; negativo ya no puede ser ninguno, porque {@link Dinero} no lo admite. Cero sí pasa
+   * aquí: una variante guardada en cero antes de que el panel lo impidiera se tiene que poder leer,
+   * o la ficha entera deja de cargar.
    */
   private static void validarPrecios(Sku sku, Dinero contado, Dinero publicado) {
-    if (contado.valor().signum() <= 0) {
-      throw new ExcepcionDeDominio(
-          "El precio de la variante '" + sku.valor() + "' tiene que ser mayor que cero.");
-    }
     if (publicado.valor().compareTo(contado.valor()) < 0) {
       throw new ExcepcionDeDominio(
           "El precio publicado de la variante '"
@@ -364,6 +355,18 @@ public final class Variante {
               + ") no puede ser menor que el de contado ("
               + contado.valor().toPlainString()
               + ").");
+    }
+  }
+
+  /**
+   * Cero no es un precio: {@link Dinero} lo admite, pero un precio en cero desde el panel solo
+   * puede ser un error de digitación, y lo que se publicaría es un producto regalado. Se exige al
+   * crear y al cambiar el precio, no al reconstruir ({@link #validarPrecios}).
+   */
+  private static void exigirMayorQueCero(Sku sku, Dinero contado) {
+    if (contado.valor().signum() <= 0) {
+      throw new ExcepcionDeDominio(
+          "El precio de la variante '" + sku.valor() + "' tiene que ser mayor que cero.");
     }
   }
 

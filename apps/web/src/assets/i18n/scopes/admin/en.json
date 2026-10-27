@@ -454,7 +454,7 @@
       "titulo": "Add variant",
       "sku": "SKU",
       "precioContado": "Cash price",
-      "precioContadoAyuda": "In pesos. The published price adds the Wompi fee to it.",
+      "precioContadoAyuda": "In pesos, greater than zero. The published price adds the Wompi fee to it.",
       "tasaIva": "VAT rate",
       "codigoBarras": "Barcode",
       "existenciaInicial": "Initial stock",
