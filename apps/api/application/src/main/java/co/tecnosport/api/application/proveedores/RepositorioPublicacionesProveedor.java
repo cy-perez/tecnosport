@@ -16,6 +16,13 @@ public interface RepositorioPublicacionesProveedor {
 
   Optional<PublicacionProveedor> buscarPorId(UUID id);
 
+  /**
+   * La misma, con la fila bloqueada hasta el final de la transacción: la que resuelve una
+   * publicación después de una extracción larga la relee así, porque otro trabajador pudo haberla
+   * resuelto mientras tanto (27 de octubre de 2026).
+   */
+  Optional<PublicacionProveedor> buscarPorIdParaActualizar(UUID id);
+
   /** Las de un lote, en orden de fecha. */
   List<PublicacionProveedor> listarDeLote(UUID loteId);
 

@@ -23,6 +23,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -204,7 +205,15 @@ public final class ProcesarLoteDeIngesta {
         if (!reloj.ahora().isBefore(fin)) {
           return soltarParaSeguir(lote.id(), mios, progreso);
         }
-        resolverUna(publicacion, mensajes, proveedor, huellasVisuales, chatDelLote, progreso);
+        resolverUna(
+            lote.id(),
+            mios,
+            publicacion,
+            mensajes,
+            proveedor,
+            huellasVisuales,
+            chatDelLote,
+            progreso);
         anotarAvance(lote.id(), mios, progreso);
       }
 
@@ -442,8 +451,21 @@ public final class ProcesarLoteDeIngesta {
                 .orElse(false));
   }
 
-  /** La extracción fuera de la transacción; la resolución dentro. Un fallo no sale de aquí. */
+  /**
+   * La extracción fuera de la transacción; la resolución dentro. Un fallo no sale de aquí, salvo
+   * que el lote haya dejado de ser de este trabajador mientras extraía: eso sale con {@link
+   * LoteAjeno}, como en {@link #puntoDeControl}.
+   *
+   * <p>La extracción puede tardar minutos, y en ese rato otro trabajador pudo retomar el lote y
+   * resolver esta misma publicación (27 de octubre de 2026). Por eso la transacción que resuelve
+   * bloquea el lote, comprueba que sigue siendo de este trabajador, y relee la publicación
+   * bloqueada: si ya no está pendiente de extracción, no hace nada. Pausado o deteniéndose, en
+   * cambio, sigue siendo suyo y la extracción ya se pagó: se resuelve, y el punto de control
+   * siguiente obedece.
+   */
   private void resolverUna(
+      UUID loteId,
+      int mios,
       PublicacionProveedor publicacion,
       Map<UUID, MensajeProveedor> mensajes,
       Proveedor proveedor,
@@ -460,6 +482,8 @@ public final class ProcesarLoteDeIngesta {
               proveedor.ajustesDeIngesta().unaFotoUnProducto());
     } catch (ExtraccionFallidaException e) {
       fallarPublicacion(
+          loteId,
+          mios,
           publicacion,
           CierreDePublicacion.de(MotivoDePublicacion.EXTRACCION_FALLIDA),
           e.getMessage());
@@ -476,15 +500,21 @@ public final class ProcesarLoteDeIngesta {
               : Map.of();
       List<ResolverBorrador.Resolucion> resoluciones =
           enTransaccionPropia.ejecutar(
-              () ->
-                  resolver.ejecutar(
-                      publicacion,
-                      mensajes,
-                      proveedor,
-                      evaluadas,
-                      pHashes,
-                      huellasVisuales,
-                      chatDelLote));
+              () -> {
+                exigirMio(loteId, mios);
+                Optional<PublicacionProveedor> pendiente = pendienteParaActualizar(publicacion);
+                if (pendiente.isEmpty()) {
+                  return List.<ResolverBorrador.Resolucion>of();
+                }
+                return resolver.ejecutar(
+                    pendiente.get(),
+                    mensajes,
+                    proveedor,
+                    evaluadas,
+                    pHashes,
+                    huellasVisuales,
+                    chatDelLote);
+              });
       for (ResolverBorrador.Resolucion resolucion : resoluciones) {
         switch (resolucion.tipo()) {
           case NUEVO -> progreso.nuevos++;
@@ -494,8 +524,12 @@ public final class ProcesarLoteDeIngesta {
         }
         progreso.alertas += resolucion.alertas().size();
       }
+    } catch (LoteAjeno e) {
+      throw e;
     } catch (RuntimeException e) {
       fallarPublicacion(
+          loteId,
+          mios,
           publicacion,
           new CierreDePublicacion(
               MotivoDePublicacion.ERROR_AL_RESOLVER, e.getClass().getSimpleName()),
@@ -504,17 +538,62 @@ public final class ProcesarLoteDeIngesta {
     }
   }
 
+  /**
+   * Con las mismas guardas que la resolución: si el lote ya no es de este trabajador, o la
+   * publicación ya no está pendiente, no escribe nada.
+   */
   private void fallarPublicacion(
-      PublicacionProveedor publicacion, CierreDePublicacion cierre, String detalle) {
+      UUID loteId,
+      int mios,
+      PublicacionProveedor publicacion,
+      CierreDePublicacion cierre,
+      String detalle) {
     enTransaccionPropia.ejecutar(
         () -> {
+          if (!sigueSiendoMio(loteId, mios)) {
+            return null;
+          }
           // La publicación pudo quedar tocada en memoria por la transacción que revirtió; se relee.
-          PublicacionProveedor fresca =
-              repositorioPublicaciones.buscarPorId(publicacion.id()).orElse(publicacion);
-          fresca.fallar(cierre, detalle);
-          repositorioPublicaciones.actualizar(fresca);
-          return fresca;
+          Optional<PublicacionProveedor> fresca = pendienteParaActualizar(publicacion);
+          if (fresca.isEmpty()) {
+            return null;
+          }
+          fresca.get().fallar(cierre, detalle);
+          repositorioPublicaciones.actualizar(fresca.get());
+          return fresca.get();
         });
+  }
+
+  /**
+   * Dentro de la transacción que resuelve, con el lote bloqueado: sigue siendo de este trabajador,
+   * o sale con {@link LoteAjeno}.
+   */
+  private void exigirMio(UUID loteId, int mios) {
+    if (!sigueSiendoMio(loteId, mios)) {
+      throw new LoteAjeno();
+    }
+  }
+
+  /**
+   * De este trabajador y sin soltar: en PROCESANDO, deteniéndose o pausado —la pausa la obedece el
+   * punto de control siguiente—. La misma condición que la escritura final del tramo.
+   */
+  private boolean sigueSiendoMio(UUID loteId, int mios) {
+    // Eliminado mientras extraía, tampoco: no hay a quién anotarle nada.
+    return repositorioLotes
+        .buscarPorIdParaActualizar(loteId)
+        .filter(
+            fresco ->
+                esMio(fresco, mios)
+                    && (fresco.enManosDelTrabajador() || fresco.estado() == EstadoLote.PAUSADO))
+        .isPresent();
+  }
+
+  /** La publicación releída con bloqueo, si sigue pendiente de extracción. */
+  private Optional<PublicacionProveedor> pendienteParaActualizar(PublicacionProveedor publicacion) {
+    return repositorioPublicaciones
+        .buscarPorIdParaActualizar(publicacion.id())
+        .filter(p -> p.estado() == EstadoPublicacionProveedor.PENDIENTE_EXTRACCION);
   }
 
   /**

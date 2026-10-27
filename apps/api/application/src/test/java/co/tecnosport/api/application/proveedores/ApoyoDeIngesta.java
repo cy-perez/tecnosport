@@ -441,6 +441,11 @@ final class ApoyoDeIngesta {
     }
 
     @Override
+    public Optional<PublicacionProveedor> buscarPorIdParaActualizar(UUID id) {
+      return buscarPorId(id);
+    }
+
+    @Override
     public List<PublicacionProveedor> listarDeLote(UUID loteId) {
       return porId.values().stream()
           .filter(p -> p.loteId().equals(loteId))

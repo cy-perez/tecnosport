@@ -1032,6 +1032,11 @@ class AdminBorradorControladorTest {
     }
 
     @Override
+    public Optional<PublicacionProveedor> buscarPorIdParaActualizar(UUID id) {
+      return buscarPorId(id);
+    }
+
+    @Override
     public Optional<PublicacionProveedor> buscarPorId(UUID id) {
       return Optional.ofNullable(porId.get(id));
     }
