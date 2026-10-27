@@ -66,14 +66,30 @@ class CarritosPorPagarEnMemoria implements AlmacenCarritoPorPagar {
 
 let carritosPorPagar = new CarritosPorPagarEnMemoria();
 
-/** El carrito del navegador: solo hace falta que exista, la pantalla no pinta sus líneas. */
+/**
+ * El carrito del navegador: la pantalla no pinta sus líneas, pero al volver pagado quita las que
+ * fueron al pedido, así que `lineasDelCarrito` las simula y `eliminadas` anota lo que se quitó.
+ */
+let lineasDelCarrito: { id: string; varianteId: string; cantidad: number }[] = [];
+let eliminadas: string[] = [];
+let actualizadas: { lineaId: string; cantidad: number }[] = [];
 const repositorioCarrito: Partial<RepositorioCarrito> = {
   ver: async (id: string) => ({
     id,
     usuarioId: null,
     creadoEn: '2026-01-01T00:00:00Z',
-    lineas: [],
+    lineas: lineasDelCarrito,
   }),
+  eliminarLinea: async (id: string, lineaId: string) => {
+    eliminadas.push(lineaId);
+    lineasDelCarrito = lineasDelCarrito.filter((linea) => linea.id !== lineaId);
+    return { id, usuarioId: null, creadoEn: '2026-01-01T00:00:00Z', lineas: lineasDelCarrito };
+  },
+  actualizarCantidad: async (id: string, lineaId: string, cantidad: number) => {
+    actualizadas.push({ lineaId, cantidad });
+    lineasDelCarrito = lineasDelCarrito.map((l) => (l.id === lineaId ? { ...l, cantidad } : l));
+    return { id, usuarioId: null, creadoEn: '2026-01-01T00:00:00Z', lineas: lineasDelCarrito };
+  },
 };
 
 /** Lo que toda pantalla con `CarritoStore` necesita, más el almacén de carritos por pagar. */
@@ -300,6 +316,9 @@ describe('EstadoPage', () => {
   beforeEach(() => {
     window.localStorage.clear();
     carritosPorPagar = new CarritosPorPagarEnMemoria();
+    lineasDelCarrito = [];
+    eliminadas = [];
+    actualizadas = [];
   });
 
   describe('el carrito que salió a pagarse en la pasarela', () => {
@@ -325,6 +344,34 @@ describe('EstadoPage', () => {
 
       await vi.waitFor(() => expect(carrito.carritoId()).toBeNull());
       expect(carritosPorPagar.carritoDe('pedido-1')).toBeNull();
+    });
+
+    // El pedido de prueba lleva 2 unidades de `variante-1`.
+    it('al volver pagado quita solo lo que llevó el pedido', async () => {
+      sembrarCarritoId('carrito-1');
+      lineasDelCarrito = [
+        { id: 'linea-1', varianteId: 'variante-1', cantidad: 2 },
+        { id: 'linea-2', varianteId: 'variante-2', cantidad: 1 },
+      ];
+      carritosPorPagar.anotar('pedido-1', 'carrito-1');
+
+      const carrito = await volverConElPedido('PAGADO');
+
+      await vi.waitFor(() => expect(eliminadas).toEqual(['linea-1']));
+      expect(carrito.carritoId()).toBe('carrito-1');
+      expect(carritosPorPagar.carritoDe('pedido-1')).toBeNull();
+    });
+
+    it('si se agregaron unidades después de salir a pagar, se quedan', async () => {
+      sembrarCarritoId('carrito-1');
+      lineasDelCarrito = [{ id: 'linea-1', varianteId: 'variante-1', cantidad: 3 }];
+      carritosPorPagar.anotar('pedido-1', 'carrito-1');
+
+      const carrito = await volverConElPedido('PAGADO');
+
+      await vi.waitFor(() => expect(actualizadas).toEqual([{ lineaId: 'linea-1', cantidad: 1 }]));
+      expect(eliminadas).toEqual([]);
+      expect(carrito.carritoId()).toBe('carrito-1');
     });
 
     it('se queda lleno mientras el pago no ha entrado', async () => {

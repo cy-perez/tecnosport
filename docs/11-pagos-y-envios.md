@@ -27,9 +27,10 @@ riesgos, porque **el precio anunciado es el máximo que alguien paga**.
 - **El descuento es solo de la mercancía.** El flete cuesta lo mismo con cualquier medio y
   no lleva comisión adentro; la de Wompi sobre el flete (unos $473 en uno de $15.000) la
   absorbe el negocio.
-- **La vitrina no muestra un segundo precio, muestra el ahorro** (decisión 10): la ficha,
-  la tarjeta y el carrito dicen «Ahorras $X pagando por transferencia, en el punto o
-  contra entrega». El desglose con el descuento solo aparece en el checkout, con el medio
+- **La vitrina no muestra un segundo precio, muestra el ahorro** (decisión 10): la ficha
+  y el carrito dicen «Ahorras $X pagando por transferencia, en el punto o contra
+  entrega». La tarjeta de la rejilla lo decía también hasta el 27/10/2026; se quitó a
+  pedido, porque repetía la misma frase debajo de cada producto. El desglose con el descuento solo aparece en el checkout, con el medio
   ya elegido: `POST /pedidos/metodos-de-pago-con-precio` da la mercancía al precio de cada
   medio, y el resumen, la pantalla de transferencia, la de estado y el comprobante por
   correo muestran el descuento en su propia línea. Si con eso basta frente al artículo 26

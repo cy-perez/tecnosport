@@ -36,6 +36,7 @@ import { CarritoIdLocalStorageAlmacen } from '../../../carrito/infrastructure/ca
 import {
   proveerAlmacenesCarrito,
   sembrarCarritoId,
+  sembrarLineasSinMarcar,
   sembrarSnapshotLinea,
 } from '../../../../../testing/carrito';
 import {
@@ -126,8 +127,16 @@ class RepositorioCarritoFalso implements RepositorioCarrito {
     throw new Error('no usado en esta prueba');
   }
 
-  async eliminarLinea(): Promise<Carrito> {
-    throw new Error('no usado en esta prueba');
+  /** Las que se quitaron al terminar: con una selección, solo las pagadas. */
+  readonly eliminadas: string[] = [];
+
+  async eliminarLinea(carritoId: string, lineaId: string): Promise<Carrito> {
+    if (!this.carrito) {
+      throw new Error('no hay carrito');
+    }
+    this.eliminadas.push(lineaId);
+    this.carrito = { ...this.carrito, lineas: this.carrito.lineas.filter((l) => l.id !== lineaId) };
+    return this.carrito;
   }
 }
 
@@ -311,6 +320,15 @@ const CARRITO_CON_LINEAS: Carrito = {
   usuarioId: null,
   creadoEn: '2026-01-01T00:00:00Z',
   lineas: [{ id: 'linea-1', varianteId: 'variante-1', cantidad: 1 }],
+};
+
+/** Dos productos; las pruebas de selección dejan `linea-2` sin marcar. */
+const CARRITO_CON_DOS_LINEAS: Carrito = {
+  ...CARRITO_CON_LINEAS,
+  lineas: [
+    { id: 'linea-1', varianteId: 'variante-1', cantidad: 1 },
+    { id: 'linea-2', varianteId: 'variante-2', cantidad: 3 },
+  ],
 };
 
 const DATOS_ENTREGA: DatosEntrega = {
@@ -1371,6 +1389,30 @@ describe('ConfirmarPage', () => {
       expect(carrito.carritoId()).toBeNull();
       expect(new CarritoIdLocalStorageAlmacen().leer()).toBeNull();
     });
+  });
+
+  /** Lo que se dejó sin marcar no va en el pedido y sigue en el carrito para otra compra. */
+  it('con una línea sin marcar, el pedido lleva solo la marcada y la otra se queda', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarLineasSinMarcar(['linea-2']);
+    const pedidos = new RepositorioPedidosFalso(pedidoDePrueba({ metodoPago: 'CONTRAENTREGA' }));
+    const repositorioCarrito = new RepositorioCarritoFalso(CARRITO_CON_DOS_LINEAS);
+
+    const { fixture } = await renderConDatos('CONTRAENTREGA', repositorioCarrito, pedidos);
+    await screen.findByText('compra@ejemplo.co');
+    await esperarCarritoCargado(fixture);
+    const carrito = fixture.debugElement.injector.get(CarritoStore);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
+
+    await vi.waitFor(() => expect(repositorioCarrito.eliminadas).toEqual(['linea-1']));
+    expect(pedidos.ultimoComando?.lineas).toEqual([
+      { varianteId: 'variante-1', cantidad: 1, enlaceCompra: undefined },
+    ]);
+    expect(carrito.carritoId()).toBe('carrito-1');
+    await vi.waitFor(() =>
+      expect(carrito.consulta.data()?.lineas.map((linea) => linea.id)).toEqual(['linea-2']),
+    );
   });
 
   /**

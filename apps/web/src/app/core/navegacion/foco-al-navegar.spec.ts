@@ -1,3 +1,5 @@
+import { Location, ViewportScroller } from '@angular/common';
+import { provideLocationMocks } from '@angular/common/testing';
 import { ApplicationRef, Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Router, RouterOutlet, provideRouter } from '@angular/router';
@@ -40,6 +42,8 @@ async function navegar(router: Router, url: string): Promise<void> {
 async function montar() {
   await render(Anfitrion, {
     providers: [
+      // `SpyLocation`: su `back()` emite el `popstate` en el acto, como el del navegador.
+      provideLocationMocks(),
       provideRouter([
         { path: ':idioma/productos', component: Catalogo },
         { path: ':idioma/carrito', component: Carrito },
@@ -91,5 +95,39 @@ describe('usarFocoAlNavegar', () => {
 
     expect(document.activeElement).toBe(boton);
     boton.remove();
+  });
+
+  /**
+   * El título de la ficha va debajo de la galería en móvil, y `focus()` a secas desplazaba hasta él:
+   * la ficha abría por la mitad.
+   */
+  it('al cambiar de pantalla la abre por el comienzo, y enfoca el título sin desplazar', async () => {
+    const router = await montar();
+    const desplazar = vi.spyOn(TestBed.inject(ViewportScroller), 'scrollToPosition');
+    const enfocar = vi.spyOn(HTMLElement.prototype, 'focus');
+
+    await navegar(router, '/es/carrito');
+
+    await vi.waitFor(() => expect(document.activeElement?.textContent).toBe('Carrito'));
+    expect(desplazar).toHaveBeenCalledWith([0, 0]);
+    expect(enfocar).toHaveBeenLastCalledWith({ preventScroll: true });
+    enfocar.mockRestore();
+  });
+
+  it('con Atrás no sube al comienzo: se vuelve a algo que ya se vio', async () => {
+    const router = await montar();
+    await navegar(router, '/es/carrito');
+    await vi.waitFor(() => expect(document.activeElement?.textContent).toBe('Carrito'));
+    const desplazar = vi.spyOn(TestBed.inject(ViewportScroller), 'scrollToPosition');
+    const enfocar = vi.spyOn(HTMLElement.prototype, 'focus');
+
+    TestBed.inject(Location).back();
+    await vi.waitFor(() => expect(router.url).toBe('/es/productos'));
+    TestBed.inject(ApplicationRef).tick();
+
+    await vi.waitFor(() => expect(document.activeElement?.textContent).toBe('Catálogo'));
+    expect(desplazar).not.toHaveBeenCalled();
+    expect(enfocar).toHaveBeenLastCalledWith({ preventScroll: false });
+    enfocar.mockRestore();
   });
 });

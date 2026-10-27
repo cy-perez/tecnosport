@@ -49,7 +49,7 @@ export class TransportadoraPage {
 
   private readonly criterios = computed<CotizarEnvioComando | null>(() => {
     const datos = this.checkout.datosEntrega();
-    const lineas = (this.carrito.consulta.data()?.lineas ?? []).map((linea) => ({
+    const lineas = this.carrito.lineasPorPagar().map((linea) => ({
       varianteId: linea.varianteId,
       cantidad: linea.cantidad,
     }));
@@ -77,7 +77,8 @@ export class TransportadoraPage {
     effect(() => {
       const datos = this.checkout.datosEntrega();
       const datosCarrito = this.carrito.consulta.data();
-      const carritoVacio = !!datosCarrito && datosCarrito.lineas.length === 0;
+      // Vacío o sin nada marcado: el resumen sabe decir cada caso.
+      const carritoVacio = !!datosCarrito && this.carrito.lineasPorPagar().length === 0;
       if (!datos || !requiereDireccion(datos.tipoEntrega) || carritoVacio) {
         void this.router.navigate(['../resumen'], { relativeTo: this.route });
       }
@@ -94,7 +95,7 @@ export class TransportadoraPage {
     this.checkout.elegirTransportadora(transportadora);
     this.faltaTransportadora.set(false);
     const datos = this.checkout.datosEntrega();
-    const lineas = this.carrito.consulta.data()?.lineas ?? [];
+    const lineas = this.carrito.lineasPorPagar();
     if (datos && lineas.length > 0) {
       this.precargarMetodosDePago(comandoMetodosDePago(datos, lineas));
     }

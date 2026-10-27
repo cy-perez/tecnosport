@@ -118,7 +118,7 @@ export class ConfirmarPage {
     if (!datos || datos.tipoEntrega !== 'ENVIO_A_DOMICILIO' || !datos.direccion) {
       return null;
     }
-    const lineas = (this.carrito.consulta.data()?.lineas ?? []).map((linea) => ({
+    const lineas = this.carrito.lineasPorPagar().map((linea) => ({
       varianteId: linea.varianteId,
       cantidad: linea.cantidad,
     }));
@@ -225,7 +225,7 @@ export class ConfirmarPage {
   );
 
   private readonly modalidades = usarModalidadesDeEntrega(() =>
-    (this.carrito.consulta.data()?.lineas ?? []).map((linea) => linea.varianteId),
+    this.carrito.lineasPorPagar().map((linea) => linea.varianteId),
   );
 
   /** Mismo criterio que en el resumen: mientras no se sabe, como si estuviera apagada. */
@@ -335,7 +335,7 @@ export class ConfirmarPage {
    */
   private readonly criteriosMetodos = computed<MetodosDePagoDisponiblesComando | null>(() => {
     const datos = this.checkout.datosEntrega();
-    const lineas = this.carrito.consulta.data()?.lineas ?? [];
+    const lineas = this.carrito.lineasPorPagar();
     return datos && lineas.length > 0 ? comandoMetodosDePago(datos, lineas) : null;
   });
 
@@ -388,8 +388,8 @@ export class ConfirmarPage {
   );
 
   /**
-   * La compra quedó hecha y ya se navegó a su pantalla final. Desde ahí el carrito se vacía y el
-   * store suelta los datos de entrega y el medio (`CheckoutStore.terminarCompra`), y la guarda de
+   * La compra quedó hecha y ya se navegó a su pantalla final. Desde ahí lo pagado sale del carrito
+   * y el store suelta los datos de entrega y el medio (`CheckoutStore.terminarCompra`), y la guarda de
    * abajo los vería faltar y mandaría al resumen, compitiendo con la navegación que ya va en vuelo.
    */
   private readonly terminado = signal(false);
@@ -402,7 +402,8 @@ export class ConfirmarPage {
       const datosCarrito = this.carrito.consulta.data();
       const sinDatosEntrega = this.checkout.datosEntrega() === null;
       const sinMetodoPago = this.checkout.metodoPago() === null;
-      const carritoVacio = !!datosCarrito && datosCarrito.lineas.length === 0;
+      // Vacío o sin nada marcado: el resumen sabe decir cada caso.
+      const carritoVacio = !!datosCarrito && this.carrito.lineasPorPagar().length === 0;
 
       if (carritoVacio || sinDatosEntrega) {
         void this.router.navigate(['../resumen'], { relativeTo: this.route });
@@ -435,8 +436,7 @@ export class ConfirmarPage {
     }
     const datos = this.checkout.datosEntrega();
     const metodoPago = this.checkout.metodoPago();
-    const datosCarrito = this.carrito.consulta.data();
-    if (!datos || !metodoPago || !datosCarrito || datosCarrito.lineas.length === 0) {
+    if (!datos || !metodoPago || this.carrito.lineasPorPagar().length === 0) {
       return;
     }
     // Sin el precio fresco del medio no se confirma: mientras carga, el botón ya va ocupado, pero
@@ -474,10 +474,17 @@ export class ConfirmarPage {
       return;
     }
 
+    // Lo marcado se lee aquí, después de las esperas, y no al principio: durante ellas la
+    // cotización del carrito puede volver con una línea que ya no se vende, y el pedido tiene que
+    // ser el de lo que la pantalla muestra ahora, el mismo con que se cotizó el envío.
+    const lineasPorPagar = this.carrito.lineasPorPagar();
+    if (lineasPorPagar.length === 0) {
+      return;
+    }
     const comando: CrearPedidoComando = {
       correo: datos.correo,
       contacto: datos.contacto,
-      lineas: datosCarrito.lineas.map((linea) => ({
+      lineas: lineasPorPagar.map((linea) => ({
         varianteId: linea.varianteId,
         cantidad: linea.cantidad,
         enlaceCompra: linea.enlaceCompra,
@@ -504,17 +511,17 @@ export class ConfirmarPage {
         // principio de este método impidiéndole volver a intentarlo.
         return;
       }
-      // Aquí y no antes, y **solo sin pasarela**. Las líneas ya son del pedido, así que dejar el
-      // carrito lleno invita a comprarlas dos veces; pero limpiarlo apenas se crea el pedido
-      // rompería el reintento de arriba, porque la guarda del principio de este método exige un
-      // carrito con líneas.
+      // Aquí y no antes, y **solo sin pasarela**. Las líneas ya son del pedido, así que dejarlas en
+      // el carrito invita a comprarlas dos veces; pero quitarlas apenas se crea el pedido rompería
+      // el reintento de arriba, porque la guarda del principio de este método exige algo por pagar.
       //
       // Con Wompi o Sistecrédito el comprador sale del sitio con el pago todavía por hacer: vaciar
       // el carrito al salir dejaba con las manos vacías a quien cancelaba en la pasarela o a quien
-      // le negaban el crédito. Ese carrito lo vacía la pantalla de estado cuando el pedido vuelve
+      // le negaban el crédito. Lo pagado lo quita la pantalla de estado cuando el pedido vuelve
       // pagado (`AlmacenCarritoPorPagar`).
       if (this.terminado()) {
-        this.carrito.limpiar();
+        // Lo que llevó este pedido; lo que se dejó sin marcar se queda en el carrito.
+        void this.carrito.quitarPagadas(comando.lineas);
         this.checkout.terminarCompra();
       }
     } catch (error) {
@@ -595,7 +602,10 @@ export class ConfirmarPage {
     void this.router.navigate(['../metodo-pago'], { relativeTo: this.route });
   }
 
-  /** Para que la pantalla de estado vacíe este carrito, y solo este, cuando el pedido vuelva pagado. */
+  /**
+   * Para que la pantalla de estado quite de este carrito, y solo de este, lo que llevó el pedido
+   * cuando vuelva pagado.
+   */
   private anotarCarritoPorPagar(pedidoId: string): void {
     const carritoId = this.carrito.carritoId();
     if (carritoId) {

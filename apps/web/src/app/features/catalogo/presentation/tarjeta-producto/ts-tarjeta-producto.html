@@ -69,14 +69,6 @@
             [moneda]="precioValor.moneda"
             [prefijo]="'catalogo.precio_desde' | transloco"
           />
-          <!-- Texto del enlace y no un adorno: entra en su nombre accesible, justo después del
-               precio. Un ahorro y no una segunda cifra de precio (ADR-0095, art. 26 de la Ley
-               1480). Si las variantes ahorran distinto, dice "o más". -->
-          @if (ahorro(); as ahorroValor) {
-            <p class="m-0 text-xs text-ts-texto-suave">
-              {{ ahorroValor.clave | transloco: { ahorro: ahorroValor.texto } }}
-            </p>
-          }
         }
         <ts-etiqueta-stock [disponible]="disponible()" />
       </div>

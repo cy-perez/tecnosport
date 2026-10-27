@@ -15,12 +15,16 @@ import {
 import { CheckoutStore } from '../../application/checkout.store';
 import { IntentoDePago } from '../../domain/intento-pago.model';
 import { IntentoSistecredito } from '../../domain/intento-sistecredito.model';
-import { DatosEntrega } from '../../domain/pedido.comandos';
+import { DatosEntrega, MetodosDePagoDisponiblesComando } from '../../domain/pedido.comandos';
 import { MetodoDePagoConPrecio, MetodoPago, Pedido, Seguimiento } from '../../domain/pedido.model';
 import { REPOSITORIO_PAGOS, RepositorioPagos } from '../../domain/repositorio-pagos.puerto';
 import { REPOSITORIO_PEDIDOS, RepositorioPedidos } from '../../domain/repositorio-pedidos.puerto';
 import { MetodoPagoPage } from './metodo-pago.page';
-import { proveerAlmacenesCarrito, sembrarCarritoId } from '../../../../../testing/carrito';
+import {
+  proveerAlmacenesCarrito,
+  sembrarCarritoId,
+  sembrarLineasSinMarcar,
+} from '../../../../../testing/carrito';
 
 class RepositorioPagosFalso implements RepositorioPagos {
   async crearIntento(): Promise<IntentoDePago> {
@@ -103,7 +107,12 @@ class RepositorioPedidosFalso implements RepositorioPedidos {
     throw new Error('no usado en esta prueba');
   }
 
-  async metodosDePagoConPrecio(): Promise<MetodoDePagoConPrecio[]> {
+  readonly consultas: MetodosDePagoDisponiblesComando[] = [];
+
+  async metodosDePagoConPrecio(
+    comando: MetodosDePagoDisponiblesComando,
+  ): Promise<MetodoDePagoConPrecio[]> {
+    this.consultas.push(comando);
     return this.disponibles.map((opcion) =>
       typeof opcion === 'string' ? conPrecio(opcion) : opcion,
     );
@@ -213,6 +222,27 @@ describe('MetodoPagoPage', () => {
     });
     await vi.waitFor(() => expect(navegar).toHaveBeenCalledWith(['../resumen'], expect.anything()));
     navegar.mockRestore();
+  });
+
+  /** El precio de cada medio depende de lo que se paga: lo desmarcado no entra en la consulta. */
+  it('consulta los métodos solo con lo marcado', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarLineasSinMarcar(['linea-2']);
+    const pedidos = new RepositorioPedidosFalso(['WOMPI']);
+
+    await renderConDatosEntrega(
+      new RepositorioCarritoFalso({
+        ...CARRITO_CON_LINEAS,
+        lineas: [
+          { id: 'linea-1', varianteId: 'variante-1', cantidad: 1 },
+          { id: 'linea-2', varianteId: 'variante-2', cantidad: 4 },
+        ],
+      }),
+      pedidos,
+    );
+
+    await screen.findByRole('button', { name: /^Tarjeta, PSE o Bancolombia/ });
+    expect(pedidos.consultas.at(-1)?.lineas).toEqual([{ varianteId: 'variante-1', cantidad: 1 }]);
   });
 
   it('con datos de entrega y carrito, muestra los métodos disponibles', async () => {

@@ -156,13 +156,15 @@ export class Pie {
   /**
    * <b>Un enlace del pie lleva al comienzo de la página, no a la altura a la que se estaba.</b> El
    * router no tiene `withInMemoryScrolling`, así que conserva el desplazamiento entre pantallas: se
-   * hace clic al fondo de una página larga y la siguiente abre por la mitad o por el final. Y el
-   * enlace a la página en la que ya se está no hacía nada, porque el router ignora la navegación a
-   * la misma URL.
+   * hacía clic al fondo de una página larga y la siguiente abría por la mitad o por el final. Desde
+   * el 27 de octubre de 2026 eso lo resuelve para todo el sitio `usarFocoAlNavegar`, que sube al
+   * comienzo cuando cambia la pantalla; aquí sigue el caso que esa no cubre: el enlace a la página
+   * en la que ya se está no hacía nada, porque el router ignora la navegación a la misma URL. La
+   * subida tras `NavigationEnd` repite la de `usarFocoAlNavegar` y no estorba: es al mismo sitio.
    *
-   * <p>Es del pie y no global <b>a propósito</b>: los filtros del catálogo y las listas del panel
-   * navegan cambiando solo la consulta, y un desplazamiento global al comienzo los haría saltar
-   * arriba con cada filtro que se toca.
+   * <p>Ninguna de las dos sube cuando solo cambia la consulta, <b>a propósito</b>: los filtros del
+   * catálogo y las listas del panel navegan así, y subir al comienzo los haría saltar arriba con
+   * cada filtro que se toca.
    *
    * <p>Si la navegación se cancela —un guardián que redirige— no se mueve nada: quien redirige
    * decide. Ctrl+clic y compañía abren otra pestaña y la página actual se queda donde está.

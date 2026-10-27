@@ -16,9 +16,29 @@
       <ts-boton variante="primario" [enlace]="['../../productos']">{{
         'checkout.resumen.ir_al_catalogo' | transloco
       }}</ts-boton>
+    } @else if (carrito.lineasPorPagar().length === 0) {
+      <!-- Tiene productos pero ninguno que pagar: o no marcó ninguno, y se eligen en el carrito, o
+           ninguno se vende, y ahí no hay casilla que marcar. -->
+      <p class="mb-16 text-ts-texto-suave">
+        {{
+          (carrito.hayLineasVendibles()
+            ? 'checkout.resumen.nada_por_pagar'
+            : 'checkout.resumen.nada_a_la_venta'
+          ) | transloco
+        }}
+      </p>
+      <ts-boton variante="primario" [enlace]="['../../carrito']">{{
+        'checkout.resumen.volver_al_carrito' | transloco
+      }}</ts-boton>
     } @else {
+      <!-- Lo que se dejó sin marcar no se pinta aquí, pero hay que decir que no se perdió. -->
+      @if (!carrito.todasMarcadas()) {
+        <p class="m-0 mb-16 text-sm text-ts-texto-suave">
+          {{ 'checkout.resumen.lo_demas_se_queda' | transloco }}
+        </p>
+      }
       <div class="flex flex-col">
-        @for (linea of datosCarrito.lineas; track linea.id) {
+        @for (linea of carrito.lineasPorPagar(); track linea.id) {
           @let snapshot = carrito.snapshotDeLinea(linea.varianteId);
           <article
             class="grid grid-cols-[var(--esp-64)_1fr_auto] items-center gap-16 border-b border-ts-borde py-16"

@@ -12,6 +12,7 @@ import { TsCheckbox } from './ts-checkbox';
       [deshabilitado]="deshabilitado()"
       [sobreMarca]="sobreMarca()"
       [obligatorio]="obligatorio()"
+      [etiquetaAccesible]="etiquetaAccesible()"
       (marcadoCambio)="ultimoEmitido.set($event)"
     />
   `,
@@ -21,6 +22,7 @@ class Anfitrion {
   readonly deshabilitado = signal(false);
   readonly sobreMarca = signal(false);
   readonly obligatorio = signal(false);
+  readonly etiquetaAccesible = signal<string | null>(null);
   readonly ultimoEmitido = signal<boolean | null>(null);
 }
 
@@ -34,6 +36,17 @@ describe('TsCheckbox', () => {
     expect(casilla().tagName).toBe('INPUT');
     expect(casilla().type).toBe('checkbox');
     expect(casilla().id).toBe('reducir');
+  });
+
+  it('con etiquetaAccesible, ese es su nombre y no el texto visible', async () => {
+    const { fixture } = await render(Anfitrion);
+
+    fixture.componentInstance.etiquetaAccesible.set('Reducir movimiento en la portada');
+    fixture.detectChanges();
+
+    expect(screen.getByRole('checkbox', { name: 'Reducir movimiento en la portada' }).id).toBe(
+      'reducir',
+    );
   });
 
   it('declara que es obligatoria con aria-required, y solo cuando lo es', async () => {

@@ -25,5 +25,12 @@
   "error_agregar": "No pudimos agregarlo al carrito. Revisa tu conexión y vuelve a intentarlo.",
   "error_agregar_maximo": "Ya tienes en el carrito el máximo de unidades de este producto.",
   "envio_aparte": "El costo de envío se cotiza al pagar, según tu destino.",
-  "seguir_comprando": "Seguir comprando"
+  "seguir_comprando": "Seguir comprando",
+  "incluir_en_el_pago": "Incluir en este pago",
+  "incluir_en_el_pago_de": "Incluir en este pago: {{nombre}}",
+  "no_se_vende": "Ya no está a la venta: no entra en este pago.",
+  "seleccionar_todos": "Seleccionar todos",
+  "seleccionados": "{{marcados}} de {{total}} productos en este pago",
+  "nada_por_pagar": "Marca al menos un producto para ir a pagar.",
+  "nada_a_la_venta": "Ninguno de estos productos está a la venta ahora."
 }

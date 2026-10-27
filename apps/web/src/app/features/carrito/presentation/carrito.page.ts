@@ -7,11 +7,13 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { usarIdiomaActivo, usarTraductor } from '../../../core/i18n/traductor';
 import { formatearPrecio } from '../../../shared/ts-precio/formato-precio';
 import { usarFoco } from '../../../shared/foco/foco';
 import { TsBoton } from '../../../shared/ui/boton/ts-boton';
+import { TsCheckbox } from '../../../shared/ui/checkbox/ts-checkbox';
 import { TsEsqueleto } from '../../../shared/ts-esqueleto/ts-esqueleto';
 import { TsPrecio } from '../../../shared/ts-precio/ts-precio';
 import { CarritoStore } from '../application/carrito.store';
@@ -19,7 +21,7 @@ import { LineaCarritoComponent } from './linea-carrito/linea-carrito';
 
 @Component({
   selector: 'app-carrito',
-  imports: [TranslocoPipe, TsBoton, TsEsqueleto, TsPrecio, LineaCarritoComponent],
+  imports: [TranslocoPipe, TsBoton, TsCheckbox, TsEsqueleto, TsPrecio, LineaCarritoComponent],
   templateUrl: './carrito.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -30,6 +32,8 @@ export class CarritoPage {
   private readonly enfocarDespuesDePintar = usarFoco();
   private readonly traducir = usarTraductor();
   private readonly idioma = usarIdiomaActivo();
+  private readonly router = inject(Router);
+  private readonly ruta = inject(ActivatedRoute);
 
   /**
    * Lo último que pasó con una línea, para la región viva. Cambiar la cantidad o quitar una línea
@@ -39,6 +43,7 @@ export class CarritoPage {
   protected readonly anuncioLinea = signal<
     | { readonly tipo: 'cantidad'; readonly nombre: string; readonly cantidad: number }
     | { readonly tipo: 'eliminada'; readonly nombre: string }
+    | { readonly tipo: 'seleccion' }
     | { readonly tipo: 'error' }
     | null
   >(null);
@@ -57,10 +62,29 @@ export class CarritoPage {
       linea,
       snapshot: this.store.snapshotDeLinea(linea.varianteId),
       precio: this.store.precioDeLinea(linea.id),
+      seVende: this.store.lineaSeVende(linea.id),
+      marcada: this.store.estaMarcada(linea.id),
     }));
   });
 
-  /** El del servidor (`CarritoStore.subtotal`), no la suma de los precios guardados al agregar. */
+  /** «2 de 3 productos en este pago»: las vendibles, que son las únicas que tienen casilla. */
+  protected readonly seleccion = computed(() => ({
+    marcados: this.store.lineasPorPagar().length,
+    total: this.lineas().filter((item) => item.seVende).length,
+  }));
+
+  /**
+   * Se pulsó «Ir a pagar» sin nada que pagar. El botón no se deshabilita —saldría del orden de
+   * tabulación sin explicar nada—: se deja vivo y se dice qué falta. Son dos casos con dos textos:
+   * con todo desmarcado se pide marcar algo; si nada se vende, no hay casilla que marcar, y pedirlo
+   * mandaba a buscar algo que no está.
+   */
+  protected readonly faltaPorPagar = signal<'nada_marcado' | 'nada_a_la_venta' | null>(null);
+
+  /**
+   * El de lo marcado (`CarritoStore.subtotal`), con los precios por línea del servidor; no la suma
+   * de los precios guardados al agregar.
+   */
   protected readonly total = computed(() => this.store.subtotal());
 
   /** El tope que manda el servidor con el carrito; `null` mientras el carrito no ha llegado. */
@@ -101,6 +125,30 @@ export class CarritoPage {
       },
       () => this.anuncioLinea.set({ tipo: 'error' }),
     );
+  }
+
+  protected marcar(lineaId: string, marcada: boolean): void {
+    this.store.marcar(lineaId, marcada);
+    this.alCambiarSeleccion();
+  }
+
+  protected marcarTodas(marcadas: boolean): void {
+    this.store.marcarTodas(marcadas);
+    this.alCambiarSeleccion();
+  }
+
+  /** Marcar cambia el total más abajo, y quien usa lector de pantalla no lo ve cambiar. */
+  private alCambiarSeleccion(): void {
+    this.faltaPorPagar.set(null);
+    this.anuncioLinea.set({ tipo: 'seleccion' });
+  }
+
+  protected irAPagar(): void {
+    if (this.store.lineasPorPagar().length === 0) {
+      this.faltaPorPagar.set(this.store.hayLineasVendibles() ? 'nada_marcado' : 'nada_a_la_venta');
+      return;
+    }
+    void this.router.navigate(['../checkout'], { relativeTo: this.ruta });
   }
 
   /** El nombre guardado de la línea, o el genérico si no hay foto guardada (otro dispositivo). */

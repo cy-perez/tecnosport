@@ -98,7 +98,7 @@ export class ResumenPage {
   protected readonly subtotal = computed(() => this.carrito.subtotal());
 
   /**
-   * Lo que se ahorra el carrito pagando sin pasarela, ya formateado; `null` si nada. El medio aún
+   * Lo que se ahorra lo marcado pagando sin pasarela, ya formateado; `null` si nada. El medio aún
    * no se ha elegido, así que el total es el publicado y esto lo acompaña como ahorro posible, no
    * como un segundo total (ADR-0095, art. 26 de la Ley 1480).
    */
@@ -171,7 +171,7 @@ export class ResumenPage {
   );
 
   private readonly modalidades = usarModalidadesDeEntrega(() =>
-    (this.carrito.consulta.data()?.lineas ?? []).map((linea) => linea.varianteId),
+    this.carrito.lineasPorPagar().map((linea) => linea.varianteId),
   );
 
   /**
@@ -351,7 +351,7 @@ export class ResumenPage {
     if (!this.requiereDireccion()) {
       return null;
     }
-    const lineas = (this.carrito.consulta.data()?.lineas ?? []).map((linea) => ({
+    const lineas = this.carrito.lineasPorPagar().map((linea) => ({
       varianteId: linea.varianteId,
       cantidad: linea.cantidad,
     }));

@@ -41,6 +41,7 @@
           {{ 'carrito.maximo_por_linea' | transloco: { maximo: cantidadMaxima() } }}
         </p>
       }
+      <ng-container *ngTemplateOutlet="seleccion" />
     </div>
   } @else {
     <div class="block size-96 bg-ts-superficie-alt object-cover" aria-hidden="true"></div>
@@ -51,8 +52,26 @@
           {{ 'carrito.maximo_por_linea' | transloco: { maximo: cantidadMaxima() } }}
         </p>
       }
+      <ng-container *ngTemplateOutlet="seleccion" />
     </div>
   }
+
+  <!-- Dentro de la columna del nombre y no en una celda propia: la rejilla de la línea ya está
+       medida a 380 px, y una sexta columna la volvía a desbordar. La que ya no se vende no lleva
+       casilla —no se puede pagar— y dice por qué, para que no parezca un olvido. -->
+  <ng-template #seleccion>
+    @if (!seVende()) {
+      <p class="m-0 text-sm text-ts-texto-suave">{{ 'carrito.no_se_vende' | transloco }}</p>
+    } @else if (seleccionable()) {
+      <ts-checkbox
+        [idCasilla]="'pagar-' + linea().id"
+        [etiqueta]="'carrito.incluir_en_el_pago' | transloco"
+        [etiquetaAccesible]="'carrito.incluir_en_el_pago_de' | transloco: { nombre }"
+        [marcado]="marcada()"
+        (marcadoCambio)="marcadaCambio.emit($event)"
+      />
+    }
+  </ng-template>
 
   <div class="col-start-2 flex items-center gap-8 desde-movil:col-start-auto">
     <!-- En cantidad 1, `inactivo` (aria-disabled) y no deshabilitado: deshabilitado salía del

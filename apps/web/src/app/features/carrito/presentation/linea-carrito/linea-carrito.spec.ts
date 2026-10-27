@@ -199,4 +199,55 @@ describe('LineaCarritoComponent', () => {
 
     expect(eliminado).toBe(true);
   });
+
+  describe('la casilla de incluir en el pago', () => {
+    it('sin selección habilitada no hay casilla', async () => {
+      await renderLinea({ linea: lineaDePrueba(), snapshot: snapshotDePrueba() });
+
+      expect(screen.queryByRole('checkbox')).toBeNull();
+    });
+
+    it('dice de qué producto es y emite el estado nuevo', async () => {
+      let emitido: boolean | null = null;
+      await renderLinea(
+        {
+          linea: lineaDePrueba(),
+          snapshot: snapshotDePrueba(),
+          seleccionable: true,
+          marcada: true,
+        },
+        { marcadaCambio: (valor: boolean) => (emitido = valor) },
+      );
+
+      const casilla = screen.getByRole('checkbox', {
+        name: 'Incluir en este pago: Morral urbano',
+      }) as HTMLInputElement;
+      expect(casilla.checked).toBe(true);
+
+      fireEvent.click(casilla);
+
+      expect(emitido).toBe(false);
+    });
+
+    it('sin foto guardada también la pinta', async () => {
+      await renderLinea({ linea: lineaDePrueba(), seleccionable: true, marcada: false });
+
+      const casilla = screen.getByRole('checkbox', {
+        name: 'Incluir en este pago: Producto',
+      }) as HTMLInputElement;
+      expect(casilla.checked).toBe(false);
+    });
+
+    it('la que ya no se vende no tiene casilla y dice por qué', async () => {
+      await renderLinea({
+        linea: lineaDePrueba(),
+        snapshot: snapshotDePrueba(),
+        seleccionable: true,
+        seVende: false,
+      });
+
+      expect(screen.queryByRole('checkbox')).toBeNull();
+      expect(screen.getByText('Ya no está a la venta: no entra en este pago.')).toBeTruthy();
+    });
+  });
 });
