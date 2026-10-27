@@ -9,9 +9,7 @@ import {
 } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
-import { QueryClient } from '@tanstack/angular-query-experimental';
 import { mensajeDeError } from '../../../../core/errores/mensaje-de-error';
-import { ErrorHttp } from '../../../../core/http/respuesta-http';
 import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
 import { usarFoco } from '../../../../shared/foco/foco';
 import { TsCampo } from '../../../../shared/ui/campo/ts-campo';
@@ -21,7 +19,7 @@ import { Marca } from '../../../catalogo/domain/producto.model';
 import { usarMigasAdmin } from '../../migas-admin';
 import { usarCrearMarca } from '../application/crear-marca.mutacion';
 import { usarEliminarMarca, usarRenombrarMarca } from '../application/editar-marca.mutaciones';
-import { CLAVE_MARCAS_ADMIN, usarMarcasAdmin } from '../application/listar-marcas-admin.consulta';
+import { usarMarcasAdmin } from '../application/listar-marcas-admin.consulta';
 import { usarFocoEnPrimerInvalido } from '../../../../shared/foco/foco';
 
 /**
@@ -104,7 +102,6 @@ export class MarcasAdminPage {
   // --- Lo que cambia una fila: renombrar en el sitio y eliminar con pregunta. ---
 
   private readonly raiz = inject<ElementRef<HTMLElement>>(ElementRef);
-  private readonly queryClient = inject(QueryClient);
   private readonly renombrado = usarRenombrarMarca();
   private readonly eliminacion = usarEliminarMarca();
   private escrituraEnVuelo = false;
@@ -180,7 +177,6 @@ export class MarcasAdminPage {
         },
         onError: (error: unknown) => {
           this.errorEdicion.set(mensajeDeError(error, this.transloco, 'admin.marcas.editar.error'));
-          this.refrescarSiYaNoExiste(error);
         },
       },
     );
@@ -220,16 +216,8 @@ export class MarcasAdminPage {
         this.errorEliminar.set(
           mensajeDeError(error, this.transloco, 'admin.marcas.eliminar.error'),
         );
-        this.refrescarSiYaNoExiste(error);
       },
     });
-  }
-
-  /** Otra pestaña la borró: reintentar daría 404 para siempre, así que la lista se vuelve a pedir. */
-  private refrescarSiYaNoExiste(error: unknown): void {
-    if (error instanceof ErrorHttp && error.estado === 404) {
-      void this.queryClient.invalidateQueries({ queryKey: CLAVE_MARCAS_ADMIN });
-    }
   }
 
   /** El `<button>` real vive dentro de `ts-boton`. */
