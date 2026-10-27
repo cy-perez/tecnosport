@@ -317,7 +317,10 @@ export function informeDeImportacion(r) {
     lineas.push(`No se volvieron a proponer (ya rechazados): ${r.modelosYaDecididos.join(", ")}`);
   }
   if (r.sinMargen.length) {
-    lineas.push("OJO, el costo alcanzó el precio de venta y la lista no lo mueve:");
+    lineas.push(
+      "OJO, quedaron agotadas: el costo nuevo les deja menos del 10 % sobre el contado, y la " +
+        "lista no mueve el precio. Súbelo en el panel, que las avisa, o vuelven cuando baje:",
+    );
     lineas.push(...r.sinMargen.map((s) => `  - ${s}`));
   }
   if (r.coloresSinVariante?.length) {
