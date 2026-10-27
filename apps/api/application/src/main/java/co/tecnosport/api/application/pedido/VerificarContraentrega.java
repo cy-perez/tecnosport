@@ -9,9 +9,11 @@ import java.util.Objects;
  * Verificación previa al despacho de un pedido contraentrega (docs/11-pagos-y-envios.md): contacto
  * por WhatsApp o llamada antes de despachar, con el motivo que registra el administrador.
  *
- * <p>{@code CONFIRMADO_CONTRAENTREGA} solo lo alcanza un pedido con {@code
- * MetodoPago.CONTRAENTREGA} ({@code Pedido.crear} lo fija según el método al confirmar), así que no
- * hace falta revalidar el método de pago aparte, a diferencia de {@code ConciliarTransferencia}.
+ * <p>{@code CONFIRMADO_CONTRAENTREGA} solo lo alcanza un pedido que se paga al recibir —{@code
+ * CONTRAENTREGA} o {@code PAGO_EN_PUNTO}, ADR-0094— ({@code Pedido.crear} lo fija según el método
+ * al confirmar), así que no hace falta revalidar el método de pago aparte, a diferencia de {@code
+ * ConciliarTransferencia}. Los dos se verifican igual: una llamada o un WhatsApp antes de
+ * prepararlo.
  */
 public final class VerificarContraentrega {
 

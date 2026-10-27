@@ -1395,4 +1395,30 @@ class CrearPedidoTest {
     assertTrue(pedidos.todos().isEmpty());
     assertTrue(autorizaciones.todas().isEmpty());
   }
+
+  /** Se paga al recoger: la reserva dura hasta la entrega, como en contraentrega (ADR-0094). */
+  @Test
+  void elPagoEnElPuntoReservaSinVencimientoYEsperaVerificacion() {
+    CrearPedido caso = crear();
+    variante = publicarProductoLocal();
+
+    Pedido pedido = caso.ejecutar(comandoRetiroEnPunto(MetodoPago.PAGO_EN_PUNTO, 1));
+
+    assertEquals(EstadoPedido.CONFIRMADO_CONTRAENTREGA, pedido.estado());
+    assertNull(ultimaReserva().expiraEn());
+  }
+
+  /** Antes de reservar: el agregado también lo rechaza, pero ya con la unidad apartada. */
+  @Test
+  void elPagoEnElPuntoNoSeAceptaADomicilioYNoApartaNada() {
+    CrearPedido caso = crear();
+    publicarProductoConVarianteYExistencia(5);
+
+    assertThrows(
+        PagoEnPuntoNoDisponibleException.class,
+        () -> caso.ejecutar(comando(MetodoPago.PAGO_EN_PUNTO, 1)));
+    assertTrue(pedidos.todos().isEmpty());
+    assertEquals(
+        5, inventarios.buscarPorVarianteId(variante.id()).orElseThrow().saldoDisponible(AHORA));
+  }
 }

@@ -239,6 +239,9 @@ tecnosport:
     # solo se podian recoger remiten a WhatsApp. Encenderla exige devolver antes los textos que la
     # prometian (PropiedadesRetiroEnPunto).
     habilitado: ${RETIRO_EN_PUNTO_HABILITADO:false}
+    # Cada cuanto se cancelan las recogidas con pago en el punto que llevan 48 horas listas y sin
+    # recoger (ADR-0094). Las 48 horas son del negocio y viven en Pedido.PLAZO_PARA_RECOGER.
+    vencimiento-intervalo-minutos: ${RETIRO_EN_PUNTO_VENCIMIENTO_INTERVALO_MINUTOS:60}
   contraentrega:
     vencimiento:
       # Decisión de negocio del 4 de octubre de 2026: un pedido contraentrega que nadie verificó en

@@ -22,6 +22,14 @@ import java.util.Set;
  * rechazado se quedaba sin reintegro y su unidad sin reingreso: el rechazo liberaba una reserva que
  * ya tenía salida, el inventario lo rechazaba, y la excepción tumbaba la conciliación de todos los
  * envíos.
+ *
+ * <p>{@code LISTO_PARA_RECOGER} es el despacho de la recogida en el punto (ADR-0094): sale de
+ * {@code EN_PREPARACION} y llega a {@code ENTREGADO} sin pasar por {@code DESPACHADO}, que exige
+ * una guía de transportadora. Que solo lo use un pedido de recogida lo cuidan los casos de uso, por
+ * el mismo motivo que la salida doble de {@code ENTREGADO}.
+ *
+ * <p>{@code CONFIRMADO_CONTRAENTREGA} lo alcanza también el pago en el punto: los dos se pagan al
+ * recibir, se verifican antes de preparar y vencen si nadie los verifica. El nombre es anterior.
  */
 public enum EstadoPedido {
   CREADO,
@@ -31,6 +39,12 @@ public enum EstadoPedido {
   CONFIRMADO_CONTRAENTREGA,
   EN_PREPARACION,
   DESPACHADO,
+
+  /**
+   * Un pedido de recogida que ya está en el punto, avisado al comprador. Lo que falta es que lo
+   * recoja: se entrega a quien muestre el número de pedido, o se cancela si no llega a tiempo.
+   */
+  LISTO_PARA_RECOGER,
   ENTREGADO,
   RECHAZADO_EN_ENTREGA,
   DEVUELTO,
@@ -58,7 +72,8 @@ public enum EstadoPedido {
     TRANSICIONES_VALIDAS.put(PAGO_FALLIDO, EnumSet.of(PAGO_PENDIENTE));
     TRANSICIONES_VALIDAS.put(PAGADO, EnumSet.of(EN_PREPARACION, CANCELADO));
     TRANSICIONES_VALIDAS.put(CONFIRMADO_CONTRAENTREGA, EnumSet.of(EN_PREPARACION, CANCELADO));
-    TRANSICIONES_VALIDAS.put(EN_PREPARACION, EnumSet.of(DESPACHADO, CANCELADO));
+    TRANSICIONES_VALIDAS.put(EN_PREPARACION, EnumSet.of(DESPACHADO, LISTO_PARA_RECOGER, CANCELADO));
+    TRANSICIONES_VALIDAS.put(LISTO_PARA_RECOGER, EnumSet.of(ENTREGADO, CANCELADO));
     TRANSICIONES_VALIDAS.put(DESPACHADO, EnumSet.of(ENTREGADO, RECHAZADO_EN_ENTREGA));
     TRANSICIONES_VALIDAS.put(ENTREGADO, EnumSet.of(DEVUELTO, RECAUDO_PENDIENTE));
     TRANSICIONES_VALIDAS.put(RECHAZADO_EN_ENTREGA, EnumSet.of(DEVUELTO));

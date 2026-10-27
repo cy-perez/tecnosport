@@ -542,4 +542,72 @@ class PedidoTest {
 
     assertEquals(aviso, reconstruido.avisoDePlazoEnviadoEn().orElseThrow());
   }
+
+  private Pedido recogidaConPagoEnPunto() {
+    return Pedido.crear(
+        NUMERO,
+        null,
+        CORREO,
+        List.of(linea(BigDecimal.valueOf(50_000), 2)),
+        TipoEntrega.RETIRO_EN_PUNTO,
+        null,
+        MetodoPago.PAGO_EN_PUNTO,
+        "cliente@tecnosport.co",
+        AHORA);
+  }
+
+  @Test
+  void elPagoEnElPuntoSeConfirmaSinPagoComoLaContraentrega() {
+    Pedido pedido = recogidaConPagoEnPunto();
+
+    assertEquals(EstadoPedido.CONFIRMADO_CONTRAENTREGA, pedido.estado());
+    assertEquals(AHORA, pedido.fechaDeInicioDelPlazoDeEntrega().orElseThrow());
+  }
+
+  @Test
+  void elPagoEnElPuntoNoSeAceptaParaEnviarADomicilio() {
+    ExcepcionDeDominio error =
+        assertThrows(ExcepcionDeDominio.class, () -> crearAlDomicilio(MetodoPago.PAGO_EN_PUNTO));
+
+    assertEquals("El pago en el punto solo vale para recoger en el punto.", error.getMessage());
+  }
+
+  /** El dinero entra en la mano de quien entrega: antes de entregar no hay nada que devolver. */
+  @Test
+  void elPagoEnElPuntoEntraAlEntregar() {
+    Pedido pedido = recogidaConPagoEnPunto();
+    pedido.transicionar(EstadoPedido.EN_PREPARACION, "admin:1", "verificado", AHORA);
+    pedido.transicionar(EstadoPedido.LISTO_PARA_RECOGER, "admin:1", "listo", AHORA);
+
+    assertEquals(Dinero.deCop(0L), pedido.dineroRecibido());
+
+    pedido.transicionar(EstadoPedido.ENTREGADO, "admin:1", "entregado en el punto", AHORA);
+
+    assertEquals(Dinero.deCop(100_000), pedido.dineroRecibido());
+  }
+
+  @Test
+  void laRecogidaVenceCuarentaYOchoHorasDespuesDelAvisoYNoDeLaCompra() {
+    Instant listo = AHORA.plusSeconds(3 * 24 * 3600);
+    Pedido pedido = recogidaConPagoEnPunto();
+    pedido.transicionar(EstadoPedido.EN_PREPARACION, "admin:1", "verificado", AHORA);
+
+    assertTrue(pedido.recogidaVenceEn().isEmpty());
+
+    pedido.transicionar(EstadoPedido.LISTO_PARA_RECOGER, "admin:1", "listo", listo);
+
+    assertEquals(listo.plusSeconds(48 * 3600), pedido.recogidaVenceEn().orElseThrow());
+  }
+
+  @Test
+  void laFechaDeEntregaDeUnaRecogidaEsLaDeLaEntregaEnElPunto() {
+    Instant entrega = AHORA.plusSeconds(3600);
+    Pedido pedido = recogidaConPagoEnPunto();
+    pedido.transicionar(EstadoPedido.EN_PREPARACION, "admin:1", "verificado", AHORA);
+    pedido.transicionar(EstadoPedido.LISTO_PARA_RECOGER, "admin:1", "listo", AHORA);
+    pedido.transicionar(EstadoPedido.ENTREGADO, "admin:1", "entregado en el punto", entrega);
+
+    assertEquals(entrega, pedido.fechaDeEntrega().orElseThrow());
+    assertTrue(pedido.recogidaVenceEn().isEmpty());
+  }
 }

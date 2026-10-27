@@ -35,7 +35,14 @@ public enum MetodoPago {
   WOMPI,
   SISTECREDITO,
   TRANSFERENCIA_MANUAL,
-  CONTRAENTREGA;
+  CONTRAENTREGA,
+
+  /**
+   * Se paga en el punto de Medellín al recoger, en efectivo o por transferencia (ADR-0094). Solo
+   * con {@code TipoEntrega.RETIRO_EN_PUNTO}. No es contraentrega: nadie recauda por nosotros, lo
+   * recibe quien entrega y lo registra al marcar el pedido entregado.
+   */
+  PAGO_EN_PUNTO;
 
   /**
    * Qué proveedor resuelve el cobro de este método (docs/11-pagos-y-envios.md).
@@ -59,8 +66,17 @@ public enum MetodoPago {
     return switch (this) {
       case WOMPI -> ProveedorDePago.WOMPI;
       case SISTECREDITO -> ProveedorDePago.SISTECREDITO;
-      case TRANSFERENCIA_MANUAL, CONTRAENTREGA -> ProveedorDePago.NINGUNO;
+      case TRANSFERENCIA_MANUAL, CONTRAENTREGA, PAGO_EN_PUNTO -> ProveedorDePago.NINGUNO;
     };
+  }
+
+  /**
+   * Si el comprador paga al recibir y no antes. Un pedido así se confirma sin pago ({@code
+   * CONFIRMADO_CONTRAENTREGA}), se verifica antes de prepararlo, vence si nadie lo verifica y su
+   * reserva de inventario no caduca: no hay pago que esperar.
+   */
+  public boolean seCobraAlRecibir() {
+    return this == CONTRAENTREGA || this == PAGO_EN_PUNTO;
   }
 
   /**

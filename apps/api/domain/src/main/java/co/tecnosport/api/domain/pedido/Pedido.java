@@ -7,6 +7,7 @@ import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
 import co.tecnosport.api.domain.compartido.VerdictoPlazo;
 import co.tecnosport.api.domain.envio.TarifaEnvio;
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -33,6 +34,12 @@ import java.util.UUID;
  * líneas. Los dos dan envío cero, y para los dos es cierto.
  */
 public final class Pedido {
+
+  /**
+   * Lo que el pedido espera en el punto antes de cancelarse, desde el aviso de que está listo. Lo
+   * fijó el negocio el 26 de octubre de 2026 (ADR-0094).
+   */
+  public static final Duration PLAZO_PARA_RECOGER = Duration.ofHours(48);
 
   private final UUID id;
   private final NumeroPedido numeroPedido;
@@ -193,6 +200,9 @@ public final class Pedido {
     if (tipoEntrega == TipoEntrega.RETIRO_EN_PUNTO && tarifaEnvio != null) {
       throw new ExcepcionDeDominio("El retiro en punto no lleva tarifa de envío.");
     }
+    if (metodoPago == MetodoPago.PAGO_EN_PUNTO && tipoEntrega != TipoEntrega.RETIRO_EN_PUNTO) {
+      throw new ExcepcionDeDominio("El pago en el punto solo vale para recoger en el punto.");
+    }
     this.tarifaEnvio = tarifaEnvio;
     this.direccion = direccion;
     this.metodoPago = Objects.requireNonNull(metodoPago, "El método de pago no puede ser nulo.");
@@ -315,7 +325,7 @@ public final class Pedido {
 
   private static EstadoPedido estadoInicial(MetodoPago metodoPago) {
     EstadoPedido estadoInicial =
-        metodoPago == MetodoPago.CONTRAENTREGA
+        metodoPago.seCobraAlRecibir()
             ? EstadoPedido.CONFIRMADO_CONTRAENTREGA
             : EstadoPedido.PAGO_PENDIENTE;
     if (!EstadoPedido.CREADO.puedeTransicionarA(estadoInicial)) {
@@ -384,10 +394,10 @@ public final class Pedido {
    * nunca. Lo levantó una revisión adversarial de los caminos del dinero.
    *
    * <p>El momento en que entra depende del método de pago, y es la única regla aquí: en
-   * contraentrega el dinero es del negocio cuando el recaudo se concilia; en los demás, cuando el
-   * pedido llegó a {@code PAGADO}, que es el único camino para alcanzar ese estado. Se pregunta al
-   * <b>historial</b> y no al estado actual, porque un pedido devuelto o cancelado cobró igual
-   * antes.
+   * contraentrega el dinero es del negocio cuando el recaudo se concilia; en el pago en el punto,
+   * cuando se entrega; en los demás, cuando el pedido llegó a {@code PAGADO}, que es el único
+   * camino para alcanzar ese estado. Se pregunta al <b>historial</b> y no al estado actual, porque
+   * un pedido devuelto o cancelado cobró igual antes.
    *
    * <p>Deliberadamente <b>no</b> bloquea nada: un comprador que pagó en efectivo tiene derecho a
    * que se le devuelva aunque la transportadora no haya dispersado, y negarle el reintegro para
@@ -395,10 +405,14 @@ public final class Pedido {
    * quien decide lo vea, y para eso está este dato en el panel.
    */
   public Dinero dineroRecibido() {
+    // El pago en el punto entra en la mano de quien entrega, en el mismo acto: no hay recaudo que
+    // conciliar después.
     EstadoPedido cuandoEntra =
-        metodoPago == MetodoPago.CONTRAENTREGA
-            ? EstadoPedido.RECAUDO_CONCILIADO
-            : EstadoPedido.PAGADO;
+        switch (metodoPago) {
+          case CONTRAENTREGA -> EstadoPedido.RECAUDO_CONCILIADO;
+          case PAGO_EN_PUNTO -> EstadoPedido.ENTREGADO;
+          case WOMPI, SISTECREDITO, TRANSFERENCIA_MANUAL -> EstadoPedido.PAGADO;
+        };
     boolean entro =
         estado == cuandoEntra || historial.stream().anyMatch(h -> h.estado() == cuandoEntra);
     return entro ? total() : Dinero.deCop(0L);
@@ -446,8 +460,9 @@ public final class Pedido {
    * <p>De ella cuelgan dos plazos legales —los cinco días hábiles del retracto y el año de la
    * garantía (docs/12-legales-de-envio.md)—, así que conviene dejar escrito por qué no es un campo
    * del agregado: el historial no se sobrescribe nunca y el grafo de {@link EstadoPedido} solo deja
-   * llegar a {@code ENTREGADO} desde {@code DESPACHADO}, una sola vez. Una columna aparte sería una
-   * segunda verdad, capaz de divergir de la primera sin que nada avise.
+   * llegar a {@code ENTREGADO} una sola vez, desde {@code DESPACHADO} o, en la recogida, desde
+   * {@code LISTO_PARA_RECOGER}: en el punto, el comprador recibe cuando se lo entregan. Una columna
+   * aparte sería una segunda verdad, capaz de divergir de la primera sin que nada avise.
    *
    * <p>Vacío mientras el pedido no se haya entregado, que es lo que distingue "el plazo todavía no
    * empezó a correr" de "empezó tal día".
@@ -463,10 +478,10 @@ public final class Pedido {
    * Cuándo empezó a correr el plazo de entrega, leído del historial por el mismo motivo que {@link
    * #fechaDeEntrega()}: una columna aparte sería una segunda verdad.
    *
-   * <p>Qué registro lo marca depende del método de pago, y es la única regla aquí. En contraentrega
-   * es {@code CONFIRMADO_CONTRAENTREGA}: ahí se celebra el contrato y no hay ninguna confirmación
-   * de pago que esperar, porque se paga al recibir. En los demás es {@code PAGADO}, que es lo que
-   * los términos publicados llaman "la confirmación del pago".
+   * <p>Qué registro lo marca depende del método de pago, y es la única regla aquí. En lo que se
+   * paga al recibir —contraentrega y pago en el punto— es {@code CONFIRMADO_CONTRAENTREGA}: ahí se
+   * celebra el contrato y no hay ninguna confirmación de pago que esperar. En los demás es {@code
+   * PAGADO}, que es lo que los términos publicados llaman "la confirmación del pago".
    *
    * <p>Vacío mientras el pago siga pendiente, que es lo que distingue "el plazo todavía no empezó a
    * correr" de "empezó tal día". Un pedido que nunca se pagó no puede incumplir una entrega.
@@ -487,13 +502,29 @@ public final class Pedido {
 
   public Optional<Instant> fechaDeInicioDelPlazoDeEntrega() {
     EstadoPedido cuandoArranca =
-        metodoPago == MetodoPago.CONTRAENTREGA
-            ? EstadoPedido.CONFIRMADO_CONTRAENTREGA
-            : EstadoPedido.PAGADO;
+        metodoPago.seCobraAlRecibir() ? EstadoPedido.CONFIRMADO_CONTRAENTREGA : EstadoPedido.PAGADO;
     return historial.stream()
         .filter(registro -> registro.estado() == cuandoArranca)
         .map(HistorialPedido::fecha)
         .findFirst();
+  }
+
+  /**
+   * Hasta cuándo puede el comprador recoger este pedido en el punto: {@link #PLAZO_PARA_RECOGER}
+   * desde que se le avisó que estaba listo. Vacío si no está esperando a que lo recojan.
+   *
+   * <p>Se cuenta desde el aviso y no desde la compra: lo que el proveedor tarde en traerlo al punto
+   * no le corre al comprador.
+   */
+  public Optional<Instant> recogidaVenceEn() {
+    if (estado != EstadoPedido.LISTO_PARA_RECOGER) {
+      return Optional.empty();
+    }
+    return historial.stream()
+        .filter(registro -> registro.estado() == EstadoPedido.LISTO_PARA_RECOGER)
+        .map(HistorialPedido::fecha)
+        .reduce((primero, ultimo) -> ultimo)
+        .map(listo -> listo.plus(PLAZO_PARA_RECOGER));
   }
 
   /**

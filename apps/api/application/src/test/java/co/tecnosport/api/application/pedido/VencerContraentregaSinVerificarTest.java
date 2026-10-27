@@ -113,4 +113,21 @@ class VencerContraentregaSinVerificarTest {
     assertEquals(EstadoPedido.EN_PREPARACION, pedido.estado());
     assertEquals(0, disponible(pedido));
   }
+
+  /** El pago en el punto tiene el mismo hueco —apartar sin pagar— y el mismo plazo (ADR-0094). */
+  @Test
+  void unPagoEnElPuntoSinVerificarTambienVenceConSuPropioTexto() {
+    Pedido pedido =
+        new Recogidas(pedidos, inventarios)
+            .confirmada(MetodoPago.PAGO_EN_PUNTO, AHORA.minus(Duration.ofHours(49)));
+
+    assertEquals(List.of(pedido.id()), casoDeUso().vencidos());
+    assertTrue(casoDeUso().ejecutar(pedido.id()));
+
+    assertEquals(EstadoPedido.CANCELADO, pedido.estado());
+    assertEquals(1, disponible(pedido));
+    String cuerpo = correos.enviados().get(0).cuerpoHtml();
+    assertTrue(cuerpo.contains("pago_en_punto_vencido"), cuerpo);
+    assertFalse(cuerpo.contains("contraentrega_vencida"), cuerpo);
+  }
 }

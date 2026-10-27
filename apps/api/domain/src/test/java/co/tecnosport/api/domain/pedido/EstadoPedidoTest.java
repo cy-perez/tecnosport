@@ -77,4 +77,14 @@ class EstadoPedidoTest {
       assertTrue(estado.admiteEliminacion() == esperado, estado.name());
     }
   }
+
+  /** La recogida no pasa por la transportadora: del punto, a la mano del comprador (ADR-0094). */
+  @Test
+  void laRecogidaVaDePreparacionAListaYDeAhiAEntregadaOCancelada() {
+    assertTrue(EstadoPedido.EN_PREPARACION.puedeTransicionarA(EstadoPedido.LISTO_PARA_RECOGER));
+    assertTrue(EstadoPedido.LISTO_PARA_RECOGER.puedeTransicionarA(EstadoPedido.ENTREGADO));
+    assertTrue(EstadoPedido.LISTO_PARA_RECOGER.puedeTransicionarA(EstadoPedido.CANCELADO));
+    assertFalse(EstadoPedido.LISTO_PARA_RECOGER.puedeTransicionarA(EstadoPedido.DESPACHADO));
+    assertFalse(EstadoPedido.PAGADO.puedeTransicionarA(EstadoPedido.LISTO_PARA_RECOGER));
+  }
 }

@@ -19,5 +19,12 @@ public enum MotivoCancelacion {
   /**
    * "Si no entregamos dentro del plazo pactado, puedes terminar el contrato y recuperar tu dinero."
    */
-  PLAZO_INCUMPLIDO
+  PLAZO_INCUMPLIDO,
+
+  /**
+   * Una recogida en el punto que estuvo lista {@code Pedido.PLAZO_PARA_RECOGER} y nadie vino por
+   * ella (ADR-0094). Solo vale para un pedido {@code LISTO_PARA_RECOGER} cuyo plazo ya venció. La
+   * que se paga en el punto la cancela el sistema; la pagada en línea, el panel con su reintegro.
+   */
+  NO_RECOGIDO
 }

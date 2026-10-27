@@ -41,6 +41,8 @@ import java.util.Set;
  * método elegido, Wompi pinta su propia lista— y ese era el problema: el comprador elegía Addi,
  * pagaba con tarjeta y el pedido quedaba grabado diciendo Addi.
  *
+ * <p>El pago en el punto es lo contrario: solo con {@code RETIRO_EN_PUNTO} (ADR-0094).
+ *
  * <p>Contraentrega exige una ciudad de destino que cubrir: sin {@code ENVIO_A_DOMICILIO} (por
  * ejemplo, {@code RETIRO_EN_PUNTO}) no se ofrece — no hay transportadora con recaudo en un
  * mostrador propio.
@@ -136,6 +138,11 @@ public final class MetodosDePagoDisponibles {
     CarritoPerezoso carrito = new CarritoPerezoso(comando.lineas());
     if (!contraentregaElegible(comando, carrito)) {
       disponibles.remove(MetodoPago.CONTRAENTREGA);
+    }
+    // El pago en el punto es de quien viene al punto (ADR-0094). Que la recogida aplique a este
+    // carrito lo decide `RecogidaEnPunto` antes de que exista el pedido, no esto.
+    if (comando.tipoEntrega() != TipoEntrega.RETIRO_EN_PUNTO) {
+      disponibles.remove(MetodoPago.PAGO_EN_PUNTO);
     }
     if (disponibles.contains(MetodoPago.SISTECREDITO) && !alcanzaElMinimoDeSistecredito(carrito)) {
       disponibles.remove(MetodoPago.SISTECREDITO);

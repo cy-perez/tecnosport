@@ -10,6 +10,7 @@ import co.tecnosport.api.domain.inventario.ReservaNoEncontradaException;
 import co.tecnosport.api.domain.inventario.ReservaYaProcesadaException;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
 import co.tecnosport.api.domain.pedido.LineaPedido;
+import co.tecnosport.api.domain.pedido.MetodoPago;
 import co.tecnosport.api.domain.pedido.Pedido;
 import java.time.Duration;
 import java.time.Instant;
@@ -31,6 +32,9 @@ import java.util.UUID;
  * verificado libera la reserva y deja intacta la del que sí se verificó.
  *
  * <p>Contraentrega no cobra antes de entregar, así que no hay reintegro. Se le avisa al comprador.
+ *
+ * <p>Vale igual para el pago en el punto (ADR-0094), que entra en el mismo estado y tiene el mismo
+ * hueco: apartar sin pagar. Lo único que cambia es el texto que se le manda al comprador.
  */
 public final class VencerContraentregaSinVerificar {
 
@@ -84,7 +88,7 @@ public final class VencerContraentregaSinVerificar {
     pedido.transicionar(
         EstadoPedido.CANCELADO,
         "sistema",
-        "contraentrega sin verificar dentro de " + plazoParaVerificar.toHours() + " horas",
+        nombre(pedido) + " sin verificar dentro de " + plazoParaVerificar.toHours() + " horas",
         ahora);
     for (LineaPedido linea : pedido.lineas()) {
       liberar(linea, ahora);
@@ -94,13 +98,17 @@ public final class VencerContraentregaSinVerificar {
     return true;
   }
 
+  private static String nombre(Pedido pedido) {
+    return pedido.metodoPago() == MetodoPago.PAGO_EN_PUNTO ? "pago en el punto" : "contraentrega";
+  }
+
   private void liberar(LineaPedido linea, Instant ahora) {
     repositorioInventario
         .buscarPorVarianteId(linea.varianteId())
         .ifPresent(
             inventario -> {
               try {
-                inventario.liberar(linea.idReserva(), "contraentrega sin verificar", ahora);
+                inventario.liberar(linea.idReserva(), "pedido sin verificar", ahora);
                 repositorioInventario.guardar(inventario);
               } catch (ReservaYaProcesadaException | ReservaNoEncontradaException yaResuelta) {
                 // Nada que liberar: la reserva ya no estaba abierta.
@@ -115,7 +123,10 @@ public final class VencerContraentregaSinVerificar {
           textos.texto(
               TextoDeCorreo.PEDIDO_CONTRAENTREGA_VENCIDA_ASUNTO, pedido.numeroPedido().valor()),
           textos.texto(
-                  TextoDeCorreo.PEDIDO_CONTRAENTREGA_VENCIDA_CUERPO, pedido.numeroPedido().valor())
+                  pedido.metodoPago() == MetodoPago.PAGO_EN_PUNTO
+                      ? TextoDeCorreo.PEDIDO_PAGO_EN_PUNTO_VENCIDO_CUERPO
+                      : TextoDeCorreo.PEDIDO_CONTRAENTREGA_VENCIDA_CUERPO,
+                  pedido.numeroPedido().valor())
               + textos.texto(TextoDeCorreo.PEDIDO_CANCELACION_SIN_COBRO)
               + textos.texto(TextoDeCorreo.PEDIDO_CANCELACION_CIERRE));
     } catch (CorreoNoEnviadoException registradoPorElAdaptador) {

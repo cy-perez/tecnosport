@@ -233,4 +233,18 @@ class DespacharPedidoTest {
             URL_ESTADO + "?pedidoId=" + pedido.id() + "#correo=cliente%40tecnosport.co"),
         cuerpo);
   }
+
+  /** Antes pasaba por aquí con una guía inventada y el comprador leía "despachado" (ADR-0094). */
+  @Test
+  void unaRecogidaNoSeDespachaConTransportadora() {
+    DespacharPedido caso = crear();
+    Pedido pedido =
+        new Recogidas(pedidos, new RepositorioInventarioFalso())
+            .enPreparacion(MetodoPago.WOMPI, AHORA);
+
+    assertThrows(EntregaNoAplicaException.class, () -> caso.ejecutar(comando(pedido.id())));
+    assertEquals(EstadoPedido.EN_PREPARACION, pedido.estado());
+    assertTrue(envios.guardados().isEmpty());
+    assertTrue(correos.enviados().isEmpty());
+  }
 }

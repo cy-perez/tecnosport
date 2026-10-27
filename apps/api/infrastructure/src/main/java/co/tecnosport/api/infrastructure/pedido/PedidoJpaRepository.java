@@ -30,6 +30,18 @@ public interface PedidoJpaRepository extends JpaRepository<PedidoJpaEntity, UUID
   List<UUID> findIdsByEstadoAndCreadoEnBefore(
       @Param("estado") String estado, @Param("corte") Instant corte, Pageable pagina);
 
+  /** La última llegada al estado y no la primera: es la que vale si el pedido volviera a él. */
+  @Query(
+      "select p.id from PedidoJpaEntity p where p.estado = :estado and p.metodoPago = :metodo"
+          + " and (select max(h.fecha) from HistorialPedidoJpaEntity h"
+          + " where h.pedidoId = p.id and h.estado = :estado) < :corte"
+          + " order by p.creadoEn asc")
+  List<UUID> findIdsByEstadoAndMetodoPagoDesdeAntesDe(
+      @Param("estado") String estado,
+      @Param("metodo") String metodo,
+      @Param("corte") Instant corte,
+      Pageable pagina);
+
   @Query(
       nativeQuery = true,
       value =

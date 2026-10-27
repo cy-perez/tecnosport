@@ -25,11 +25,13 @@ import co.tecnosport.api.application.pedido.ConsultarSeguimientoPedido;
 import co.tecnosport.api.application.pedido.CrearPedido;
 import co.tecnosport.api.application.pedido.DespacharPedido;
 import co.tecnosport.api.application.pedido.EliminarPedido;
+import co.tecnosport.api.application.pedido.EntregarEnPunto;
 import co.tecnosport.api.application.pedido.EnviarComprobantesDeCompra;
 import co.tecnosport.api.application.pedido.GenerarEnlaceDeCompra;
 import co.tecnosport.api.application.pedido.ListarEnlacesDeCompra;
 import co.tecnosport.api.application.pedido.ListarPedidosAdmin;
 import co.tecnosport.api.application.pedido.MarcarEntregado;
+import co.tecnosport.api.application.pedido.MarcarListoParaRecoger;
 import co.tecnosport.api.application.pedido.RechazarEnEntrega;
 import co.tecnosport.api.application.pedido.RecibirPedidoRechazado;
 import co.tecnosport.api.application.pedido.RecogidaEnPunto;
@@ -38,6 +40,7 @@ import co.tecnosport.api.application.pedido.RepositorioEnlacesDeCompra;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.application.pedido.SolicitarEnlaceDeSeguimiento;
 import co.tecnosport.api.application.pedido.VencerContraentregaSinVerificar;
+import co.tecnosport.api.application.pedido.VencerRecogidasSinRetirar;
 import co.tecnosport.api.application.pedido.VerificarContraentrega;
 import co.tecnosport.api.application.reintegro.RepositorioReintegros;
 import co.tecnosport.api.application.reintegro.TopeDeReintegro;
@@ -227,6 +230,40 @@ public class ConfiguracionPedido {
       TextosDeCorreo textos,
       Reloj reloj) {
     return new AvisarPlazosDeEntregaVencidos(repositorioPedidos, enviadorDeCorreo, textos, reloj);
+  }
+
+  @Bean
+  public MarcarListoParaRecoger marcarListoParaRecoger(
+      RepositorioPedidos repositorioPedidos,
+      EnviadorDeCorreo enviadorDeCorreo,
+      TextosDeCorreo textos,
+      Reloj reloj,
+      PropiedadesApp propiedadesApp) {
+    return new MarcarListoParaRecoger(
+        repositorioPedidos,
+        enviadorDeCorreo,
+        textos,
+        reloj,
+        propiedadesApp.urlPublica() + "/es/checkout/estado");
+  }
+
+  @Bean
+  public EntregarEnPunto entregarEnPunto(
+      RepositorioPedidos repositorioPedidos,
+      RepositorioInventario repositorioInventario,
+      Reloj reloj) {
+    return new EntregarEnPunto(repositorioPedidos, repositorioInventario, reloj);
+  }
+
+  @Bean
+  public VencerRecogidasSinRetirar vencerRecogidasSinRetirar(
+      RepositorioPedidos repositorioPedidos,
+      RepositorioInventario repositorioInventario,
+      EnviadorDeCorreo enviadorDeCorreo,
+      TextosDeCorreo textos,
+      Reloj reloj) {
+    return new VencerRecogidasSinRetirar(
+        repositorioPedidos, repositorioInventario, enviadorDeCorreo, textos, reloj);
   }
 
   @Bean

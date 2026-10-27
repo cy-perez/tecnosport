@@ -105,6 +105,10 @@ public final class CancelarPedido {
             .buscarPorIdParaModificar(comando.pedidoId())
             .orElseThrow(() -> new PedidoNoEncontradoException(comando.pedidoId()));
 
+    if (comando.motivo() == MotivoCancelacion.NO_RECOGIDO && !recogidaVencida(pedido)) {
+      throw new IllegalArgumentException(
+          "Solo se cancela por no recogerlo una recogida lista cuyo plazo ya venció.");
+    }
     boolean elDineroYaEntro = elDineroYaEntro(pedido);
     if (elDineroYaEntro && (comando.monto() == null || comando.medio() == null)) {
       throw ReintegroRequeridoException.porqueElDineroYaEntro(pedido.id());
@@ -155,6 +159,11 @@ public final class CancelarPedido {
     return pedido.dineroRecibido().valor().signum() > 0;
   }
 
+  private boolean recogidaVencida(Pedido pedido) {
+    Instant ahora = reloj.ahora();
+    return pedido.recogidaVenceEn().map(vence -> !vence.isAfter(ahora)).orElse(false);
+  }
+
   private void devolverAlInventario(LineaPedido linea, MotivoCancelacion motivo, Instant ahora) {
     Inventario inventario =
         repositorioInventario
@@ -183,9 +192,11 @@ public final class CancelarPedido {
    * del comprador: la cancelación la decide el negocio.
    */
   private static MotivoReintegro motivoDelReintegro(MotivoCancelacion motivo) {
-    return motivo == MotivoCancelacion.NO_DISPONIBILIDAD
-        ? MotivoReintegro.NO_DISPONIBILIDAD
-        : MotivoReintegro.PLAZO_INCUMPLIDO;
+    return switch (motivo) {
+      case NO_DISPONIBILIDAD -> MotivoReintegro.NO_DISPONIBILIDAD;
+      case PLAZO_INCUMPLIDO -> MotivoReintegro.PLAZO_INCUMPLIDO;
+      case NO_RECOGIDO -> MotivoReintegro.NO_RECOGIDO;
+    };
   }
 
   private static String motivo(CancelarPedidoComando comando) {
@@ -258,9 +269,11 @@ public final class CancelarPedido {
    */
   private void avisar(Pedido pedido, CancelarPedidoComando comando, boolean huboReintegro) {
     TextoDeCorreo explicacion =
-        comando.motivo() == MotivoCancelacion.NO_DISPONIBILIDAD
-            ? TextoDeCorreo.PEDIDO_CANCELACION_NO_DISPONIBILIDAD
-            : TextoDeCorreo.PEDIDO_CANCELACION_PLAZO_INCUMPLIDO;
+        switch (comando.motivo()) {
+          case NO_DISPONIBILIDAD -> TextoDeCorreo.PEDIDO_CANCELACION_NO_DISPONIBILIDAD;
+          case PLAZO_INCUMPLIDO -> TextoDeCorreo.PEDIDO_CANCELACION_PLAZO_INCUMPLIDO;
+          case NO_RECOGIDO -> TextoDeCorreo.PEDIDO_CANCELACION_NO_RECOGIDO;
+        };
     TextoDeCorreo dinero =
         huboReintegro
             ? TextoDeCorreo.PEDIDO_CANCELACION_CON_REINTEGRO

@@ -1,6 +1,7 @@
 package co.tecnosport.api.application.pedido;
 
 import co.tecnosport.api.domain.pedido.EstadoPedido;
+import co.tecnosport.api.domain.pedido.MetodoPago;
 import co.tecnosport.api.domain.pedido.NumeroPedido;
 import co.tecnosport.api.domain.pedido.Pedido;
 import java.time.Instant;
@@ -109,6 +110,17 @@ public interface RepositorioPedidos {
    */
   default List<UUID> buscarIdsEnEstadoCreadosAntesDe(
       EstadoPedido estado, Instant creadosAntesDe, int maximo) {
+    return List.of();
+  }
+
+  /**
+   * Los ids de los pedidos en ese estado y con ese método de pago que <b>llegaron</b> a él antes
+   * del corte —según su historial, no su creación—, del más viejo al más nuevo y como mucho {@code
+   * maximo}. Es la pregunta del vencimiento de la recogida: el plazo corre desde el aviso de que
+   * está lista (ADR-0094).
+   */
+  default List<UUID> buscarIdsEnEstadoDesdeAntesDe(
+      EstadoPedido estado, MetodoPago metodoPago, Instant desdeAntesDe, int maximo) {
     return List.of();
   }
 
