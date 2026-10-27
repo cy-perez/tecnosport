@@ -146,7 +146,9 @@ public final class AplicarEventoDeEnvio {
    */
   private boolean confirmarDespacho(
       Pedido pedido, AplicarEventoDeEnvioComando comando, Instant ahora) {
-    if (!pedido.estado().puedeTransicionarA(EstadoPedido.DESPACHADO)) {
+    // Al agregado y no al grafo de estados: una recogida no se despacha (ADR-0094), y un evento de
+    // la transportadora sobre ella no es un error, es un evento que no mueve nada.
+    if (!pedido.puedeTransicionarA(EstadoPedido.DESPACHADO)) {
       return false;
     }
     pedido.transicionar(

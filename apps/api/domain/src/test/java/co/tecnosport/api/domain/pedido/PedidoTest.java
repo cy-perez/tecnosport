@@ -1,6 +1,7 @@
 package co.tecnosport.api.domain.pedido;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -581,7 +582,8 @@ class PedidoTest {
 
     assertEquals(Dinero.deCop(0L), pedido.dineroRecibido());
 
-    pedido.transicionar(EstadoPedido.ENTREGADO, "admin:1", "entregado en el punto", AHORA);
+    pedido.entregarEnPunto(
+        pedido.numeroPedido().valor(), MedioDePagoEnPunto.EFECTIVO, "admin:1", AHORA);
 
     assertEquals(Dinero.deCop(100_000), pedido.dineroRecibido());
   }
@@ -605,9 +607,90 @@ class PedidoTest {
     Pedido pedido = recogidaConPagoEnPunto();
     pedido.transicionar(EstadoPedido.EN_PREPARACION, "admin:1", "verificado", AHORA);
     pedido.transicionar(EstadoPedido.LISTO_PARA_RECOGER, "admin:1", "listo", AHORA);
-    pedido.transicionar(EstadoPedido.ENTREGADO, "admin:1", "entregado en el punto", entrega);
+    pedido.entregarEnPunto(
+        pedido.numeroPedido().valor(), MedioDePagoEnPunto.TRANSFERENCIA, "admin:1", entrega);
 
     assertEquals(entrega, pedido.fechaDeEntrega().orElseThrow());
     assertTrue(pedido.recogidaVenceEn().isEmpty());
+  }
+
+  // El camino de entrega es del agregado (ADR-0094): hasta el 27/10/2026 lo repetían cuatro casos
+  // de uso, y el que aplica los eventos de la transportadora no lo miraba.
+
+  @Test
+  void unaRecogidaNoSeDespachaConTransportadora() {
+    Pedido pedido = recogidaConPagoEnPunto();
+    pedido.transicionar(EstadoPedido.EN_PREPARACION, "admin:1", "verificado", AHORA);
+
+    assertFalse(pedido.puedeTransicionarA(EstadoPedido.DESPACHADO));
+    assertThrows(
+        EntregaNoAplicaException.class,
+        () -> pedido.transicionar(EstadoPedido.DESPACHADO, "admin:1", "guía", AHORA));
+    assertEquals(EstadoPedido.EN_PREPARACION, pedido.estado());
+  }
+
+  @Test
+  void unEnvioADomicilioNoQuedaListoParaRecoger() {
+    Pedido pedido = crearAlDomicilio(MetodoPago.CONTRAENTREGA);
+    pedido.transicionar(EstadoPedido.EN_PREPARACION, "admin:1", "verificado", AHORA);
+
+    assertFalse(pedido.puedeTransicionarA(EstadoPedido.LISTO_PARA_RECOGER));
+    assertThrows(
+        EntregaNoAplicaException.class,
+        () -> pedido.transicionar(EstadoPedido.LISTO_PARA_RECOGER, "admin:1", "listo", AHORA));
+    assertTrue(pedido.puedeTransicionarA(EstadoPedido.DESPACHADO));
+  }
+
+  @Test
+  void unaRecogidaNoSeEntregaSinElNumero() {
+    Pedido pedido = recogidaConPagoEnPunto();
+    pedido.transicionar(EstadoPedido.EN_PREPARACION, "admin:1", "verificado", AHORA);
+    pedido.transicionar(EstadoPedido.LISTO_PARA_RECOGER, "admin:1", "listo", AHORA);
+
+    assertThrows(
+        EntregaNoAplicaException.class,
+        () -> pedido.transicionar(EstadoPedido.ENTREGADO, "admin:1", "entregado", AHORA));
+    assertThrows(
+        NumeroDePedidoNoCoincideException.class,
+        () -> pedido.entregarEnPunto("TS-2026-999999", MedioDePagoEnPunto.EFECTIVO, "a", AHORA));
+    assertEquals(EstadoPedido.LISTO_PARA_RECOGER, pedido.estado());
+  }
+
+  /** Se dicta en voz alta o se lee de un teléfono: mayúsculas y espacios alrededor no cuentan. */
+  @Test
+  void elNumeroSeComparaSinMayusculasNiEspacios() {
+    Pedido pedido = recogidaConPagoEnPunto();
+    pedido.transicionar(EstadoPedido.EN_PREPARACION, "admin:1", "verificado", AHORA);
+    pedido.transicionar(EstadoPedido.LISTO_PARA_RECOGER, "admin:1", "listo", AHORA);
+
+    pedido.entregarEnPunto(
+        "  " + pedido.numeroPedido().valor().toLowerCase() + " ",
+        MedioDePagoEnPunto.EFECTIVO,
+        "admin:1",
+        AHORA);
+
+    assertEquals(EstadoPedido.ENTREGADO, pedido.estado());
+    assertEquals("entregado en el punto; pagó en efectivo", pedido.historial().getLast().motivo());
+  }
+
+  @Test
+  void unPedidoADomicilioNoSeEntregaEnElPunto() {
+    Pedido pedido = crearAlDomicilio(MetodoPago.CONTRAENTREGA);
+
+    assertThrows(
+        EntregaNoAplicaException.class,
+        () -> pedido.entregarEnPunto(pedido.numeroPedido().valor(), null, "admin:1", AHORA));
+  }
+
+  @Test
+  void elPagoEnElPuntoPideElMedioYUnPedidoPagadoNoLoLleva() {
+    Pedido pedido = recogidaConPagoEnPunto();
+    pedido.transicionar(EstadoPedido.EN_PREPARACION, "admin:1", "verificado", AHORA);
+    pedido.transicionar(EstadoPedido.LISTO_PARA_RECOGER, "admin:1", "listo", AHORA);
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> pedido.entregarEnPunto(pedido.numeroPedido().valor(), null, "admin:1", AHORA));
+    assertEquals(EstadoPedido.LISTO_PARA_RECOGER, pedido.estado());
   }
 }

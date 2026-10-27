@@ -139,6 +139,49 @@ class AplicarEventoDeEnvioTest {
         "NN-1", estado, "novedad de la transportadora", AHORA, idExterno, "skydropx");
   }
 
+  /**
+   * Una recogida en el punto no se despacha (ADR-0094). Si llega un {@code picked_up} sobre una
+   * —una guía mal asociada—, no la mueve a DESPACHADO ni tumba el webhook: este caso de uso no
+   * miraba el camino de entrega, y el grafo de estados sí admite EN_PREPARACION → DESPACHADO.
+   */
+  @Test
+  void unaRecogidaEnElPuntoNoSeDespachaPorUnEvento() {
+    Pedido pedido =
+        Pedido.crear(
+            NumeroPedido.de(2026, 7),
+            null,
+            new CorreoElectronico("cliente@tecnosport.co"),
+            List.of(
+                new LineaPedido(
+                    UUID.randomUUID(),
+                    UUID.randomUUID(),
+                    new Sku("TS-CAM-AZ-M"),
+                    "Camiseta running Dry-Fit",
+                    1,
+                    Dinero.deCop(89_900),
+                    BigDecimal.ZERO,
+                    null,
+                    UUID.randomUUID())),
+            TipoEntrega.RETIRO_EN_PUNTO,
+            null,
+            MetodoPago.WOMPI,
+            "cliente@tecnosport.co",
+            DESPACHO.minusSeconds(60));
+    pedido.transicionar(EstadoPedido.PAGADO, "webhook", "pago aprobado", DESPACHO);
+    pedido.transicionar(EstadoPedido.EN_PREPARACION, "admin", "alistado", DESPACHO);
+    pedidos.guardar(pedido);
+    envios.guardar(
+        Envio.crear(
+            pedido.id(),
+            List.of(GuiaEnvio.crear("99 minutes", "NN-1", Dinero.deCop(10_540))),
+            DESPACHO));
+
+    caso.ejecutar(evento(EstadoEnvio.RECOGIDO, "ev-1"));
+
+    assertEquals(
+        EstadoPedido.EN_PREPARACION, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
+  }
+
   /** Un evento de un despacho que no es nuestro no puede tumbar el webhook. */
   @Test
   void unaGuiaDesconocidaSeDescartaSinLanzar() {

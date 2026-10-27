@@ -8,7 +8,6 @@ import co.tecnosport.api.application.compartido.TextosDeCorreo;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
 import co.tecnosport.api.domain.pedido.MetodoPago;
 import co.tecnosport.api.domain.pedido.Pedido;
-import co.tecnosport.api.domain.pedido.TipoEntrega;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -54,9 +53,7 @@ public final class MarcarListoParaRecoger {
         repositorioPedidos
             .buscarPorIdParaModificar(comando.pedidoId())
             .orElseThrow(() -> new PedidoNoEncontradoException(comando.pedidoId()));
-    if (pedido.tipoEntrega() != TipoEntrega.RETIRO_EN_PUNTO) {
-      throw new EntregaNoAplicaException(pedido.id(), "va a domicilio y no se recoge en el punto");
-    }
+    // Un envío a domicilio no queda listo para recoger: lo rechaza el agregado (ADR-0094).
     Instant ahora = reloj.ahora();
     pedido.transicionar(
         EstadoPedido.LISTO_PARA_RECOGER, comando.actor(), "listo para recoger en el punto", ahora);
