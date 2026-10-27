@@ -158,6 +158,19 @@ describe('SeguridadAdminPage', () => {
     expect(sesionStore.sesion()).toEqual(SESION_NUEVA);
   });
 
+  it('al regenerar, el foco va al titular de los códigos nuevos', async () => {
+    await renderPagina();
+    await screen.findByText(textos.seguridad.regenerar_titulo);
+
+    llenar(seccion(textos.seguridad.regenerar_titulo), 'clave-segura', '123456');
+    fireEvent.click(screen.getByRole('button', { name: textos.seguridad.regenerar }));
+    await screen.findByText('QQQQ-RRRR-SSSS-TTTT');
+    await new Promise((listo) => requestAnimationFrame(listo));
+    await new Promise((listo) => requestAnimationFrame(listo));
+
+    expect(document.activeElement?.id).toBe('codigos-de-respaldo-titulo');
+  });
+
   it('con el código equivocado no regenera y lo dice en su sección', async () => {
     const repositorio = new RepositorioSegundoFactorFalso();
     repositorio.alRegenerar = new CodigoSegundoFactorInvalidoError();

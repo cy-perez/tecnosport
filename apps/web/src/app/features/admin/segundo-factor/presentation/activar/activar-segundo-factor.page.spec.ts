@@ -274,6 +274,8 @@ describe('ActivarSegundoFactorPage', () => {
 
     expect(await screen.findByText(textos.codigos.error_sin_guardar)).toBeTruthy();
     expect(navegar).not.toHaveBeenCalled();
+    await new Promise((listo) => requestAnimationFrame(listo));
+    expect(document.activeElement?.id).toBe('activar-codigos-guardados');
   });
 
   it('con la casilla marcada entra al panel', async () => {
@@ -283,6 +285,24 @@ describe('ActivarSegundoFactorPage', () => {
     fireEvent.click(screen.getByRole('button', { name: textos.activar.ir_al_panel }));
 
     expect(navegar).toHaveBeenCalledWith('/es/admin/panel');
+  });
+
+  it('al pasar a la clave TOTP el foco va a su titular', async () => {
+    await renderPagina();
+    await escribirClaveYContinuar();
+    await screen.findByText('JBSW Y3DP EHPK 3PXP JBSW Y3DP EHPK 3PXP');
+    await new Promise((listo) => requestAnimationFrame(listo));
+    await new Promise((listo) => requestAnimationFrame(listo));
+
+    expect(document.activeElement?.id).toBe('activar-titulo-clave');
+  });
+
+  it('al mostrar los códigos el foco va a su titular', async () => {
+    await hastaLosCodigos();
+    await new Promise((listo) => requestAnimationFrame(listo));
+    await new Promise((listo) => requestAnimationFrame(listo));
+
+    expect(document.activeElement?.id).toBe('codigos-de-respaldo-titulo');
   });
 
   it('la pantalla de los códigos no tiene violaciones de accesibilidad', async () => {

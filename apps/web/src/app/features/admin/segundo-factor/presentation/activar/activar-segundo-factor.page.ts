@@ -202,6 +202,7 @@ export class ActivarSegundoFactorPage {
   protected irAlPanel(): void {
     if (!this.guardados()) {
       this.errorGuardados.set(this.traducir()('admin.segundoFactor.codigos.error_sin_guardar'));
+      this.enfocarEn('#activar-codigos-guardados');
       return;
     }
     void this.router.navigateByUrl(`/${this.transloco.activeLang()}/admin/panel`);

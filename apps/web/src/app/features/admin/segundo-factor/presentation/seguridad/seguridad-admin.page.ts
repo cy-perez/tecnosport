@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  ElementRef,
+  inject,
+  signal,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
@@ -11,6 +18,7 @@ import {
 import { mensajeDeError } from '../../../../../core/errores/mensaje-de-error';
 import { fechaLarga } from '../../../../../core/i18n/fecha-colombia';
 import { usarTraductor } from '../../../../../core/i18n/traductor';
+import { usarFoco } from '../../../../../shared/foco/foco';
 import { TsEsqueleto } from '../../../../../shared/ts-esqueleto/ts-esqueleto';
 import { TsBoton } from '../../../../../shared/ui/boton/ts-boton';
 import { TsCampo } from '../../../../../shared/ui/campo/ts-campo';
@@ -64,6 +72,8 @@ export class SeguridadAdminPage {
   private readonly transloco = inject(TranslocoService);
   private readonly traducir = usarTraductor();
   protected readonly consulta = usarEstadoSegundoFactor();
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly enfocar = usarFoco();
   private readonly regenerar = usarRegenerarCodigos();
   private readonly desactivacion = usarDesactivar();
 
@@ -117,6 +127,11 @@ export class SeguridadAdminPage {
       const resultado = await this.regenerar.mutateAsync(this.valoresDe(this.formRegenerar));
       this.codigosNuevos.set(resultado.codigos);
       this.formRegenerar.reset();
+      // Los códigos aparecen debajo del botón y sin región viva (nacen llenos): sin mover el foco,
+      // quien usa lector de pantalla no se entera de que están ahí.
+      this.enfocar(() =>
+        this.host.nativeElement.querySelector<HTMLElement>('#codigos-de-respaldo-titulo'),
+      );
     } catch (error) {
       this.errorRegenerar.set(this.mensaje(error));
       this.formRegenerar.controls.codigo.reset();
