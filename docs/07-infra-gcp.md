@@ -476,7 +476,10 @@ arrancar y el código nuevo sin la llave tampoco arranca:
 
 Si la llave se pierde o se rota sin migrar, el procedimiento es
 `infra/operacion/restablecer-segundo-factor.sql`: borra el factor del
-administrador y lo obliga a activarlo otra vez.
+administrador y lo obliga a activarlo otra vez. Se corre a mano en la consola SQL
+de la base, con el correo de la cuenta en lugar de `CORREO_DEL_ADMIN`; los pasos
+están en `docs/08-seguridad-legal.md`. Con la llave perdida hay que correrlo una
+vez por cada administrador que tuviera factor.
 
 ```
 APP_URL_PUBLICA
