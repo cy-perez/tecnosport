@@ -47,6 +47,7 @@ import co.tecnosport.api.application.garantia.ReclamacionGarantiaNoEncontradaExc
 import co.tecnosport.api.application.pago.MetodoDePagoNoEsDeSistecreditoException;
 import co.tecnosport.api.application.pago.MetodoDePagoNoSoportadoPorWompiException;
 import co.tecnosport.api.application.pago.PagoConPedidoQueLoEsperaException;
+import co.tecnosport.api.application.pago.PagoConTransaccionOResueltoException;
 import co.tecnosport.api.application.pago.PagoNoEncontradoException;
 import co.tecnosport.api.application.pago.PagoSinPedidoYaDevueltoException;
 import co.tecnosport.api.application.pago.PedidoNoEstaEnPagoPendienteException;
@@ -683,6 +684,12 @@ public class ManejadorDeErrores {
   public ProblemDetail transaccionDeOtroPago(TransaccionDeOtroPagoException excepcion) {
     return problema(
         HttpStatus.UNPROCESSABLE_CONTENT, "La transacción no es de este pago", excepcion);
+  }
+
+  // La alerta del panel estaba vieja: el pago ya tiene su transacción o ya se resolvió.
+  @ExceptionHandler(PagoConTransaccionOResueltoException.class)
+  public ProblemDetail pagoConTransaccionOResuelto(PagoConTransaccionOResueltoException excepcion) {
+    return problema(HttpStatus.CONFLICT, "El pago ya no está sin transacción", excepcion);
   }
 
   @ExceptionHandler(PagoNoEncontradoException.class)

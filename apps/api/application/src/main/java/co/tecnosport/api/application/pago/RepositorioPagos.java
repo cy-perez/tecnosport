@@ -49,5 +49,19 @@ public interface RepositorioPagos {
    */
   List<Pago> buscarSinPedidoQueLosEspere();
 
+  /**
+   * {@code PENDIENTE}, <b>sin</b> {@code idTransaccionPasarela}, creados antes de {@code
+   * creadosAntesDe} y que nadie ha marcado como revisados, del más viejo al más nuevo. Es el
+   * complemento de {@link #buscarPendientesParaConciliar}: lo que la conciliación no puede
+   * consultar, porque la API de Wompi busca por su id y no por la referencia propia.
+   */
+  List<Pago> buscarPendientesSinTransaccionSinRevisar(Instant creadosAntesDe);
+
+  /**
+   * Deja constancia de que alguien buscó este pago a mano y ya no hace falta enseñarlo. Devuelve
+   * {@code false} si ya estaba marcado: la primera marca se conserva.
+   */
+  boolean marcarRevisadoSinTransaccion(UUID pagoId, String actor, Instant ahora);
+
   void guardar(Pago pago);
 }

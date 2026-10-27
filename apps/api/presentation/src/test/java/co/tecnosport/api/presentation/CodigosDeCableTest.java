@@ -162,6 +162,9 @@ class CodigosDeCableTest {
   private static final Map<Class<? extends Exception>, String> CABLEADOS_EN_TRADUCCIONES =
       Map.ofEntries(
           Map.entry(AcuseNoAplicableException.class, "ACUSE_NO_APLICABLE"),
+          Map.entry(
+              co.tecnosport.api.application.pago.PagoConTransaccionOResueltoException.class,
+              "PAGO_CON_TRANSACCION_O_RESUELTO"),
           Map.entry(ContraentregaNoDisponibleException.class, "CONTRAENTREGA_NO_DISPONIBLE"),
           Map.entry(EmisionNoEncontradaException.class, "EMISION_NO_ENCONTRADA"),
           Map.entry(ExcepcionDeDominio.class, "EXCEPCION_DE_DOMINIO"),

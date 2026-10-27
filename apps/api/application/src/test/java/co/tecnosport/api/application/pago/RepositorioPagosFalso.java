@@ -92,6 +92,24 @@ final class RepositorioPagosFalso implements RepositorioPagos {
         .toList();
   }
 
+  private final java.util.Set<UUID> revisadosSinTransaccion = new java.util.HashSet<>();
+
+  @Override
+  public List<Pago> buscarPendientesSinTransaccionSinRevisar(Instant creadosAntesDe) {
+    return pagos.stream()
+        .filter(p -> p.estado() == EstadoPago.PENDIENTE)
+        .filter(p -> p.idTransaccionPasarela().isEmpty())
+        .filter(p -> p.creadoEn().isBefore(creadosAntesDe))
+        .filter(p -> !revisadosSinTransaccion.contains(p.id()))
+        .map(RepositorioPagosFalso::copia)
+        .toList();
+  }
+
+  @Override
+  public boolean marcarRevisadoSinTransaccion(UUID pagoId, String actor, Instant ahora) {
+    return revisadosSinTransaccion.add(pagoId);
+  }
+
   @Override
   public void guardar(Pago pago) {
     pagos.removeIf(p -> p.id().equals(pago.id()));

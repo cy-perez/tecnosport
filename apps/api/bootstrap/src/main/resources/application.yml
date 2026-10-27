@@ -685,6 +685,10 @@ tecnosport:
   ip-cliente:
     clave-proxy: ${PROXY_WEB_CLAVE:}
     saltos-confiables: ${IP_CLIENTE_SALTOS_CONFIABLES:1}
+  # Umbrales de las alertas del panel de pedidos (AdminAlertasControlador). Dato de operacion: a
+  # partir de cuando conviene que alguien mire. 12 h decidido el 27/10/2026.
+  alertas:
+    pago-sin-transaccion-horas: ${ALERTA_PAGO_SIN_TRANSACCION_HORAS:12}
   limite-intentos:
     # docs/08-seguridad-legal.md pide el límite, pero no da números — dato de seguridad, no de
     # negocio, ajustable. "auth" agrupa sesión/registro/recuperación (mismo tipo de abuso);
