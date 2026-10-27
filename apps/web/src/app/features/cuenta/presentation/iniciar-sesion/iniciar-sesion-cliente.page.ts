@@ -4,6 +4,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { correoValido } from '../../../../shared/formularios/validadores';
 import { Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
+import { usarTraductor } from '../../../../core/i18n/traductor';
 import {
   CorreoSinVerificarError,
   CuentaExistenteRequiereClaveError,
@@ -43,6 +44,7 @@ export class IniciarSesionClientePage {
   private readonly enfocarPrimerInvalido = usarFocoEnPrimerInvalido();
   private readonly router = inject(Router);
   private readonly transloco = inject(TranslocoService);
+  private readonly traducir = usarTraductor();
   protected readonly sesionStore = inject(SesionStore);
 
   /** Las anclas de los campos, igual que en crear cuenta: nunca el nombre accesible. */
@@ -87,9 +89,9 @@ export class IniciarSesionClientePage {
       return null;
     }
     if (control.hasError('required')) {
-      return this.transloco.translate('cuenta.iniciarSesion.errores.correo_requerido');
+      return this.traducir()('cuenta.iniciarSesion.errores.correo_requerido');
     }
-    return this.transloco.translate('cuenta.iniciarSesion.errores.correo_invalido');
+    return this.traducir()('cuenta.iniciarSesion.errores.correo_invalido');
   });
 
   private readonly tickClave = toSignal(this.form.controls.clave.events, {
@@ -101,7 +103,7 @@ export class IniciarSesionClientePage {
     if (!control.touched || control.valid) {
       return null;
     }
-    return this.transloco.translate('cuenta.iniciarSesion.errores.clave_requerida');
+    return this.traducir()('cuenta.iniciarSesion.errores.clave_requerida');
   });
 
   protected async enviar(): Promise<void> {

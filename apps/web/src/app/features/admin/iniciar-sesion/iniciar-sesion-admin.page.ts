@@ -4,6 +4,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { correoValido } from '../../../shared/formularios/validadores';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
+import { usarTraductor } from '../../../core/i18n/traductor';
 import { TsBoton } from '../../../shared/ui/boton/ts-boton';
 import { TsPaginaFormulario } from '../../../shared/ui/pagina-formulario/ts-pagina-formulario';
 import { TsCampo } from '../../../shared/ui/campo/ts-campo';
@@ -27,6 +28,7 @@ export class IniciarSesionAdminPage {
   private readonly router = inject(Router);
   private readonly ruta = inject(ActivatedRoute);
   private readonly transloco = inject(TranslocoService);
+  private readonly traducir = usarTraductor();
   protected readonly sesionStore = inject(SesionStore);
 
   protected readonly error = signal<string | null>(null);
@@ -72,9 +74,9 @@ export class IniciarSesionAdminPage {
       return null;
     }
     if (control.hasError('required')) {
-      return this.transloco.translate('admin.iniciarSesion.errores.correo_requerido');
+      return this.traducir()('admin.iniciarSesion.errores.correo_requerido');
     }
-    return this.transloco.translate('admin.iniciarSesion.errores.correo_invalido');
+    return this.traducir()('admin.iniciarSesion.errores.correo_invalido');
   });
 
   private readonly tickClave = toSignal(this.form.controls.clave.events, {
@@ -86,7 +88,7 @@ export class IniciarSesionAdminPage {
     if (!control.touched || control.valid) {
       return null;
     }
-    return this.transloco.translate('admin.iniciarSesion.errores.clave_requerida');
+    return this.traducir()('admin.iniciarSesion.errores.clave_requerida');
   });
 
   /**

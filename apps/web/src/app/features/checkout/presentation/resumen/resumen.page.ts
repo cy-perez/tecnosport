@@ -228,11 +228,11 @@ export class ResumenPage {
       return null;
     }
     if (control.hasError('required')) {
-      return this.transloco.translate('checkout.resumen.errores.nombre_requerido');
+      return this.traducir()('checkout.resumen.errores.nombre_requerido');
     }
     return control.hasError('maxlength')
-      ? this.transloco.translate('checkout.resumen.errores.nombre_largo')
-      : this.transloco.translate('checkout.resumen.errores.nombre_invalido');
+      ? this.traducir()('checkout.resumen.errores.nombre_largo')
+      : this.traducir()('checkout.resumen.errores.nombre_invalido');
   });
 
   private readonly tickTelefono = toSignal(this.form.controls.telefono.events, {
@@ -245,8 +245,8 @@ export class ResumenPage {
       return null;
     }
     return control.hasError('required')
-      ? this.transloco.translate('checkout.resumen.errores.telefono_requerido')
-      : this.transloco.translate('checkout.resumen.errores.telefono_invalido');
+      ? this.traducir()('checkout.resumen.errores.telefono_requerido')
+      : this.traducir()('checkout.resumen.errores.telefono_invalido');
   });
 
   private readonly tickCorreo = toSignal(this.form.controls.correo.events, { initialValue: null });
@@ -257,8 +257,8 @@ export class ResumenPage {
       return null;
     }
     return control.hasError('required')
-      ? this.transloco.translate('checkout.resumen.errores.correo_requerido')
-      : this.transloco.translate('checkout.resumen.errores.correo_invalido');
+      ? this.traducir()('checkout.resumen.errores.correo_requerido')
+      : this.traducir()('checkout.resumen.errores.correo_invalido');
   });
 
   /**
@@ -275,7 +275,7 @@ export class ResumenPage {
     this.tickAutorizacion();
     const control = this.form.controls.autorizaDatos;
     return control.touched && control.invalid
-      ? this.transloco.translate('checkout.resumen.errores.autorizacion_requerida')
+      ? this.traducir()('checkout.resumen.errores.autorizacion_requerida')
       : null;
   });
 
@@ -287,7 +287,7 @@ export class ResumenPage {
     this.tickDepartamento();
     const control = this.form.controls.direccion.controls.codigoDaneDepartamento;
     return control.touched && control.invalid
-      ? this.transloco.translate('checkout.resumen.errores.departamento_requerido')
+      ? this.traducir()('checkout.resumen.errores.departamento_requerido')
       : null;
   });
 
@@ -301,7 +301,7 @@ export class ResumenPage {
     this.tickCiudad();
     const control = this.form.controls.direccion.controls.codigoDaneCiudad;
     return control.touched && control.invalid
-      ? this.transloco.translate('checkout.resumen.errores.ciudad_requerida')
+      ? this.traducir()('checkout.resumen.errores.ciudad_requerida')
       : null;
   });
 
@@ -318,8 +318,8 @@ export class ResumenPage {
       return null;
     }
     return control.hasError('required')
-      ? this.transloco.translate('checkout.resumen.errores.direccion_requerida')
-      : this.transloco.translate('checkout.resumen.errores.direccion_invalida');
+      ? this.traducir()('checkout.resumen.errores.direccion_requerida')
+      : this.traducir()('checkout.resumen.errores.direccion_invalida');
   });
 
   /**
@@ -333,7 +333,7 @@ export class ResumenPage {
     this.tickBarrio();
     const control = this.form.controls.direccion.controls.barrio;
     return control.touched && control.invalid
-      ? this.transloco.translate('checkout.resumen.errores.barrio_invalido')
+      ? this.traducir()('checkout.resumen.errores.barrio_invalido')
       : null;
   });
 

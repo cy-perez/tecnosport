@@ -10,6 +10,7 @@ import {
 } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
+import { usarTraductor } from '../../../../core/i18n/traductor';
 import { esFalloDelServidor } from '../../../../core/http/respuesta-http';
 import { DemasiadosIntentosError } from '../../../../core/autenticacion/sesion.errores';
 import { REPOSITORIO_CUENTA } from '../../domain/repositorio-cuenta.puerto';
@@ -41,6 +42,7 @@ export class RestablecerClavePage {
   private readonly route = inject(ActivatedRoute);
   private readonly repositorio = inject(REPOSITORIO_CUENTA);
   protected readonly transloco = inject(TranslocoService);
+  private readonly traducir = usarTraductor();
 
   protected readonly token = this.route.snapshot.queryParamMap.get('token');
 
@@ -78,7 +80,7 @@ export class RestablecerClavePage {
     this.tickClaveNueva();
     const control = this.form.controls.claveNueva;
     return control.touched && control.hasError('required')
-      ? this.transloco.translate('cuenta.restablecerClave.errores.clave_requerida')
+      ? this.traducir()('cuenta.restablecerClave.errores.clave_requerida')
       : null;
   });
 
@@ -89,7 +91,7 @@ export class RestablecerClavePage {
     this.tickConfirmarClave();
     const control = this.form.controls.confirmarClave;
     return control.touched && control.hasError('required')
-      ? this.transloco.translate('cuenta.restablecerClave.errores.confirmar_requerida')
+      ? this.traducir()('cuenta.restablecerClave.errores.confirmar_requerida')
       : null;
   });
 
