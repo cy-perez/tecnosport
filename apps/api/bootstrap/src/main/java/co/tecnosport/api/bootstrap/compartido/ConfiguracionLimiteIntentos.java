@@ -82,8 +82,9 @@ public class ConfiguracionLimiteIntentos {
    * segundo. El resto de endpoints públicos solo cuestan base de datos propia.
    *
    * <p><b>Son dos rutas, no una</b>, y la segunda faltaba: {@code
-   * /api/v1/pedidos/metodos-de-pago-disponibles} cotiza igual —con recaudo, así que crea una
-   * cotización y la sondea— y quedaba fuera de los tres filtros. El patrón {@code /api/v1/pedidos}
+   * /api/v1/pedidos/metodos-de-pago-con-precio} cotiza igual —con recaudo, así que crea una
+   * cotización y la sondea—. Su antecesora sin precios, {@code metodos-de-pago-disponibles},
+   * quedaba fuera de los tres filtros; se retiró el 27/10/2026. El patrón {@code /api/v1/pedidos}
    * de arriba es exacto y no cubre subrutas. Agotar las dos peticiones por segundo de la cuenta
    * deja a los compradores reales con un checkout que solo ofrece recogida en el punto y sin
    * contraentrega: la venta con envío se pierde entera mientras dure. Lo levantó una revisión
@@ -103,8 +104,7 @@ public class ConfiguracionLimiteIntentos {
                 Duration.ofMinutes(propiedades.ipMinutos())));
     registro.addUrlPatterns(
         "/api/v1/envios/cotizacion",
-        "/api/v1/pedidos/metodos-de-pago-disponibles",
-        // ADR-0095: la misma consulta con el precio de cada medio; cotiza igual con recaudo.
+        // ADR-0095: los medios con el precio de cada uno; cotiza con recaudo.
         "/api/v1/pedidos/metodos-de-pago-con-precio",
         // ADR-0093: no llama a terceros, pero cada variante de la lista es una lectura del
         // catálogo.

@@ -10796,47 +10796,6 @@
         ]
       }
     },
-    "/api/v1/pedidos/metodos-de-pago-disponibles" : {
-      "post" : {
-        "deprecated" : true,
-        "operationId" : "metodosDePagoDisponibles",
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/MetodosDePagoDisponiblesRequest"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "items" : {
-                    "enum" : [
-                      "WOMPI",
-                      "SISTECREDITO",
-                      "TRANSFERENCIA_MANUAL",
-                      "CONTRAENTREGA",
-                      "PAGO_EN_PUNTO"
-                    ],
-                    "type" : "string"
-                  },
-                  "type" : "array"
-                }
-              }
-            },
-            "description" : "OK"
-          }
-        },
-        "tags" : [
-          "pedido-controlador"
-        ]
-      }
-    },
     "/api/v1/pedidos/seguimiento" : {
       "post" : {
         "operationId" : "seguimientoPorNumero",

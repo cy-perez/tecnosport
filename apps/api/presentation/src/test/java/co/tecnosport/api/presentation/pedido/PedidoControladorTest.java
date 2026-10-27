@@ -583,7 +583,7 @@ class PedidoControladorTest {
   }
 
   @Test
-  void metodosDePagoDisponiblesIncluyeContraentregaCuandoLaCiudadEstaCubierta() throws Exception {
+  void metodosDePagoConPrecioIncluyeContraentregaCuandoLaCiudadEstaCubierta() throws Exception {
     Variante variante = publicarProductoConVarianteYExistencia(5);
     MetodosDePagoDisponiblesRequest cuerpo =
         new MetodosDePagoDisponiblesRequest(
@@ -594,11 +594,11 @@ class PedidoControladorTest {
 
     mockMvc
         .perform(
-            post("/api/v1/pedidos/metodos-de-pago-disponibles")
+            post("/api/v1/pedidos/metodos-de-pago-con-precio")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json.writeValueAsString(cuerpo)))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$", hasItem("CONTRAENTREGA")));
+        .andExpect(jsonPath("$.metodos[*].metodo", hasItem("CONTRAENTREGA")));
   }
 
   /**
@@ -607,7 +607,7 @@ class PedidoControladorTest {
    * en el controlador, se ofrecería con la que sí recauda y esta prueba caería.
    */
   @Test
-  void metodosDePagoDisponiblesMiraLaTransportadoraElegida() throws Exception {
+  void metodosDePagoConPrecioMiraLaTransportadoraElegida() throws Exception {
     Variante variante = publicarProductoConVarianteYExistencia(5);
     MetodosDePagoDisponiblesRequest cuerpo =
         new MetodosDePagoDisponiblesRequest(
@@ -619,11 +619,11 @@ class PedidoControladorTest {
 
     mockMvc
         .perform(
-            post("/api/v1/pedidos/metodos-de-pago-disponibles")
+            post("/api/v1/pedidos/metodos-de-pago-con-precio")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json.writeValueAsString(cuerpo)))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$", not(hasItem("CONTRAENTREGA"))));
+        .andExpect(jsonPath("$.metodos[*].metodo", not(hasItem("CONTRAENTREGA"))));
   }
 
   /**
@@ -632,7 +632,7 @@ class PedidoControladorTest {
    * la negaba al confirmar. El control —el mismo cuerpo sin teléfono— es la prueba de arriba.
    */
   @Test
-  void metodosDePagoDisponiblesNoOfreceContraentregaAUnTelefonoQueYaRechazo() throws Exception {
+  void metodosDePagoConPrecioNoOfreceContraentregaAUnTelefonoQueYaRechazo() throws Exception {
     Variante variante = publicarProductoConVarianteYExistencia(5);
     pedidos.sembrarRechazoPorTelefono("3138816711");
     MetodosDePagoDisponiblesRequest cuerpo =
@@ -646,15 +646,15 @@ class PedidoControladorTest {
 
     mockMvc
         .perform(
-            post("/api/v1/pedidos/metodos-de-pago-disponibles")
+            post("/api/v1/pedidos/metodos-de-pago-con-precio")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json.writeValueAsString(cuerpo)))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$", not(hasItem("CONTRAENTREGA"))));
+        .andExpect(jsonPath("$.metodos[*].metodo", not(hasItem("CONTRAENTREGA"))));
   }
 
   @Test
-  void metodosDePagoDisponiblesExcluyeContraentregaSiNadieRecaudaAhi() throws Exception {
+  void metodosDePagoConPrecioExcluyeContraentregaSiNadieRecaudaAhi() throws Exception {
     Variante variante = publicarProductoConVarianteYExistencia(5);
     MetodosDePagoDisponiblesRequest cuerpo =
         new MetodosDePagoDisponiblesRequest(
@@ -665,12 +665,35 @@ class PedidoControladorTest {
 
     mockMvc
         .perform(
-            post("/api/v1/pedidos/metodos-de-pago-disponibles")
+            post("/api/v1/pedidos/metodos-de-pago-con-precio")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json.writeValueAsString(cuerpo)))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$", not(hasItem("CONTRAENTREGA"))))
-        .andExpect(jsonPath("$", hasItem("WOMPI")));
+        .andExpect(jsonPath("$.metodos[*].metodo", not(hasItem("CONTRAENTREGA"))))
+        .andExpect(jsonPath("$.metodos[*].metodo", hasItem("WOMPI")));
+  }
+
+  /**
+   * La ruta vieja, sin precios, se retiró el 27/10/2026: estaba marcada obsoleta desde el ADR-0095,
+   * ni el checkout ni las herramientas la llamaban, y seguía siendo una puerta pública que cotiza
+   * con recaudo contra un proveedor que se paga.
+   */
+  @Test
+  void laRutaSinPreciosYaNoExiste() throws Exception {
+    Variante variante = publicarProductoConVarianteYExistencia(5);
+    MetodosDePagoDisponiblesRequest cuerpo =
+        new MetodosDePagoDisponiblesRequest(
+            List.of(new CrearPedidoRequest.LineaRequest(variante.id(), 1)),
+            "cliente@tecnosport.co",
+            "ENVIO_A_DOMICILIO",
+            DIRECCION_MEDELLIN);
+
+    mockMvc
+        .perform(
+            post("/api/v1/pedidos/metodos-de-pago-disponibles")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(cuerpo)))
+        .andExpect(status().isNotFound());
   }
 
   @Test

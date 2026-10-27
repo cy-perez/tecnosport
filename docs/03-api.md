@@ -70,9 +70,11 @@ POST /api/v1/envios/cotizacion              costo de envío y plazo para este ca
 POST /api/v1/envios/modalidades             qué formas de entrega tiene este carrito ({varianteIds}): {envioADomicilio,
                                              retiroEnPunto}; la recogida solo si todo es de proveedores locales (adr/0093)
                                              POST /pedidos con RETIRO_EN_PUNTO fuera de eso: 409 RETIRO_EN_PUNTO_NO_DISPONIBLE
-POST /api/v1/pedidos/metodos-de-pago-disponibles   qué métodos ofrece el negocio hoy y aplican a este carrito y destino
-POST /api/v1/pedidos/metodos-de-pago-con-precio    la misma consulta y el mismo cuerpo, con {metodos: [{metodo, subtotal, descuento}]}:
-                                             la mercancía, sin flete, al precio de cada medio, y lo que ahorra (adr/0095)
+POST /api/v1/pedidos/metodos-de-pago-con-precio    qué métodos ofrece el negocio hoy y aplican a este carrito y destino, con
+                                             {metodos: [{metodo, subtotal, descuento, costoEnvio?}]}: la mercancía al precio
+                                             de cada medio y lo que ahorra (adr/0095); `costoEnvio` es el flete que se cobra
+                                             con ese medio cuando no es el de /envios/cotizacion —el de recaudo en
+                                             CONTRAENTREGA, cero en un retiro en punto—, y va nulo con los demás
 POST /api/v1/pedidos                        revalida precios, existencias y costo de envío, reserva; el precio de cada línea
                                              lo elige el servidor con `metodoPago`: publicado con pasarela, de contado sin
                                              ella. La respuesta trae `descuento` y por línea `precioPublicado`. Una línea de color
@@ -90,12 +92,11 @@ POST /api/v1/pedidos/{id}/seguimiento       el del enlace de los correos, sin se
 POST /api/v1/pedidos/seguimiento            manda ese enlace al correo, por el número legible (202)
 ```
 
-**`metodos-de-pago-con-precio` es una ruta aparte y no otra forma de
+**`metodos-de-pago-con-precio` nació como ruta aparte de
 `metodos-de-pago-disponibles`** (27 de octubre de 2026, `ADR-0095`). Aquélla
-devuelve un arreglo de nombres que ya tenía lectores, y cambiarle la forma los
-rompía; ésta devuelve un objeto para poder crecer. Tienen el mismo cuerpo, el
-mismo orden por nombre y el mismo límite de intentos, y el checkout ya solo llama a
-la nueva. Las cifras son informativas: el precio que se cobra lo fija `POST
+devolvía un arreglo de nombres que ya tenía lectores, y cambiarle la forma los
+rompía; ésta devuelve un objeto para poder crecer. La vieja se retiró el mismo día,
+cuando ni el checkout ni las herramientas la llamaban. Las cifras son informativas: el precio que se cobra lo fija `POST
 /pedidos` con el catálogo de ese momento. El seguimiento por `{id}` trae también
 `descuento`, ya restado en `subtotal`.
 
