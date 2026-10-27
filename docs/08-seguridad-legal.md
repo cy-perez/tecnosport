@@ -16,8 +16,17 @@ el panel administrativo, el asistente de captura y la cuenta opcional del client
   reutilización: si un refresco ya usado reaparece, se invalida toda la familia de
   tokens de ese usuario.
 - **El token de acceso no va en `localStorage`.** Vive en memoria.
-- Roles: `CLIENTE` y `ADMIN`. Autorización por método en la capa de aplicación,
-  no solo por ruta.
+- Roles: `CLIENTE` y `ADMIN`. **La autorización es por ruta, no por método.**
+  Esta línea decía lo contrario y era falso: no hay `@PreAuthorize` ni
+  `EnableMethodSecurity`, y `application` no puede tenerlos porque no conoce
+  Spring. `ConfiguracionSeguridad` exige `ADMIN` en `/api/v1/admin/**`, exige
+  sesión en `POST /auth/clave`, y deja el resto en `permitAll()`; lo que es de
+  un cliente concreto lo comprueba el caso de uso contra el principal (ver
+  "autorización verificada por recurso" más abajo). Como todo el panel cuelga de
+  una sola regla de ruta, `ArquitecturaTest` exige que cada `Admin*` de
+  `presentation` monte su `@RequestMapping` bajo `/api/v1/admin` —leyendo
+  `value` y `path`, y sin aceptar un prefijo parecido como
+  `/api/v1/administracion`, que la regla de seguridad no cubre—.
 - Verificación de correo obligatoria al registrarse. Recuperación con token de un
   solo uso, válido 30 minutos, separado del token de verificación de correo por
   nivel de sensibilidad (`ADR-0015`). Confirmar la recuperación revoca **todas**

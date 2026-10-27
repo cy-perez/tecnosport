@@ -1,8 +1,12 @@
 package co.tecnosport.api.bootstrap;
 
+import static com.tngtech.archunit.base.DescribedPredicate.not;
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.methods;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
+import com.tngtech.archunit.base.DescribedPredicate;
+import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
@@ -12,33 +16,6 @@ import org.springframework.transaction.annotation.Transactional;
 class ArquitecturaTest {
 
   private static final String RAIZ = "co.tecnosport.api";
-
-  /**
-   * Los paquetes de framework que ni {@code domain} ni {@code application} pueden tocar.
-   *
-   * <p>{@code CLAUDE.md} atribuía esta mitad de la regla dura #1 a ArchUnit, y las tres reglas de
-   * arriba solo comparaban paquetes internos. Al comprobarlo apareció algo mejor que lo que el
-   * documento prometía: <b>quien lo impide hoy es Gradle</b>. {@code domain/build.gradle.kts} no
-   * declara ni una dependencia y {@code application} solo declara {@code :domain}, así que un
-   * {@code import org.springframework...} en esas dos capas <b>no compila</b> — comprobado
-   * metiéndolo a propósito. Un límite de classpath es más fuerte que una prueba: no se puede
-   * desactivar sin darse cuenta.
-   *
-   * <p>Entonces estas dos reglas no protegen el presente, protegen el día que alguien agregue la
-   * dependencia a uno de esos dos {@code build.gradle.kts} — momento en el que el error de
-   * compilación desaparece y esto es lo único que se daría cuenta. Ese día no es hipotético: esta
-   * rama introdujo el primer puerto de {@code application} cuya única implementación es una clase
-   * de Spring ({@code TextosDeCorreo} ← {@code TextosDeCorreoMessageSource}), que es justo el
-   * escenario donde la tentación de acercar {@code MessageSource} al caso de uso aparece sola.
-   */
-  private static final String[] FRAMEWORKS = {
-    "org.springframework..",
-    "jakarta.persistence..",
-    "jakarta.validation..",
-    "tools.jackson..",
-    "com.fasterxml.jackson..",
-    "org.hibernate.."
-  };
 
   private final JavaClasses clases =
       new ClassFileImporter()
@@ -114,41 +91,94 @@ class ArquitecturaTest {
    * Todo controlador del panel cuelga de {@code /api/v1/admin}, que es lo único que la cadena de
    * seguridad protege: termina en {@code anyRequest().permitAll()}. Un {@code Admin*Controlador}
    * nuevo montado en otra ruta nacería público y ninguna prueba lo habría notado.
+   *
+   * <p><b>No hay autorización por método</b> —ni {@code @PreAuthorize} ni {@code
+   * EnableMethodSecurity}—: el rol {@code ADMIN} lo exige solo la ruta. Por eso esta regla es la
+   * que sostiene el panel, y por eso se endureció el 27 de octubre de 2026: leía solo {@code
+   * value()} del {@code @RequestMapping}, así que un {@code @RequestMapping(path = "/otra")} —el
+   * alias, que la reflexión cruda no resuelve— llegaba como una lista vacía, y {@code allMatch}
+   * sobre nada es {@code true}: el controlador pasaba por protegido. Y miraba solo
+   * {@code @RestController}, no {@code @Controller}.
    */
   @Test
   void losControladoresDelPanelCuelganDeLaRutaProtegida() {
     java.util.List<String> fuera = new java.util.ArrayList<>();
+    int vistos = 0;
     for (com.tngtech.archunit.core.domain.JavaClass clase : clases) {
       if (!clase.getPackageName().startsWith(RAIZ + ".presentation")
           || !clase.getSimpleName().startsWith("Admin")
-          || !clase.isAnnotatedWith(org.springframework.web.bind.annotation.RestController.class)) {
+          || !(clase.isAnnotatedWith(org.springframework.web.bind.annotation.RestController.class)
+              || clase.isAnnotatedWith(org.springframework.stereotype.Controller.class))) {
         continue;
       }
-      org.springframework.web.bind.annotation.RequestMapping mapeo =
-          clase
-              .reflect()
-              .getAnnotation(org.springframework.web.bind.annotation.RequestMapping.class);
-      boolean protegido =
-          mapeo != null
-              && java.util.Arrays.stream(mapeo.value())
-                  .allMatch(r -> r.startsWith("/api/v1/admin"));
-      if (!protegido) {
+      vistos++;
+      if (!cuelgaDeLaRutaProtegida(clase.reflect())) {
         fuera.add(clase.getSimpleName());
       }
     }
+    org.junit.jupiter.api.Assertions.assertTrue(
+        vistos > 10,
+        "Solo " + vistos + " controladores del panel: ¿cambió el paquete o el nombre?");
     org.junit.jupiter.api.Assertions.assertEquals(
         java.util.List.of(), fuera, "Controladores del panel fuera de /api/v1/admin");
   }
 
-  /** La otra mitad de la regla dura #1, la que el documento prometía y nadie comprobaba. */
+  /** Lo que la regla de arriba se pregunta de cada controlador, aparte para poder probarlo. */
+  static boolean cuelgaDeLaRutaProtegida(Class<?> controlador) {
+    org.springframework.web.bind.annotation.RequestMapping mapeo =
+        controlador.getAnnotation(org.springframework.web.bind.annotation.RequestMapping.class);
+    if (mapeo == null) {
+      return false;
+    }
+    java.util.List<String> rutas = new java.util.ArrayList<>();
+    rutas.addAll(java.util.Arrays.asList(mapeo.value()));
+    rutas.addAll(java.util.Arrays.asList(mapeo.path()));
+    return !rutas.isEmpty()
+        && rutas.stream()
+            .allMatch(r -> r.equals("/api/v1/admin") || r.startsWith("/api/v1/admin/"));
+  }
+
+  @org.springframework.web.bind.annotation.RequestMapping(path = "/api/v1/publico")
+  private static final class AdminConElAlias {}
+
+  @org.springframework.web.bind.annotation.RequestMapping("/api/v1/administracion")
+  private static final class AdminConPrefijoParecido {}
+
+  @org.springframework.web.bind.annotation.RequestMapping
+  private static final class AdminSinRuta {}
+
+  @org.springframework.web.bind.annotation.RequestMapping(path = "/api/v1/admin/pedidos")
+  private static final class AdminBienMontado {}
+
+  @Test
+  void laReglaDelPanelNoSeDejaEnganarPorElAliasNiPorUnPrefijoParecido() {
+    org.junit.jupiter.api.Assertions.assertFalse(cuelgaDeLaRutaProtegida(AdminConElAlias.class));
+    org.junit.jupiter.api.Assertions.assertFalse(
+        cuelgaDeLaRutaProtegida(AdminConPrefijoParecido.class));
+    org.junit.jupiter.api.Assertions.assertFalse(cuelgaDeLaRutaProtegida(AdminSinRuta.class));
+    org.junit.jupiter.api.Assertions.assertTrue(cuelgaDeLaRutaProtegida(AdminBienMontado.class));
+  }
+
+  /**
+   * La otra mitad de la regla dura #1, y es una <b>lista blanca</b> desde el 27 de octubre de 2026.
+   * Era una lista negra —Spring, JPA, Bean Validation, Jackson, Hibernate— y no nombraba {@code
+   * com.google}, {@code jakarta.mail}, {@code jakarta.servlet}, {@code jakarta.annotation}, {@code
+   * org.flywaydb} ni {@code org.slf4j}: el día que alguien agregara una de esas al {@code
+   * build.gradle.kts} de la capa, el error de compilación desaparecía y esta regla no veía nada.
+   * Ahora lo permitido es lo que se nombra: el JDK, menos lo que es infraestructura disfrazada
+   * ({@code java.sql}, el cliente de {@code java.net.http}), y las capas propias.
+   *
+   * <p>La primera línea sigue siendo Gradle: {@code domain/build.gradle.kts} no declara ninguna
+   * dependencia y {@code application} solo {@code :domain}, así que hoy un import de framework ahí
+   * no compila. Esta regla protege el día que alguien agregue la dependencia.
+   */
   @Test
   void dominioNoSabeDeNingunFramework() {
-    noClasses()
+    classes()
         .that()
         .resideInAPackage(RAIZ + ".domain..")
         .should()
-        .dependOnClassesThat()
-        .resideInAnyPackage(FRAMEWORKS)
+        .onlyDependOnClassesThat(permitidas(RAIZ + ".domain.."))
         .check(clases);
   }
 
@@ -158,14 +188,64 @@ class ArquitecturaTest {
    */
   @Test
   void aplicacionNoSabeDeNingunFramework() {
-    noClasses()
+    classes()
         .that()
         .resideInAPackage(RAIZ + ".application..")
         .should()
-        .dependOnClassesThat()
-        .resideInAnyPackage(FRAMEWORKS)
+        .onlyDependOnClassesThat(permitidas(RAIZ + ".domain..", RAIZ + ".application.."))
         .check(clases);
   }
+
+  /**
+   * El tipo base —el de un arreglo es su componente— es un primitivo, está en el JDK permitido o en
+   * una de las capas propias.
+   */
+  private static DescribedPredicate<JavaClass> permitidas(String... propias) {
+    DescribedPredicate<JavaClass> paquetePermitido =
+        JavaClass.Predicates.resideInAPackage("java..")
+            .and(not(JavaClass.Predicates.resideInAnyPackage(JDK_VEDADO)))
+            .or(JavaClass.Predicates.resideInAnyPackage(propias));
+    return new DescribedPredicate<JavaClass>(
+        "el JDK (sin " + String.join(", ", JDK_VEDADO) + ") y " + String.join(", ", propias)) {
+      @Override
+      public boolean test(JavaClass clase) {
+        JavaClass base = clase.getBaseComponentType();
+        return base.isPrimitive() || paquetePermitido.test(base);
+      }
+    };
+  }
+
+  /** Lo que la lista negra dejaba pasar, y lo que la blanca no tiene que vetar. */
+  @Test
+  void laListaBlancaVetaLoQueLaNegraDejabaPasar() {
+    JavaClasses muestra =
+        new ClassFileImporter()
+            .importClasses(
+                jakarta.servlet.http.HttpServletRequest.class,
+                org.slf4j.Logger.class,
+                java.sql.Connection.class,
+                java.net.http.HttpClient.class,
+                java.util.List.class,
+                java.math.BigDecimal.class);
+    DescribedPredicate<JavaClass> deDominio = permitidas(RAIZ + ".domain..");
+
+    for (Class<?> vetada :
+        new Class<?>[] {
+          jakarta.servlet.http.HttpServletRequest.class,
+          org.slf4j.Logger.class,
+          java.sql.Connection.class,
+          java.net.http.HttpClient.class
+        }) {
+      org.junit.jupiter.api.Assertions.assertFalse(
+          deDominio.test(muestra.get(vetada)), vetada.getName());
+    }
+    org.junit.jupiter.api.Assertions.assertTrue(deDominio.test(muestra.get(java.util.List.class)));
+    org.junit.jupiter.api.Assertions.assertTrue(
+        deDominio.test(muestra.get(java.math.BigDecimal.class)));
+  }
+
+  /** Del JDK, lo que es tecnología y no lenguaje: una base de datos y un cliente HTTP. */
+  private static final String[] JDK_VEDADO = {"java.sql..", "java.net.http.."};
 
   /**
    * Guardar una imagen escribe <b>dos tablas</b> —{@code imagen_producto} y {@code
