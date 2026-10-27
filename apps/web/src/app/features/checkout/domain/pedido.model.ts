@@ -16,7 +16,13 @@ export type TipoEntrega = 'ENVIO_A_DOMICILIO' | 'RETIRO_EN_PUNTO';
  * allí, así que un pedido podía decir NEQUI y haberse cobrado con tarjeta. Agruparlos dice lo que
  * de verdad se sabe; con qué se cobró vive en `medio_reportado_pasarela`, del lado del servidor.
  */
-export type MetodoPago = 'WOMPI' | 'SISTECREDITO' | 'TRANSFERENCIA_MANUAL' | 'CONTRAENTREGA';
+export type MetodoPago =
+  | 'WOMPI'
+  | 'SISTECREDITO'
+  | 'TRANSFERENCIA_MANUAL'
+  | 'CONTRAENTREGA'
+  /** Al recoger en el punto, en efectivo o por transferencia; solo con `RETIRO_EN_PUNTO` (ADR-0094). */
+  | 'PAGO_EN_PUNTO';
 
 /**
  * Los tipos de documento que acepta la pasarela de Sistecrédito (`adr/0048`). No son todos los que
@@ -33,6 +39,7 @@ export type EstadoPedido =
   | 'CONFIRMADO_CONTRAENTREGA'
   | 'EN_PREPARACION'
   | 'DESPACHADO'
+  | 'LISTO_PARA_RECOGER'
   | 'ENTREGADO'
   | 'RECHAZADO_EN_ENTREGA'
   | 'DEVUELTO'

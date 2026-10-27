@@ -37,6 +37,7 @@ const CLAVE_ETIQUETA_ESTADO: Record<EstadoPedido, string> = {
   CONFIRMADO_CONTRAENTREGA: 'checkout.estado.estados.confirmado_contraentrega',
   EN_PREPARACION: 'checkout.estado.estados.en_preparacion',
   DESPACHADO: 'checkout.estado.estados.despachado',
+  LISTO_PARA_RECOGER: 'checkout.estado.estados.listo_para_recoger',
   ENTREGADO: 'checkout.estado.estados.entregado',
   RECHAZADO_EN_ENTREGA: 'checkout.estado.estados.rechazado_en_entrega',
   DEVUELTO: 'checkout.estado.estados.devuelto',
@@ -250,7 +251,15 @@ export class EstadoPage {
 
   protected readonly etiquetaEstado = computed(() => {
     const pedido = this.pedido();
-    return pedido ? this.traducir()(CLAVE_ETIQUETA_ESTADO[pedido.estado]) : '';
+    if (!pedido) {
+      return '';
+    }
+    // El pago en el punto comparte estado con la contraentrega (ADR-0094); el nombre del estado
+    // no, porque al comprador le diría que paga a una transportadora.
+    if (pedido.estado === 'CONFIRMADO_CONTRAENTREGA' && pedido.metodoPago === 'PAGO_EN_PUNTO') {
+      return this.traducir()('checkout.estado.estados.confirmado_pago_en_punto');
+    }
+    return this.traducir()(CLAVE_ETIQUETA_ESTADO[pedido.estado]);
   });
 
   /**

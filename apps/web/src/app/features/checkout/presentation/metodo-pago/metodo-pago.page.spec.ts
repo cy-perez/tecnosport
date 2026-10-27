@@ -281,6 +281,20 @@ describe('MetodoPagoPage', () => {
     ).toBeTruthy();
   });
 
+  /** Pagar al recoger (ADR-0094): se avisa antes de elegir que hay que confirmarlo y que se guarda. */
+  it('cuando se ofrece pagar al recoger, lo nombra y avisa de los dos plazos', async () => {
+    sembrarCarritoId('carrito-1');
+
+    await renderConDatosEntrega(
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioPedidosFalso(['WOMPI', 'PAGO_EN_PUNTO']),
+    );
+
+    expect(await screen.findByRole('button', { name: /^Pagar al recoger/ })).toBeTruthy();
+    expect(screen.getByText(/si no logramos confirmarlo en 48 horas se cancela/)).toBeTruthy();
+    expect(screen.queryByText(/solo en efectivo/)).toBeFalsy();
+  });
+
   /** Sin la opción no hay nada que advertir, y un aviso que no aplica es ruido. */
   it('sin contraentrega entre las opciones, el aviso no aparece', async () => {
     sembrarCarritoId('carrito-1');

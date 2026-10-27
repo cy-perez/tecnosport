@@ -35,6 +35,7 @@ const CLAVE_ETIQUETA: Record<MetodoPago, string> = {
   SISTECREDITO: 'checkout.metodoPago.sistecredito',
   TRANSFERENCIA_MANUAL: 'checkout.metodoPago.transferencia_manual',
   CONTRAENTREGA: 'checkout.metodoPago.contraentrega',
+  PAGO_EN_PUNTO: 'checkout.metodoPago.pago_en_punto',
 };
 
 /**
@@ -52,6 +53,7 @@ const CLAVE_ETIQUETA: Record<MetodoPago, string> = {
 const CLAVE_DETALLE: Partial<Record<MetodoPago, string>> = {
   WOMPI: 'checkout.metodoPago.wompi_detalle',
   TRANSFERENCIA_MANUAL: 'checkout.metodoPago.transferencia_manual_detalle',
+  PAGO_EN_PUNTO: 'checkout.metodoPago.pago_en_punto_detalle',
 };
 
 /**
@@ -74,6 +76,7 @@ const ORDEN_DE_PRESENTACION: readonly MetodoPago[] = [
   'TRANSFERENCIA_MANUAL',
   'SISTECREDITO',
   'CONTRAENTREGA',
+  'PAGO_EN_PUNTO',
 ];
 
 /** Los que acepta la pasarela de Sistecrédito (`adr/0048`). */
@@ -151,6 +154,14 @@ export class MetodoPagoPage {
    */
   protected readonly ofreceContraentrega = computed(() =>
     this.opciones().some((opcion) => opcion.valor === 'CONTRAENTREGA'),
+  );
+
+  /**
+   * Lo mismo para pagar al recoger (ADR-0094), y por la misma razón: antes de elegir. Lo que
+   * sorprende es que hay que confirmar el pedido y que, listo, se guarda 48 horas.
+   */
+  protected readonly ofrecePagoEnPunto = computed(() =>
+    this.opciones().some((opcion) => opcion.valor === 'PAGO_EN_PUNTO'),
   );
 
   /**

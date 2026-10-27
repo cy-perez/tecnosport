@@ -37,6 +37,7 @@ const CLAVE_ETIQUETA: Record<MetodoPago, string> = {
   SISTECREDITO: 'checkout.metodoPago.sistecredito',
   TRANSFERENCIA_MANUAL: 'checkout.metodoPago.transferencia_manual',
   CONTRAENTREGA: 'checkout.metodoPago.contraentrega',
+  PAGO_EN_PUNTO: 'checkout.metodoPago.pago_en_punto',
 };
 
 /**
