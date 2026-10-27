@@ -9,11 +9,11 @@ import java.util.Objects;
  * Verificación previa al despacho de un pedido contraentrega (docs/11-pagos-y-envios.md): contacto
  * por WhatsApp o llamada antes de despachar, con el motivo que registra el administrador.
  *
- * <p>{@code CONFIRMADO_CONTRAENTREGA} solo lo alcanza un pedido que se paga al recibir —{@code
- * CONTRAENTREGA} o {@code PAGO_EN_PUNTO}, ADR-0094— ({@code Pedido.crear} lo fija según el método
- * al confirmar), así que no hace falta revalidar el método de pago aparte, a diferencia de {@code
- * ConciliarTransferencia}. Los dos se verifican igual: una llamada o un WhatsApp antes de
- * prepararlo.
+ * <p>Solo un pedido {@code CONFIRMADO_CONTRAENTREGA} que se paga al recibir —{@code CONTRAENTREGA}
+ * o {@code PAGO_EN_PUNTO}, ADR-0094—. Los dos se verifican igual: una llamada o un WhatsApp antes
+ * de prepararlo. La guarda es explícita y no se deja al grafo de estados: el grafo permite {@code
+ * PAGADO → EN_PREPARACION}, y sin ella un pedido pagado pasaba a preparación por aquí sin que
+ * {@code ConfirmarInventarioDePedidoPagado} confirmara su reserva.
  */
 public final class VerificarContraentrega {
 
@@ -31,6 +31,11 @@ public final class VerificarContraentrega {
         repositorioPedidos
             .buscarPorIdParaModificar(comando.pedidoId())
             .orElseThrow(() -> new PedidoNoEncontradoException(comando.pedidoId()));
+    if (pedido.estado() != EstadoPedido.CONFIRMADO_CONTRAENTREGA
+        || !pedido.metodoPago().seCobraAlRecibir()) {
+      throw new ContraentregaNoVerificableException(
+          pedido.id(), pedido.estado(), pedido.metodoPago());
+    }
     pedido.transicionar(
         EstadoPedido.EN_PREPARACION, comando.actor(), comando.motivo(), reloj.ahora());
     repositorioPedidos.guardar(pedido);

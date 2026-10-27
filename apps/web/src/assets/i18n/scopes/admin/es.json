@@ -13,6 +13,7 @@
     "transicion_de_estado_invalida": "Ese paso no se puede dar desde el estado actual. Recarga y vuelve a mirar.",
     "metodo_de_pago_no_es_transferencia_manual": "Este pedido no se pagó por transferencia, así que no se concilia a mano.",
     "contraentrega_no_disponible": "La contraentrega no está disponible para este pedido.",
+    "contraentrega_no_verificable": "Este pedido no espera verificación: solo se verifica uno que se paga al recibir y sigue confirmado sin pago. Recarga y vuelve a mirar.",
     "excepcion_de_dominio": "La operación no cumple una regla del negocio y el servidor no dice cuál. Vuelve a mirar los datos.",
     "sesion_de_refresco_invalida": "Tu sesión expiró. Vuelve a iniciar sesión: reintentar no va a servir.",
     "credenciales_invalidas": "Correo o clave incorrectos.",

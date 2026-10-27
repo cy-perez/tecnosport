@@ -55,6 +55,7 @@ import co.tecnosport.api.application.pago.SistecreditoNoEntregoLaUrlDePagoExcept
 import co.tecnosport.api.application.pago.SistecreditoNoRespondeException;
 import co.tecnosport.api.application.pago.TransaccionDeOtroPagoException;
 import co.tecnosport.api.application.pedido.ContraentregaNoDisponibleException;
+import co.tecnosport.api.application.pedido.ContraentregaNoVerificableException;
 import co.tecnosport.api.application.pedido.DisponibilidadPorConfirmarException;
 import co.tecnosport.api.application.pedido.EnlaceDeCompraNoEncontradoException;
 import co.tecnosport.api.application.pedido.EntregaNoAplicaException;
@@ -990,6 +991,14 @@ public class ManejadorDeErrores {
   public ProblemDetail metodoDePagoNoSoportadoPorWompi(
       MetodoDePagoNoSoportadoPorWompiException excepcion) {
     return problema(HttpStatus.CONFLICT, "Método de pago no soportado por Wompi", excepcion);
+  }
+
+  // Verificar un pedido que no se cobra al recibir, o que ya no espera la verificación. 409, como
+  // la
+  // conciliación de transferencia: el pedido existe, no está en el estado que esa acción pide.
+  @ExceptionHandler(ContraentregaNoVerificableException.class)
+  public ProblemDetail contraentregaNoVerificable(ContraentregaNoVerificableException excepcion) {
+    return problema(HttpStatus.CONFLICT, "El pedido no espera verificación", excepcion);
   }
 
   @ExceptionHandler(MetodoDePagoNoEsTransferenciaManualException.class)

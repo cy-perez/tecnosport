@@ -13,6 +13,7 @@
     "transicion_de_estado_invalida": "That step is not possible from the current state. Reload and check again.",
     "metodo_de_pago_no_es_transferencia_manual": "This order was not paid by transfer, so it cannot be reconciled by hand.",
     "contraentrega_no_disponible": "Cash on delivery is not available for this order.",
+    "contraentrega_no_verificable": "This order is not awaiting verification: only an order paid on receipt that is still confirmed without payment can be verified. Reload and check again.",
     "excepcion_de_dominio": "The operation breaks a business rule and the server does not say which. Check the data again.",
     "sesion_de_refresco_invalida": "Your session expired. Sign in again: retrying will not help.",
     "credenciales_invalidas": "Wrong email or password.",
