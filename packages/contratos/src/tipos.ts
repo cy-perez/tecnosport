@@ -1092,6 +1092,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/precios/recalculo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["previsualizar"];
+        put?: never;
+        post: operations["aplicar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/productos": {
         parameters: {
             query?: never;
@@ -2212,6 +2228,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/pedidos/metodos-de-pago-con-precio": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["metodosDePagoConPrecio"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/pedidos/metodos-de-pago-disponibles": {
         parameters: {
             query?: never;
@@ -2411,7 +2443,7 @@ export interface components {
             /** Format: int32 */
             pesoGramos?: number;
             /** Format: int64 */
-            precio?: number;
+            precioContado?: number;
             /** Format: uuid */
             productoId?: string;
             sku?: string;
@@ -2531,6 +2563,8 @@ export interface components {
             /** Format: int64 */
             precioProveedor?: number;
             /** Format: int64 */
+            precioPublicadoSugerido?: number;
+            /** Format: int64 */
             precioVentaSugerido?: number;
             preciosAdicionales?: components["schemas"]["PrecioAdicionalRespuesta"][];
             /** Format: uuid */
@@ -2616,6 +2650,7 @@ export interface components {
         CarritoCotizadoRespuesta: {
             lineas: components["schemas"]["Linea"][];
             subtotal: components["schemas"]["DineroRespuesta"];
+            subtotalContado: components["schemas"]["DineroRespuesta"];
         };
         CarritoRespuesta: {
             /** Format: date-time */
@@ -2689,7 +2724,11 @@ export interface components {
             /** Format: int64 */
             costoProveedor: number;
             /** Format: int64 */
+            precioContadoSugerido?: number;
+            /** Format: int64 */
             precioMercado?: number;
+            /** Format: int64 */
+            precioPublicadoSugerido?: number;
             /** Format: int64 */
             precioVenta?: number;
             ram?: string;
@@ -3193,8 +3232,10 @@ export interface components {
             disponible: boolean;
             /** Format: uuid */
             lineaId: string;
+            precioContado?: components["schemas"]["DineroRespuesta"];
             precioUnitario?: components["schemas"]["DineroRespuesta"];
             subtotal?: components["schemas"]["DineroRespuesta"];
+            subtotalContado?: components["schemas"]["DineroRespuesta"];
             /** Format: uuid */
             varianteId: string;
         };
@@ -3215,6 +3256,7 @@ export interface components {
             id?: string;
             imagenUrl?: string;
             nombre?: string;
+            precioPublicado?: components["schemas"]["DineroRespuesta"];
             precioUnitario?: components["schemas"]["DineroRespuesta"];
             sku?: string;
             tasaIva?: number;
@@ -3319,6 +3361,15 @@ export interface components {
             /** Format: int32 */
             pesoGramos?: number;
         };
+        Metodo: {
+            descuento: components["schemas"]["DineroRespuesta"];
+            /** @enum {string} */
+            metodo: "WOMPI" | "SISTECREDITO" | "TRANSFERENCIA_MANUAL" | "CONTRAENTREGA" | "PAGO_EN_PUNTO";
+            subtotal: components["schemas"]["DineroRespuesta"];
+        };
+        MetodosDePagoConPrecioRespuesta: {
+            metodos: components["schemas"]["Metodo"][];
+        };
         MetodosDePagoDisponiblesRequest: {
             correo?: string;
             direccion?: components["schemas"]["DireccionRequest"];
@@ -3405,6 +3456,7 @@ export interface components {
             /** Format: date-time */
             creadoEn?: string;
             datosTransferencia?: components["schemas"]["DatosTransferenciaRespuesta"];
+            descuento?: components["schemas"]["DineroRespuesta"];
             dineroRecibido?: components["schemas"]["DineroRespuesta"];
             direccion?: components["schemas"]["DireccionRespuesta"];
             envio?: components["schemas"]["EnvioRespuesta"];
@@ -3434,6 +3486,7 @@ export interface components {
             /** Format: date-time */
             creadoEn?: string;
             datosTransferencia?: components["schemas"]["DatosTransferenciaRespuesta"];
+            descuento?: components["schemas"]["DineroRespuesta"];
             direccion?: components["schemas"]["DireccionRespuesta"];
             envio?: components["schemas"]["EnvioPublicoRespuesta"];
             estado?: string;
@@ -3485,9 +3538,24 @@ export interface components {
         };
         PrecioDeVariantePeticion: {
             /** Format: int64 */
-            precio: number;
+            precioContado: number;
             /** Format: uuid */
             varianteId: string;
+        };
+        PrecioPorRecalcularRespuesta: {
+            nombreProducto: string;
+            /** Format: int64 */
+            precioContado: number;
+            /** Format: int64 */
+            publicadoActual: number;
+            /** Format: int64 */
+            publicadoNuevo: number;
+            sku: string;
+            /** Format: uuid */
+            varianteId: string;
+        };
+        PreciosPorRecalcularRespuesta: {
+            variantes: components["schemas"]["PrecioPorRecalcularRespuesta"][];
         };
         PrendaAprobadaPeticion: {
             colorHex?: string;
@@ -3682,6 +3750,10 @@ export interface components {
             /** Format: date-time */
             recibidaEn?: string;
             tipo?: string;
+        };
+        RecalculoAplicadoRespuesta: {
+            /** Format: int32 */
+            recalculadas: number;
         };
         RechazarBorradorPeticion: {
             motivo: string;
@@ -4040,6 +4112,7 @@ export interface components {
             /** Format: uuid */
             id?: string;
             precio?: components["schemas"]["DineroRespuesta"];
+            precioContado?: components["schemas"]["DineroRespuesta"];
             sku?: string;
         };
         VarianteResumenAdminRespuesta: {
@@ -4049,6 +4122,8 @@ export interface components {
             id?: string;
             /** Format: int64 */
             precio: number;
+            /** Format: int64 */
+            precioContado: number;
             sku?: string;
         };
         VarianteSinMedirRespuesta: {
@@ -6079,6 +6154,46 @@ export interface operations {
             };
         };
     };
+    previsualizar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PreciosPorRecalcularRespuesta"];
+                };
+            };
+        };
+    };
+    aplicar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RecalculoAplicadoRespuesta"];
+                };
+            };
+        };
+    };
     listar_1: {
         parameters: {
             query?: {
@@ -7940,6 +8055,30 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PedidoRespuesta"];
+                };
+            };
+        };
+    };
+    metodosDePagoConPrecio: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MetodosDePagoDisponiblesRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MetodosDePagoConPrecioRespuesta"];
                 };
             };
         };

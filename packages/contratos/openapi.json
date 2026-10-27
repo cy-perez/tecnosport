@@ -187,7 +187,7 @@
             "format" : "int32",
             "type" : "integer"
           },
-          "precio" : {
+          "precioContado" : {
             "format" : "int64",
             "type" : "integer"
           },
@@ -529,6 +529,10 @@
             "format" : "int64",
             "type" : "integer"
           },
+          "precioPublicadoSugerido" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
           "precioVentaSugerido" : {
             "format" : "int64",
             "type" : "integer"
@@ -799,11 +803,15 @@
           },
           "subtotal" : {
             "$ref" : "#/components/schemas/DineroRespuesta"
+          },
+          "subtotalContado" : {
+            "$ref" : "#/components/schemas/DineroRespuesta"
           }
         },
         "required" : [
           "lineas",
-          "subtotal"
+          "subtotal",
+          "subtotalContado"
         ],
         "type" : "object"
       },
@@ -1028,7 +1036,15 @@
             "format" : "int64",
             "type" : "integer"
           },
+          "precioContadoSugerido" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
           "precioMercado" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "precioPublicadoSugerido" : {
             "format" : "int64",
             "type" : "integer"
           },
@@ -2504,10 +2520,16 @@
             "format" : "uuid",
             "type" : "string"
           },
+          "precioContado" : {
+            "$ref" : "#/components/schemas/DineroRespuesta"
+          },
           "precioUnitario" : {
             "$ref" : "#/components/schemas/DineroRespuesta"
           },
           "subtotal" : {
+            "$ref" : "#/components/schemas/DineroRespuesta"
+          },
+          "subtotalContado" : {
             "$ref" : "#/components/schemas/DineroRespuesta"
           },
           "varianteId" : {
@@ -2561,6 +2583,9 @@
           },
           "nombre" : {
             "type" : "string"
+          },
+          "precioPublicado" : {
+            "$ref" : "#/components/schemas/DineroRespuesta"
           },
           "precioUnitario" : {
             "$ref" : "#/components/schemas/DineroRespuesta"
@@ -2811,6 +2836,46 @@
             "type" : "integer"
           }
         },
+        "type" : "object"
+      },
+      "Metodo" : {
+        "properties" : {
+          "descuento" : {
+            "$ref" : "#/components/schemas/DineroRespuesta"
+          },
+          "metodo" : {
+            "enum" : [
+              "WOMPI",
+              "SISTECREDITO",
+              "TRANSFERENCIA_MANUAL",
+              "CONTRAENTREGA",
+              "PAGO_EN_PUNTO"
+            ],
+            "type" : "string"
+          },
+          "subtotal" : {
+            "$ref" : "#/components/schemas/DineroRespuesta"
+          }
+        },
+        "required" : [
+          "descuento",
+          "metodo",
+          "subtotal"
+        ],
+        "type" : "object"
+      },
+      "MetodosDePagoConPrecioRespuesta" : {
+        "properties" : {
+          "metodos" : {
+            "items" : {
+              "$ref" : "#/components/schemas/Metodo"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [
+          "metodos"
+        ],
         "type" : "object"
       },
       "MetodosDePagoDisponiblesRequest" : {
@@ -3115,6 +3180,9 @@
           "datosTransferencia" : {
             "$ref" : "#/components/schemas/DatosTransferenciaRespuesta"
           },
+          "descuento" : {
+            "$ref" : "#/components/schemas/DineroRespuesta"
+          },
           "dineroRecibido" : {
             "$ref" : "#/components/schemas/DineroRespuesta"
           },
@@ -3202,6 +3270,9 @@
           },
           "datosTransferencia" : {
             "$ref" : "#/components/schemas/DatosTransferenciaRespuesta"
+          },
+          "descuento" : {
+            "$ref" : "#/components/schemas/DineroRespuesta"
           },
           "direccion" : {
             "$ref" : "#/components/schemas/DireccionRespuesta"
@@ -3350,7 +3421,7 @@
       },
       "PrecioDeVariantePeticion" : {
         "properties" : {
-          "precio" : {
+          "precioContado" : {
             "format" : "int64",
             "type" : "integer"
           },
@@ -3360,8 +3431,57 @@
           }
         },
         "required" : [
-          "precio",
+          "precioContado",
           "varianteId"
+        ],
+        "type" : "object"
+      },
+      "PrecioPorRecalcularRespuesta" : {
+        "properties" : {
+          "nombreProducto" : {
+            "type" : "string"
+          },
+          "precioContado" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "publicadoActual" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "publicadoNuevo" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "sku" : {
+            "type" : "string"
+          },
+          "varianteId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "nombreProducto",
+          "precioContado",
+          "publicadoActual",
+          "publicadoNuevo",
+          "sku",
+          "varianteId"
+        ],
+        "type" : "object"
+      },
+      "PreciosPorRecalcularRespuesta" : {
+        "properties" : {
+          "variantes" : {
+            "items" : {
+              "$ref" : "#/components/schemas/PrecioPorRecalcularRespuesta"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [
+          "variantes"
         ],
         "type" : "object"
       },
@@ -3936,6 +4056,18 @@
             "type" : "string"
           }
         },
+        "type" : "object"
+      },
+      "RecalculoAplicadoRespuesta" : {
+        "properties" : {
+          "recalculadas" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "required" : [
+          "recalculadas"
+        ],
         "type" : "object"
       },
       "RechazarBorradorPeticion" : {
@@ -4950,6 +5082,9 @@
           "precio" : {
             "$ref" : "#/components/schemas/DineroRespuesta"
           },
+          "precioContado" : {
+            "$ref" : "#/components/schemas/DineroRespuesta"
+          },
           "sku" : {
             "type" : "string"
           }
@@ -4979,13 +5114,18 @@
             "format" : "int64",
             "type" : "integer"
           },
+          "precioContado" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
           "sku" : {
             "type" : "string"
           }
         },
         "required" : [
           "disponibilidadPorConfirmar",
-          "precio"
+          "precio",
+          "precioContado"
         ],
         "type" : "object"
       },
@@ -7980,6 +8120,44 @@
         ]
       }
     },
+    "/api/v1/admin/precios/recalculo" : {
+      "get" : {
+        "operationId" : "previsualizar",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PreciosPorRecalcularRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-precios-controlador"
+        ]
+      },
+      "post" : {
+        "operationId" : "aplicar",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RecalculoAplicadoRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-precios-controlador"
+        ]
+      }
+    },
     "/api/v1/admin/productos" : {
       "get" : {
         "operationId" : "listar_1",
@@ -10501,6 +10679,36 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/PedidoRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "pedido-controlador"
+        ]
+      }
+    },
+    "/api/v1/pedidos/metodos-de-pago-con-precio" : {
+      "post" : {
+        "operationId" : "metodosDePagoConPrecio",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/MetodosDePagoDisponiblesRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MetodosDePagoConPrecioRespuesta"
                 }
               }
             },
