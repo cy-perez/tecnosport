@@ -60,7 +60,13 @@
 
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { CATALOGO, leerJson, leerMaterial, margenDe } from "./material-catalogo.mjs";
+import {
+  CATALOGO,
+  contadoSugeridoDe,
+  leerJson,
+  leerMaterial,
+  margenDe,
+} from "./material-catalogo.mjs";
 import { paraLaWeb, subirVariantes as subirVariantesCon } from "./subida-de-imagenes.mjs";
 
 const argv = process.argv.slice(2);
@@ -171,8 +177,12 @@ const CATEGORIAS = {
  */
 const skuDe = (id) => id.toUpperCase().slice(0, 60);
 
-/** El precio de venta es el de mercado, no el del proveedor. Vender al costo no es vender. */
-const precioDe = (producto) => producto.precio_mercado_cop;
+/**
+ * El precio **de contado** que se manda (ADR-0095): `min(mercado, costo + 400.000)`, como la
+ * sugerencia del panel, o el de mercado si la lista no trae el costo. Ver `contadoSugeridoDe`. El
+ * publicado, con la comisión de Wompi dentro, lo calcula el servidor; este script no lo conoce.
+ */
+const precioContadoDe = (producto) => contadoSugeridoDe(producto);
 
 /**
  * La clave, leída de la terminal sin eco. Sin dependencias: el modo crudo de stdin es lo que
@@ -354,7 +364,8 @@ async function cargarUno(producto, catalogos, registro) {
 
   console.log(
     `${ESCRIBIR ? "cargando" : "simulado"}    ${producto.titulo}\n` +
-      `            ${sku} · $${precioDe(producto).toLocaleString("es-CO")} · ${categoria.nombre}` +
+      `            ${sku} · $${precioContadoDe(producto).toLocaleString("es-CO")} de contado` +
+      ` · ${categoria.nombre}` +
       ` · existencia ${EXISTENCIA} · ${medidas}` +
       `${PUBLICAR ? " · se publica" : " · queda en BORRADOR"}`,
   );
@@ -395,7 +406,7 @@ async function cargarUno(producto, catalogos, registro) {
     body: JSON.stringify({
       productoId: creado.id,
       sku,
-      precio: precioDe(producto),
+      precioContado: precioContadoDe(producto),
       tasaIva: "0.00",
       codigoBarras: null,
       existenciaInicial: EXISTENCIA,
