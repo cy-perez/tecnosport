@@ -431,6 +431,57 @@ class ResolverBorradorTest {
         new UsoDelExtractor("falso", 1, 1, 1));
   }
 
+  /**
+   * Revisión adversarial del 27 de octubre de 2026: los gemelos de un anuncio unisex llevan el
+   * mismo título. Si el precio del proveedor cambia, la huella no se toca: recalcularla con el
+   * título y el precio dejaba las dos iguales —y el índice único revertía la resolución— y además
+   * rompía el vínculo de gemelo, así que el de caballero ya no se renovaba.
+   */
+  @Test
+  void unCambioDePrecioNoTocaLaHuellaDeLosGemelos() {
+    String texto =
+        "NIKE UNISEX ULTRALIVIANO🔥\nTallas disponibles en la foto!\n"
+            + "Horma normal Dama, Aumenta 1 Cab⚠️⚠️\n💰*$85,000*";
+    resolver(publicacion(texto, "foto-nike"), tenis(List.of("41", "42", "43")));
+    BorradorProducto dama =
+        borradores.enEstado(EstadoBorrador.EN_REVISION).stream()
+            .filter(b -> b.generoDeCalzado().equals(Optional.of(GeneroDeCalzado.DAMA)))
+            .findFirst()
+            .orElseThrow();
+    BorradorProducto caballero =
+        borradores.enEstado(EstadoBorrador.EN_REVISION).stream()
+            .filter(b -> b.generoDeCalzado().equals(Optional.of(GeneroDeCalzado.CABALLERO)))
+            .findFirst()
+            .orElseThrow();
+    HuellaProveedor deLaDama = dama.huella().orElseThrow();
+    HuellaProveedor delCaballero = caballero.huella().orElseThrow();
+    // El mismo título en los dos, como los tenis de Tenis Al Pie (ADR-0089), y el costo de antes.
+    Producto deDama =
+        productoExistente("Tenis Nike", 60000, deLaDama, EstadoDisponibilidad.DISPONIBLE);
+    Producto deCaballero =
+        productoExistente("Tenis Nike", 60000, delCaballero, EstadoDisponibilidad.DISPONIBLE);
+    PHash foto = dama.pHash().orElseThrow();
+    caballero.aprobar(deCaballero.id(), foto);
+    borradores.porId.remove(dama.id());
+    dama.aprobar(deDama.id(), foto);
+    borradores.guardar(dama);
+
+    Resolucion renovada =
+        resolver(
+            publicacion(texto, "foto-nike", FECHA_DEL_MENSAJE.plusSeconds(86_400)),
+            tenis(List.of("41", "42", "43")));
+
+    assertEquals(TipoDeResolucion.RENOVACION, renovada.tipo());
+    assertTrue(renovada.alertas().contains(AlertaBorrador.PRECIO_CAMBIO));
+    assertEquals(Optional.of(deLaDama), deDama.huellaProveedor());
+    assertEquals(Optional.of(delCaballero), deCaballero.huellaProveedor());
+    assertEquals(Optional.of(Dinero.deCop(65000)), deDama.precioProveedor());
+    assertEquals(
+        Optional.of(Dinero.deCop(65000)),
+        deCaballero.precioProveedor(),
+        "el gemelo sigue encontrándose y se renueva con el precio nuevo");
+  }
+
   /** Un bolso del mismo anuncio no talla: ni se corre ni se parte. */
   @Test
   void unBolsoNoSeCorreNiSeParte() {

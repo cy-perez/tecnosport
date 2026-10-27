@@ -262,15 +262,20 @@ public final class Producto {
   }
 
   /**
-   * El proveedor cambió el precio. Se guarda el nuevo y <b>la huella se recalcula con él</b>: la
-   * huella lleva el precio dentro, y si se quedara con el viejo, el siguiente anuncio del mismo
-   * producto al precio nuevo ya no la encontraría y acabaría en un producto duplicado. El margen lo
-   * revisa una persona.
+   * El proveedor cambió el precio. Se guarda el nuevo y <b>la huella no se toca</b>.
+   *
+   * <p>Hasta el 27 de octubre de 2026 se recalculaba con {@link HuellaProveedor#calcular}, del
+   * título y el precio, sin importar de dónde hubiera salido: de la referencia, del anuncio, del
+   * gemelo o de una parte. Los gemelos de un anuncio unisex llevan el mismo título, así que un
+   * cambio de precio dejaba las dos huellas iguales —el índice único revertía la resolución— y, aun
+   * sin chocar, el de caballero dejaba de encontrarse desde el de dama. Ninguna huella que el
+   * resolvedor busca hoy lleva el precio del momento: la de referencia no lo lleva, y la del
+   * anuncio lleva además la fecha del mensaje, así que el anuncio siguiente se reconoce por la foto
+   * de todos modos. El margen lo revisa una persona.
    */
   public void actualizarPrecioProveedor(Dinero precio) {
     exigirDeProveedor("cambiar el precio de proveedor de");
     this.precioProveedor = Objects.requireNonNull(precio, "El precio no puede ser nulo.");
-    this.huellaProveedor = HuellaProveedor.calcular(proveedorId, nombre, precio);
   }
 
   /**
