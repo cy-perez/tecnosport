@@ -40,6 +40,12 @@ variable "proxy_web_listo" {
   default     = false
 }
 
+variable "segundo_factor_listo" {
+  description = "Si el secreto `segundo-factor-llave` ya tiene version cargada (ADR-0096). Mientras sea false no se monta, y el codigo que la exige no arranca: el orden es aplicar con false para crear el recipiente y el permiso, cargar la llave con gcloud, poner esto en true, aplicar, y solo entonces mezclar el codigo. Misma secuencia que `proxy_web_listo`."
+  type        = bool
+  default     = false
+}
+
 variable "ingesta_lista" {
   description = "Si el secreto `anthropic-api-key` ya tiene version cargada. Mientras sea false no se monta y la extraccion queda sembrada: solo lee el precio y todo borrador sale con alertas. Misma secuencia que `meta_listo`: cargar el valor con gcloud, poner esto en true, aplicar."
   type        = bool

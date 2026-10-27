@@ -378,6 +378,11 @@ locals {
     # comparar, la web para mandarla. Sin ella la IP del proxy no se cree y todo el trafico que
     # pasa por la web cae en un solo cubo del limite de intentos.
     "proxy-web-clave",
+    # ADR-0096. La llave AES-256 con la que la API cifra el secreto TOTP de cada segundo factor
+    # antes de guardarlo. 32 bytes aleatorios en Base64 estandar. **Perderla es perder todos los
+    # factores**: nadie puede volver a entrar al panel con el suyo, y la salida es
+    # `infra/operacion/restablecer-segundo-factor.sql`. No se rota sin ese procedimiento.
+    "segundo-factor-llave",
   ]
 }
 
@@ -485,6 +490,10 @@ module "api" {
     # la ofrecen (términos 2026-10-26.1) y la entrega en el punto (ADR-0094). Solo aplica a los
     # carritos de proveedores locales; el valor por omisión sigue siendo `false`.
     RETIRO_EN_PUNTO_HABILITADO = "true"
+    # ADR-0096. El panel de dev exige segundo factor al ADMIN: dev es publico (docs/08), asi que
+    # la clave sola no basta tampoco aqui. Un ADMIN sin factor entra con una sesion que solo sirve
+    # para activarlo. El valor por omision de `application.yml` es `false`.
+    ADMIN_EXIGE_SEGUNDO_FACTOR = "true"
     GOOGLE_CLIENT_ID           = "2132674273-64m082sb4vfika599ja818f2eubnpfdi.apps.googleusercontent.com"
     # Las cuentas de transferencia (docs/11-pagos-y-envios.md). Los valores vienen de
     # `cuentas.auto.tfvars`, que no se versiona porque el repo es público; ver la variable.
@@ -570,6 +579,10 @@ module "api" {
     ANTHROPIC_API_KEY = "anthropic-api-key"
     } : {}, var.proxy_web_listo ? {
     PROXY_WEB_CLAVE = "proxy-web-clave"
+    } : {}, var.segundo_factor_listo ? {
+    # ADR-0096. Sin ella la API **no arranca**: `application.yml` no le da valor por omision.
+    # Por eso el orden es infra, secreto y despues el codigo que la exige.
+    SEGUNDO_FACTOR_LLAVE = "segundo-factor-llave"
     } : {}, var.sistecredito_listo ? {
     SISTECREDITO_SUBSCRIPTION_KEY = "sistecredito-llave-suscripcion"
     SISTECREDITO_STORE_ID         = "sistecredito-store-id"
