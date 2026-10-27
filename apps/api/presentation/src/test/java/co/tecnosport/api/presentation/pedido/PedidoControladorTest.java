@@ -1256,7 +1256,8 @@ class PedidoControladorTest {
           repositorioAutorizaciones,
           "2026-09-07",
           recogidaDeProveedoresLocales(repositorioProductos),
-          new RepositorioEnlacesDeCompraDobleDePrueba());
+          new RepositorioEnlacesDeCompraDobleDePrueba(),
+          new co.tecnosport.api.domain.compartido.TopeDeUnidadesPorLinea(5));
     }
 
     @Bean

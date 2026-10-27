@@ -831,6 +831,10 @@
       },
       "CarritoRespuesta" : {
         "properties" : {
+          "cantidadMaximaPorLinea" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
           "creadoEn" : {
             "format" : "date-time",
             "type" : "string"
@@ -850,6 +854,9 @@
             "type" : "string"
           }
         },
+        "required" : [
+          "cantidadMaximaPorLinea"
+        ],
         "type" : "object"
       },
       "CategoriaConPesoRespuesta" : {

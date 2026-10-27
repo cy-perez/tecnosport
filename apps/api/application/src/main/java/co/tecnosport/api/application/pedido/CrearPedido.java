@@ -18,6 +18,7 @@ import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
+import co.tecnosport.api.domain.compartido.TopeDeUnidadesPorLinea;
 import co.tecnosport.api.domain.envio.TarifaEnvio;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.inventario.MovimientoInventario;
@@ -78,6 +79,7 @@ public final class CrearPedido {
 
   private final RecogidaEnPunto recogidaEnPunto;
   private final RepositorioEnlacesDeCompra repositorioEnlaces;
+  private final TopeDeUnidadesPorLinea topePorLinea;
 
   public CrearPedido(
       RepositorioProductos repositorioProductos,
@@ -94,7 +96,10 @@ public final class CrearPedido {
       RepositorioAutorizaciones repositorioAutorizaciones,
       String versionPolitica,
       RecogidaEnPunto recogidaEnPunto,
-      RepositorioEnlacesDeCompra repositorioEnlaces) {
+      RepositorioEnlacesDeCompra repositorioEnlaces,
+      TopeDeUnidadesPorLinea topePorLinea) {
+    this.topePorLinea =
+        Objects.requireNonNull(topePorLinea, "El tope de unidades por línea no puede ser nulo.");
     this.repositorioProductos =
         Objects.requireNonNull(
             repositorioProductos, "El repositorio de productos no puede ser nulo.");
@@ -162,6 +167,9 @@ public final class CrearPedido {
     // libro. El agregado lo vuelve a exigir al crearse; aquí se adelanta para no reservar nada.
     Pedido.exigirVariantesSinRepetir(
         comando.lineas().stream().map(CrearPedidoComando.LineaComando::varianteId).toList());
+    // Tampoco más unidades por línea de las que se venden: sin tope, pedidos anónimos que nunca se
+    // pagan apartaban todas las unidades de una variante. Antes de reservar, por lo mismo.
+    comando.lineas().forEach(linea -> topePorLinea.exigir(linea.cantidad()));
 
     // Antes de reservar, y después de lo de arriba: la recogida lee el catálogo por cada línea
     // (ADR-0093), así que va detrás del límite por cuenta y del rechazo barato de los repetidos.

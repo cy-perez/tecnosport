@@ -2657,6 +2657,8 @@ export interface components {
             subtotalContado: components["schemas"]["DineroRespuesta"];
         };
         CarritoRespuesta: {
+            /** Format: int32 */
+            cantidadMaximaPorLinea: number;
             /** Format: date-time */
             creadoEn?: string;
             /** Format: uuid */
