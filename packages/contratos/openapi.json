@@ -1247,7 +1247,8 @@
               "WOMPI",
               "SISTECREDITO",
               "TRANSFERENCIA_MANUAL",
-              "CONTRAENTREGA"
+              "CONTRAENTREGA",
+              "PAGO_EN_PUNTO"
             ],
             "type" : "string"
           },
@@ -1723,6 +1724,24 @@
           "id",
           "token",
           "varianteId"
+        ],
+        "type" : "object"
+      },
+      "EntregarEnPuntoRequest" : {
+        "properties" : {
+          "medioDePago" : {
+            "enum" : [
+              "EFECTIVO",
+              "TRANSFERENCIA"
+            ],
+            "type" : "string"
+          },
+          "numeroPedido" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "numeroPedido"
         ],
         "type" : "object"
       },
@@ -3129,7 +3148,8 @@
               "WOMPI",
               "SISTECREDITO",
               "TRANSFERENCIA_MANUAL",
-              "CONTRAENTREGA"
+              "CONTRAENTREGA",
+              "PAGO_EN_PUNTO"
             ],
             "type" : "string"
           },
@@ -3138,6 +3158,10 @@
           },
           "plazoDeEntrega" : {
             "$ref" : "#/components/schemas/PlazoDeEntregaRespuesta"
+          },
+          "recogidaVenceEn" : {
+            "format" : "date-time",
+            "type" : "string"
           },
           "subtotal" : {
             "$ref" : "#/components/schemas/DineroRespuesta"
@@ -3209,7 +3233,8 @@
               "WOMPI",
               "SISTECREDITO",
               "TRANSFERENCIA_MANUAL",
-              "CONTRAENTREGA"
+              "CONTRAENTREGA",
+              "PAGO_EN_PUNTO"
             ],
             "type" : "string"
           },
@@ -7508,6 +7533,78 @@
         ]
       }
     },
+    "/api/v1/admin/pedidos/{id}/entrega-en-punto" : {
+      "post" : {
+        "operationId" : "entregarEnPunto",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/EntregarEnPuntoRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PedidoRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-pedidos-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/pedidos/{id}/listo-para-recoger" : {
+      "post" : {
+        "operationId" : "marcarListoParaRecoger",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PedidoRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-pedidos-controlador"
+        ]
+      }
+    },
     "/api/v1/admin/pedidos/{id}/recaudo" : {
       "post" : {
         "operationId" : "conciliarRecaudo",
@@ -10438,7 +10535,8 @@
                       "WOMPI",
                       "SISTECREDITO",
                       "TRANSFERENCIA_MANUAL",
-                      "CONTRAENTREGA"
+                      "CONTRAENTREGA",
+                      "PAGO_EN_PUNTO"
                     ],
                     "type" : "string"
                   },

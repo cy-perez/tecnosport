@@ -948,6 +948,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/pedidos/{id}/entrega-en-punto": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["entregarEnPunto"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/pedidos/{id}/listo-para-recoger": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["marcarListoParaRecoger"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/pedidos/{id}/recaudo": {
         parameters: {
             query?: never;
@@ -2727,7 +2759,7 @@ export interface components {
             direccion?: components["schemas"]["DireccionRequest"];
             lineas?: components["schemas"]["LineaRequest"][];
             /** @enum {string} */
-            metodoPago?: "WOMPI" | "SISTECREDITO" | "TRANSFERENCIA_MANUAL" | "CONTRAENTREGA";
+            metodoPago?: "WOMPI" | "SISTECREDITO" | "TRANSFERENCIA_MANUAL" | "CONTRAENTREGA" | "PAGO_EN_PUNTO";
             nombre?: string;
             telefono?: string;
             tipoEntrega?: string;
@@ -2887,6 +2919,11 @@ export interface components {
             token: string;
             /** Format: uuid */
             varianteId: string;
+        };
+        EntregarEnPuntoRequest: {
+            /** @enum {string} */
+            medioDePago?: "EFECTIVO" | "TRANSFERENCIA";
+            numeroPedido: string;
         };
         EnviarSugerenciaRequest: {
             autorizaDatos?: boolean;
@@ -3377,9 +3414,11 @@ export interface components {
             id?: string;
             lineas?: components["schemas"]["LineaPedidoRespuesta"][];
             /** @enum {string} */
-            metodoPago?: "WOMPI" | "SISTECREDITO" | "TRANSFERENCIA_MANUAL" | "CONTRAENTREGA";
+            metodoPago?: "WOMPI" | "SISTECREDITO" | "TRANSFERENCIA_MANUAL" | "CONTRAENTREGA" | "PAGO_EN_PUNTO";
             numeroPedido?: string;
             plazoDeEntrega?: components["schemas"]["PlazoDeEntregaRespuesta"];
+            /** Format: date-time */
+            recogidaVenceEn?: string;
             subtotal?: components["schemas"]["DineroRespuesta"];
             tipoEntrega?: string;
             total?: components["schemas"]["DineroRespuesta"];
@@ -3403,7 +3442,7 @@ export interface components {
             id?: string;
             lineas?: components["schemas"]["LineaPedidoRespuesta"][];
             /** @enum {string} */
-            metodoPago?: "WOMPI" | "SISTECREDITO" | "TRANSFERENCIA_MANUAL" | "CONTRAENTREGA";
+            metodoPago?: "WOMPI" | "SISTECREDITO" | "TRANSFERENCIA_MANUAL" | "CONTRAENTREGA" | "PAGO_EN_PUNTO";
             numeroPedido?: string;
             retractos?: components["schemas"]["RetractoPublicoRespuesta"][];
             subtotal?: components["schemas"]["DineroRespuesta"];
@@ -5748,6 +5787,54 @@ export interface operations {
             };
         };
     };
+    entregarEnPunto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EntregarEnPuntoRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PedidoRespuesta"];
+                };
+            };
+        };
+    };
+    marcarListoParaRecoger: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PedidoRespuesta"];
+                };
+            };
+        };
+    };
     conciliarRecaudo: {
         parameters: {
             query?: never;
@@ -7876,7 +7963,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": ("WOMPI" | "SISTECREDITO" | "TRANSFERENCIA_MANUAL" | "CONTRAENTREGA")[];
+                    "*/*": ("WOMPI" | "SISTECREDITO" | "TRANSFERENCIA_MANUAL" | "CONTRAENTREGA" | "PAGO_EN_PUNTO")[];
                 };
             };
         };
