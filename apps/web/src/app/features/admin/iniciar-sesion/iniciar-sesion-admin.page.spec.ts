@@ -10,8 +10,12 @@ import {
   RepositorioSesion,
 } from '../../../core/autenticacion/repositorio-sesion.puerto';
 import { ErrorHttp } from '../../../core/http/respuesta-http';
-import { DemasiadosIntentosError } from '../../../core/autenticacion/sesion.errores';
-import { Sesion } from '../../../core/autenticacion/sesion.model';
+import {
+  CodigoSegundoFactorInvalidoError,
+  DemasiadosIntentosError,
+  DesafioSegundoFactorVencidoError,
+} from '../../../core/autenticacion/sesion.errores';
+import { ResultadoInicioSesion, Sesion } from '../../../core/autenticacion/sesion.model';
 import { IniciarSesionAdminPage } from './iniciar-sesion-admin.page';
 
 class RepositorioSesionFalso implements RepositorioSesion {
@@ -23,14 +27,19 @@ class RepositorioSesionFalso implements RepositorioSesion {
 
   constructor(
     private sesionAlIniciar:
-      Sesion | { error: true } | { falloServidor: true } | { limitado: true } = {
+      | Sesion
+      | { error: true }
+      | { falloServidor: true }
+      | { limitado: true }
+      | { desafio: string } = {
       usuarioId: 'u1',
       rol: 'ADMIN',
       accessToken: 'jwt',
+      segundoFactorPorActivar: false,
     },
   ) {}
 
-  async iniciarSesion(): Promise<Sesion> {
+  async iniciarSesion(): Promise<ResultadoInicioSesion> {
     // El adaptador real lanza `ErrorHttp` con su código (`sesion-http.repositorio.ts`); el
     // doble imita esa forma para que la pantalla se pruebe contra el fallo de verdad.
     if ('error' in this.sesionAlIniciar) {
@@ -42,7 +51,31 @@ class RepositorioSesionFalso implements RepositorioSesion {
     if ('falloServidor' in this.sesionAlIniciar) {
       throw new ErrorHttp(500, 'no se pudo iniciar sesión');
     }
-    return this.sesionAlIniciar;
+    if ('desafio' in this.sesionAlIniciar) {
+      return {
+        tipo: 'segundo-factor',
+        desafio: this.sesionAlIniciar.desafio,
+        venceEn: '2026-10-27T12:05:00Z',
+      };
+    }
+    return { tipo: 'sesion', sesion: this.sesionAlIniciar };
+  }
+
+  /** Lo que responde el segundo paso: la sesión, o el error que lanza el adaptador real. */
+  alVerificar: Sesion | Error = {
+    usuarioId: 'u1',
+    rol: 'ADMIN',
+    accessToken: 'jwt',
+    segundoFactorPorActivar: false,
+  };
+  verificaciones: { desafio: string; codigo: string }[] = [];
+
+  async verificarSegundoFactor(desafio: string, codigo: string): Promise<Sesion> {
+    this.verificaciones.push({ desafio, codigo });
+    if (this.alVerificar instanceof Error) {
+      throw this.alVerificar;
+    }
+    return this.alVerificar;
   }
 
   async cambiarClave(): Promise<Sesion> {
@@ -142,7 +175,12 @@ describe('IniciarSesionAdminPage', () => {
 
   it('con credenciales válidas de ADMIN, navega al panel', async () => {
     const { fixture } = await renderPagina(
-      new RepositorioSesionFalso({ usuarioId: 'u1', rol: 'ADMIN', accessToken: 'jwt' }),
+      new RepositorioSesionFalso({
+        usuarioId: 'u1',
+        rol: 'ADMIN',
+        accessToken: 'jwt',
+        segundoFactorPorActivar: false,
+      }),
     );
     const router = fixture.debugElement.injector.get(Router);
     const navegar = vi.spyOn(router, 'navigateByUrl');
@@ -154,7 +192,12 @@ describe('IniciarSesionAdminPage', () => {
 
   it('vuelve al destino que puso el guardia, en vez de al panel', async () => {
     const { fixture } = await renderPagina(
-      new RepositorioSesionFalso({ usuarioId: 'u1', rol: 'ADMIN', accessToken: 'jwt' }),
+      new RepositorioSesionFalso({
+        usuarioId: 'u1',
+        rol: 'ADMIN',
+        accessToken: 'jwt',
+        segundoFactorPorActivar: false,
+      }),
       '/es/admin/productos/abc-123/captura-360',
     );
     const router = fixture.debugElement.injector.get(Router);
@@ -173,7 +216,12 @@ describe('IniciarSesionAdminPage', () => {
     ['/es/carrito', 'una ruta de este sitio pero fuera de /admin'],
   ])('ignora %s (%s) y va al panel', async (destino) => {
     const { fixture } = await renderPagina(
-      new RepositorioSesionFalso({ usuarioId: 'u1', rol: 'ADMIN', accessToken: 'jwt' }),
+      new RepositorioSesionFalso({
+        usuarioId: 'u1',
+        rol: 'ADMIN',
+        accessToken: 'jwt',
+        segundoFactorPorActivar: false,
+      }),
       destino,
     );
     const router = fixture.debugElement.injector.get(Router);
@@ -189,6 +237,7 @@ describe('IniciarSesionAdminPage', () => {
       usuarioId: 'u1',
       rol: 'CLIENTE',
       accessToken: 'jwt',
+      segundoFactorPorActivar: false,
     });
     const { fixture } = await renderPagina(repositorio);
     const router = fixture.debugElement.injector.get(Router);
@@ -220,5 +269,129 @@ describe('IniciarSesionAdminPage', () => {
 
     expect(await screen.findByText(/Demasiados intentos/)).toBeTruthy();
     expect(screen.queryByText('Correo o clave incorrectos.')).toBeNull();
+  });
+
+  it('el correo y la clave se declaran al gestor de contraseñas', async () => {
+    await renderPagina(new RepositorioSesionFalso());
+
+    expect(screen.getByLabelText('Correo electrónico').getAttribute('autocomplete')).toBe(
+      'username',
+    );
+    expect(screen.getByLabelText('Clave').getAttribute('autocomplete')).toBe('current-password');
+  });
+});
+
+/**
+ * ADR-0096: con el segundo factor activo, la clave correcta no abre sesión; responde un desafío y
+ * la pantalla pide el código. Lo que importa de cada caso es a qué paso deja a la persona: un
+ * código mal escrito se corrige ahí mismo, un desafío vencido manda de vuelta a la clave.
+ */
+describe('IniciarSesionAdminPage con segundo factor', () => {
+  const textos = esAdmin.iniciarSesion.segundoFactor;
+
+  async function hastaElCodigo(repositorio = new RepositorioSesionFalso({ desafio: 'desafio-1' })) {
+    const vista = await renderPagina(repositorio);
+    const navegar = vi.spyOn(vista.fixture.debugElement.injector.get(Router), 'navigateByUrl');
+    await llenarYEnviar();
+    await screen.findByLabelText(textos.codigo_aplicacion);
+    return { repositorio, navegar };
+  }
+
+  function escribirCodigoYVerificar(codigo: string, etiqueta = textos.codigo_aplicacion) {
+    fireEvent.input(screen.getByLabelText(etiqueta), { target: { value: codigo } });
+    fireEvent.click(screen.getByRole('button', { name: textos.verificar }));
+  }
+
+  it('la clave correcta pide el código y todavía no entra', async () => {
+    const { navegar } = await hastaElCodigo();
+
+    expect(screen.getByText(textos.explicacion_aplicacion)).toBeTruthy();
+    expect(screen.queryByLabelText('Clave')).toBeNull();
+    expect(navegar).not.toHaveBeenCalled();
+  });
+
+  it('el campo del código abre el teclado numérico y se ofrece al autocompletado', async () => {
+    await hastaElCodigo();
+
+    const campo = screen.getByLabelText(textos.codigo_aplicacion);
+    expect(campo.getAttribute('autocomplete')).toBe('one-time-code');
+    expect(campo.getAttribute('inputmode')).toBe('numeric');
+  });
+
+  it('con el código bueno entra al panel, presentando el desafío que llegó', async () => {
+    const { repositorio, navegar } = await hastaElCodigo();
+
+    escribirCodigoYVerificar('123 456');
+
+    await vi.waitFor(() => expect(navegar).toHaveBeenCalledWith('/es/admin/panel'));
+    // Los espacios se quitan aquí: quien copia "123 456" de la aplicación no se equivocó.
+    expect(repositorio.verificaciones).toEqual([{ desafio: 'desafio-1', codigo: '123456' }]);
+  });
+
+  it('un código con forma imposible no llega al servidor', async () => {
+    const { repositorio } = await hastaElCodigo();
+
+    escribirCodigoYVerificar('12345');
+
+    expect(await screen.findByText(textos.errores.codigo_formato)).toBeTruthy();
+    expect(repositorio.verificaciones).toEqual([]);
+  });
+
+  it('con el código equivocado se queda en el código y lo dice', async () => {
+    const repositorio = new RepositorioSesionFalso({ desafio: 'desafio-1' });
+    repositorio.alVerificar = new CodigoSegundoFactorInvalidoError();
+    const { navegar } = await hastaElCodigo(repositorio);
+
+    escribirCodigoYVerificar('000000');
+
+    expect(await screen.findByText(textos.error_codigo)).toBeTruthy();
+    expect(screen.getByLabelText(textos.codigo_aplicacion)).toBeTruthy();
+    expect(navegar).not.toHaveBeenCalled();
+  });
+
+  it('con el desafío vencido vuelve a la clave y explica por qué', async () => {
+    const repositorio = new RepositorioSesionFalso({ desafio: 'desafio-1' });
+    repositorio.alVerificar = new DesafioSegundoFactorVencidoError();
+    await hastaElCodigo(repositorio);
+
+    escribirCodigoYVerificar('123456');
+
+    expect(await screen.findByText(textos.error_desafio_vencido)).toBeTruthy();
+    expect(screen.getByLabelText('Clave')).toBeTruthy();
+    expect(screen.queryByLabelText(textos.codigo_aplicacion)).toBeNull();
+  });
+
+  it('el límite de intentos dice que espere, no que el código está mal', async () => {
+    const repositorio = new RepositorioSesionFalso({ desafio: 'desafio-1' });
+    repositorio.alVerificar = new DemasiadosIntentosError();
+    await hastaElCodigo(repositorio);
+
+    escribirCodigoYVerificar('123456');
+
+    expect(await screen.findByText(textos.error_demasiados_intentos)).toBeTruthy();
+    expect(screen.queryByText(textos.error_codigo)).toBeNull();
+  });
+
+  it('acepta un código de respaldo con guiones y sin el teclado numérico', async () => {
+    const { repositorio, navegar } = await hastaElCodigo();
+
+    fireEvent.click(screen.getByRole('button', { name: textos.usar_respaldo }));
+    const campo = await screen.findByLabelText(textos.codigo_respaldo);
+    expect(campo.getAttribute('inputmode')).toBe('text');
+    escribirCodigoYVerificar('abcd-efgh-ijkl-mnop', textos.codigo_respaldo);
+
+    await vi.waitFor(() => expect(navegar).toHaveBeenCalledWith('/es/admin/panel'));
+    expect(repositorio.verificaciones).toEqual([
+      { desafio: 'desafio-1', codigo: 'abcdefghijklmnop' },
+    ]);
+  });
+
+  it('volver lleva a la clave y suelta el desafío', async () => {
+    await hastaElCodigo();
+
+    fireEvent.click(screen.getByRole('button', { name: textos.volver }));
+
+    expect(await screen.findByLabelText('Clave')).toBeTruthy();
+    expect(screen.queryByLabelText(textos.codigo_aplicacion)).toBeNull();
   });
 });

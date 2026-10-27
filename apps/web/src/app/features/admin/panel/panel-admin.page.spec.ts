@@ -11,7 +11,7 @@ import {
   RepositorioSesion,
 } from '../../../core/autenticacion/repositorio-sesion.puerto';
 import { SesionStore } from '../../../core/autenticacion/sesion.store';
-import { Sesion } from '../../../core/autenticacion/sesion.model';
+import { ResultadoInicioSesion, Sesion } from '../../../core/autenticacion/sesion.model';
 import {
   ExistenciasDelCatalogo,
   InventarioSinMedir,
@@ -29,7 +29,11 @@ class RepositorioSesionFalso implements RepositorioSesion {
 
   llamadasCerrar = 0;
 
-  async iniciarSesion(): Promise<Sesion> {
+  async iniciarSesion(): Promise<ResultadoInicioSesion> {
+    throw new Error('no usado en esta prueba');
+  }
+
+  async verificarSegundoFactor(): Promise<Sesion> {
     throw new Error('no usado en esta prueba');
   }
 
@@ -90,7 +94,12 @@ describe('PanelAdminPage', () => {
   it('muestra el rol de la sesión activa y cierra sesión al hacer clic', async () => {
     const { fixture, sesion } = await renderPanel();
     const sesionStore = fixture.debugElement.injector.get(SesionStore);
-    sesionStore.sesion.set({ usuarioId: 'u1', rol: 'ADMIN', accessToken: 'jwt' });
+    sesionStore.sesion.set({
+      usuarioId: 'u1',
+      rol: 'ADMIN',
+      accessToken: 'jwt',
+      segundoFactorPorActivar: false,
+    });
     fixture.detectChanges();
     const router = fixture.debugElement.injector.get(Router);
     const navegar = vi.spyOn(router, 'navigate');
@@ -112,7 +121,12 @@ describe('PanelAdminPage', () => {
     const { fixture, sesion } = await renderPanel();
     sesion.falloAlCerrar = true;
     const sesionStore = fixture.debugElement.injector.get(SesionStore);
-    sesionStore.sesion.set({ usuarioId: 'u1', rol: 'ADMIN', accessToken: 'jwt' });
+    sesionStore.sesion.set({
+      usuarioId: 'u1',
+      rol: 'ADMIN',
+      accessToken: 'jwt',
+      segundoFactorPorActivar: false,
+    });
     fixture.detectChanges();
     const router = fixture.debugElement.injector.get(Router);
     const navegar = vi.spyOn(router, 'navigate');

@@ -12,7 +12,7 @@ import {
   REPOSITORIO_SESION,
   RepositorioSesion,
 } from '../../../../core/autenticacion/repositorio-sesion.puerto';
-import { Sesion } from '../../../../core/autenticacion/sesion.model';
+import { ResultadoInicioSesion, Sesion } from '../../../../core/autenticacion/sesion.model';
 import { IniciarSesionClientePage } from './iniciar-sesion-cliente.page';
 import { CuentaGoogleSinRegistroError } from '../../../../core/autenticacion/sesion.errores';
 import { ConfiguracionGoogle } from '../../domain/boton-google.puerto';
@@ -32,7 +32,7 @@ class RepositorioSesionFalso implements RepositorioSesion {
     if (this.errorConGoogle) {
       throw this.errorConGoogle;
     }
-    return { usuarioId: 'u1', rol: 'CLIENTE', accessToken: 'jwt' };
+    return { usuarioId: 'u1', rol: 'CLIENTE', accessToken: 'jwt', segundoFactorPorActivar: false };
   }
 
   llamadasCerrar = 0;
@@ -43,10 +43,11 @@ class RepositorioSesionFalso implements RepositorioSesion {
       usuarioId: 'u1',
       rol: 'CLIENTE',
       accessToken: 'jwt',
+      segundoFactorPorActivar: false,
     },
   ) {}
 
-  async iniciarSesion(): Promise<Sesion> {
+  async iniciarSesion(): Promise<ResultadoInicioSesion> {
     // Lo que lanza el adaptador de verdad ante credenciales malas es un `ErrorHttp` 401
     // (`sesion-http.repositorio.ts`), no un `Error` pelado: el doble lo imita para que la
     // pantalla se pruebe contra la forma real del fallo.
@@ -59,7 +60,11 @@ class RepositorioSesionFalso implements RepositorioSesion {
     if ('errorSinVerificar' in this.sesionAlIniciar) {
       throw new CorreoSinVerificarError();
     }
-    return this.sesionAlIniciar;
+    return { tipo: 'sesion', sesion: this.sesionAlIniciar };
+  }
+
+  async verificarSegundoFactor(): Promise<Sesion> {
+    throw new Error('no usado en esta prueba');
   }
 
   async cambiarClave(): Promise<Sesion> {
@@ -178,7 +183,12 @@ describe('IniciarSesionClientePage', () => {
 
   it('con credenciales válidas de CLIENTE, navega a la portada', async () => {
     const { fixture } = await renderPagina(
-      new RepositorioSesionFalso({ usuarioId: 'u1', rol: 'CLIENTE', accessToken: 'jwt' }),
+      new RepositorioSesionFalso({
+        usuarioId: 'u1',
+        rol: 'CLIENTE',
+        accessToken: 'jwt',
+        segundoFactorPorActivar: false,
+      }),
     );
     const router = fixture.debugElement.injector.get(Router);
     const navegar = vi.spyOn(router, 'navigate');
@@ -193,6 +203,7 @@ describe('IniciarSesionClientePage', () => {
       usuarioId: 'u1',
       rol: 'ADMIN',
       accessToken: 'jwt',
+      segundoFactorPorActivar: false,
     });
     const { fixture } = await renderPagina(repositorio);
     const router = fixture.debugElement.injector.get(Router);
@@ -206,6 +217,28 @@ describe('IniciarSesionClientePage', () => {
         'Esta cuenta pertenece al panel administrativo, no a una cuenta de cliente.',
       ),
     ).toBeTruthy();
+    expect(navegar).not.toHaveBeenCalled();
+  });
+
+  /**
+   * ADR-0096: solo el panel pide segundo factor, así que un desafío aquí es una cuenta de
+   * administrador. "Correo o clave incorrectos" sería falso —la clave estaba bien— y no hay sesión
+   * que cerrar, porque el 202 no abre ninguna.
+   */
+  it('con una cuenta que pide segundo factor, dice que es del panel y no navega', async () => {
+    const repositorio = new RepositorioSesionFalso();
+    repositorio.iniciarSesion = async () => ({
+      tipo: 'segundo-factor',
+      desafio: 'desafio-1',
+      venceEn: '2026-10-27T12:05:00Z',
+    });
+    const { fixture } = await renderPagina(repositorio);
+    const navegar = vi.spyOn(fixture.debugElement.injector.get(Router), 'navigate');
+
+    await llenarYEnviar();
+
+    expect(await screen.findByText(esCuenta.iniciarSesion.no_es_cliente)).toBeTruthy();
+    expect(repositorio.llamadasCerrar).toBe(0);
     expect(navegar).not.toHaveBeenCalled();
   });
 

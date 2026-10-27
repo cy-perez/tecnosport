@@ -90,6 +90,24 @@
       "correo_requerido": "Escribe el correo.",
       "correo_invalido": "Ese correo no tiene una forma válida.",
       "clave_requerida": "Escribe la clave."
+    },
+    "segundoFactor": {
+      "explicacion_aplicacion": "Tu cuenta tiene segundo factor. Abre tu aplicación de autenticación y escribe el código de 6 dígitos que muestra ahora.",
+      "explicacion_respaldo": "Escribe uno de tus códigos de respaldo, con o sin guiones. Cada uno sirve una sola vez.",
+      "codigo_aplicacion": "Código de la aplicación",
+      "codigo_respaldo": "Código de respaldo",
+      "verificar": "Verificar y entrar",
+      "verificando": "Verificando…",
+      "usar_respaldo": "No tengo el teléfono: usar un código de respaldo",
+      "usar_aplicacion": "Usar el código de la aplicación",
+      "volver": "Volver a la clave",
+      "error_codigo": "Ese código no es válido. Revisa que sea el que muestra la aplicación ahora y vuelve a escribirlo.",
+      "error_desafio_vencido": "El paso del código venció o se agotaron sus intentos. Escribe otra vez tu clave para recibir uno nuevo.",
+      "error_demasiados_intentos": "Demasiados intentos seguidos. Espera unos minutos y vuelve a probar.",
+      "errores": {
+        "codigo_requerido": "Escribe el código.",
+        "codigo_formato": "El código son 6 dígitos de la aplicación, o un código de respaldo de 16 caracteres."
+      }
     }
   },
   "panel": {

@@ -123,11 +123,18 @@ export class IniciarSesionClientePage {
     this.enviando.set(true);
 
     try {
-      const sesion = await this.sesionStore.iniciarSesion(
+      const resultado = await this.sesionStore.iniciarSesion(
         this.form.controls.correo.value,
         this.form.controls.clave.value,
       );
-      if (sesion.rol !== 'CLIENTE') {
+      // Solo el panel pide segundo factor (ADR-0096): quien llega aquí con un desafío es una cuenta
+      // de administrador, y esta pantalla no es su puerta. No hay sesión que cerrar, porque el 202
+      // no abre ninguna.
+      if (resultado.tipo === 'segundo-factor') {
+        this.error.set(this.transloco.translate('cuenta.iniciarSesion.no_es_cliente'));
+        return;
+      }
+      if (resultado.sesion.rol !== 'CLIENTE') {
         await this.sesionStore.cerrarSesion();
         this.error.set(this.transloco.translate('cuenta.iniciarSesion.no_es_cliente'));
         return;

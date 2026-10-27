@@ -1,6 +1,20 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  ElementRef,
+  inject,
+  signal,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormControl,
+  FormGroup,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
 import { correoValido } from '../../../shared/formularios/validadores';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
@@ -10,7 +24,38 @@ import { TsPaginaFormulario } from '../../../shared/ui/pagina-formulario/ts-pagi
 import { TsCampo } from '../../../shared/ui/campo/ts-campo';
 import { SesionStore } from '../../../core/autenticacion/sesion.store';
 import { esFalloDelServidor } from '../../../core/http/respuesta-http';
-import { DemasiadosIntentosError } from '../../../core/autenticacion/sesion.errores';
+import {
+  CodigoSegundoFactorInvalidoError,
+  DemasiadosIntentosError,
+  DesafioSegundoFactorVencidoError,
+} from '../../../core/autenticacion/sesion.errores';
+import { Sesion } from '../../../core/autenticacion/sesion.model';
+import { usarFoco } from '../../../shared/foco/foco';
+
+/**
+ * Seis dígitos de la aplicación, o un código de respaldo: 16 caracteres Base32, con o sin guiones
+ * y en cualquier caso, que es lo que el servidor acepta (ADR-0096). Se normaliza igual que allá
+ * para no rechazar aquí lo que allá entraría.
+ */
+const CODIGO_DE_LA_APLICACION = /^\d{6}$/;
+const CODIGO_DE_RESPALDO = /^[A-Za-z2-7]{16}$/;
+
+function normalizarCodigo(valor: string): string {
+  return valor.replace(/[\s-]/g, '');
+}
+
+function codigoValido(control: AbstractControl<string>): ValidationErrors | null {
+  const codigo = normalizarCodigo(control.value ?? '');
+  if (codigo === '') {
+    return null;
+  }
+  return CODIGO_DE_LA_APLICACION.test(codigo) || CODIGO_DE_RESPALDO.test(codigo)
+    ? null
+    : { codigoInvalido: true };
+}
+
+/** Los dos pasos del inicio de sesión: la clave, y el código cuando la cuenta tiene segundo factor. */
+type Paso = 'clave' | 'codigo';
 
 /**
  * Solo para `ADMIN` — el login de `CLIENTE` es `features/cuenta/`, todavía
@@ -31,8 +76,48 @@ export class IniciarSesionAdminPage {
   private readonly traducir = usarTraductor();
   protected readonly sesionStore = inject(SesionStore);
 
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly enfocar = usarFoco();
+
   protected readonly error = signal<string | null>(null);
   protected readonly enviando = signal(false);
+
+  /**
+   * En qué paso está la pantalla. El desafío del segundo paso vive solo aquí, en memoria: no va a
+   * la URL ni al almacenamiento, y recargar la página vuelve a la clave, que es lo que debe pasar
+   * con un trámite de cinco minutos.
+   */
+  protected readonly paso = signal<Paso>('clave');
+  private desafio: string | null = null;
+
+  /**
+   * Si quien entra escribe el código de la aplicación o uno de respaldo. El campo acepta los dos en
+   * cualquier modo; lo que cambia es la etiqueta, la ayuda y el teclado del teléfono: seis dígitos
+   * piden el numérico, y un código de respaldo lleva letras.
+   */
+  protected readonly conRespaldo = signal(false);
+
+  protected readonly formCodigo = new FormGroup({
+    codigo: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required, codigoValido],
+    }),
+  });
+
+  private readonly tickCodigo = toSignal(this.formCodigo.controls.codigo.events, {
+    initialValue: null,
+  });
+  protected readonly errorCodigo = computed(() => {
+    this.tickCodigo();
+    const control = this.formCodigo.controls.codigo;
+    if (!control.touched || control.valid) {
+      return null;
+    }
+    if (control.hasError('required')) {
+      return this.traducir()('admin.iniciarSesion.segundoFactor.errores.codigo_requerido');
+    }
+    return this.traducir()('admin.iniciarSesion.segundoFactor.errores.codigo_formato');
+  });
 
   /**
    * El panel cerró la sesión en la pestaña pero el servidor no lo confirmó (`PanelAdminPage`): la
@@ -125,6 +210,9 @@ export class IniciarSesionAdminPage {
   }
 
   protected async enviar(): Promise<void> {
+    if (this.enviando()) {
+      return;
+    }
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -133,23 +221,121 @@ export class IniciarSesionAdminPage {
     this.enviando.set(true);
 
     try {
-      const sesion = await this.sesionStore.iniciarSesion(
+      const resultado = await this.sesionStore.iniciarSesion(
         this.form.controls.correo.value,
         this.form.controls.clave.value,
       );
-      if (sesion.rol !== 'ADMIN') {
-        // Si el cierre falla, el mensaje sigue siendo este: decir "correo o clave incorrectos" a
-        // quien acaba de entrar bien sería falso. La sesión ya se soltó en la pestaña.
-        await this.sesionStore.cerrarSesion().catch(() => undefined);
-        this.error.set(this.transloco.translate('admin.iniciarSesion.no_es_admin'));
+      if (resultado.tipo === 'segundo-factor') {
+        this.pedirCodigo(resultado.desafio);
         return;
       }
-      const idioma = this.transloco.activeLang();
-      void this.router.navigateByUrl(this.destinoTrasIniciar(idioma));
+      await this.entrar(resultado.sesion);
     } catch (error) {
       this.error.set(this.transloco.translate(this.claveDelError(error)));
     } finally {
       this.enviando.set(false);
     }
+  }
+
+  /** El segundo paso: el código de la aplicación o uno de respaldo contra el desafío (ADR-0096). */
+  protected async verificar(): Promise<void> {
+    if (this.enviando()) {
+      return;
+    }
+    if (this.formCodigo.invalid) {
+      this.formCodigo.markAllAsTouched();
+      return;
+    }
+    const desafio = this.desafio;
+    if (desafio === null) {
+      this.volverAClave();
+      return;
+    }
+    this.error.set(null);
+    this.enviando.set(true);
+
+    try {
+      const sesion = await this.sesionStore.verificarSegundoFactor(
+        desafio,
+        normalizarCodigo(this.formCodigo.controls.codigo.value),
+      );
+      await this.entrar(sesion);
+    } catch (error) {
+      if (error instanceof DesafioSegundoFactorVencidoError) {
+        // Ningún código va a servir contra este desafío: vencido, usado o con los intentos
+        // agotados. Se vuelve a la clave con el motivo dicho, en vez de dejar a alguien tecleando
+        // códigos buenos que el servidor va a seguir rechazando.
+        this.volverAClave();
+        this.error.set(
+          this.transloco.translate('admin.iniciarSesion.segundoFactor.error_desafio_vencido'),
+        );
+        return;
+      }
+      this.error.set(this.transloco.translate(this.claveDelErrorDeCodigo(error)));
+      this.formCodigo.controls.codigo.reset();
+      this.enfocarCodigo();
+    } finally {
+      this.enviando.set(false);
+    }
+  }
+
+  protected alternarRespaldo(): void {
+    this.conRespaldo.update((valor) => !valor);
+    this.formCodigo.reset();
+    this.error.set(null);
+    this.enfocarCodigo();
+  }
+
+  /** "Volver": otra cuenta, o la clave mal escrita. El desafío se suelta. */
+  protected volverAClave(): void {
+    this.desafio = null;
+    this.paso.set('clave');
+    this.conRespaldo.set(false);
+    this.formCodigo.reset();
+    this.form.controls.clave.reset();
+    this.error.set(null);
+    this.enfocar(() => this.host.nativeElement.querySelector<HTMLElement>('#admin-clave'));
+  }
+
+  private pedirCodigo(desafio: string): void {
+    this.desafio = desafio;
+    this.conRespaldo.set(false);
+    this.formCodigo.reset();
+    this.paso.set('codigo');
+    this.enfocarCodigo();
+  }
+
+  /**
+   * El foco al campo del código al cambiar de paso: el formulario de la clave desaparece con el
+   * botón que se acaba de pulsar dentro, y sin esto el foco cae a `<body>` (apps/web/CLAUDE.md).
+   */
+  private enfocarCodigo(): void {
+    this.enfocar(() => this.host.nativeElement.querySelector<HTMLElement>('#admin-codigo'));
+  }
+
+  private async entrar(sesion: Sesion): Promise<void> {
+    if (sesion.rol !== 'ADMIN') {
+      // Si el cierre falla, el mensaje sigue siendo este: decir "correo o clave incorrectos" a
+      // quien acaba de entrar bien sería falso. La sesión ya se soltó en la pestaña.
+      await this.sesionStore.cerrarSesion().catch(() => undefined);
+      this.error.set(this.transloco.translate('admin.iniciarSesion.no_es_admin'));
+      return;
+    }
+    const idioma = this.transloco.activeLang();
+    void this.router.navigateByUrl(this.destinoTrasIniciar(idioma));
+  }
+
+  /**
+   * El código mal escrito se corrige escribiendo otro; el límite de intentos, esperando. Un fallo
+   * del servidor no es culpa del código.
+   */
+  private claveDelErrorDeCodigo(error: unknown): string {
+    if (error instanceof DemasiadosIntentosError) {
+      return 'admin.iniciarSesion.segundoFactor.error_demasiados_intentos';
+    }
+    if (error instanceof CodigoSegundoFactorInvalidoError || !esFalloDelServidor(error)) {
+      return 'admin.iniciarSesion.segundoFactor.error_codigo';
+    }
+    return 'comun.error_servidor';
   }
 }

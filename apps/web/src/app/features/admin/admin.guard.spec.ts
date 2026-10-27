@@ -12,7 +12,7 @@ import {
   REPOSITORIO_SESION,
   RepositorioSesion,
 } from '../../core/autenticacion/repositorio-sesion.puerto';
-import { Sesion } from '../../core/autenticacion/sesion.model';
+import { ResultadoInicioSesion, Sesion } from '../../core/autenticacion/sesion.model';
 import { adminGuard } from './admin.guard';
 
 class RepositorioSesionFalso implements RepositorioSesion {
@@ -22,12 +22,16 @@ class RepositorioSesionFalso implements RepositorioSesion {
 
   constructor(private sesionAlRefrescar: Sesion | null) {}
 
-  async iniciarSesion(): Promise<Sesion> {
+  async iniciarSesion(): Promise<ResultadoInicioSesion> {
     throw new Error('no usado en esta prueba');
   }
 
   async refrescar(): Promise<Sesion | null> {
     return this.sesionAlRefrescar;
+  }
+
+  async verificarSegundoFactor(): Promise<Sesion> {
+    throw new Error('no usado en esta prueba');
   }
 
   async cambiarClave(): Promise<Sesion> {
@@ -62,7 +66,12 @@ async function configurar(repositorio: RepositorioSesion) {
 describe('adminGuard', () => {
   it('con sesión de ADMIN, permite el acceso', async () => {
     await configurar(
-      new RepositorioSesionFalso({ usuarioId: 'u1', rol: 'ADMIN', accessToken: 'jwt' }),
+      new RepositorioSesionFalso({
+        usuarioId: 'u1',
+        rol: 'ADMIN',
+        accessToken: 'jwt',
+        segundoFactorPorActivar: false,
+      }),
     );
 
     const resultado = await TestBed.runInInjectionContext(() =>
@@ -101,7 +110,12 @@ describe('adminGuard', () => {
 
   it('con sesión de CLIENTE, no permite el acceso', async () => {
     await configurar(
-      new RepositorioSesionFalso({ usuarioId: 'u1', rol: 'CLIENTE', accessToken: 'jwt' }),
+      new RepositorioSesionFalso({
+        usuarioId: 'u1',
+        rol: 'CLIENTE',
+        accessToken: 'jwt',
+        segundoFactorPorActivar: false,
+      }),
     );
 
     const resultado = await TestBed.runInInjectionContext(() =>

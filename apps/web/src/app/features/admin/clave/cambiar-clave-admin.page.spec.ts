@@ -13,12 +13,22 @@ import {
   DemasiadosIntentosError,
   SesionExpiradaError,
 } from '../../../core/autenticacion/sesion.errores';
-import { Sesion } from '../../../core/autenticacion/sesion.model';
+import { ResultadoInicioSesion, Sesion } from '../../../core/autenticacion/sesion.model';
 import { SesionStore } from '../../../core/autenticacion/sesion.store';
 import { CambiarClaveAdminPage } from './cambiar-clave-admin.page';
 
-const SESION: Sesion = { usuarioId: 'u1', rol: 'ADMIN', accessToken: 'jwt.viejo' };
-const SESION_NUEVA: Sesion = { usuarioId: 'u1', rol: 'ADMIN', accessToken: 'jwt.nuevo' };
+const SESION: Sesion = {
+  usuarioId: 'u1',
+  rol: 'ADMIN',
+  accessToken: 'jwt.viejo',
+  segundoFactorPorActivar: false,
+};
+const SESION_NUEVA: Sesion = {
+  usuarioId: 'u1',
+  rol: 'ADMIN',
+  accessToken: 'jwt.nuevo',
+  segundoFactorPorActivar: false,
+};
 
 class RepositorioSesionFalso implements RepositorioSesion {
   async iniciarSesionConGoogle(): Promise<Sesion> {
@@ -30,7 +40,11 @@ class RepositorioSesionFalso implements RepositorioSesion {
 
   constructor(private readonly falla?: Error) {}
 
-  async iniciarSesion(): Promise<Sesion> {
+  async iniciarSesion(): Promise<ResultadoInicioSesion> {
+    throw new Error('no usado en esta prueba');
+  }
+
+  async verificarSegundoFactor(): Promise<Sesion> {
     throw new Error('no usado en esta prueba');
   }
 

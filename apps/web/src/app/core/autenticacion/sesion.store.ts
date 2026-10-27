@@ -1,7 +1,7 @@
 import { isPlatformBrowser } from '@angular/common';
 import { afterNextRender, computed, inject, Injectable, PLATFORM_ID, signal } from '@angular/core';
 import { REPOSITORIO_SESION } from './repositorio-sesion.puerto';
-import { Sesion } from './sesion.model';
+import { ResultadoInicioSesion, Sesion } from './sesion.model';
 
 /**
  * Único en toda la app (`providedIn: 'root'`), mismo motivo que
@@ -54,10 +54,34 @@ export class SesionStore {
     });
   }
 
-  async iniciarSesion(correo: string, clave: string): Promise<Sesion> {
-    const sesion = await this.repositorio.iniciarSesion(correo, clave);
+  /**
+   * Con la cuenta sin segundo factor, la sesión queda abierta aquí mismo. Con él (ADR-0096) no hay
+   * sesión todavía: vuelve el desafío y la pantalla pide el código, que cierra el trámite con
+   * {@link verificarSegundoFactor}.
+   */
+  async iniciarSesion(correo: string, clave: string): Promise<ResultadoInicioSesion> {
+    const resultado = await this.repositorio.iniciarSesion(correo, clave);
+    if (resultado.tipo === 'sesion') {
+      this.sesion.set(resultado.sesion);
+    }
+    return resultado;
+  }
+
+  /** El segundo paso del inicio de sesión: con el código bueno, la sesión queda abierta. */
+  async verificarSegundoFactor(desafio: string, codigo: string): Promise<Sesion> {
+    const sesion = await this.repositorio.verificarSegundoFactor(desafio, codigo);
     this.sesion.set(sesion);
     return sesion;
+  }
+
+  /**
+   * Adopta la sesión que el servidor acaba de abrir por otra vía que no es entrar: activar,
+   * desactivar o regenerar el segundo factor revocan todas las sesiones y responden con una nueva,
+   * igual que {@link cambiarClave}. Sin esto la pestaña seguiría con un token revocado —o con el
+   * restringido, después de activar—.
+   */
+  adoptar(sesion: Sesion): void {
+    this.sesion.set(sesion);
   }
 
   /** La misma sesión, abierta con Google (ADR-0074). */

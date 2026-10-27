@@ -196,3 +196,42 @@ describe('TsCampo obligatorio', () => {
     expect(screen.getByLabelText('Precio').getAttribute('aria-required')).toBeNull();
   });
 });
+
+@Component({
+  imports: [ReactiveFormsModule, TsCampo],
+  template: `
+    <ts-campo
+      idCampo="codigo"
+      label="Código"
+      autocompletar="one-time-code"
+      modoEntrada="numeric"
+      [formControl]="control"
+    />
+  `,
+})
+class AnfitrionCodigo {
+  readonly control = new FormControl('');
+}
+
+/**
+ * El código del segundo factor (ADR-0096): `one-time-code` es lo que hace que el teléfono ofrezca
+ * el código, y `numeric` lo que abre el teclado de números. Sin las dos entradas, `ts-campo` no
+ * dejaba poner ninguno de los dos atributos en el `<input>` real.
+ */
+describe('TsCampo con autocompletar y modo de entrada', () => {
+  it('los pone en el control real', async () => {
+    await render(AnfitrionCodigo);
+
+    const campo = screen.getByLabelText('Código');
+    expect(campo.getAttribute('autocomplete')).toBe('one-time-code');
+    expect(campo.getAttribute('inputmode')).toBe('numeric');
+  });
+
+  it('sin valor no pinta ninguno de los dos, y decide el navegador', async () => {
+    await render(AnfitrionDePrueba);
+
+    const campo = screen.getByLabelText('Precio');
+    expect(campo.hasAttribute('autocomplete')).toBe(false);
+    expect(campo.hasAttribute('inputmode')).toBe(false);
+  });
+});

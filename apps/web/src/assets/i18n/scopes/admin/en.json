@@ -90,6 +90,24 @@
       "correo_requerido": "Enter the email.",
       "correo_invalido": "That email address isn't valid.",
       "clave_requerida": "Enter the password."
+    },
+    "segundoFactor": {
+      "explicacion_aplicacion": "Your account has two-step verification. Open your authenticator app and enter the 6-digit code it shows now.",
+      "explicacion_respaldo": "Enter one of your backup codes, with or without dashes. Each one works only once.",
+      "codigo_aplicacion": "App code",
+      "codigo_respaldo": "Backup code",
+      "verificar": "Verify and sign in",
+      "verificando": "Verifying…",
+      "usar_respaldo": "I don't have my phone: use a backup code",
+      "usar_aplicacion": "Use the app code",
+      "volver": "Back to password",
+      "error_codigo": "That code isn't valid. Make sure it's the one the app shows right now and try again.",
+      "error_desafio_vencido": "The code step expired or ran out of attempts. Enter your password again to get a new one.",
+      "error_demasiados_intentos": "Too many attempts in a row. Wait a few minutes and try again.",
+      "errores": {
+        "codigo_requerido": "Enter the code.",
+        "codigo_formato": "The code is 6 digits from the app, or a 16-character backup code."
+      }
     }
   },
   "panel": {

@@ -16,7 +16,7 @@ import {
   REPOSITORIO_SESION,
   RepositorioSesion,
 } from '../../../../core/autenticacion/repositorio-sesion.puerto';
-import { Sesion } from '../../../../core/autenticacion/sesion.model';
+import { ResultadoInicioSesion, Sesion } from '../../../../core/autenticacion/sesion.model';
 import {
   BotonGoogleFalso,
   GOOGLE_HABILITADO,
@@ -77,10 +77,14 @@ class SesionConGoogleFalsa implements RepositorioSesion {
 
   async iniciarSesionConGoogle(credencial: string, autorizaDatos: boolean): Promise<Sesion> {
     this.llamadasGoogle.push({ credencial, autorizaDatos });
-    return { usuarioId: 'u1', rol: 'CLIENTE', accessToken: 'jwt' };
+    return { usuarioId: 'u1', rol: 'CLIENTE', accessToken: 'jwt', segundoFactorPorActivar: false };
   }
 
-  async iniciarSesion(): Promise<Sesion> {
+  async iniciarSesion(): Promise<ResultadoInicioSesion> {
+    throw new Error('no usado en esta prueba');
+  }
+
+  async verificarSegundoFactor(): Promise<Sesion> {
     throw new Error('no usado en esta prueba');
   }
 

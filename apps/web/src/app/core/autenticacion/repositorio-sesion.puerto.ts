@@ -1,8 +1,18 @@
 import { InjectionToken } from '@angular/core';
-import { Sesion } from './sesion.model';
+import { ResultadoInicioSesion, Sesion } from './sesion.model';
 
 export interface RepositorioSesion {
-  iniciarSesion(correo: string, clave: string): Promise<Sesion>;
+  /**
+   * `POST /auth/sesion`. Con la clave bien, la sesión abierta —o, si la cuenta tiene segundo factor
+   * (ADR-0096), el desafío que hay que completar con {@link verificarSegundoFactor}—.
+   */
+  iniciarSesion(correo: string, clave: string): Promise<ResultadoInicioSesion>;
+  /**
+   * `POST /auth/segundo-factor/verificacion`: el segundo paso, con el código de la aplicación o uno
+   * de respaldo. Rechaza con `CodigoSegundoFactorInvalidoError` si el código no sirve —el desafío
+   * sigue vivo— y con `DesafioSegundoFactorVencidoError` si hay que volver a la clave.
+   */
+  verificarSegundoFactor(desafio: string, codigo: string): Promise<Sesion>;
   /**
    * `POST /auth/google` (ADR-0074): la misma sesión que la de la clave, abierta con la credencial
    * que entregó el botón de Google. `autorizaDatos` solo cuenta si la cuenta no existe todavía.
