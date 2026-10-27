@@ -348,10 +348,13 @@ export class EstadoPage {
       if (esMetodoPagoWompi(actualizado.metodoPago)) {
         const intento = await this.checkout.crearIntentoPago(actualizado.id);
         const idioma = this.transloco.activeLang();
+        // Sin el correo en la URL, igual que en `ConfirmarPage`: ahí quedaba en los registros de la
+        // web y de la API, en el historial y en los de Wompi. Lo recuerda el navegador, y la
+        // pantalla de retorno lo lee de ahí.
+        this.correosDePedido.recordar(actualizado.id, actualizado.correo);
         const parametrosRetorno = new URLSearchParams({
           referencia: intento.referencia,
           pedidoId: actualizado.id,
-          correo: actualizado.correo,
         });
         const urlRetorno = `${window.location.origin}/${idioma}/checkout/retorno-wompi?${parametrosRetorno.toString()}`;
         window.location.href = urlWebCheckoutWompi(intento, urlRetorno);

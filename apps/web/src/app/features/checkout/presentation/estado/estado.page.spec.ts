@@ -561,7 +561,7 @@ describe('EstadoPage', () => {
       pedidoDePrueba({ estado: 'PAGO_PENDIENTE', metodoPago: 'WOMPI' }),
     );
     const pagos = new RepositorioPagosFalso();
-    await renderConPedidoEnMemoria(
+    const { fixture } = await renderConPedidoEnMemoria(
       pedidoDePrueba({ estado: 'PAGO_FALLIDO', metodoPago: 'WOMPI' }),
       pedidos,
       pagos,
@@ -572,6 +572,13 @@ describe('EstadoPage', () => {
     await vi.waitFor(() => expect(pedidos.llamadasReintentar).toBe(1));
     expect(pagos.llamadasCrearIntento).toBe(1);
     expect(window.location.href).toContain('https://checkout.wompi.co/p/?');
+    // El correo no viaja en la URL de retorno —ni codificado—: lo recuerda el navegador.
+    const href = decodeURIComponent(window.location.href);
+    expect(href).toContain('pedidoId=pedido-1');
+    expect(href).not.toContain('correo');
+    expect(href).not.toContain('cliente@tecnosport.co');
+    const correos = fixture.debugElement.injector.get(ALMACEN_CORREO_DE_PEDIDO);
+    expect(correos.correoDe('pedido-1')).toBe('cliente@tecnosport.co');
 
     Object.defineProperty(window, 'location', { configurable: true, value: ubicacionOriginal });
   });
