@@ -136,6 +136,36 @@ el panel administrativo, el asistente de captura y la cuenta opcional del client
 - Registros sin datos personales ni tokens. Nunca se registra el cuerpo completo
   de una petición de checkout.
 - Dependencias revisadas automáticamente y actualizadas.
+- **Los tokens de sesión, de recuperación y de verificación se guardan por su
+  SHA-256**, no en claro (`HuellaDeToken`, `V140`, desde el 27 de octubre de
+  2026). Una copia de la base ya no entrega sesiones ni enlaces de cambio de
+  clave listos para usar.
+- **El registro responde igual exista o no la cuenta**, y si existía le escribe
+  al titular; el inicio de sesión compara contra un hash de relleno cuando la
+  cuenta no existe, para que el tiempo tampoco lo diga.
+- **El proxy de `/api` del servidor de la web corta en 413** un cuerpo de más de
+  1 MiB (`TOPE_DEL_CUERPO_EN_BYTES` en `proxy-api.ts`).
+
+## El ambiente de dev no es un ensayo
+
+Hay que tenerlo presente al decidir qué se prueba ahí y con qué clave se entra:
+
+- **Es público.** La web y la API de dev se publican en `run.app` sin ninguna
+  barrera delante; cualquiera que tenga la URL usa el sitio y la API.
+- **Opera la cuenta real de Instagram** (`@tecnosport_co`). La Graph API no tiene
+  sandbox, y `META_PUBLICAR_DE_VERDAD` es lo único que separa una prueba de un
+  post en la cuenta del negocio (`infra/envs/dev/main.tf`).
+- **Usa credenciales productivas de Sistecrédito.** No existen otras: la pasarela
+  es la de verdad, y `SISTECREDITO_SANDBOX_ACTIVO` es lo único que separa una
+  prueba de una solicitud de crédito real a nombre de una persona.
+- **La clave del administrador de dev tiene que ser distinta de la de
+  producción**, y el panel tiene que llevar **segundo factor antes de abrir
+  producción**. Hoy no lo tiene: el inicio de sesión es correo y clave, y el
+  correo del administrador es el mismo público de contacto. Separar los dos
+  correos es una decisión pendiente del dueño.
+- La federación de GitHub con el proyecto exige desde el 27 de octubre de 2026
+  el repositorio **y** la rama `main` (`attribute_condition` en
+  `infra/envs/dev/main.tf`); hace falta el `terraform apply` para que rija.
 
 ## Marco legal colombiano
 
