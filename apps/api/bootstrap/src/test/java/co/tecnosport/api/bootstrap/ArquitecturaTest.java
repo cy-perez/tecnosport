@@ -248,6 +248,34 @@ class ArquitecturaTest {
   private static final String[] JDK_VEDADO = {"java.sql..", "java.net.http.."};
 
   /**
+   * Los adaptadores de los puertos viven en {@code infrastructure}, y {@code bootstrap} solo los
+   * cablea. Hasta el 27 de octubre de 2026 cuatro vivían en {@code bootstrap} —{@code
+   * EnTransaccionPropiaSpring}, {@code SistecreditoApagado}, {@code EjecutorDeIngestasEnHilo} y
+   * {@code MarcapasosConTemporizador}—, fuera del alcance de las reglas de capa y de las pruebas de
+   * {@code infrastructure}. Que el perfil decida cuál se usa sigue siendo trabajo de {@code
+   * bootstrap}; la clase que lo implementa, no.
+   */
+  @Test
+  void bootstrapNoImplementaPuertos() {
+    noClasses()
+        .that()
+        .resideInAPackage(RAIZ + ".bootstrap..")
+        .and()
+        .areNotAnonymousClasses()
+        .should()
+        .implement(
+            JavaClass.Predicates.resideInAPackage(RAIZ + ".application..")
+                .and(
+                    new DescribedPredicate<JavaClass>("una interfaz") {
+                      @Override
+                      public boolean test(JavaClass clase) {
+                        return clase.isInterface();
+                      }
+                    }))
+        .check(clases);
+  }
+
+  /**
    * Guardar una imagen escribe <b>dos tablas</b> —{@code imagen_producto} y {@code
    * variante_imagen}—, y el reemplazo de la principal además borra la fila anterior antes. Sin
    * {@code @Transactional} cada {@code save}/{@code delete} de {@code SimpleJpaRepository} confirma

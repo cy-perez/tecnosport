@@ -1,4 +1,4 @@
-package co.tecnosport.api.bootstrap.compartido;
+package co.tecnosport.api.infrastructure.compartido;
 
 import co.tecnosport.api.application.compartido.EnTransaccionPropia;
 import java.util.Objects;

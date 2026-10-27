@@ -39,6 +39,8 @@ import co.tecnosport.api.application.proveedores.ResolverBorrador;
 import co.tecnosport.api.application.proveedores.SolicitarSubidaDeExportacion;
 import co.tecnosport.api.application.proveedores.VerificadorDeTareasDeIngesta;
 import co.tecnosport.api.infrastructure.proveedores.AlmacenDeArchivosDeProveedorGcs;
+import co.tecnosport.api.infrastructure.proveedores.EjecutorDeIngestasEnHilo;
+import co.tecnosport.api.infrastructure.proveedores.MarcapasosConTemporizador;
 import co.tecnosport.api.infrastructure.proveedores.tareas.ColaDeIngestasCloudTasks;
 import co.tecnosport.api.infrastructure.proveedores.tareas.TokenDeAccesoDeGoogle;
 import co.tecnosport.api.infrastructure.proveedores.tareas.VerificadorDeTareasDeIngestaGoogleJwt;
