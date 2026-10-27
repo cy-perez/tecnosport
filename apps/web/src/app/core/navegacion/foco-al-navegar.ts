@@ -1,5 +1,6 @@
+import { ViewportScroller } from '@angular/common';
 import { DOCUMENT, DestroyRef, Injector, afterNextRender, inject } from '@angular/core';
-import { NavigationEnd, Router } from '@angular/router';
+import { NavigationEnd, NavigationStart, Router } from '@angular/router';
 import { filter } from 'rxjs';
 
 /**
@@ -29,23 +30,43 @@ export function pantallaDe(url: string): string {
  *
  * <p>No se usa `withInMemoryScrolling({ scrollPositionRestoration: 'enabled' })`: sube al principio
  * en <b>toda</b> navegación, también en las de parámetros de consulta, y cada filtro devolvería la
- * rejilla arriba. Enfocar el título ya la lleva a la vista cuando la pantalla cambia.
+ * rejilla arriba.
+ *
+ * <p><b>La pantalla nueva abre por el comienzo, y el foco va al título sin desplazar.</b> Se creía
+ * que enfocar el título bastaba para llevarla a la vista, y en móvil la llevaba a la mitad: el
+ * `<h1>` de la ficha va debajo de la galería, y `focus()` desplaza hasta dejarlo visible, con la
+ * foto fuera de la pantalla. Lo mismo con cualquier pantalla cuyo título no sea lo primero.
+ *
+ * <p>Salvo con Atrás y Adelante (`popstate`): ahí se vuelve a algo que ya se vio, y subir al
+ * comienzo no es lo que se espera. Esas siguen como estaban.
  */
 export function usarFocoAlNavegar(): void {
   const router = inject(Router);
   const documento = inject(DOCUMENT);
   const injector = inject(Injector);
+  const desplazador = inject(ViewportScroller);
   let anterior: string | null = null;
+  let porHistorial = false;
 
   const suscripcion = router.events
-    .pipe(filter((evento): evento is NavigationEnd => evento instanceof NavigationEnd))
+    .pipe(
+      filter(
+        (evento): evento is NavigationStart | NavigationEnd =>
+          evento instanceof NavigationStart || evento instanceof NavigationEnd,
+      ),
+    )
     .subscribe((evento) => {
+      if (evento instanceof NavigationStart) {
+        porHistorial = evento.navigationTrigger === 'popstate';
+        return;
+      }
       const actual = pantallaDe(evento.urlAfterRedirects);
       const cambio = anterior !== null && actual !== anterior;
       anterior = actual;
       if (!cambio) {
         return;
       }
+      const alComienzo = !porHistorial;
       // `afterNextRender` y no un fotograma: `NavigationEnd` llega antes de que se pinte la
       // pantalla nueva, y hay que esperar a ese pintado para encontrar su título. No corre en el
       // servidor, que es justo lo que hace falta.
@@ -56,7 +77,10 @@ export function usarFocoAlNavegar(): void {
           if (titulo && !titulo.hasAttribute('tabindex')) {
             titulo.setAttribute('tabindex', '-1');
           }
-          (titulo ?? principal)?.focus();
+          if (alComienzo) {
+            desplazador.scrollToPosition([0, 0]);
+          }
+          (titulo ?? principal)?.focus({ preventScroll: alComienzo });
         },
         { injector },
       );
