@@ -715,6 +715,20 @@ describe('ListaPedidosAdminPage', () => {
     expect(screen.queryByText(/La guía se crea a mano en Skydropx/)).toBeNull();
   });
 
+  /** `[ocupado]` no deshabilita el botón: sin la guarda, un doble clic manda dos POST. */
+  it('dos clics en marcar listo para recoger lo piden una sola vez', async () => {
+    const { repositorio } = await renderLista([
+      pedidoDePrueba({ estado: 'EN_PREPARACION', tipoEntrega: 'RETIRO_EN_PUNTO' }),
+    ]);
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }));
+
+    const marcar = await screen.findByRole('button', { name: 'Marcar listo para recoger' });
+    fireEvent.click(marcar);
+    fireEvent.click(marcar);
+
+    await vi.waitFor(() => expect(repositorio.listos).toEqual(['p1']));
+  });
+
   it('una recogida con pago en el punto se entrega con el número y cómo pagó', async () => {
     const { repositorio } = await renderLista([
       pedidoDePrueba({
@@ -1120,6 +1134,20 @@ describe('ListaPedidosAdminPage', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }));
 
     fireEvent.click(await screen.findByRole('button', { name: 'Confirmar inventario y preparar' }));
+
+    await vi.waitFor(() => expect(repositorio.confirmacionesDeInventario).toEqual(['p1']));
+  });
+
+  /** `[ocupado]` no deshabilita el botón: sin la guarda, un doble clic manda dos POST. */
+  it('dos clics en confirmar el inventario lo piden una sola vez', async () => {
+    const { repositorio } = await renderLista([pedidoDePrueba({ estado: 'PAGADO' })]);
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }));
+
+    const confirmar = await screen.findByRole('button', {
+      name: 'Confirmar inventario y preparar',
+    });
+    fireEvent.click(confirmar);
+    fireEvent.click(confirmar);
 
     await vi.waitFor(() => expect(repositorio.confirmacionesDeInventario).toEqual(['p1']));
   });
