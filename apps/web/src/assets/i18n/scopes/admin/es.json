@@ -1304,6 +1304,7 @@
       "errorCarga": "No se pudo cargar el modelo. Recarga la página.",
       "de": "De {{proveedor}} · modelo {{modelo}}",
       "completaProducto": "Este modelo ya se vende: lo que apruebes aquí se añade a su producto.",
+      "fotosEnElProducto": "Aprobado: sus fotos ya están en el producto publicado.",
       "verProducto": "Ver el producto",
       "motivoRechazo": "Rechazado: {{motivo}}",
       "ficha": "Ficha que preparó la skill",

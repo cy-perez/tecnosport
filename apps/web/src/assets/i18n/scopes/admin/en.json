@@ -1304,6 +1304,7 @@
       "errorCarga": "The model could not be loaded. Reload the page.",
       "de": "From {{proveedor}} · model {{modelo}}",
       "completaProducto": "This model is already on sale: what you approve here is added to its product.",
+      "fotosEnElProducto": "Approved: its photos are now on the published product.",
       "verProducto": "See the product",
       "motivoRechazo": "Rejected: {{motivo}}",
       "ficha": "Product sheet prepared by the skill",
