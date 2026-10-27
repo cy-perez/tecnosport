@@ -1,25 +1,6 @@
 {
   "components" : {
     "schemas" : {
-      "AbrirSetRotacionPeticion" : {
-        "properties" : {
-          "dispositivo" : {
-            "type" : "string"
-          },
-          "fotogramas" : {
-            "format" : "int32",
-            "type" : "integer"
-          },
-          "productoId" : {
-            "format" : "uuid",
-            "type" : "string"
-          },
-          "versionAsistente" : {
-            "type" : "string"
-          }
-        },
-        "type" : "object"
-      },
       "ActivacionConfirmadaRespuesta" : {
         "properties" : {
           "codigosDeRespaldo" : {
@@ -1024,17 +1005,6 @@
           },
           "patron" : {
             "type" : "string"
-          }
-        },
-        "type" : "object"
-      },
-      "CompletarSetRotacionPeticion" : {
-        "properties" : {
-          "fotogramas" : {
-            "items" : {
-              "$ref" : "#/components/schemas/FotogramaPeticion"
-            },
-            "type" : "array"
           }
         },
         "type" : "object"
@@ -2210,29 +2180,6 @@
         ],
         "type" : "object"
       },
-      "FotogramaPeticion" : {
-        "properties" : {
-          "alto" : {
-            "format" : "int32",
-            "type" : "integer"
-          },
-          "ancho" : {
-            "format" : "int32",
-            "type" : "integer"
-          },
-          "hash" : {
-            "type" : "string"
-          },
-          "objectKey" : {
-            "type" : "string"
-          },
-          "orden" : {
-            "format" : "int32",
-            "type" : "integer"
-          }
-        },
-        "type" : "object"
-      },
       "GenerarEnlaceDeCompraRequest" : {
         "properties" : {
           "varianteId" : {
@@ -2447,26 +2394,6 @@
               "type" : "string"
             },
             "type" : "array"
-          }
-        },
-        "type" : "object"
-      },
-      "ImagenRotacionRespuesta" : {
-        "properties" : {
-          "alto" : {
-            "format" : "int32",
-            "type" : "integer"
-          },
-          "ancho" : {
-            "format" : "int32",
-            "type" : "integer"
-          },
-          "orden" : {
-            "format" : "int32",
-            "type" : "integer"
-          },
-          "url" : {
-            "type" : "string"
           }
         },
         "type" : "object"
@@ -4030,9 +3957,6 @@
             },
             "type" : "array"
           },
-          "rotacion" : {
-            "$ref" : "#/components/schemas/RotacionRespuesta"
-          },
           "slug" : {
             "type" : "string"
           },
@@ -4863,21 +4787,6 @@
         },
         "type" : "object"
       },
-      "RotacionRespuesta" : {
-        "properties" : {
-          "fotogramas" : {
-            "format" : "int32",
-            "type" : "integer"
-          },
-          "imagenes" : {
-            "items" : {
-              "$ref" : "#/components/schemas/ImagenRotacionRespuesta"
-            },
-            "type" : "array"
-          }
-        },
-        "type" : "object"
-      },
       "SeguimientoPorIdRequest" : {
         "properties" : {
           "correo" : {
@@ -4941,45 +4850,6 @@
         ],
         "type" : "object"
       },
-      "SetRotacionRespuesta" : {
-        "properties" : {
-          "capturadoEn" : {
-            "format" : "date-time",
-            "type" : "string"
-          },
-          "capturadoPor" : {
-            "type" : "string"
-          },
-          "dispositivo" : {
-            "type" : "string"
-          },
-          "estado" : {
-            "type" : "string"
-          },
-          "fotogramasPrometidos" : {
-            "format" : "int32",
-            "type" : "integer"
-          },
-          "id" : {
-            "format" : "uuid",
-            "type" : "string"
-          },
-          "imagenes" : {
-            "items" : {
-              "$ref" : "#/components/schemas/ImagenRotacionRespuesta"
-            },
-            "type" : "array"
-          },
-          "productoId" : {
-            "format" : "uuid",
-            "type" : "string"
-          },
-          "versionAsistente" : {
-            "type" : "string"
-          }
-        },
-        "type" : "object"
-      },
       "SolicitarRecuperacionRequest" : {
         "properties" : {
           "correo" : {
@@ -5019,14 +4889,6 @@
         "type" : "object"
       },
       "SolicitarSubidaDeImagenPrincipalPeticion" : {
-        "properties" : {
-          "contentType" : {
-            "type" : "string"
-          }
-        },
-        "type" : "object"
-      },
-      "SolicitarSubidasDeRotacionPeticion" : {
         "properties" : {
           "contentType" : {
             "type" : "string"
@@ -5200,21 +5062,6 @@
         "properties" : {
           "objectKey" : {
             "type" : "string"
-          },
-          "url" : {
-            "type" : "string"
-          }
-        },
-        "type" : "object"
-      },
-      "SubidaDeFotogramaRespuesta" : {
-        "properties" : {
-          "objectKey" : {
-            "type" : "string"
-          },
-          "orden" : {
-            "format" : "int32",
-            "type" : "integer"
           },
           "url" : {
             "type" : "string"
@@ -7841,7 +7688,7 @@
     },
     "/api/v1/admin/pedidos/{id}" : {
       "delete" : {
-        "operationId" : "eliminar_8",
+        "operationId" : "eliminar_7",
         "parameters" : [
           {
             "in" : "path",
@@ -9421,7 +9268,7 @@
         ]
       },
       "post" : {
-        "operationId" : "publicar_1",
+        "operationId" : "publicar",
         "parameters" : [
           {
             "in" : "path",
@@ -9910,176 +9757,6 @@
         },
         "tags" : [
           "admin-reversiones-controlador"
-        ]
-      }
-    },
-    "/api/v1/admin/sets-rotacion" : {
-      "post" : {
-        "operationId" : "abrir",
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/AbrirSetRotacionPeticion"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "201" : {
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/SetRotacionRespuesta"
-                }
-              }
-            },
-            "description" : "Created"
-          }
-        },
-        "tags" : [
-          "admin-set-rotacion-controlador"
-        ]
-      }
-    },
-    "/api/v1/admin/sets-rotacion/{id}" : {
-      "delete" : {
-        "operationId" : "eliminar_7",
-        "parameters" : [
-          {
-            "in" : "path",
-            "name" : "id",
-            "required" : true,
-            "schema" : {
-              "format" : "uuid",
-              "type" : "string"
-            }
-          }
-        ],
-        "responses" : {
-          "204" : {
-            "description" : "No Content"
-          }
-        },
-        "tags" : [
-          "admin-set-rotacion-controlador"
-        ]
-      }
-    },
-    "/api/v1/admin/sets-rotacion/{id}/completar" : {
-      "post" : {
-        "operationId" : "completar",
-        "parameters" : [
-          {
-            "in" : "path",
-            "name" : "id",
-            "required" : true,
-            "schema" : {
-              "format" : "uuid",
-              "type" : "string"
-            }
-          }
-        ],
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/CompletarSetRotacionPeticion"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/SetRotacionRespuesta"
-                }
-              }
-            },
-            "description" : "OK"
-          }
-        },
-        "tags" : [
-          "admin-set-rotacion-controlador"
-        ]
-      }
-    },
-    "/api/v1/admin/sets-rotacion/{id}/publicar" : {
-      "post" : {
-        "operationId" : "publicar",
-        "parameters" : [
-          {
-            "in" : "path",
-            "name" : "id",
-            "required" : true,
-            "schema" : {
-              "format" : "uuid",
-              "type" : "string"
-            }
-          }
-        ],
-        "responses" : {
-          "200" : {
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/SetRotacionRespuesta"
-                }
-              }
-            },
-            "description" : "OK"
-          }
-        },
-        "tags" : [
-          "admin-set-rotacion-controlador"
-        ]
-      }
-    },
-    "/api/v1/admin/sets-rotacion/{id}/subidas" : {
-      "post" : {
-        "operationId" : "subidas",
-        "parameters" : [
-          {
-            "in" : "path",
-            "name" : "id",
-            "required" : true,
-            "schema" : {
-              "format" : "uuid",
-              "type" : "string"
-            }
-          }
-        ],
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/SolicitarSubidasDeRotacionPeticion"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "201" : {
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "items" : {
-                    "$ref" : "#/components/schemas/SubidaDeFotogramaRespuesta"
-                  },
-                  "type" : "array"
-                }
-              }
-            },
-            "description" : "Created"
-          }
-        },
-        "tags" : [
-          "admin-set-rotacion-controlador"
         ]
       }
     },

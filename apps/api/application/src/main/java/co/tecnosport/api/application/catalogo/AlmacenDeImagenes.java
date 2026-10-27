@@ -20,8 +20,7 @@ public interface AlmacenDeImagenes {
   /**
    * El camino de vuelta de {@link #urlPublica(String)}: qué objeto hay detrás de una URL ya
    * guardada. Hace falta para borrar la imagen de una galería, que es lo único que se elimina
-   * conociendo solo la URL —la principal se limpia por prefijo, y un set de rotación borra el suyo
-   * entero—.
+   * conociendo solo la URL —la principal se limpia por prefijo—.
    *
    * <p>Vacío cuando la URL no es de este almacén, y ese caso <b>existe de verdad</b>: el catálogo
    * sembrado de {@code local} y {@code dev} trae imágenes de picsum.photos. Quitar una de esas

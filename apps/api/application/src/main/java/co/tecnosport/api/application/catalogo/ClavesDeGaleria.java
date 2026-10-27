@@ -4,9 +4,8 @@ import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
 import java.util.UUID;
 
 /**
- * Dónde vive cada imagen de galería dentro del bucket, con el mismo criterio que {@link
- * ClavesDeRotacion}: la key la arma siempre el servidor y el cliente solo recibe la URL firmada que
- * apunta a ella.
+ * Dónde vive cada imagen de galería dentro del bucket: la key la arma siempre el servidor y el
+ * cliente solo recibe la URL firmada que apunta a ella.
  *
  * <p>Existe como clase y no como dos literales sueltos porque el prefijo lo escribe {@link
  * SolicitarSubidaDeImagenDeGaleria} y lo <b>exige</b> {@link AgregarImagenDeGaleria}, y esas dos

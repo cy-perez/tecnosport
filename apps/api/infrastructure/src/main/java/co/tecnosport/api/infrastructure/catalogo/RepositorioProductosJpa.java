@@ -259,7 +259,6 @@ public class RepositorioProductosJpa implements RepositorioProductos {
             imagen.id(),
             productoId,
             imagen.varianteId().orElse(null),
-            null,
             imagen.tipo().name(),
             imagen.orden(),
             imagen.url(),
@@ -283,11 +282,11 @@ public class RepositorioProductosJpa implements RepositorioProductos {
   }
 
   /**
-   * {@code @Transactional} como {@code RepositorioSetsRotacionJpa.eliminar}: un borrado derivado de
-   * Spring Data no trae transacción propia —a diferencia de {@code save}, que la hereda de {@code
-   * SimpleJpaRepository}—, y sin ella revienta con {@code TransactionRequiredException}. Las
-   * pruebas no lo atrapan: la clase de Testcontainers es {@code @Transactional} entera, así que
-   * siempre hay una abierta. Esto se cae en {@code bootRun}, no en verde.
+   * {@code @Transactional} porque un borrado derivado de Spring Data no trae transacción propia —a
+   * diferencia de {@code save}, que la hereda de {@code SimpleJpaRepository}—, y sin ella revienta
+   * con {@code TransactionRequiredException}. Las pruebas no lo atrapan: la clase de Testcontainers
+   * es {@code @Transactional} entera, así que siempre hay una abierta. Esto se cae en {@code
+   * bootRun}, no en verde.
    */
   @Override
   @Transactional
@@ -710,9 +709,7 @@ public class RepositorioProductosJpa implements RepositorioProductos {
         where variante_id in (select id from variante where producto_id = :productoId)
         """,
         parametros);
-    // Antes que `set_rotacion`: un fotograma apunta a su set, y el set no se puede ir primero.
     jdbc.update("delete from imagen_producto where producto_id = :productoId", parametros);
-    jdbc.update("delete from set_rotacion where producto_id = :productoId", parametros);
     jdbc.update("delete from variante where producto_id = :productoId", parametros);
     jdbc.update("delete from producto where id = :productoId", parametros);
   }

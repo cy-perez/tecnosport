@@ -4,7 +4,6 @@ import co.tecnosport.api.domain.catalogo.Atributo;
 import co.tecnosport.api.domain.catalogo.Categoria;
 import co.tecnosport.api.domain.catalogo.EstadoDisponibilidad;
 import co.tecnosport.api.domain.catalogo.EstadoProducto;
-import co.tecnosport.api.domain.catalogo.EstadoSetRotacion;
 import co.tecnosport.api.domain.catalogo.EstadoVariante;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
@@ -12,7 +11,6 @@ import co.tecnosport.api.domain.catalogo.Marca;
 import co.tecnosport.api.domain.catalogo.OrigenProducto;
 import co.tecnosport.api.domain.catalogo.Paquete;
 import co.tecnosport.api.domain.catalogo.Producto;
-import co.tecnosport.api.domain.catalogo.SetRotacion;
 import co.tecnosport.api.domain.catalogo.TipoAtributo;
 import co.tecnosport.api.domain.catalogo.TipoImagen;
 import co.tecnosport.api.domain.catalogo.ValorAtributo;
@@ -30,7 +28,6 @@ import co.tecnosport.api.infrastructure.catalogo.entidad.CategoriaJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.ImagenProductoJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.MarcaJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.ProductoJpaEntity;
-import co.tecnosport.api.infrastructure.catalogo.entidad.SetRotacionJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.VarianteAtributoValorJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.VarianteImagenJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.VarianteJpaEntity;
@@ -60,7 +57,6 @@ public class MapeadorCatalogo {
   private final AtributoJpaRepository atributoJpaRepository;
   private final ImagenProductoJpaRepository imagenProductoJpaRepository;
   private final VarianteImagenJpaRepository varianteImagenJpaRepository;
-  private final SetRotacionJpaRepository setRotacionJpaRepository;
 
   public MapeadorCatalogo(
       ProductoJpaRepository productoJpaRepository,
@@ -70,8 +66,7 @@ public class MapeadorCatalogo {
       VarianteAtributoValorJpaRepository varianteAtributoValorJpaRepository,
       AtributoJpaRepository atributoJpaRepository,
       ImagenProductoJpaRepository imagenProductoJpaRepository,
-      VarianteImagenJpaRepository varianteImagenJpaRepository,
-      SetRotacionJpaRepository setRotacionJpaRepository) {
+      VarianteImagenJpaRepository varianteImagenJpaRepository) {
     this.productoJpaRepository = productoJpaRepository;
     this.marcaJpaRepository = marcaJpaRepository;
     this.categoriaJpaRepository = categoriaJpaRepository;
@@ -80,7 +75,6 @@ public class MapeadorCatalogo {
     this.atributoJpaRepository = atributoJpaRepository;
     this.imagenProductoJpaRepository = imagenProductoJpaRepository;
     this.varianteImagenJpaRepository = varianteImagenJpaRepository;
-    this.setRotacionJpaRepository = setRotacionJpaRepository;
   }
 
   /** Devuelve los productos hidratados en el mismo orden que {@code productoIds}. */
@@ -131,10 +125,6 @@ public class MapeadorCatalogo {
     Map<UUID, List<VarianteImagenJpaEntity>> variantesPorImagen =
         variantesDe(imagenesPorProducto.values().stream().flatMap(List::stream).toList());
 
-    Map<UUID, List<SetRotacionJpaEntity>> setsPorProducto =
-        setRotacionJpaRepository.findByProductoIdIn(productoIds).stream()
-            .collect(Collectors.groupingBy(SetRotacionJpaEntity::getProductoId));
-
     Map<UUID, Producto> productosPorId =
         productos.stream()
             .collect(
@@ -149,7 +139,6 @@ public class MapeadorCatalogo {
                             valoresPorVariante,
                             atributosPorId,
                             imagenesPorProducto.getOrDefault(p.getId(), List.of()),
-                            setsPorProducto.getOrDefault(p.getId(), List.of()),
                             variantesPorImagen)));
 
     return productoIds.stream().map(productosPorId::get).filter(Objects::nonNull).toList();
@@ -163,15 +152,13 @@ public class MapeadorCatalogo {
       Map<UUID, List<VarianteAtributoValorJpaEntity>> valoresPorVariante,
       Map<UUID, AtributoJpaEntity> atributosPorId,
       List<ImagenProductoJpaEntity> imagenesDelProducto,
-      List<SetRotacionJpaEntity> setsDelProducto,
       Map<UUID, List<VarianteImagenJpaEntity>> variantesPorImagen) {
 
     Marca marca = aMarca(marcasPorId.get(p.getMarcaId()));
     Categoria categoria = aCategoria(categoriasPorId.get(p.getCategoriaId()));
 
     // Sin filtrar por variante_id: una principal o una de galería puede colgar de una variante —el
-    // tono que muestra la foto de un producto de proveedor— y sigue siendo del producto. Lo que sí
-    // se separa por variante son los fotogramas de rotación, que se leen por su set.
+    // tono que muestra la foto de un producto de proveedor— y sigue siendo del producto.
     ImagenProducto imagenPrincipal =
         imagenesDelProducto.stream()
             .filter(i -> "PRINCIPAL".equals(i.getTipo()))
@@ -186,17 +173,6 @@ public class MapeadorCatalogo {
             .map(i -> aImagen(i, variantesPorImagen))
             .toList();
 
-    // Solo el set PUBLICADO: un producto puede tener varios (el que se está capturando ahora, en
-    // BORRADOR, conviviendo con el que ya se ve en la ficha). Sin este filtro, `findFirst` podía
-    // devolver el borrador y la ficha se quedaba sin visor aunque hubiera uno publicado.
-    SetRotacion setRotacionProducto =
-        setsDelProducto.stream()
-            .filter(s -> s.getVarianteId() == null)
-            .filter(MapeadorCatalogo::estaPublicado)
-            .findFirst()
-            .map(s -> aSetRotacion(s, imagenesDelProducto, variantesPorImagen))
-            .orElse(null);
-
     List<Variante> variantes =
         variantesJpa.stream()
             // La ficha pública no expone variantes dadas de baja: mismo principio que ya aplica a
@@ -205,15 +181,7 @@ public class MapeadorCatalogo {
             .map(
                 v ->
                     aVariante(
-                        v,
-                        valoresPorVariante.getOrDefault(v.getId(), List.of()),
-                        atributosPorId,
-                        setsDelProducto.stream()
-                            .filter(s -> v.getId().equals(s.getVarianteId()))
-                            .filter(MapeadorCatalogo::estaPublicado)
-                            .findFirst(),
-                        imagenesDelProducto,
-                        variantesPorImagen))
+                        v, valoresPorVariante.getOrDefault(v.getId(), List.of()), atributosPorId))
             .toList();
 
     Producto producto =
@@ -227,7 +195,6 @@ public class MapeadorCatalogo {
             EstadoProducto.valueOf(p.getEstado()),
             imagenPrincipal,
             galeria,
-            setRotacionProducto,
             variantes,
             OrigenProducto.valueOf(p.getOrigen()),
             p.getProveedorId(),
@@ -248,10 +215,7 @@ public class MapeadorCatalogo {
   private Variante aVariante(
       VarianteJpaEntity v,
       List<VarianteAtributoValorJpaEntity> valoresJpa,
-      Map<UUID, AtributoJpaEntity> atributosPorId,
-      java.util.Optional<SetRotacionJpaEntity> setJpa,
-      List<ImagenProductoJpaEntity> imagenesDelProducto,
-      Map<UUID, List<VarianteImagenJpaEntity>> variantesPorImagen) {
+      Map<UUID, AtributoJpaEntity> atributosPorId) {
 
     List<ValorAtributo> atributos =
         valoresJpa.stream()
@@ -270,9 +234,6 @@ public class MapeadorCatalogo {
             .sorted(Comparator.comparing(valor -> valor.atributo().nombre()))
             .toList();
 
-    SetRotacion setRotacionPropio =
-        setJpa.map(s -> aSetRotacion(s, imagenesDelProducto, variantesPorImagen)).orElse(null);
-
     return new Variante(
         v.getId(),
         new Sku(v.getSku()),
@@ -283,45 +244,8 @@ public class MapeadorCatalogo {
         paqueteDe(v),
         EstadoVariante.valueOf(v.getEstado()),
         atributos,
-        setRotacionPropio,
         v.isAgotadaPorProveedor(),
         v.isDisponibilidadPorConfirmar());
-  }
-
-  private static boolean estaPublicado(SetRotacionJpaEntity set) {
-    return EstadoSetRotacion.PUBLICADO.name().equals(set.getEstado());
-  }
-
-  /**
-   * Público porque el adaptador del set de rotación reconstruye el agregado por su cuenta, sin
-   * pasar por el producto: recibe el set y las filas de imagen que le pertenecen.
-   */
-  public SetRotacion aSetRotacion(
-      SetRotacionJpaEntity s, List<ImagenProductoJpaEntity> imagenesDelProducto) {
-    return aSetRotacion(s, imagenesDelProducto, variantesDe(imagenesDelProducto));
-  }
-
-  private SetRotacion aSetRotacion(
-      SetRotacionJpaEntity s,
-      List<ImagenProductoJpaEntity> imagenesDelProducto,
-      Map<UUID, List<VarianteImagenJpaEntity>> variantesPorImagen) {
-    List<ImagenProducto> fotogramas =
-        imagenesDelProducto.stream()
-            .filter(i -> s.getId().equals(i.getSetRotacionId()))
-            .sorted(Comparator.comparingInt(ImagenProductoJpaEntity::getOrden))
-            .map(i -> aImagen(i, variantesPorImagen))
-            .toList();
-
-    return new SetRotacion(
-        s.getId(),
-        s.getProductoId(),
-        s.getFotogramas(),
-        fotogramas,
-        EstadoSetRotacion.valueOf(s.getEstado()),
-        s.getCapturadoPor(),
-        s.getCapturadoEn(),
-        s.getDispositivo(),
-        s.getVersionAsistente());
   }
 
   /** Las variantes de un grupo de imágenes, en una sola consulta y agrupadas por imagen. */

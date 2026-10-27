@@ -61,8 +61,8 @@ public interface RepositorioProductos {
 
   /**
    * Borra el producto y todo lo que cuelga de él: sus variantes con sus atributos y su inventario,
-   * sus imágenes y sus sets de rotación. Quien llama ya comprobó que se puede borrar — ver {@code
-   * EliminarProducto}, que es el único sitio donde esa decisión está escrita.
+   * y sus imágenes. Quien llama ya comprobó que se puede borrar — ver {@code EliminarProducto}, que
+   * es el único sitio donde esa decisión está escrita.
    *
    * <p><b>En cascada explícita y no confiando en la base</b>, porque la base no la tiene: las
    * foráneas de {@code variante}, {@code inventario} e {@code imagen_producto} se declararon sin

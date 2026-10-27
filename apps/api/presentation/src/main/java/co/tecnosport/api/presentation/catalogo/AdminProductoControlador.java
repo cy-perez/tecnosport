@@ -210,7 +210,7 @@ public class AdminProductoControlador {
   /**
    * {@code POST} sobre un subrecurso y no un {@code PATCH} del estado: publicar no es editar un
    * campo, es una transición con su propia regla —no hay publicación sin imagen principal— y su
-   * propio permiso conceptual. Mismo criterio que {@code /sets-rotacion/{id}/publicar}.
+   * propio permiso conceptual.
    */
   @PostMapping("/{id}/publicacion")
   public ProductoAdminRespuesta publicar(@PathVariable("id") UUID id) {

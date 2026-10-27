@@ -20,8 +20,6 @@ import co.tecnosport.api.application.catalogo.ProductoNoEncontradoPorIdException
 import co.tecnosport.api.application.catalogo.ProductoPublicadoException;
 import co.tecnosport.api.application.catalogo.ProductoSinDescripcionException;
 import co.tecnosport.api.application.catalogo.ProfundidadDeCategoriaExcedidaException;
-import co.tecnosport.api.application.catalogo.SetRotacionNoEncontradoException;
-import co.tecnosport.api.application.catalogo.SetRotacionPublicadoExistenteException;
 import co.tecnosport.api.application.catalogo.SkuYaEnUsoException;
 import co.tecnosport.api.application.catalogo.SlugDeHijaSinPrefijoException;
 import co.tecnosport.api.application.catalogo.TasaIvaNoPermitidaException;
@@ -208,19 +206,6 @@ public class ManejadorDeErrores {
   @ExceptionHandler(ObjetoDeImagenNoEncontradoException.class)
   public ProblemDetail objetoDeImagenNoEncontrado(ObjetoDeImagenNoEncontradoException excepcion) {
     return problema(HttpStatus.NOT_FOUND, "Imagen no encontrada", excepcion);
-  }
-
-  // 409: la solicitud está bien formada, el conflicto es que el SKU ya está en uso en otro
-  // producto.
-  @ExceptionHandler(SetRotacionNoEncontradoException.class)
-  public ProblemDetail setRotacionNoEncontrado(SetRotacionNoEncontradoException excepcion) {
-    return problema(HttpStatus.NOT_FOUND, "Set de rotación no encontrado", excepcion);
-  }
-
-  @ExceptionHandler(SetRotacionPublicadoExistenteException.class)
-  public ProblemDetail setRotacionPublicadoExistente(
-      SetRotacionPublicadoExistenteException excepcion) {
-    return problema(HttpStatus.CONFLICT, "El producto ya tiene un set publicado", excepcion);
   }
 
   // Sin esto, intentar publicar un producto sin imagen saldria como 500: la invariante existe en el

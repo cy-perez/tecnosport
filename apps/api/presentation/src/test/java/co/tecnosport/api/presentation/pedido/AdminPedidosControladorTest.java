@@ -640,8 +640,7 @@ class AdminPedidosControladorTest {
             null,
             new Paquete(180, 30, 25, 4),
             EstadoVariante.ACTIVA,
-            List.of(),
-            null));
+            List.of()));
     productos.conProductos(producto);
   }
 

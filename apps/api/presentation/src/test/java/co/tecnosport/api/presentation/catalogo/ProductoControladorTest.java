@@ -70,8 +70,9 @@ class ProductoControladorTest {
     assertEquals(LineaCatalogo.TECNOLOGIA, repositorio.ultimoFiltro().linea());
   }
 
+  /** Sin {@code rotacion}: el visor 360 se retiró (ADR-0097) y el campo salió del contrato. */
   @Test
-  void fichaEncontradaDevuelve200ConRotacionNulaSiNoEstaPublicado() throws Exception {
+  void fichaEncontradaDevuelve200SinCampoDeRotacion() throws Exception {
     Producto producto = productoPublicado();
     repositorio.conProductos(producto);
 
@@ -81,7 +82,7 @@ class ProductoControladorTest {
         .andExpect(jsonPath("$.nombre").value(producto.nombre()))
         .andExpect(jsonPath("$.marca.nombre").value("TecnoSport"))
         .andExpect(jsonPath("$.variantes", hasSize(0)))
-        .andExpect(jsonPath("$.rotacion").isEmpty())
+        .andExpect(jsonPath("$.rotacion").doesNotExist())
         .andExpect(jsonPath("$.escalaTallas", hasSize(0)))
         .andExpect(jsonPath("$.tallaSirveHasta").isEmpty())
         .andExpect(jsonPath("$.imagenPrincipal.varianteId").isEmpty());

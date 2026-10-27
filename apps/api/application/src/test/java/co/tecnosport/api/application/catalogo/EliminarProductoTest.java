@@ -35,6 +35,7 @@ class EliminarProductoTest {
     productos.conProductos(producto);
     almacen.conObjeto("productos/" + producto.id() + "/principal-a.jpg", 100);
     almacen.conObjeto("productos/" + producto.id() + "/galeria-b.jpg", 100);
+    // Lo que dejó en el bucket el visor 360 ya retirado (ADR-0097): ninguna fila lo nombra.
     almacen.conObjeto("productos/" + producto.id() + "/rotacion/set-1/0.jpg", 100);
 
     int borrados = eliminar.ejecutar(producto.id());
@@ -44,9 +45,9 @@ class EliminarProductoTest {
   }
 
   /**
-   * Un solo prefijo para las tres clases de imagen. Si alguien lo estrecha a {@code principal-} o
-   * recorre los sets de rotación uno por uno, la galería o los fotogramas se quedan en el bucket
-   * pagándose para siempre, y nada más lo diría.
+   * Un solo prefijo para todo el producto. Si alguien lo estrecha a {@code principal-} o recorre
+   * las imágenes una por una, la galería o los objetos que ninguna fila nombra se quedan en el
+   * bucket pagándose para siempre, y nada más lo diría.
    */
   @Test
   void limpiaElProductoEnteroDelBucket() {

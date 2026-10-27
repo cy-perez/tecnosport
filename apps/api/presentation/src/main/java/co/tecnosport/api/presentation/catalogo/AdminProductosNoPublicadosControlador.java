@@ -30,7 +30,7 @@ public class AdminProductosNoPublicadosControlador {
 
   /**
    * Cuántos productos borra una petición. Pocos a propósito: el bucket se borra objeto por objeto,
-   * y un producto con visor 360 y tres resoluciones por foto pasa de cien objetos.
+   * y cada foto de un producto se guarda en varias resoluciones.
    */
   static final int TANDA_DE_BORRADO = 10;
 

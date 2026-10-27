@@ -5,8 +5,8 @@ import java.util.UUID;
 
 /**
  * Dónde vive la imagen principal dentro del bucket, con el mismo criterio que {@link
- * ClavesDeGaleria} y {@link ClavesDeRotacion}: la key la arma siempre el servidor y el cliente solo
- * recibe la URL firmada que apunta a ella.
+ * ClavesDeGaleria}: la key la arma siempre el servidor y el cliente solo recibe la URL firmada que
+ * apunta a ella.
  *
  * <p>Existe por lo mismo que existe {@code ClavesDeGaleria}, y llega tarde: el prefijo se escribía
  * <b>a mano en tres sitios</b> —al firmar la subida, al validar la confirmación y al limpiar— y la
@@ -17,8 +17,7 @@ import java.util.UUID;
  * prefijo {@code principal-} entero salvo las claves recién confirmadas, y esas son de galería— se
  * llevaba por delante los objetos {@code principal-} de verdad. La principal quedaba apuntando a un
  * objeto de galería vivo, y el siguiente {@code DELETE} de esa imagen de galería dejaba la foto
- * principal rota en una ficha publicada. Con una key de {@code rotacion/} pasaba lo mismo contra el
- * set.
+ * principal rota en una ficha publicada.
  *
  * <p>Es además la regla dura #7: la key la manda el cliente, y comprobar solo que empiece por el id
  * del producto es confiar en él para decidir qué objeto se borra.

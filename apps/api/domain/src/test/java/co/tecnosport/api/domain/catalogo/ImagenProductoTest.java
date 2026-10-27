@@ -28,27 +28,19 @@ class ImagenProductoTest {
   }
 
   @Test
-  void permiteAltVacioEnFotogramaDeRotacion() {
-    ImagenProducto imagen = imagen(TipoImagen.ROTACION, null, null);
-
-    assertEquals("", imagen.altEs());
-    assertEquals("", imagen.altEn());
-  }
-
-  @Test
   void rechazaAltoNoPositivo() {
     assertThrows(
         ImagenProductoInvalidaException.class,
         () ->
             ImagenProducto.crear(
-                TipoImagen.ROTACION,
+                TipoImagen.GALERIA,
                 0,
                 List.of(new VarianteDeImagen(800, "https://x/800.avif", 1000)),
                 null,
                 0,
                 new HashContenido("%064x".formatted(1)),
-                "",
-                ""));
+                "Camiseta azul",
+                "Blue t-shirt"));
   }
 
   @Test

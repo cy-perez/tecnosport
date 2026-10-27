@@ -46,7 +46,6 @@ public final class Variante {
   private final Paquete paquete;
   private final EstadoVariante estado;
   private final List<ValorAtributo> atributos;
-  private final SetRotacion setRotacionPropio;
   private final boolean agotadaPorProveedor;
   private final boolean disponibilidadPorConfirmar;
 
@@ -58,19 +57,8 @@ public final class Variante {
       String codigoBarras,
       Paquete paquete,
       EstadoVariante estado,
-      List<ValorAtributo> atributos,
-      SetRotacion setRotacionPropio) {
-    this(
-        id,
-        sku,
-        precio,
-        tasaIva,
-        codigoBarras,
-        paquete,
-        estado,
-        atributos,
-        setRotacionPropio,
-        false);
+      List<ValorAtributo> atributos) {
+    this(id, sku, precio, tasaIva, codigoBarras, paquete, estado, atributos, false);
   }
 
   public Variante(
@@ -82,7 +70,6 @@ public final class Variante {
       Paquete paquete,
       EstadoVariante estado,
       List<ValorAtributo> atributos,
-      SetRotacion setRotacionPropio,
       boolean agotadaPorProveedor) {
     this(
         id,
@@ -93,7 +80,6 @@ public final class Variante {
         paquete,
         estado,
         atributos,
-        setRotacionPropio,
         agotadaPorProveedor,
         false);
   }
@@ -115,7 +101,6 @@ public final class Variante {
       Paquete paquete,
       EstadoVariante estado,
       List<ValorAtributo> atributos,
-      SetRotacion setRotacionPropio,
       boolean agotadaPorProveedor,
       boolean disponibilidadPorConfirmar) {
     this(
@@ -128,7 +113,6 @@ public final class Variante {
         paquete,
         estado,
         atributos,
-        setRotacionPropio,
         agotadaPorProveedor,
         disponibilidadPorConfirmar);
   }
@@ -152,7 +136,6 @@ public final class Variante {
       Paquete paquete,
       EstadoVariante estado,
       List<ValorAtributo> atributos,
-      SetRotacion setRotacionPropio,
       boolean agotadaPorProveedor,
       boolean disponibilidadPorConfirmar) {
     this.id = Objects.requireNonNull(id, "El id de la variante no puede ser nulo.");
@@ -170,7 +153,6 @@ public final class Variante {
     this.paquete = paquete;
     this.estado = Objects.requireNonNull(estado, "El estado de la variante no puede ser nulo.");
     this.atributos = List.copyOf(Objects.requireNonNullElse(atributos, List.of()));
-    this.setRotacionPropio = setRotacionPropio;
     this.agotadaPorProveedor = agotadaPorProveedor;
     this.disponibilidadPorConfirmar = disponibilidadPorConfirmar;
   }
@@ -210,7 +192,6 @@ public final class Variante {
         paquete,
         EstadoVariante.ACTIVA,
         atributos,
-        null,
         false,
         false);
   }
@@ -237,7 +218,6 @@ public final class Variante {
         paquete,
         estado,
         atributos,
-        setRotacionPropio,
         agotadaPorProveedor,
         disponibilidadPorConfirmar);
   }
@@ -263,7 +243,6 @@ public final class Variante {
         paquete,
         estado,
         atributos,
-        setRotacionPropio,
         agotadaPorProveedor,
         disponibilidadPorConfirmar);
   }
@@ -290,7 +269,6 @@ public final class Variante {
         paquete,
         estado,
         con,
-        setRotacionPropio,
         agotadaPorProveedor,
         disponibilidadPorConfirmar);
   }
@@ -319,7 +297,6 @@ public final class Variante {
         paquete,
         estado,
         con,
-        setRotacionPropio,
         agotadaPorProveedor,
         disponibilidadPorConfirmar);
   }
@@ -445,10 +422,6 @@ public final class Variante {
 
   public List<ValorAtributo> atributos() {
     return atributos;
-  }
-
-  public Optional<SetRotacion> setRotacionPropio() {
-    return Optional.ofNullable(setRotacionPropio);
   }
 
   @Override

@@ -878,7 +878,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete: operations["eliminar_8"];
+        delete: operations["eliminar_7"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1437,7 +1437,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["publicar_1"];
+        post: operations["publicar"];
         delete: operations["despublicar"];
         options?: never;
         head?: never;
@@ -1598,86 +1598,6 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["resolver"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/sets-rotacion": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["abrir"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/sets-rotacion/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete: operations["eliminar_7"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/sets-rotacion/{id}/completar": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["completar"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/sets-rotacion/{id}/publicar": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["publicar"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/sets-rotacion/{id}/subidas": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["subidas"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2520,14 +2440,6 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        AbrirSetRotacionPeticion: {
-            dispositivo?: string;
-            /** Format: int32 */
-            fotogramas?: number;
-            /** Format: uuid */
-            productoId?: string;
-            versionAsistente?: string;
-        };
         ActivacionConfirmadaRespuesta: {
             codigosDeRespaldo: string[];
             sesion: components["schemas"]["SesionRespuesta"];
@@ -2860,9 +2772,6 @@ export interface components {
             nombre?: string;
             nombreEn?: string;
             patron?: string;
-        };
-        CompletarSetRotacionPeticion: {
-            fotogramas?: components["schemas"]["FotogramaPeticion"][];
         };
         ConciliarRecaudoRequest: {
             /** Format: int64 */
@@ -3258,16 +3167,6 @@ export interface components {
             tonosVistos: string[];
             url?: string;
         };
-        FotogramaPeticion: {
-            /** Format: int32 */
-            alto?: number;
-            /** Format: int32 */
-            ancho?: number;
-            hash?: string;
-            objectKey?: string;
-            /** Format: int32 */
-            orden?: number;
-        };
         GenerarEnlaceDeCompraRequest: {
             /** Format: uuid */
             varianteId: string;
@@ -3347,15 +3246,6 @@ export interface components {
             varianteId?: string;
             variantes?: components["schemas"]["VarianteDeImagenRespuesta"][];
             variantesQueMuestra?: string[];
-        };
-        ImagenRotacionRespuesta: {
-            /** Format: int32 */
-            alto?: number;
-            /** Format: int32 */
-            ancho?: number;
-            /** Format: int32 */
-            orden?: number;
-            url?: string;
         };
         ImportacionTecnologiaRespuesta: {
             /** Format: int32 */
@@ -3864,7 +3754,6 @@ export interface components {
             marca?: components["schemas"]["MarcaRespuesta"];
             nombre?: string;
             paleta: string[];
-            rotacion?: components["schemas"]["RotacionRespuesta"];
             slug?: string;
             tallaSirveHasta?: string;
             variantes?: components["schemas"]["VarianteRespuesta"][];
@@ -4161,11 +4050,6 @@ export interface components {
             /** Format: date-time */
             reembolsadoEn?: string;
         };
-        RotacionRespuesta: {
-            /** Format: int32 */
-            fotogramas?: number;
-            imagenes?: components["schemas"]["ImagenRotacionRespuesta"][];
-        };
         SeguimientoPorIdRequest: {
             correo: string;
         };
@@ -4185,21 +4069,6 @@ export interface components {
             acompanante: string;
             origenDelCosto: string;
         };
-        SetRotacionRespuesta: {
-            /** Format: date-time */
-            capturadoEn?: string;
-            capturadoPor?: string;
-            dispositivo?: string;
-            estado?: string;
-            /** Format: int32 */
-            fotogramasPrometidos?: number;
-            /** Format: uuid */
-            id?: string;
-            imagenes?: components["schemas"]["ImagenRotacionRespuesta"][];
-            /** Format: uuid */
-            productoId?: string;
-            versionAsistente?: string;
-        };
         SolicitarRecuperacionRequest: {
             correo?: string;
         };
@@ -4213,9 +4082,6 @@ export interface components {
             contentType?: string;
         };
         SolicitarSubidaDeImagenPrincipalPeticion: {
-            contentType?: string;
-        };
-        SolicitarSubidasDeRotacionPeticion: {
             contentType?: string;
         };
         SolicitudAtencionRespuesta: {
@@ -4281,12 +4147,6 @@ export interface components {
         };
         SubidaDeFotoRespuesta: {
             objectKey?: string;
-            url?: string;
-        };
-        SubidaDeFotogramaRespuesta: {
-            objectKey?: string;
-            /** Format: int32 */
-            orden?: number;
             url?: string;
         };
         TallaAlProveedorRespuesta: {
@@ -5989,7 +5849,7 @@ export interface operations {
             };
         };
     };
-    eliminar_8: {
+    eliminar_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -7034,7 +6894,7 @@ export interface operations {
             };
         };
     };
-    publicar_1: {
+    publicar: {
         parameters: {
             query?: never;
             header?: never;
@@ -7389,124 +7249,6 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["SolicitudReversionRespuesta"];
-                };
-            };
-        };
-    };
-    abrir: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AbrirSetRotacionPeticion"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["SetRotacionRespuesta"];
-                };
-            };
-        };
-    };
-    eliminar_7: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    completar: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CompletarSetRotacionPeticion"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["SetRotacionRespuesta"];
-                };
-            };
-        };
-    };
-    publicar: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["SetRotacionRespuesta"];
-                };
-            };
-        };
-    };
-    subidas: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SolicitarSubidasDeRotacionPeticion"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["SubidaDeFotogramaRespuesta"][];
                 };
             };
         };

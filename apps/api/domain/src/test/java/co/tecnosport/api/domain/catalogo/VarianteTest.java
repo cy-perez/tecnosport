@@ -173,7 +173,6 @@ class VarianteTest {
         PAQUETE,
         EstadoVariante.ACTIVA,
         List.of(),
-        null,
         false,
         false);
   }

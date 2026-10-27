@@ -35,7 +35,6 @@ class DescuentoSinPasarelaTest {
         null,
         EstadoVariante.ACTIVA,
         List.of(),
-        null,
         false,
         false);
   }

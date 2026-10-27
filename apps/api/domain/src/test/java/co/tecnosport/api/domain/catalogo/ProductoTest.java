@@ -708,7 +708,6 @@ class ProductoTest {
                 EstadoProducto.BORRADOR,
                 imagenPrincipal(),
                 List.of(imagenPrincipal()),
-                null,
                 List.of()));
   }
 

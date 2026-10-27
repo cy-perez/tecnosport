@@ -77,7 +77,6 @@ class CotizarCarritoTest {
             new Paquete(150, 28, 22, 3),
             co.tecnosport.api.domain.catalogo.EstadoVariante.ACTIVA,
             List.of(),
-            null,
             agotada,
             false);
     producto.agregarVariante(variante);

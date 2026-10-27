@@ -1,6 +1,5 @@
 package co.tecnosport.api.bootstrap.catalogo;
 
-import co.tecnosport.api.application.catalogo.AbrirSetRotacion;
 import co.tecnosport.api.application.catalogo.AgregarColorDesdeLaPrincipal;
 import co.tecnosport.api.application.catalogo.AgregarImagenDeGaleria;
 import co.tecnosport.api.application.catalogo.AgregarVariante;
@@ -10,7 +9,6 @@ import co.tecnosport.api.application.catalogo.AsignarColorAImagenPrincipal;
 import co.tecnosport.api.application.catalogo.BuscarProductos;
 import co.tecnosport.api.application.catalogo.CambiarPrecios;
 import co.tecnosport.api.application.catalogo.CambiarTalla;
-import co.tecnosport.api.application.catalogo.CompletarSetRotacion;
 import co.tecnosport.api.application.catalogo.ConfirmarImagenPrincipal;
 import co.tecnosport.api.application.catalogo.CrearCategoria;
 import co.tecnosport.api.application.catalogo.CrearMarca;
@@ -22,7 +20,6 @@ import co.tecnosport.api.application.catalogo.EliminarCategoria;
 import co.tecnosport.api.application.catalogo.EliminarMarca;
 import co.tecnosport.api.application.catalogo.EliminarProducto;
 import co.tecnosport.api.application.catalogo.EliminarProductosNoPublicados;
-import co.tecnosport.api.application.catalogo.EliminarSetRotacion;
 import co.tecnosport.api.application.catalogo.ListarAtributos;
 import co.tecnosport.api.application.catalogo.ListarCategorias;
 import co.tecnosport.api.application.catalogo.ListarMapaDelSitio;
@@ -36,7 +33,6 @@ import co.tecnosport.api.application.catalogo.MedirVariante;
 import co.tecnosport.api.application.catalogo.PreciosDelCatalogo;
 import co.tecnosport.api.application.catalogo.ProductosNoPublicados;
 import co.tecnosport.api.application.catalogo.PublicarProducto;
-import co.tecnosport.api.application.catalogo.PublicarSetRotacion;
 import co.tecnosport.api.application.catalogo.QuitarImagenDeGaleria;
 import co.tecnosport.api.application.catalogo.RecalcularPreciosPublicados;
 import co.tecnosport.api.application.catalogo.RenombrarMarca;
@@ -47,10 +43,8 @@ import co.tecnosport.api.application.catalogo.RepositorioMapaDelSitio;
 import co.tecnosport.api.application.catalogo.RepositorioMarcas;
 import co.tecnosport.api.application.catalogo.RepositorioPaletaDeColores;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
-import co.tecnosport.api.application.catalogo.RepositorioSetsRotacion;
 import co.tecnosport.api.application.catalogo.SolicitarSubidaDeImagenDeGaleria;
 import co.tecnosport.api.application.catalogo.SolicitarSubidaDeImagenPrincipal;
-import co.tecnosport.api.application.catalogo.SolicitarSubidasDeRotacion;
 import co.tecnosport.api.application.catalogo.UsarImagenDeGaleriaComoPrincipal;
 import co.tecnosport.api.application.catalogo.VerFichaDeProducto;
 import co.tecnosport.api.application.catalogo.VerProductoAdmin;
@@ -356,36 +350,5 @@ public class ConfiguracionCatalogo {
         propiedadesNegocio.responsableDeIva(),
         paleta,
         comision);
-  }
-
-  @Bean
-  public AbrirSetRotacion abrirSetRotacion(
-      RepositorioProductos repositorioProductos,
-      RepositorioSetsRotacion repositorioSetsRotacion,
-      Reloj reloj) {
-    return new AbrirSetRotacion(repositorioProductos, repositorioSetsRotacion, reloj);
-  }
-
-  @Bean
-  public SolicitarSubidasDeRotacion solicitarSubidasDeRotacion(
-      RepositorioSetsRotacion repositorioSetsRotacion, AlmacenDeImagenes almacenDeImagenes) {
-    return new SolicitarSubidasDeRotacion(repositorioSetsRotacion, almacenDeImagenes);
-  }
-
-  @Bean
-  public CompletarSetRotacion completarSetRotacion(
-      RepositorioSetsRotacion repositorioSetsRotacion, AlmacenDeImagenes almacenDeImagenes) {
-    return new CompletarSetRotacion(repositorioSetsRotacion, almacenDeImagenes);
-  }
-
-  @Bean
-  public PublicarSetRotacion publicarSetRotacion(RepositorioSetsRotacion repositorioSetsRotacion) {
-    return new PublicarSetRotacion(repositorioSetsRotacion);
-  }
-
-  @Bean
-  public EliminarSetRotacion eliminarSetRotacion(
-      RepositorioSetsRotacion repositorioSetsRotacion, AlmacenDeImagenes almacenDeImagenes) {
-    return new EliminarSetRotacion(repositorioSetsRotacion, almacenDeImagenes);
   }
 }

@@ -293,7 +293,6 @@ class CrearPedidoTest {
             variante.paquete().orElse(null),
             EstadoVariante.ACTIVA,
             variante.atributos(),
-            null,
             false,
             true);
     Producto producto =
@@ -307,7 +306,6 @@ class CrearPedidoTest {
             primerProducto.estado(),
             primerProducto.imagenPrincipal().orElse(null),
             primerProducto.galeria(),
-            null,
             List.of(porConfirmar));
     variante = porConfirmar;
     primerProducto = producto;

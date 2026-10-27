@@ -134,29 +134,6 @@ class ConfirmarImagenPrincipalTest {
                     "b")));
   }
 
-  /** Lo mismo con un fotograma del set de rotación, que se borra por prefijo entero. */
-  @Test
-  void unaKeyDeRotacionDelMismoProductoNoSePuedeConfirmarComoPrincipal() {
-    Producto producto = productoDePrueba();
-    repositorioProductos.conProductos(producto);
-    String keyDeRotacion =
-        "productos/" + producto.id() + "/rotacion/" + UUID.randomUUID() + "/0.webp";
-    almacenDeImagenes.conObjeto(keyDeRotacion, 1000);
-
-    assertThrows(
-        IllegalArgumentException.class,
-        () ->
-            confirmarImagenPrincipal.ejecutar(
-                new ConfirmarImagenPrincipalComando(
-                    producto.id(),
-                    List.of(new VarianteSubida(100, keyDeRotacion)),
-                    null,
-                    100,
-                    HASH,
-                    "a",
-                    "b")));
-  }
-
   /**
    * Y la vista previa entra por la misma puerta: es una clave más de la lista, así que colarla por
    * ahí tendría el mismo efecto que colarla como variante.
@@ -254,30 +231,6 @@ class ConfirmarImagenPrincipalTest {
 
     assertEquals(0, confirmacion.objetosAnterioresBorrados());
     assertTrue(almacenDeImagenes.existe(ajena));
-  }
-
-  @Test
-  void noTocaElSetDeRotacionDelMismoProducto() {
-    Producto producto = productoDePrueba();
-    repositorioProductos.conProductos(producto);
-    String nueva = "productos/" + producto.id() + "/principal-nueva.webp";
-    String fotograma = "productos/" + producto.id() + "/rotacion/set-1/0.webp";
-    almacenDeImagenes.conObjeto(nueva, 45_000);
-    almacenDeImagenes.conObjeto(fotograma, 40_000);
-
-    confirmarImagenPrincipal.ejecutar(
-        new ConfirmarImagenPrincipalComando(
-            producto.id(),
-            List.of(new VarianteSubida(1000, nueva)),
-            null,
-            800,
-            HASH,
-            "alt es",
-            "alt en"));
-
-    // El prefijo llega hasta "principal-" a propósito: con solo el id del producto, reemplazar la
-    // imagen principal se llevaría por delante los fotogramas del visor 360.
-    assertTrue(almacenDeImagenes.existe(fotograma));
   }
 
   @Test

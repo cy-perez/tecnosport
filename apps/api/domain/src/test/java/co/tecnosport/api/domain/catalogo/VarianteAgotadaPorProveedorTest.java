@@ -26,7 +26,6 @@ class VarianteAgotadaPorProveedorTest {
         null,
         estado,
         List.of(),
-        null,
         agotada);
   }
 

@@ -119,7 +119,6 @@ class ReintentarPagoTest {
             null,
             EstadoVariante.ACTIVA,
             List.of(),
-            null,
             varianteAgotada,
             disponibilidadPorConfirmar));
     producto.publicar();
