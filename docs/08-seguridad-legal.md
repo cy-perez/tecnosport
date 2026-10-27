@@ -91,10 +91,29 @@ el panel administrativo, el asistente de captura y la cuenta opcional del client
 - Validación en el servidor de todo lo que llega, incluso de lo que el formulario
   ya validó.
 - CORS con lista explícita de orígenes, no comodín.
-- Cabeceras: `Content-Security-Policy` sin `unsafe-inline`, con nonce desde el
-  SSR, `Strict-Transport-Security`, `X-Content-Type-Options`, `Referrer-Policy` y
-  `Permissions-Policy`. La política de permisos declara explícitamente el uso de
-  cámara y sensores, y solo en la ruta del asistente de captura.
+- Cabeceras (`apps/web/src/server.ts` y `cabeceras-seguridad.ts`):
+  `Strict-Transport-Security`, `X-Content-Type-Options`, `X-Frame-Options: DENY`,
+  `Referrer-Policy`, `Permissions-Policy` y una CSP **en modo informe**. Esta
+  línea prometía una CSP con nonce desde el SSR y una política de permisos
+  acotada a la ruta del asistente, y hasta el 27 de octubre de 2026 no había
+  ninguna de las dos. Lo que hay:
+  - **`Permissions-Policy`**: cámara, `accelerometer`, `gyroscope`,
+    `magnetometer`, `screen-wake-lock` y `clipboard-write` en `(self)`;
+    micrófono, geolocalización, pagos, USB y captura de pantalla apagados.
+    **No se puede acotar a la ruta del asistente**: es una aplicación de una
+    sola página y la política es del documento que cargó primero, así que quien
+    entra por la portada y navega al asistente se quedaría sin cámara. `(self)`
+    impide que un marco ajeno las herede, que es lo que sí se puede.
+  - **`Content-Security-Policy-Report-Only`**, sin nonce: `'self'` más los
+    orígenes que el sitio usa de verdad (Google para entrar con Google, Cloud
+    Storage para imágenes y subidas firmadas). Wompi y Sistecrédito no
+    aparecen porque se abren con una navegación de primer nivel. No bloquea
+    nada y no tiene `report-uri`: lo que bloquearía se ve en la consola del
+    navegador, y hoy eso incluye el script en línea del tema de `index.html`.
+    **Pendiente**: un nonce por respuesta en `server.ts`, escrito a la vez en
+    la cabecera y en el HTML (`ngCspNonce` en `<app-root>`), comprobar en el
+    navegador que el CSS crítico y el script del tema lo llevan, y solo
+    entonces pasar a `Content-Security-Policy`.
 - Subida de imágenes: tipo verificado por contenido y no por extensión, tamaño
   máximo, nombre regenerado, servidas desde el dominio de estáticos. El backend
   valida los objetos subidos antes de publicar un set. **Todavía no se cumple
