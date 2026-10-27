@@ -878,6 +878,22 @@ class TecnologiaPorListasTest {
     assertTrue(productosDeProveedor.variantesSinMargen().isEmpty());
   }
 
+  /**
+   * Revisión adversarial del 27 de octubre de 2026: la configuración que no viene en la lista y la
+   * skill no reporta como desaparecida —`conocidos.json` la había visto «ausente»— no se retiraba
+   * nunca. Si su modelo viene en la lista, lo que no trae deja de tener existencia libre.
+   */
+  @Test
+  void unaConfiguracionQueNoVieneConSuModeloSeRetiraAunqueNadieLaDeclareDesaparecida() {
+    Producto producto = unA17QueYaSeVende();
+    List<UUID> variantes = producto.variantes().stream().map(Variante::id).toList();
+    variantes.forEach(id -> assertEquals(EXISTENCIA, disponible(id)));
+
+    importar(lista(JUEVES, List.of(config(DUAL, 690_000, "Dual SIM")), List.of(), List.of()));
+
+    variantes.forEach(id -> assertEquals(0, disponible(id), "la de una SIM ya no viene"));
+  }
+
   @Test
   void unProveedorDeBolsosNoRecibeListas() {
     Proveedor deBolsos = ApoyoDeIngesta.proveedorDeBolsos();

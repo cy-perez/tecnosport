@@ -181,6 +181,19 @@ public final class ImportarListaDeTecnologia {
         }
         Map<String, List<VarianteDeProveedor>> conocidas = porConfiguracion(existente.id());
         Map<UUID, Dinero> precioPorVariante = preciosDe(existente);
+        if (inventario) {
+          // El modelo vino y esta configuración no: deja de ofrecerse aunque la skill no la haya
+          // mandado como desaparecida —conocidos.json pudo verla «ausente» antes— (27 de octubre
+          // de 2026). Si viene más abajo, el ciclo siguiente le pone su objetivo.
+          Set<String> queVinieron = new HashSet<>();
+          entrada.configuraciones().forEach(c -> queVinieron.add(c.sku()));
+          conocidas.forEach(
+              (configuracion, suyas) -> {
+                if (!queVinieron.contains(configuracion)) {
+                  suyas.forEach(v -> objetivos.put(v.varianteId(), 0));
+                }
+              });
+        }
         for (ConfiguracionTecnologia c : entrada.configuraciones()) {
           List<VarianteDeProveedor> variantes = conocidas.get(c.sku());
           if (variantes == null) {
