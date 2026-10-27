@@ -49,6 +49,7 @@ function productoDePrueba(): Producto {
         id: 'variante-1',
         sku: 'SKU-1',
         precio: { valor: 150_000, moneda: 'COP' },
+        precioContado: { valor: 150_000, moneda: 'COP' },
         disponible: true,
         disponibilidadPorConfirmar: false,
         atributos: [],
@@ -109,6 +110,7 @@ function bodiDePrueba(): Producto {
         id: 'v-negro',
         sku: 'PRV-1',
         precio: { valor: 60_000, moneda: 'COP' },
+        precioContado: { valor: 60_000, moneda: 'COP' },
         disponible: true,
         disponibilidadPorConfirmar: false,
         atributos: atributos('Negro', '#111111'),
@@ -117,6 +119,7 @@ function bodiDePrueba(): Producto {
         id: 'v-vino',
         sku: 'PRV-2',
         precio: { valor: 60_000, moneda: 'COP' },
+        precioContado: { valor: 60_000, moneda: 'COP' },
         disponible: true,
         disponibilidadPorConfirmar: false,
         atributos: atributos('Vino', '#722F37'),
@@ -242,6 +245,7 @@ describe('TsTarjetaProducto', () => {
         id: 'v' + i,
         sku: 'SKU-' + i,
         precio: { valor: 60_000, moneda: 'COP' },
+        precioContado: { valor: 60_000, moneda: 'COP' },
         disponible: true,
         disponibilidadPorConfirmar: false,
         atributos: [{ nombre: 'Color', valor: color, colorHex: '#111111', unidad: null }],
@@ -371,5 +375,63 @@ describe('TsTarjetaProducto y el prefijo del precio', () => {
 
     expect(screen.getByText('Desde')).toBeTruthy();
     expect(screen.getByText(/150\.000/)).toBeTruthy();
+  });
+});
+
+/**
+ * ADR-0095 y el artículo 26 de la Ley 1480: el único precio que se pinta es el publicado; lo de
+ * pagar sin pasarela se dice como ahorro, y entra en el nombre del enlace de la tarjeta.
+ */
+describe('TsTarjetaProducto y el ahorro sin pasarela', () => {
+  async function renderCon(producto: Producto) {
+    return render(TsTarjetaProducto, {
+      inputs: { producto },
+      imports: [
+        TranslocoTestingModule.forRoot({
+          langs: { es, en, 'catalogo/es': esCatalogo } as never,
+          translocoConfig: { availableLangs: ['es', 'en'], defaultLang: 'es' },
+          preloadLangs: true,
+        }),
+      ],
+      providers: [
+        provideRouter([]),
+        provideTanStackQuery(new QueryClient()),
+        proveerPaletaDePrueba(),
+      ],
+    });
+  }
+
+  function conContado(producto: Producto, ...contados: number[]): Producto {
+    return {
+      ...producto,
+      variantes: producto.variantes.map((variante, indice) => ({
+        ...variante,
+        precioContado: { valor: contados[indice], moneda: 'COP' },
+      })),
+    };
+  }
+
+  it('dice cuánto se ahorra, sin pintar el contado como otro precio', async () => {
+    await renderCon(conContado(productoDePrueba(), 145_000));
+
+    const ahorro = screen.getByText(
+      /^Ahorras \$\s?5\.000 pagando por transferencia, en el punto o contra entrega$/,
+    );
+    expect(ahorro).toBeTruthy();
+    expect(screen.queryByText(/145\.000/)).toBeNull();
+    // Dentro del enlace: es parte de lo que el lector de pantalla oye al llegar a la tarjeta.
+    expect(screen.getByRole('link').textContent).toContain('Ahorras');
+  });
+
+  it('si las variantes ahorran distinto, anuncia el menor con "o más"', async () => {
+    await renderCon(conContado(bodiDePrueba(), 57_000, 55_000));
+
+    expect(screen.getByText(/^Ahorras \$\s?3\.000 o más pagando por transferencia/)).toBeTruthy();
+  });
+
+  it('sin descuento no dice nada', async () => {
+    await renderTarjeta();
+
+    expect(screen.queryByText(/Ahorras/)).toBeNull();
   });
 });

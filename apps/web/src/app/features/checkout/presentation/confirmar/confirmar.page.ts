@@ -153,7 +153,12 @@ export class ConfirmarPage {
 
   protected readonly costoEnvio = computed(() => this.envioElegido()?.costoEnvio ?? 0);
 
-  protected readonly total = computed(() => this.subtotal() + this.costoEnvio());
+  /**
+   * Lo que se cobra: la mercancía **con el medio elegido**, del servidor, más el flete (ADR-0095).
+   * El servidor lo vuelve a calcular al crear el pedido con la misma regla; esto es la vista previa
+   * y sale de su respuesta, no de sumar precios aquí.
+   */
+  protected readonly total = computed(() => this.subtotalCobrado() + this.costoEnvio());
 
   /** Retiro en punto: no hay flete que mostrar, y el total es el subtotal. */
   protected readonly muestraEnvio = computed(() => this.criteriosCotizacion() !== null);
@@ -305,7 +310,22 @@ export class ConfirmarPage {
    * guardó al agregar: si cambió, el comprador aceptaba un total y se le cobraba otro, y una línea
    * sin foto guardada sumaba cero.
    */
-  protected readonly subtotal = computed(() => this.carrito.subtotal());
+  protected readonly subtotal = computed(() => {
+    const eleccion = this.checkout.eleccionDePago();
+    // Al publicado: es el precio anunciado, y el descuento va en su propia fila. Sin elección no
+    // se llega a pintar —la pantalla vuelve al método de pago—; el del carrito es el mismo número.
+    return eleccion ? eleccion.subtotal.valor + eleccion.descuento.valor : this.carrito.subtotal();
+  });
+
+  /** El descuento del medio elegido (ADR-0095); cero con Wompi y Sistecrédito. */
+  protected readonly descuento = computed(
+    () => this.checkout.eleccionDePago()?.descuento.valor ?? 0,
+  );
+
+  /** La mercancía con el medio elegido: el subtotal que dio el servidor para ese medio. */
+  private readonly subtotalCobrado = computed(
+    () => this.checkout.eleccionDePago()?.subtotal.valor ?? this.carrito.subtotal(),
+  );
 
   protected readonly etiquetaMetodoPago = computed(() => {
     const metodo = this.checkout.metodoPago();

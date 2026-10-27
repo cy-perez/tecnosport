@@ -16,7 +16,7 @@ import { CheckoutStore } from '../../application/checkout.store';
 import { IntentoDePago } from '../../domain/intento-pago.model';
 import { IntentoSistecredito } from '../../domain/intento-sistecredito.model';
 import { DatosEntrega } from '../../domain/pedido.comandos';
-import { MetodoPago, Pedido, Seguimiento } from '../../domain/pedido.model';
+import { MetodoDePagoConPrecio, MetodoPago, Pedido, Seguimiento } from '../../domain/pedido.model';
 import { REPOSITORIO_PAGOS, RepositorioPagos } from '../../domain/repositorio-pagos.puerto';
 import { REPOSITORIO_PEDIDOS, RepositorioPedidos } from '../../domain/repositorio-pedidos.puerto';
 import { MetodoPagoPage } from './metodo-pago.page';
@@ -52,8 +52,14 @@ class RepositorioCarritoFalso implements RepositorioCarrito {
       cantidad: linea.cantidad,
       precioUnitario: PRECIO_DE_HOY,
       subtotal: PRECIO_DE_HOY * linea.cantidad,
+      precioContado: PRECIO_DE_HOY,
+      subtotalContado: PRECIO_DE_HOY * linea.cantidad,
     }));
-    return { lineas, subtotal: lineas.reduce((suma, linea) => suma + linea.subtotal, 0) };
+    return {
+      lineas,
+      subtotal: lineas.reduce((suma, linea) => suma + linea.subtotal, 0),
+      subtotalContado: lineas.reduce((suma, linea) => suma + linea.subtotalContado, 0),
+    };
   }
   constructor(private carrito: Carrito | null) {}
 
@@ -78,15 +84,29 @@ class RepositorioCarritoFalso implements RepositorioCarrito {
   }
 }
 
+/** Un medio con su precio; sin descuento salvo que se diga, como Wompi y Sistecrédito. */
+function conPrecio(metodo: MetodoPago, descuento = 0): MetodoDePagoConPrecio {
+  return {
+    metodo,
+    subtotal: { valor: PRECIO_DE_HOY - descuento, moneda: 'COP' },
+    descuento: { valor: descuento, moneda: 'COP' },
+  };
+}
+
 class RepositorioPedidosFalso implements RepositorioPedidos {
-  constructor(private disponibles: MetodoPago[] = ['WOMPI', 'CONTRAENTREGA']) {}
+  /** Un medio a secas se ofrece sin descuento. */
+  constructor(
+    private disponibles: (MetodoPago | MetodoDePagoConPrecio)[] = ['WOMPI', 'CONTRAENTREGA'],
+  ) {}
 
   async crear(): Promise<Pedido> {
     throw new Error('no usado en esta prueba');
   }
 
-  async metodosDePagoDisponibles(): Promise<MetodoPago[]> {
-    return this.disponibles;
+  async metodosDePagoConPrecio(): Promise<MetodoDePagoConPrecio[]> {
+    return this.disponibles.map((opcion) =>
+      typeof opcion === 'string' ? conPrecio(opcion) : opcion,
+    );
   }
 
   async reintentarPago(): Promise<Pedido> {
@@ -259,6 +279,55 @@ describe('MetodoPagoPage', () => {
     // Fuera del botón, y aun así enlazada con él.
     expect(boton.contains(descripcion)).toBe(false);
     expect(descripcion?.textContent).toContain('Nequi, DaviPlata o cuenta de ahorros del BBVA');
+  });
+
+  /**
+   * ADR-0095: el medio que paga el precio de contado lo dice como ahorro, con la cifra que dio el
+   * servidor, y por la misma descripción accesible. El que paga el publicado no dice nada.
+   */
+  it('el detalle de un medio con descuento dice cuánto se ahorra; el que no, no', async () => {
+    sembrarCarritoId('carrito-1');
+
+    await renderConDatosEntrega(
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioPedidosFalso([
+        'WOMPI',
+        conPrecio('TRANSFERENCIA_MANUAL', 5_000),
+        conPrecio('CONTRAENTREGA', 5_000),
+      ]),
+    );
+
+    const transferencia = await screen.findByRole('button', { name: 'Transferencia bancaria' });
+    const detalleTransferencia = document.getElementById(
+      transferencia.getAttribute('aria-describedby') ?? '',
+    );
+    expect(detalleTransferencia?.textContent).toContain('Nequi');
+    expect(detalleTransferencia?.textContent).toMatch(/Ahorras \$\s?5\.000\./);
+
+    // Contraentrega no tenía detalle: ahora lo tiene, y es solo el ahorro.
+    const contraentrega = screen.getByRole('button', { name: 'Pago contraentrega' });
+    const detalleContraentrega = document.getElementById(
+      contraentrega.getAttribute('aria-describedby') ?? '',
+    );
+    expect(detalleContraentrega?.textContent?.trim()).toMatch(/^Ahorras \$\s?5\.000\.$/);
+
+    const wompi = screen.getByRole('button', { name: /^Tarjeta, PSE o Bancolombia/ });
+    const detalleWompi = document.getElementById(wompi.getAttribute('aria-describedby') ?? '');
+    expect(detalleWompi?.textContent).not.toContain('Ahorras');
+  });
+
+  it('al elegir un medio guarda en el store su subtotal y su descuento', async () => {
+    sembrarCarritoId('carrito-1');
+
+    const { fixture } = await renderConDatosEntrega(
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioPedidosFalso(['WOMPI', conPrecio('TRANSFERENCIA_MANUAL', 5_000)]),
+    );
+    const checkout = fixture.debugElement.injector.get(CheckoutStore);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Transferencia bancaria' }));
+
+    expect(checkout.eleccionDePago()).toEqual(conPrecio('TRANSFERENCIA_MANUAL', 5_000));
   });
 
   /**

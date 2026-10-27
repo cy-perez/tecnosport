@@ -136,6 +136,14 @@
         </dd>
       }
 
+      <!-- El descuento del medio elegido, en su fila y restando (ADR-0095): el subtotal va al
+           precio anunciado y el total ya lo trae aplicado. Es desglose de la compra, no un
+           segundo precio. -->
+      @if (descuento() > 0) {
+        <dt>{{ 'checkout.confirmar.descuento' | transloco }}</dt>
+        <dd><ts-precio [valor]="-descuento()" moneda="COP" /></dd>
+      }
+
       <dt class="font-medio">{{ 'checkout.resumen.total' | transloco }}</dt>
       <dd class="font-medio">
         <!-- Sin flete conocido no hay total: `costoEnvio` cae a cero sin cotización, y eso pintaba

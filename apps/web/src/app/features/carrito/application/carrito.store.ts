@@ -87,6 +87,16 @@ export class CarritoStore {
    */
   readonly subtotal = computed(() => this.cotizacion.data()?.subtotal ?? 0);
 
+  /**
+   * Lo que se ahorra el carrito entero pagando sin pasarela —transferencia, en el punto o contra
+   * entrega—: subtotal publicado menos subtotal de contado, los dos del servidor (ADR-0095). Cero
+   * sin cotización o si no hay descuento; nunca negativo.
+   */
+  readonly ahorroSinPasarela = computed(() => {
+    const cotizacion = this.cotizacion.data();
+    return cotizacion ? Math.max(0, cotizacion.subtotal - cotizacion.subtotalContado) : 0;
+  });
+
   /** El precio de hoy de una línea; `null` si todavía no llegó o si ya no se vende. */
   precioDeLinea(lineaId: string): number | null {
     return (

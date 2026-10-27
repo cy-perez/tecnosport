@@ -105,7 +105,16 @@
           class="sticky bottom-0 z-pegada -mx-16 my-16 flex flex-wrap items-center gap-16 border-t border-ts-borde bg-ts-fondo py-12 ps-16 pe-64 desde-tableta:static desde-tableta:mx-0 desde-tableta:border-0 desde-tableta:px-0 desde-tableta:py-0"
         >
           @if (varianteActiva(); as variante) {
-            <ts-precio [valor]="variante.precio.valor" [moneda]="variante.precio.moneda" />
+            <!-- El precio y su ahorro, juntos en un bloque: el ahorro es del precio, y así se lee
+                 justo detrás de él. -->
+            <div class="flex flex-col gap-4">
+              <ts-precio [valor]="variante.precio.valor" [moneda]="variante.precio.moneda" />
+              @if (ahorroDeLaVariante(); as ahorro) {
+                <p class="m-0 text-xs text-ts-texto-suave">
+                  {{ 'catalogo.ahorro_sin_pasarela' | transloco: { ahorro } }}
+                </p>
+              }
+            </div>
             @if (consultaPorWhatsapp()) {
               <!-- El color de un equipo o la talla de un tenis sin confirmar se preguntan antes de
                    comprarse (ADR-0086, ADR-0089). Un enlace y no un botón: abre el chat, no hace

@@ -15,6 +15,10 @@
           | transloco: { nombre: anuncio.nombre, cantidad: anuncio.cantidad }
       }}
       {{ 'carrito.total' | transloco }}: <ts-precio [valor]="total()" moneda="COP" />
+      <!-- El ahorro va con el total, como en pantalla: oír solo el total callaba la mitad. -->
+      @if (ahorro(); as ahorroTexto) {
+        <span>. {{ 'carrito.ahorro_sin_pasarela' | transloco: { ahorro: ahorroTexto } }}</span>
+      }
     } @else if (anuncio?.tipo === 'eliminada') {
       {{ 'carrito.anuncio_eliminada' | transloco: { nombre: anuncio.nombre } }}
     } @else if (anuncio?.tipo === 'error') {
@@ -56,6 +60,12 @@
         <span>{{ 'carrito.total' | transloco }}</span>
         <ts-precio [valor]="total()" moneda="COP" />
       </div>
+      <!-- Debajo del total y en su misma voz: es un descuento del medio de pago, no otro precio. -->
+      @if (ahorro(); as ahorroTexto) {
+        <p class="mt-8 mb-0 text-sm text-ts-texto-suave">
+          {{ 'carrito.ahorro_sin_pasarela' | transloco: { ahorro: ahorroTexto } }}
+        </p>
+      }
       <!-- El total del carrito es sin flete, y hay que decirlo aquí y no solo
            en el checkout: el precio publicado es base y el envío se cotiza por
            destino y se cobra aparte (docs/00-producto.md, artículo 50 de la

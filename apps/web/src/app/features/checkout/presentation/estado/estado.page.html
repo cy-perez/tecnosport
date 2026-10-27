@@ -73,6 +73,13 @@
          Lo que la línea dice hoy es lo único que el comprador necesita saber: al precio publicado
          no se le suma nada. El flete sí se cobra aparte y tiene su propia fila arriba.
          Ver `adr/0041` y docs/02-modelo-datos.md. -->
+    <!-- Los precios de las líneas y el subtotal ya son los cobrados; el descuento del medio de
+         pago (ADR-0095) se dice aparte, como lo que ya se restó, para que la suma de arriba cuadre. -->
+    @if (p.descuento.valor > 0) {
+      <p class="m-0 mt-8 text-sm text-ts-texto-suave">
+        {{ 'checkout.estado.descuento_incluido' | transloco: { valor: descuento() } }}
+      </p>
+    }
     <p class="m-0 mt-8 text-sm text-ts-texto-suave">
       {{ 'checkout.resumen.precio_final' | transloco }}
     </p>

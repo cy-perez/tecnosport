@@ -4,7 +4,7 @@ import { render } from '@testing-library/angular';
 import { IntentoDePago } from '../domain/intento-pago.model';
 import { IntentoSistecredito } from '../domain/intento-sistecredito.model';
 import { CrearPedidoComando } from '../domain/pedido.comandos';
-import { MetodoPago, Pedido, Seguimiento } from '../domain/pedido.model';
+import { MetodoDePagoConPrecio, MetodoPago, Pedido, Seguimiento } from '../domain/pedido.model';
 import { REPOSITORIO_PAGOS, RepositorioPagos } from '../domain/repositorio-pagos.puerto';
 import { REPOSITORIO_PEDIDOS, RepositorioPedidos } from '../domain/repositorio-pedidos.puerto';
 import { CheckoutStore } from './checkout.store';
@@ -21,6 +21,7 @@ function pedidoDePrueba(overrides: Partial<Pedido> = {}): Pedido {
     metodoPago: 'WOMPI',
     estado: 'PAGO_PENDIENTE',
     subtotal: { valor: 150_000, moneda: 'COP' },
+    descuento: { valor: 0, moneda: 'COP' },
     costoEnvio: { valor: 0, moneda: 'COP' },
     total: { valor: 150_000, moneda: 'COP' },
     creadoEn: '2026-01-01T00:00:00Z',
@@ -28,6 +29,15 @@ function pedidoDePrueba(overrides: Partial<Pedido> = {}): Pedido {
     datosTransferencia: null,
     transportadora: null,
     ...overrides,
+  };
+}
+
+/** Un medio con su precio, como lo devuelve el servidor; sin descuento salvo que se diga. */
+function eleccion(metodo: MetodoPago, subtotal = 150_000, descuento = 0): MetodoDePagoConPrecio {
+  return {
+    metodo,
+    subtotal: { valor: subtotal, moneda: 'COP' },
+    descuento: { valor: descuento, moneda: 'COP' },
   };
 }
 
@@ -41,8 +51,8 @@ class RepositorioPedidosFalso implements RepositorioPedidos {
     return this.pedido;
   }
 
-  async metodosDePagoDisponibles(): Promise<MetodoPago[]> {
-    return ['WOMPI', 'CONTRAENTREGA'];
+  async metodosDePagoConPrecio(): Promise<MetodoDePagoConPrecio[]> {
+    return [eleccion('WOMPI'), eleccion('CONTRAENTREGA')];
   }
 
   correoDelUltimoReintento: string | null = null;
@@ -156,14 +166,39 @@ describe('CheckoutStore', () => {
   it('elegirMetodoPago deja el valor en la señal metodoPago', async () => {
     const { store } = await renderConRepositorio(new RepositorioPedidosFalso());
 
-    store.elegirMetodoPago('CONTRAENTREGA');
+    store.elegirMetodoPago(eleccion('CONTRAENTREGA'));
 
     expect(store.metodoPago()).toBe('CONTRAENTREGA');
   });
 
+  /** ADR-0095: confirmar enseña el precio del medio elegido, y lo lee de aquí. */
+  it('elegirMetodoPago guarda el subtotal y el descuento del medio elegido', async () => {
+    const { store } = await renderConRepositorio(new RepositorioPedidosFalso());
+
+    store.elegirMetodoPago(eleccion('TRANSFERENCIA_MANUAL', 145_000, 5_000));
+
+    expect(store.eleccionDePago()).toEqual(eleccion('TRANSFERENCIA_MANUAL', 145_000, 5_000));
+  });
+
+  it('guardarDatosEntrega descarta también el precio del medio elegido', async () => {
+    const { store } = await renderConRepositorio(new RepositorioPedidosFalso());
+    store.elegirMetodoPago(eleccion('TRANSFERENCIA_MANUAL', 145_000, 5_000));
+
+    store.guardarDatosEntrega({
+      correo: 'compra@ejemplo.co',
+      contacto: { nombre: 'Ana', telefono: '3001234567' },
+      tipoEntrega: 'RETIRO_EN_PUNTO',
+      direccion: null,
+      autorizaDatos: true,
+      transportadora: null,
+    });
+
+    expect(store.eleccionDePago()).toBeNull();
+  });
+
   it('guardarDatosEntrega descarta el método de pago y el pedido ya creados', async () => {
     const { store } = await renderConRepositorio(new RepositorioPedidosFalso());
-    store.elegirMetodoPago('CONTRAENTREGA');
+    store.elegirMetodoPago(eleccion('CONTRAENTREGA'));
     await store.crearPedido(comandoDePrueba());
 
     store.guardarDatosEntrega({
@@ -190,7 +225,7 @@ describe('CheckoutStore', () => {
       transportadora: null,
     };
     store.guardarDatosEntrega(datos);
-    store.elegirMetodoPago('CONTRAENTREGA');
+    store.elegirMetodoPago(eleccion('CONTRAENTREGA'));
     await store.crearPedido(comandoDePrueba());
 
     store.elegirTransportadora('Servientrega');
@@ -210,10 +245,10 @@ describe('CheckoutStore', () => {
 
   it('elegirMetodoPago descarta el pedido ya creado con el método anterior', async () => {
     const { store } = await renderConRepositorio(new RepositorioPedidosFalso());
-    store.elegirMetodoPago('WOMPI');
+    store.elegirMetodoPago(eleccion('WOMPI'));
     await store.crearPedido(comandoDePrueba());
 
-    store.elegirMetodoPago('CONTRAENTREGA');
+    store.elegirMetodoPago(eleccion('CONTRAENTREGA'));
 
     expect(store.pedido()).toBeNull();
   });

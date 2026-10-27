@@ -46,6 +46,7 @@ function productoDePrueba(slug: string): Producto {
         id: `id-${slug}`,
         sku: `SKU-${slug}`,
         precio: { valor: 10_000, moneda: 'COP' },
+        precioContado: { valor: 10_000, moneda: 'COP' },
         disponible: true,
         disponibilidadPorConfirmar: false,
         atributos: [],

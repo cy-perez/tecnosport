@@ -35,7 +35,7 @@ export function opcionDeTransportadora(
  *
  * No dice nada de contraentrega: esta cotización se pide sin recaudo —el comprador todavía no ha
  * elegido cómo paga— y la cobertura de recaudo solo se sabe pidiéndola con recaudo. Eso lo responde
- * `POST /pedidos/metodos-de-pago-disponibles`.
+ * `POST /pedidos/metodos-de-pago-con-precio`.
  *
  * Es informativa. El costo que se cobra lo fija el servidor otra vez al crear
  * el pedido, así que el resumen se vuelve a pintar con lo que devuelve el

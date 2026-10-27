@@ -9,7 +9,7 @@ import esCheckout from '../../../../../assets/i18n/scopes/checkout/es.json';
 import { CheckoutStore } from '../../application/checkout.store';
 import { IntentoDePago } from '../../domain/intento-pago.model';
 import { IntentoSistecredito } from '../../domain/intento-sistecredito.model';
-import { MetodoPago, Pedido, Seguimiento } from '../../domain/pedido.model';
+import { MetodoDePagoConPrecio, Pedido, Seguimiento } from '../../domain/pedido.model';
 import { REPOSITORIO_PAGOS, RepositorioPagos } from '../../domain/repositorio-pagos.puerto';
 import { REPOSITORIO_PEDIDOS, RepositorioPedidos } from '../../domain/repositorio-pedidos.puerto';
 import { TransferenciaPage } from './transferencia.page';
@@ -50,6 +50,7 @@ function pedidoDePrueba(overrides: Partial<Pedido> = {}): Pedido {
     metodoPago: 'TRANSFERENCIA_MANUAL',
     estado: 'PAGO_PENDIENTE',
     subtotal: { valor: 300_000, moneda: 'COP' },
+    descuento: { valor: 0, moneda: 'COP' },
     costoEnvio: { valor: 0, moneda: 'COP' },
     total: { valor: 300_000, moneda: 'COP' },
     creadoEn: '2026-01-01T00:00:00Z',
@@ -82,7 +83,7 @@ class RepositorioPedidosFalso implements RepositorioPedidos {
     throw new Error('no usado en esta prueba');
   }
 
-  async metodosDePagoDisponibles(): Promise<MetodoPago[]> {
+  async metodosDePagoConPrecio(): Promise<MetodoDePagoConPrecio[]> {
     throw new Error('no usado en esta prueba');
   }
 
@@ -166,6 +167,40 @@ describe('TransferenciaPage', () => {
     expect(await screen.findByText('Bancolombia')).toBeTruthy();
     expect(screen.getByText('000-000000-00')).toBeTruthy();
     expect(screen.getByText('TS-2026-000001')).toBeTruthy();
+  });
+
+  /**
+   * ADR-0095: el monto a transferir ya trae el descuento, y se dice: es lo que explica por qué no
+   * es el precio de la vitrina.
+   */
+  it('el monto a transferir dice que ya incluye el descuento', async () => {
+    await renderConProviders(
+      new RepositorioPedidosFalso(),
+      {},
+      anfitrionConPedidoEnMemoria(
+        pedidoDePrueba({
+          subtotal: { valor: 290_000, moneda: 'COP' },
+          descuento: { valor: 10_000, moneda: 'COP' },
+          total: { valor: 290_000, moneda: 'COP' },
+        }),
+      ),
+    );
+
+    const nota = await screen.findByText(
+      /^Ya incluye un descuento de \$\s?10\.000 por pagar por transferencia\.$/,
+    );
+    expect(nota.closest('dd')?.textContent).toMatch(/290\.000/);
+  });
+
+  it('sin descuento el monto va solo', async () => {
+    await renderConProviders(
+      new RepositorioPedidosFalso(),
+      {},
+      anfitrionConPedidoEnMemoria(pedidoDePrueba()),
+    );
+
+    expect((await screen.findAllByText(/300\.000/)).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/descuento/)).toBeNull();
   });
 
   /**

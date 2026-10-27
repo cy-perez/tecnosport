@@ -25,9 +25,17 @@ class RepositorioCarritoFalso implements RepositorioCarrito {
       cantidad: linea.cantidad,
       precioUnitario: PRECIO_DE_HOY,
       subtotal: PRECIO_DE_HOY * linea.cantidad,
+      precioContado: this.contado,
+      subtotalContado: this.contado * linea.cantidad,
     }));
-    return { lineas, subtotal: lineas.reduce((suma, linea) => suma + linea.subtotal, 0) };
+    return {
+      lineas,
+      subtotal: lineas.reduce((suma, linea) => suma + linea.subtotal, 0),
+      subtotalContado: lineas.reduce((suma, linea) => suma + linea.subtotalContado, 0),
+    };
   }
+  /** El precio de contado por unidad; por debajo del de hoy, hay descuento sin pasarela. */
+  contado = PRECIO_DE_HOY;
   llamadasCrear = 0;
   /**
    * Ids que el servidor ya purgó. `ver` los sigue reconociendo solo si están en
@@ -163,6 +171,29 @@ describe('CarritoStore', () => {
 
     await store.eliminarLinea(lineaId);
     await vi.waitFor(() => expect(store.cantidadTotal()).toBe(0));
+  });
+
+  /** ADR-0095: el ahorro sin pasarela es la resta de los dos subtotales del servidor. */
+  it('ahorroSinPasarela es el subtotal publicado menos el de contado', async () => {
+    const repositorio = new RepositorioCarritoFalso();
+    repositorio.contado = 145_000;
+    const { store } = await renderConRepositorio(repositorio);
+
+    await store.agregarAlCarrito('variante-1', 2, snapshotDePrueba('variante-1'));
+
+    await vi.waitFor(() => expect(store.ahorroSinPasarela()).toBe(10_000));
+    expect(store.subtotal()).toBe(300_000);
+  });
+
+  it('ahorroSinPasarela es cero sin descuento y sin cotización', async () => {
+    const repositorio = new RepositorioCarritoFalso();
+    const { store } = await renderConRepositorio(repositorio);
+    expect(store.ahorroSinPasarela()).toBe(0);
+
+    await store.agregarAlCarrito('variante-1', 2, snapshotDePrueba('variante-1'));
+
+    await vi.waitFor(() => expect(store.subtotal()).toBe(300_000));
+    expect(store.ahorroSinPasarela()).toBe(0);
   });
 
   it('limpiar deja el carrito sin id, sin líneas y sin nada guardado', async () => {

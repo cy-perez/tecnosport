@@ -4,6 +4,7 @@
   "ir_al_catalogo": "Go to catalog",
   "error": "We couldn't load your cart. Please try again.",
   "total": "Total",
+  "ahorro_sin_pasarela": "Save {{ahorro}} when paying by bank transfer, at our location or cash on delivery",
   "ir_a_pagar": "Go to checkout",
   "producto_sin_foto": "Product",
   "disminuir": "Decrease quantity",

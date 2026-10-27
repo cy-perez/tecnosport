@@ -1,5 +1,6 @@
 {
   "resumen": {
+    "ahorro_sin_pasarela": "Save {{ahorro}} when paying by bank transfer, at our location or cash on delivery",
     "foto_de": "Photo of {{nombre}}",
     "titulo": "Order summary",
     "carrito_vacio": "Your cart is empty.",
@@ -60,6 +61,7 @@
     "precio_final": "Each product's price is final: no tax is added to it."
   },
   "metodoPago": {
+    "ahorro": "You save {{ahorro}}.",
     "titulo": "Payment method",
     "wompi": "Card, PSE or Bancolombia",
     "wompi_detalle": "Pay through Wompi with a credit or debit card, PSE or the Bancolombia button.",
@@ -107,6 +109,7 @@
     "continuar": "Continue"
   },
   "confirmar": {
+    "descuento": "Payment method discount",
     "con_transportadora": "With {{transportadora}}",
     "transportadora_no_disponible": "The carrier you chose is no longer available for this shipment. Go back and choose another one.",
     "disponibilidad_por_confirmar": "The availability of an item in your cart is confirmed with us before purchase, and its purchase link is no longer valid. Message us on WhatsApp and we'll confirm it again.",
@@ -142,6 +145,7 @@
     "volver_inicio": "Back to home"
   },
   "estado": {
+    "descuento_incluido": "Includes a {{valor}} discount for the payment method.",
     "titulo": "Order {{numero}}",
     "sin_datos": "We couldn't find this order.",
     "reintentar": "Retry payment",
@@ -199,6 +203,7 @@
     }
   },
   "transferencia": {
+    "descuento_incluido": "Already includes a {{valor}} discount for paying by bank transfer.",
     "titulo": "Transfer to this account",
     "instrucciones": "Transfer to whichever of these accounts you prefer. Your order is on hold for 24 hours. Once you make the transfer, send us the receipt - we'll reconcile it and confirm your order.",
     "entidad": "Entity",

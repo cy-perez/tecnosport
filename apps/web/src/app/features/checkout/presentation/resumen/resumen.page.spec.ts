@@ -16,7 +16,7 @@ import {
 } from '../../../carrito/domain/repositorio-carrito.puerto';
 import { IntentoDePago } from '../../domain/intento-pago.model';
 import { IntentoSistecredito } from '../../domain/intento-sistecredito.model';
-import { MetodoPago, Pedido, Seguimiento } from '../../domain/pedido.model';
+import { MetodoDePagoConPrecio, Pedido, Seguimiento } from '../../domain/pedido.model';
 import { REPOSITORIO_PAGOS, RepositorioPagos } from '../../domain/repositorio-pagos.puerto';
 import { REPOSITORIO_PEDIDOS, RepositorioPedidos } from '../../domain/repositorio-pedidos.puerto';
 import {
@@ -64,10 +64,20 @@ class RepositorioCarritoFalso implements RepositorioCarrito {
       cantidad: linea.cantidad,
       precioUnitario: PRECIO_DE_HOY,
       subtotal: PRECIO_DE_HOY * linea.cantidad,
+      precioContado: this.contado,
+      subtotalContado: this.contado * linea.cantidad,
     }));
-    return { lineas, subtotal: lineas.reduce((suma, linea) => suma + linea.subtotal, 0) };
+    return {
+      lineas,
+      subtotal: lineas.reduce((suma, linea) => suma + linea.subtotal, 0),
+      subtotalContado: lineas.reduce((suma, linea) => suma + linea.subtotalContado, 0),
+    };
   }
-  constructor(private carrito: Carrito | null) {}
+  /** `contado` por debajo de {@link PRECIO_DE_HOY} es un producto con descuento sin pasarela. */
+  constructor(
+    private carrito: Carrito | null,
+    private readonly contado = PRECIO_DE_HOY,
+  ) {}
 
   async crear(): Promise<Carrito> {
     throw new Error('no usado en esta prueba');
@@ -95,7 +105,7 @@ class RepositorioPedidosFalso implements RepositorioPedidos {
     throw new Error('no usado en esta prueba');
   }
 
-  async metodosDePagoDisponibles(): Promise<MetodoPago[]> {
+  async metodosDePagoConPrecio(): Promise<MetodoDePagoConPrecio[]> {
     throw new Error('no usado en esta prueba');
   }
 
@@ -690,6 +700,41 @@ describe('ResumenPage', () => {
     });
 
     expect(screen.queryByText(/Te ahorras/)).toBeFalsy();
+  });
+
+  /**
+   * ADR-0095: antes de elegir el medio, el total es el publicado más el envío, y lo de pagar sin
+   * pasarela se dice como ahorro junto a él —dentro del mismo `<dd>`, que es lo que el `aria-live`
+   * del desglose lee—, nunca como un segundo total.
+   */
+  it('junto al total dice cuánto se ahorra pagando sin pasarela', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+
+    await renderResumen(
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS, 145_000),
+      new RepositorioEnviosFalso(COTIZACION),
+    );
+    await screen.findByText('Morral urbano');
+    await llenarDireccionEnMedellin();
+
+    expect((await screen.findAllByText(/309\.540/)).length).toBeGreaterThan(0);
+    const ahorro = screen.getByText(
+      /^Ahorras \$\s?10\.000 pagando por transferencia, en el punto o contra entrega$/,
+    );
+    expect(ahorro.closest('dd')?.textContent).toMatch(/309\.540/);
+    // El total de contado (299.540) no se pinta como cifra en ningún sitio.
+    expect(screen.queryByText(/299\.540/)).toBeNull();
+  });
+
+  it('sin descuento no dice ningún ahorro', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+
+    await renderResumen(new RepositorioCarritoFalso(CARRITO_CON_LINEAS));
+
+    expect(await screen.findByText('Morral urbano')).toBeTruthy();
+    expect(screen.queryByText(/Ahorras/)).toBeNull();
   });
 
   it('sin carrito guardado, muestra el mensaje de vacío', async () => {

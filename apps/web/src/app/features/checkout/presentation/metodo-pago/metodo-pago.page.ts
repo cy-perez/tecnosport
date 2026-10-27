@@ -11,7 +11,8 @@ import { usarFocoEnPrimerInvalido } from '../../../../shared/foco/foco';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { usarTraductor } from '../../../../core/i18n/traductor';
+import { usarIdiomaActivo, usarTraductor } from '../../../../core/i18n/traductor';
+import { formatearPrecio } from '../../../../shared/ts-precio/formato-precio';
 import {
   OpcionMetodoPago,
   TsSelectorMetodoPago,
@@ -28,7 +29,7 @@ import { MetodosDePagoDisponiblesComando } from '../../domain/pedido.comandos';
 import { TsCampo } from '../../../../shared/ui/campo/ts-campo';
 import { TsSelect } from '../../../../shared/ui/select/ts-select';
 import { TsSelectControl } from '../../../../shared/ui/select/ts-select-control';
-import { MetodoPago, TipoDocumento } from '../../domain/pedido.model';
+import { MetodoDePagoConPrecio, MetodoPago, TipoDocumento } from '../../domain/pedido.model';
 
 const CLAVE_ETIQUETA: Record<MetodoPago, string> = {
   WOMPI: 'checkout.metodoPago.wompi',
@@ -59,7 +60,7 @@ const CLAVE_DETALLE: Partial<Record<MetodoPago, string>> = {
 /**
  * El orden en que se pintan los botones, que no es el que devuelve el servidor.
  *
- * <p>La respuesta de `POST /pedidos/metodos-de-pago-disponibles` dice **cuáles** se ofrecen, no en
+ * <p>La respuesta de `POST /pedidos/metodos-de-pago-con-precio` dice **cuáles** se ofrecen, no en
  * qué orden se enseñan: eso es una decisión de la vitrina, y sin fijarla aquí cualquier cambio en
  * el backend reordenaría los botones de la pantalla sin que nadie lo pidiera. Se pidió esta
  * secuencia el 28 de septiembre de 2026.
@@ -92,7 +93,7 @@ function posicionDe(metodo: MetodoPago): number {
  * Segundo paso del checkout (Fase 3, paso 4b de `docs/09-plan-de-arranque.md`).
  * Sin dirección/correo guardados de la página de resumen (`CheckoutStore.datosEntrega`)
  * no hay nada que consultar — se vuelve ahí. `POST
- * /pedidos/metodos-de-pago-disponibles` es la misma consulta que el
+ * /pedidos/metodos-de-pago-con-precio` es la misma consulta que el
  * servidor vuelve a aplicar al crear el pedido (`MetodosDePagoDisponibles`
  * en el backend): lo que se ve aquí no es una promesa, es lo que de verdad
  * va a aceptar el siguiente paso.
@@ -118,6 +119,7 @@ export class MetodoPagoPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly traducir = usarTraductor();
+  private readonly idioma = usarIdiomaActivo();
   protected readonly carrito = inject(CarritoStore);
   protected readonly checkout = inject(CheckoutStore);
 
@@ -132,15 +134,32 @@ export class MetodoPagoPage {
 
   protected readonly consulta = usarMetodosDePagoDisponibles(() => this.comando());
 
+  /**
+   * Cada medio con su detalle y, si pagar con él ahorra algo, "Ahorras $ X" (ADR-0095). Un ahorro
+   * y no un total por medio: el precio anunciado es uno solo, y lo que cambia con el medio es el
+   * descuento. La cifra es la del servidor, no una resta de precios en el navegador.
+   */
   protected readonly opciones = computed<OpcionMetodoPago[]>(() =>
     [...(this.consulta.data() ?? [])]
-      .sort((uno, otro) => posicionDe(uno) - posicionDe(otro))
-      .map((metodo) => {
-        const claveDetalle = CLAVE_DETALLE[metodo];
+      .sort((uno, otro) => posicionDe(uno.metodo) - posicionDe(otro.metodo))
+      .map((opcion) => {
+        const claveDetalle = CLAVE_DETALLE[opcion.metodo];
+        const partes = [
+          claveDetalle ? this.traducir()(claveDetalle) : null,
+          opcion.descuento.valor > 0
+            ? this.traducir()('checkout.metodoPago.ahorro', {
+                ahorro: formatearPrecio(
+                  opcion.descuento.valor,
+                  opcion.descuento.moneda,
+                  this.idioma(),
+                ),
+              })
+            : null,
+        ].filter((parte): parte is string => parte !== null);
         return {
-          valor: metodo,
-          etiqueta: this.traducir()(CLAVE_ETIQUETA[metodo]),
-          detalle: claveDetalle ? this.traducir()(claveDetalle) : undefined,
+          valor: opcion.metodo,
+          etiqueta: this.traducir()(CLAVE_ETIQUETA[opcion.metodo]),
+          detalle: partes.length > 0 ? partes.join(' ') : undefined,
         };
       }),
   );
@@ -242,8 +261,15 @@ export class MetodoPagoPage {
   /** Se pulsó «Continuar» sin elegir método: el botón ya no se deshabilita, así que lo dice. */
   protected readonly faltaMetodo = signal(false);
 
+  /** Se guarda el medio **con su precio**: es lo que la pantalla de confirmar enseña. */
   protected elegir(metodo: MetodoPago): void {
-    this.checkout.elegirMetodoPago(metodo);
+    const eleccion = this.consulta
+      .data()
+      ?.find((opcion: MetodoDePagoConPrecio) => opcion.metodo === metodo);
+    if (!eleccion) {
+      return;
+    }
+    this.checkout.elegirMetodoPago(eleccion);
     this.faltaMetodo.set(false);
   }
 

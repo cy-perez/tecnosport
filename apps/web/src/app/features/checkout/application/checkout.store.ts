@@ -3,7 +3,7 @@ import { injectMutation } from '@tanstack/angular-query-experimental';
 import { IntentoDePago } from '../domain/intento-pago.model';
 import { DocumentoComprador, IntentoSistecredito } from '../domain/intento-sistecredito.model';
 import { CrearPedidoComando, DatosEntrega } from '../domain/pedido.comandos';
-import { MetodoPago, Pedido } from '../domain/pedido.model';
+import { MetodoDePagoConPrecio, Pedido } from '../domain/pedido.model';
 import { REPOSITORIO_PAGOS } from '../domain/repositorio-pagos.puerto';
 import { REPOSITORIO_PEDIDOS } from '../domain/repositorio-pedidos.puerto';
 
@@ -49,7 +49,7 @@ export class CheckoutStore {
     // Si ya existía un pedido creado con los datos anteriores, tampoco sigue
     // sirviendo: un pedido es inmutable una vez creado, así que un cambio de
     // dirección exige uno nuevo, no reutilizar el viejo.
-    this.metodoPago.set(null);
+    this.eleccionDePago.set(null);
     this.pedido.set(null);
   }
 
@@ -67,12 +67,20 @@ export class CheckoutStore {
     this.guardarDatosEntrega({ ...datos, transportadora });
   }
 
-  /** Mismo criterio que `datosEntrega`: en memoria, poblado por la página de
-   * selección de método de pago para que la de creación del pedido lo lea. */
-  readonly metodoPago = signal<MetodoPago | null>(null);
+  /**
+   * Mismo criterio que `datosEntrega`: en memoria, poblado por la página de selección de método de
+   * pago para que la de creación del pedido lo lea. **Con su precio**, tal como lo dio el servidor
+   * para ese carrito y esa entrega (ADR-0095): es lo que la pantalla de confirmar enseña como
+   * subtotal, descuento y total, sin sumar precios en el navegador. Se elige con el precio o no se
+   * elige, para que nadie pueda dejar un medio sin la cifra que le corresponde.
+   */
+  readonly eleccionDePago = signal<MetodoDePagoConPrecio | null>(null);
 
-  elegirMetodoPago(metodo: MetodoPago): void {
-    this.metodoPago.set(metodo);
+  readonly metodoPago = computed(() => this.eleccionDePago()?.metodo ?? null);
+
+  elegirMetodoPago(eleccion: MetodoDePagoConPrecio): void {
+    const metodo = eleccion.metodo;
+    this.eleccionDePago.set(eleccion);
     // Mismo motivo que en guardarDatosEntrega: el método de pago queda
     // congelado en el pedido ya creado, así que cambiarlo exige uno nuevo.
     this.pedido.set(null);

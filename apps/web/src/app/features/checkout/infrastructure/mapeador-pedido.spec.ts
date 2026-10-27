@@ -1,4 +1,10 @@
-import { METODOS_DE_PAGO_AL_DIA, aDireccion, aPedido } from './mapeador-pedido';
+import {
+  METODOS_DE_PAGO_AL_DIA,
+  aDireccion,
+  aMetodoDePagoConPrecio,
+  aPedido,
+  aSeguimiento,
+} from './mapeador-pedido';
 
 describe('aPedido', () => {
   it('mapea el DTO completo al modelo de dominio', () => {
@@ -34,6 +40,7 @@ describe('aPedido', () => {
       metodoPago: 'TRANSFERENCIA_MANUAL',
       estado: 'PAGO_PENDIENTE',
       subtotal: { valor: 160_000, moneda: 'COP' },
+      descuento: { valor: 0, moneda: 'COP' },
       costoEnvio: { valor: 0, moneda: 'COP' },
       total: { valor: 160_000, moneda: 'COP' },
       creadoEn: '2026-09-04T12:00:00Z',
@@ -83,6 +90,7 @@ describe('aPedido', () => {
       metodoPago: 'TRANSFERENCIA_MANUAL',
       estado: 'PAGO_PENDIENTE',
       subtotal: { valor: 160_000, moneda: 'COP' },
+      descuento: { valor: 0, moneda: 'COP' },
       costoEnvio: { valor: 0, moneda: 'COP' },
       total: { valor: 160_000, moneda: 'COP' },
       creadoEn: '2026-09-04T12:00:00Z',
@@ -112,6 +120,7 @@ describe('aPedido', () => {
       metodoPago: 'CONTRAENTREGA',
       estado: 'CONFIRMADO_CONTRAENTREGA',
       subtotal: { valor: 0, moneda: 'COP' },
+      descuento: { valor: 0, moneda: 'COP' },
       costoEnvio: { valor: 0, moneda: 'COP' },
       total: { valor: 0, moneda: 'COP' },
       creadoEn: '2026-09-04T12:00:00Z',
@@ -137,6 +146,7 @@ describe('aPedido', () => {
       metodoPago: 'WOMPI',
       estado: 'PAGO_PENDIENTE',
       subtotal: { valor: 0, moneda: 'COP' },
+      descuento: { valor: 0, moneda: 'COP' },
       costoEnvio: { valor: 0, moneda: 'COP' },
       total: { valor: 0, moneda: 'COP' },
       creadoEn: '',
@@ -169,6 +179,41 @@ describe('aDireccion', () => {
       direccion: '',
       indicaciones: null,
       barrio: null,
+    });
+  });
+});
+
+/** ADR-0095: el pedido guarda el descuento del medio de pago, y el seguimiento también lo trae. */
+describe('el descuento del medio de pago', () => {
+  it('aPedido lo lleva tal como vino', () => {
+    const pedido = aPedido({ descuento: { valor: 9_000, moneda: 'COP' } });
+
+    expect(pedido.descuento).toEqual({ valor: 9_000, moneda: 'COP' });
+  });
+
+  it('un pedido de antes de que existiera no tuvo descuento', () => {
+    expect(aPedido({}).descuento).toEqual({ valor: 0, moneda: 'COP' });
+  });
+
+  it('aSeguimiento también lo lleva', () => {
+    const seguimiento = aSeguimiento({ descuento: { valor: 5_000, moneda: 'COP' } });
+
+    expect(seguimiento.descuento).toEqual({ valor: 5_000, moneda: 'COP' });
+  });
+});
+
+describe('aMetodoDePagoConPrecio', () => {
+  it('mapea el medio con su subtotal y su descuento', () => {
+    expect(
+      aMetodoDePagoConPrecio({
+        metodo: 'TRANSFERENCIA_MANUAL',
+        subtotal: { valor: 230_000, moneda: 'COP' },
+        descuento: { valor: 9_000, moneda: 'COP' },
+      }),
+    ).toEqual({
+      metodo: 'TRANSFERENCIA_MANUAL',
+      subtotal: { valor: 230_000, moneda: 'COP' },
+      descuento: { valor: 9_000, moneda: 'COP' },
     });
   });
 });

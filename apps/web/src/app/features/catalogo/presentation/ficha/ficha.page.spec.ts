@@ -47,8 +47,14 @@ class RepositorioCarritoFalso implements RepositorioCarrito {
       cantidad: linea.cantidad,
       precioUnitario: PRECIO_DE_HOY,
       subtotal: PRECIO_DE_HOY * linea.cantidad,
+      precioContado: PRECIO_DE_HOY,
+      subtotalContado: PRECIO_DE_HOY * linea.cantidad,
     }));
-    return { lineas, subtotal: lineas.reduce((suma, linea) => suma + linea.subtotal, 0) };
+    return {
+      lineas,
+      subtotal: lineas.reduce((suma, linea) => suma + linea.subtotal, 0),
+      subtotalContado: lineas.reduce((suma, linea) => suma + linea.subtotalContado, 0),
+    };
   }
   crear(): Promise<Carrito> {
     return Promise.reject(new Error('no usado en esta prueba'));
@@ -128,6 +134,7 @@ function productoDePrueba(): Producto {
         id: 'variante-1',
         sku: 'SKU-1',
         precio: { valor: 150_000, moneda: 'COP' },
+        precioContado: { valor: 150_000, moneda: 'COP' },
         disponible: true,
         disponibilidadPorConfirmar: false,
         atributos: [],
@@ -162,6 +169,7 @@ function productoConVariantes(): Producto {
         id: 'variante-az',
         sku: 'SKU-AZ',
         precio: { valor: 89_900, moneda: 'COP' },
+        precioContado: { valor: 89_900, moneda: 'COP' },
         disponible: true,
         disponibilidadPorConfirmar: false,
         atributos: [{ nombre: 'Color', valor: 'Azul marino', colorHex: '#1E3A8A', unidad: null }],
@@ -170,6 +178,7 @@ function productoConVariantes(): Producto {
         id: 'variante-ng',
         sku: 'SKU-NG',
         precio: { valor: 99_900, moneda: 'COP' },
+        precioContado: { valor: 99_900, moneda: 'COP' },
         disponible: true,
         disponibilidadPorConfirmar: false,
         atributos: [{ nombre: 'Color', valor: 'Negro', colorHex: '#111111', unidad: null }],
@@ -804,6 +813,52 @@ describe('FichaPage', () => {
     expect(screen.queryByText('Esta combinación no está disponible.')).toBeNull();
   });
 
+  /**
+   * ADR-0095: debajo del precio de la variante elegida, el ahorro de pagar sin pasarela — nunca el
+   * contado como un segundo precio— y el de la variante que se elija.
+   */
+  it('dice el ahorro de la variante elegida y cambia con ella', async () => {
+    const base = productoConVariantes();
+    const producto: Producto = {
+      ...base,
+      variantes: [
+        { ...base.variantes[0], precioContado: { valor: 85_000, moneda: 'COP' } },
+        { ...base.variantes[1], precioContado: { valor: 94_000, moneda: 'COP' } },
+      ],
+    };
+    const repositorio: RepositorioProductos = {
+      buscar: () =>
+        Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
+      buscarPorSlug: () => Promise.resolve(producto),
+    };
+
+    await renderFicha(repositorio, 'camiseta');
+
+    expect(
+      await screen.findByText(
+        /^Ahorras \$\s?4\.900 pagando por transferencia, en el punto o contra entrega$/,
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByText(/85\.000/)).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Negro' }));
+
+    expect(await screen.findByText(/^Ahorras \$\s?5\.900/)).toBeTruthy();
+  });
+
+  it('sin descuento no dice ningún ahorro', async () => {
+    const repositorio: RepositorioProductos = {
+      buscar: () =>
+        Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
+      buscarPorSlug: () => Promise.resolve(productoDePrueba()),
+    };
+
+    await renderFicha(repositorio);
+
+    await screen.findByRole('heading', { name: 'Morral urbano' });
+    expect(screen.queryByText(/Ahorras/)).toBeNull();
+  });
+
   it('elegir otra variante cambia el precio y la existencia mostrados', async () => {
     const repositorio: RepositorioProductos = {
       buscar: () =>
@@ -834,6 +889,7 @@ describe('FichaPage', () => {
           id: 'v-u',
           sku: 'PRV-1',
           precio: { valor: 60_000, moneda: 'COP' },
+          precioContado: { valor: 60_000, moneda: 'COP' },
           disponible: true,
           disponibilidadPorConfirmar: false,
           atributos: [{ nombre: 'Talla', valor: 'Única', colorHex: null, unidad: null }],
@@ -869,6 +925,7 @@ describe('FichaPage', () => {
           id: 'v-m',
           sku: 'SKU-M',
           precio: { valor: 50_000, moneda: 'COP' },
+          precioContado: { valor: 50_000, moneda: 'COP' },
           disponible: true,
           disponibilidadPorConfirmar: false,
           atributos: talla('M'),
@@ -877,6 +934,7 @@ describe('FichaPage', () => {
           id: 'v-l',
           sku: 'SKU-L',
           precio: { valor: 50_000, moneda: 'COP' },
+          precioContado: { valor: 50_000, moneda: 'COP' },
           disponible: false,
           disponibilidadPorConfirmar: false,
           atributos: talla('L'),
@@ -907,6 +965,7 @@ describe('FichaPage', () => {
       id,
       sku: id,
       precio: { valor: 50_000, moneda: 'COP' as const },
+      precioContado: { valor: 50_000, moneda: 'COP' as const },
       disponible,
       atributos: atributos(color, hex, t),
       disponibilidadPorConfirmar: false,
@@ -958,6 +1017,7 @@ describe('FichaPage', () => {
           id: 'v-128',
           sku: 'CEL-128',
           precio: { valor: 900_000, moneda: 'COP' },
+          precioContado: { valor: 900_000, moneda: 'COP' },
           disponible: true,
           disponibilidadPorConfirmar: false,
           atributos: atributos('128GB', '6GB'),
@@ -966,6 +1026,7 @@ describe('FichaPage', () => {
           id: 'v-256',
           sku: 'CEL-256',
           precio: { valor: 1_100_000, moneda: 'COP' },
+          precioContado: { valor: 1_100_000, moneda: 'COP' },
           disponible: true,
           disponibilidadPorConfirmar: false,
           atributos: atributos('256GB', '8GB'),
@@ -1135,6 +1196,7 @@ describe('FichaPage', () => {
           id: 'v-negro',
           sku: 'IPH-NE',
           precio: { valor: 6_000_000, moneda: 'COP' },
+          precioContado: { valor: 6_000_000, moneda: 'COP' },
           disponible: true,
           disponibilidadPorConfirmar: false,
           atributos: color('Negro', '#111111'),
@@ -1143,6 +1205,7 @@ describe('FichaPage', () => {
           id: 'v-morado',
           sku: 'IPH-MO',
           precio: { valor: 6_000_000, moneda: 'COP' },
+          precioContado: { valor: 6_000_000, moneda: 'COP' },
           disponible: false,
           disponibilidadPorConfirmar: true,
           atributos: color('Morado', '#6B3FA0'),
@@ -1239,6 +1302,7 @@ describe('FichaPage', () => {
           id: 'v-40',
           sku: 'PRV-40',
           precio: { valor: 162_000, moneda: 'COP' },
+          precioContado: { valor: 162_000, moneda: 'COP' },
           disponible: true,
           disponibilidadPorConfirmar: true,
           atributos: [{ nombre: 'Talla', valor: '40', colorHex: null, unidad: null }],

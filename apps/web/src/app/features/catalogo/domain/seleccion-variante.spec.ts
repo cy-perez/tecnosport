@@ -25,6 +25,7 @@ function variante(sku: string, disponible: boolean, atributos: Variante['atribut
     id: `id-${sku}`,
     sku,
     precio: { valor: 100_000, moneda: 'COP' },
+    precioContado: { valor: 100_000, moneda: 'COP' },
     disponible,
     atributos,
     disponibilidadPorConfirmar: false,

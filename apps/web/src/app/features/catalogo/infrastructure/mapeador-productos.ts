@@ -134,6 +134,11 @@ function aVariante(dto: VarianteDto): Variante {
     id: dto.id ?? '',
     sku: dto.sku ?? '',
     precio: { valor: dto.precio?.valor ?? 0, moneda: dto.precio?.moneda ?? 'COP' },
+    // Sin el campo, el contado es el publicado: una respuesta de antes de ADR-0095 no tiene
+    // descuento que anunciar, y caer a cero anunciaría como ahorro el precio entero.
+    precioContado: dto.precioContado
+      ? { valor: dto.precioContado.valor ?? 0, moneda: dto.precioContado.moneda ?? 'COP' }
+      : { valor: dto.precio?.valor ?? 0, moneda: dto.precio?.moneda ?? 'COP' },
     // Sin `?? false`: el contrato lo declara obligatorio desde que el DTO lleva su `@Schema`.
     // La caída a `false` parecía la elección segura y era la peor posible junto a un contrato que
     // no exigía el campo: si algún día dejaba de serializarse, todo el catálogo salía agotado sin

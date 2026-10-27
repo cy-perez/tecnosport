@@ -11,7 +11,7 @@ import esCheckout from '../../../../../assets/i18n/scopes/checkout/es.json';
 import { CheckoutStore } from '../../application/checkout.store';
 import { IntentoDePago } from '../../domain/intento-pago.model';
 import { IntentoSistecredito } from '../../domain/intento-sistecredito.model';
-import { MetodoPago, Pedido, Seguimiento } from '../../domain/pedido.model';
+import { MetodoDePagoConPrecio, Pedido, Seguimiento } from '../../domain/pedido.model';
 import { REPOSITORIO_PAGOS, RepositorioPagos } from '../../domain/repositorio-pagos.puerto';
 import { REPOSITORIO_PEDIDOS, RepositorioPedidos } from '../../domain/repositorio-pedidos.puerto';
 import { EstadoPage } from './estado.page';
@@ -64,6 +64,7 @@ function pedidoDePrueba(overrides: Partial<Pedido> = {}): Pedido {
     metodoPago: 'CONTRAENTREGA',
     estado: 'CONFIRMADO_CONTRAENTREGA',
     subtotal: { valor: 300_000, moneda: 'COP' },
+    descuento: { valor: 0, moneda: 'COP' },
     costoEnvio: { valor: 0, moneda: 'COP' },
     total: { valor: 300_000, moneda: 'COP' },
     creadoEn: '2026-01-01T00:00:00Z',
@@ -94,7 +95,7 @@ class RepositorioPedidosFalso implements RepositorioPedidos {
     throw new Error('no usado en esta prueba');
   }
 
-  async metodosDePagoDisponibles(): Promise<MetodoPago[]> {
+  async metodosDePagoConPrecio(): Promise<MetodoDePagoConPrecio[]> {
     throw new Error('no usado en esta prueba');
   }
 
@@ -235,6 +236,54 @@ describe('EstadoPage', () => {
     // Lo que eligió: el comprador ve la talla y el color que compró.
     expect(screen.getByText('Negro · Única')).toBeTruthy();
     expect(screen.getByText('Confirmado, pago contra entrega')).toBeTruthy();
+  });
+
+  /**
+   * ADR-0095: las líneas, el subtotal y el total ya son lo cobrado; el descuento del medio de pago
+   * se dice aparte, como lo que ya se restó, y la suma de arriba sigue cuadrando.
+   */
+  it('con descuento del medio de pago, lo dice junto al total cobrado', async () => {
+    const pedidos = new RepositorioPedidosFalso();
+    await renderConPedidoEnMemoria(
+      pedidoDePrueba({
+        lineas: [
+          {
+            id: 'linea-1',
+            varianteId: 'variante-1',
+            sku: 'SKU-1',
+            nombre: 'Morral urbano',
+            cantidad: 2,
+            precioUnitario: { valor: 145_000, moneda: 'COP' },
+            tasaIva: 0,
+            imagenUrl: null,
+            detalleVariante: null,
+          },
+        ],
+        subtotal: { valor: 290_000, moneda: 'COP' },
+        descuento: { valor: 10_000, moneda: 'COP' },
+        total: { valor: 290_000, moneda: 'COP' },
+      }),
+      pedidos,
+      new RepositorioPagosFalso(),
+    );
+
+    expect(
+      await screen.findByText(/^Incluye un descuento de \$\s?10\.000 por el medio de pago\.$/),
+    ).toBeTruthy();
+    // La línea, el subtotal y el total: los tres a lo cobrado.
+    expect(screen.getAllByText(/290\.000/)).toHaveLength(3);
+    expect(screen.queryByText(/300\.000/)).toBeNull();
+  });
+
+  it('sin descuento no lo menciona', async () => {
+    await renderConPedidoEnMemoria(
+      pedidoDePrueba(),
+      new RepositorioPedidosFalso(),
+      new RepositorioPagosFalso(),
+    );
+
+    await screen.findByText('Pedido TS-2026-000001');
+    expect(screen.queryByText(/descuento/)).toBeNull();
   });
 
   /** Comparte estado con la contraentrega, pero no le dice al comprador que paga a un mensajero. */
@@ -528,6 +577,7 @@ describe('EstadoPage', () => {
         metodoPago: 'WOMPI',
         tipoEntrega: 'ENVIO_A_DOMICILIO',
         subtotal: { valor: 300_000, moneda: 'COP' },
+        descuento: { valor: 0, moneda: 'COP' },
         costoEnvio: { valor: 14_500, moneda: 'COP' },
         total: { valor: 314_500, moneda: 'COP' },
       }),

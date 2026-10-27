@@ -169,9 +169,9 @@ describe('PedidoHttpRepositorio: la transportadora elegida', () => {
   });
 
   it('va en el cuerpo al pedir los métodos de pago', async () => {
-    const cuerpos = capturarCuerpos(['WOMPI']);
+    const cuerpos = capturarCuerpos({ metodos: [] });
 
-    await new PedidoHttpRepositorio().metodosDePagoDisponibles({
+    await new PedidoHttpRepositorio().metodosDePagoConPrecio({
       correo: 'cliente@tecnosport.co',
       lineas: [{ varianteId: 'variante-1', cantidad: 1 }],
       tipoEntrega: 'ENVIO_A_DOMICILIO',
@@ -181,6 +181,58 @@ describe('PedidoHttpRepositorio: la transportadora elegida', () => {
     });
 
     expect(cuerpos[0]).toMatchObject({ transportadora: 'Servientrega', telefono: '3138816711' });
+  });
+
+  /** ADR-0095: la ruta nueva, y lo que devuelve, mapeado al modelo del front. */
+  it('pide los métodos con precio a su ruta y devuelve cada uno con su subtotal y descuento', async () => {
+    const urls: string[] = [];
+    vi.stubGlobal('window', undefined);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (entrada: Request) => {
+        urls.push(entrada.url);
+        return new Response(
+          JSON.stringify({
+            metodos: [
+              {
+                metodo: 'WOMPI',
+                subtotal: { valor: 239_000, moneda: 'COP' },
+                descuento: { valor: 0, moneda: 'COP' },
+              },
+              {
+                metodo: 'TRANSFERENCIA_MANUAL',
+                subtotal: { valor: 230_000, moneda: 'COP' },
+                descuento: { valor: 9_000, moneda: 'COP' },
+              },
+            ],
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        );
+      }),
+    );
+
+    const metodos = await new PedidoHttpRepositorio().metodosDePagoConPrecio({
+      correo: 'cliente@tecnosport.co',
+      lineas: [{ varianteId: 'variante-1', cantidad: 1 }],
+      tipoEntrega: 'RETIRO_EN_PUNTO',
+      direccion: null,
+      transportadora: null,
+      telefono: '3138816711',
+    });
+
+    expect(urls[0]).toContain('/api/v1/pedidos/metodos-de-pago-con-precio');
+    expect(metodos).toEqual([
+      {
+        metodo: 'WOMPI',
+        subtotal: { valor: 239_000, moneda: 'COP' },
+        descuento: { valor: 0, moneda: 'COP' },
+      },
+      {
+        metodo: 'TRANSFERENCIA_MANUAL',
+        subtotal: { valor: 230_000, moneda: 'COP' },
+        descuento: { valor: 9_000, moneda: 'COP' },
+      },
+    ]);
   });
 
   /**

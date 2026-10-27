@@ -33,10 +33,20 @@ class RepositorioCarritoFalso implements RepositorioCarrito {
       cantidad: linea.cantidad,
       precioUnitario: PRECIO_DE_HOY,
       subtotal: PRECIO_DE_HOY * linea.cantidad,
+      precioContado: this.contado,
+      subtotalContado: this.contado * linea.cantidad,
     }));
-    return { lineas, subtotal: lineas.reduce((suma, linea) => suma + linea.subtotal, 0) };
+    return {
+      lineas,
+      subtotal: lineas.reduce((suma, linea) => suma + linea.subtotal, 0),
+      subtotalContado: lineas.reduce((suma, linea) => suma + linea.subtotalContado, 0),
+    };
   }
-  constructor(private carrito: Carrito | null) {}
+  /** `contado` por debajo de {@link PRECIO_DE_HOY} es un producto con descuento sin pasarela. */
+  constructor(
+    protected carrito: Carrito | null,
+    private readonly contado = PRECIO_DE_HOY,
+  ) {}
 
   async crear(): Promise<Carrito> {
     throw new Error('no usado en esta prueba');
@@ -96,6 +106,25 @@ async function renderCarrito(repositorio: RepositorioCarrito) {
       { provide: REPOSITORIO_CARRITO, useValue: repositorio },
     ],
   });
+}
+
+/** Acepta el cambio de cantidad, como un backend sano. */
+class RepositorioCarritoQueActualiza extends RepositorioCarritoFalso {
+  // Opcionales porque el doble base no los declara; el store siempre los manda.
+  override async actualizarCantidad(
+    _carritoId?: string,
+    lineaId?: string,
+    cantidad?: number,
+  ): Promise<Carrito> {
+    if (!this.carrito || cantidad === undefined) {
+      throw new Error('no hay carrito');
+    }
+    this.carrito = {
+      ...this.carrito,
+      lineas: this.carrito.lineas.map((l) => (l.id === lineaId ? { ...l, cantidad } : l)),
+    };
+    return this.carrito;
+  }
 }
 
 describe('CarritoPage', () => {
@@ -282,5 +311,55 @@ describe('CarritoPage', () => {
     fixture.detectChanges();
 
     expect(espia).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * ADR-0095 y el artículo 26 de la Ley 1480: el total es el publicado y lo de pagar sin pasarela
+ * se dice como ahorro, nunca como un segundo total.
+ */
+describe('CarritoPage y el ahorro sin pasarela', () => {
+  const CARRITO: Carrito = {
+    id: 'carrito-1',
+    usuarioId: null,
+    creadoEn: '2026-01-01T00:00:00Z',
+    lineas: [{ id: 'linea-1', varianteId: 'variante-1', cantidad: 2 }],
+  };
+
+  beforeEach(() => {
+    window.localStorage.clear();
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+  });
+
+  it('debajo del total dice cuánto se ahorra el carrito entero, sin un segundo total', async () => {
+    await renderCarrito(new RepositorioCarritoFalso(CARRITO, 145_000));
+
+    expect(
+      await screen.findByText(
+        /^Ahorras \$\s?10\.000 pagando por transferencia, en el punto o contra entrega$/,
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByText(/290\.000/)).toBeNull();
+  });
+
+  it('sin descuento no dice nada', async () => {
+    await renderCarrito(new RepositorioCarritoFalso(CARRITO));
+
+    await screen.findByText('Morral urbano');
+    expect((await screen.findAllByText(/300\.000/)).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/Ahorras/)).toBeNull();
+  });
+
+  it('al cambiar la cantidad anuncia el total y el ahorro juntos', async () => {
+    await renderCarrito(new RepositorioCarritoQueActualiza(CARRITO, 145_000));
+    await screen.findByText('Morral urbano');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Aumentar cantidad de Morral urbano' }));
+
+    await vi.waitFor(() => {
+      const anuncio = screen.getByRole('status').textContent!.replace(/\s+/g, ' ');
+      expect(anuncio).toMatch(/Total: \$\s?450\.000\. Ahorras \$\s?15\.000 pagando/);
+    });
   });
 });

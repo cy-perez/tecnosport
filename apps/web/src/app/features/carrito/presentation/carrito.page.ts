@@ -8,7 +8,8 @@ import {
   viewChild,
 } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { usarTraductor } from '../../../core/i18n/traductor';
+import { usarIdiomaActivo, usarTraductor } from '../../../core/i18n/traductor';
+import { formatearPrecio } from '../../../shared/ts-precio/formato-precio';
 import { usarFoco } from '../../../shared/foco/foco';
 import { TsBoton } from '../../../shared/ui/boton/ts-boton';
 import { TsEsqueleto } from '../../../shared/ts-esqueleto/ts-esqueleto';
@@ -28,6 +29,7 @@ export class CarritoPage {
   private readonly titulo = viewChild<ElementRef<HTMLElement>>('titulo');
   private readonly enfocarDespuesDePintar = usarFoco();
   private readonly traducir = usarTraductor();
+  private readonly idioma = usarIdiomaActivo();
 
   /**
    * Lo último que pasó con una línea, para la región viva. Cambiar la cantidad o quitar una línea
@@ -60,6 +62,16 @@ export class CarritoPage {
 
   /** El del servidor (`CarritoStore.subtotal`), no la suma de los precios guardados al agregar. */
   protected readonly total = computed(() => this.store.subtotal());
+
+  /**
+   * El ahorro de pagar sin pasarela, ya formateado para ir dentro de la frase; `null` si no hay.
+   * Un ahorro y no un segundo total (ADR-0095): con dos precios a la vista, el artículo 26 de la
+   * Ley 1480 obliga a cobrar el más bajo.
+   */
+  protected readonly ahorro = computed(() => {
+    const ahorro = this.store.ahorroSinPasarela();
+    return ahorro > 0 ? formatearPrecio(ahorro, 'COP', this.idioma()) : null;
+  });
 
   protected cambiarCantidad(lineaId: string, cantidad: number, nombre?: string): void {
     this.store.actualizarCantidad(lineaId, cantidad).then(

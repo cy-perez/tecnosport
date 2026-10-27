@@ -27,6 +27,7 @@ describe('mapeador-productos', () => {
           id: 'v1',
           sku: 'TS-CAM-AZ-M',
           precio: { valor: 89900, moneda: 'COP' },
+          precioContado: { valor: 86000, moneda: 'COP' },
           disponible: true,
           disponibilidadPorConfirmar: false,
           atributos: [
@@ -49,12 +50,30 @@ describe('mapeador-productos', () => {
     expect(producto.variantes).toHaveLength(1);
     expect(producto.variantes[0].id).toBe('v1');
     expect(producto.variantes[0].precio.valor).toBe(89900);
+    expect(producto.variantes[0].precioContado).toEqual({ valor: 86000, moneda: 'COP' });
     expect(producto.paleta).toEqual(['Morado', 'Plata']);
     expect(producto.variantes[0].disponibilidadPorConfirmar).toBe(false);
     expect(producto.variantes[0].atributos[0].colorHex).toBe('#1E3A8A');
     // La unidad viaja con el valor; sin ella en el DTO queda en null, no en cadena vacía.
     expect(producto.variantes[0].atributos[0].unidad).toBeNull();
     expect(producto.variantes[0].atributos[1].unidad).toBe('meses');
+  });
+
+  /** Una respuesta sin el contado no tiene descuento: caer a cero anunciaría el precio entero. */
+  it('sin precio de contado en el DTO, el contado es el publicado', () => {
+    const producto = aProducto({
+      paleta: [],
+      variantes: [
+        {
+          id: 'v1',
+          precio: { valor: 50_000, moneda: 'COP' },
+          disponible: true,
+          disponibilidadPorConfirmar: false,
+        },
+      ],
+    });
+
+    expect(producto.variantes[0].precioContado).toEqual({ valor: 50_000, moneda: 'COP' });
   });
 
   it('no truena con campos ausentes del DTO', () => {

@@ -18,7 +18,7 @@ import { IntentoDePago } from '../../domain/intento-pago.model';
 import { ErrorHttp } from '../../../../core/http/respuesta-http';
 import { DocumentoComprador, IntentoSistecredito } from '../../domain/intento-sistecredito.model';
 import { CrearPedidoComando, DatosEntrega } from '../../domain/pedido.comandos';
-import { MetodoPago, Pedido, Seguimiento } from '../../domain/pedido.model';
+import { MetodoDePagoConPrecio, MetodoPago, Pedido, Seguimiento } from '../../domain/pedido.model';
 import { REPOSITORIO_PAGOS, RepositorioPagos } from '../../domain/repositorio-pagos.puerto';
 import { REPOSITORIO_PEDIDOS, RepositorioPedidos } from '../../domain/repositorio-pedidos.puerto';
 import {
@@ -75,8 +75,14 @@ class RepositorioCarritoFalso implements RepositorioCarrito {
       cantidad: linea.cantidad,
       precioUnitario: PRECIO_DE_HOY,
       subtotal: PRECIO_DE_HOY * linea.cantidad,
+      precioContado: PRECIO_DE_HOY,
+      subtotalContado: PRECIO_DE_HOY * linea.cantidad,
     }));
-    return { lineas, subtotal: lineas.reduce((suma, linea) => suma + linea.subtotal, 0) };
+    return {
+      lineas,
+      subtotal: lineas.reduce((suma, linea) => suma + linea.subtotal, 0),
+      subtotalContado: lineas.reduce((suma, linea) => suma + linea.subtotalContado, 0),
+    };
   }
   constructor(private carrito: Carrito | null) {}
 
@@ -113,6 +119,7 @@ function pedidoDePrueba(overrides: Partial<Pedido> = {}): Pedido {
     metodoPago: 'WOMPI',
     estado: 'PAGO_PENDIENTE',
     subtotal: { valor: 150_000, moneda: 'COP' },
+    descuento: { valor: 0, moneda: 'COP' },
     costoEnvio: { valor: 0, moneda: 'COP' },
     total: { valor: 150_000, moneda: 'COP' },
     creadoEn: '2026-01-01T00:00:00Z',
@@ -135,7 +142,7 @@ class RepositorioPedidosFalso implements RepositorioPedidos {
     return { ...this.pedido, metodoPago: _comando.metodoPago };
   }
 
-  async metodosDePagoDisponibles(): Promise<MetodoPago[]> {
+  async metodosDePagoConPrecio(): Promise<MetodoDePagoConPrecio[]> {
     throw new Error('no usado en esta prueba');
   }
 
@@ -171,7 +178,7 @@ class RepositorioPedidosQueFalla implements RepositorioPedidos {
     throw new Error('el servidor rechazó el pedido');
   }
 
-  async metodosDePagoDisponibles(): Promise<MetodoPago[]> {
+  async metodosDePagoConPrecio(): Promise<MetodoDePagoConPrecio[]> {
     throw new Error('no usado en esta prueba');
   }
 
@@ -296,7 +303,7 @@ function snapshotDePrueba(varianteId: string) {
  * primer `effect()`, así que los datos tienen que existir antes de que
  * `ConfirmarPage` se construya. */
 function anfitrionConDatos(
-  metodoPago: MetodoPago,
+  metodoPago: MetodoPago | MetodoDePagoConPrecio,
   datos: DatosEntrega = DATOS_ENTREGA,
   documento: DocumentoComprador | null = null,
 ) {
@@ -310,7 +317,16 @@ function anfitrionConDatos(
 
     constructor() {
       this.checkout.guardarDatosEntrega(datos);
-      this.checkout.elegirMetodoPago(metodoPago);
+      // Un medio a secas es uno sin descuento: el subtotal del carrito de prueba, una unidad.
+      this.checkout.elegirMetodoPago(
+        typeof metodoPago === 'string'
+          ? {
+              metodo: metodoPago,
+              subtotal: { valor: PRECIO_DE_HOY, moneda: 'COP' },
+              descuento: { valor: 0, moneda: 'COP' },
+            }
+          : metodoPago,
+      );
       // Sin documento, la pantalla de Sistecredito se va a pedirlo y nunca llama a la pasarela:
       // vive solo en memoria y no sobrevive a una recarga, a proposito.
       this.checkout.anotarDocumentoComprador(documento);
@@ -362,7 +378,7 @@ const COTIZACION: CotizacionEnvio = {
 };
 
 async function renderConDatos(
-  metodoPago: MetodoPago,
+  metodoPago: MetodoPago | MetodoDePagoConPrecio,
   carrito: RepositorioCarrito,
   pedidos: RepositorioPedidos,
   pagos: RepositorioPagos = new RepositorioPagosFalso(),
@@ -465,6 +481,51 @@ describe('ConfirmarPage', () => {
     expect(screen.queryByText('Costo de envío')).toBeFalsy();
     // Subtotal y total valen lo mismo cuando no hay flete, así que aparece dos veces.
     expect(await screen.findAllByText(/150\.000/)).toHaveLength(2);
+  });
+
+  /**
+   * ADR-0095: con transferencia el subtotal va al publicado, el descuento resta en su fila y el
+   * total es el que dio el servidor para ese medio más el flete. Ninguna cifra sale de sumar precios
+   * aquí: 150.000 publicado, 145.000 con el medio, 9.540 de envío.
+   */
+  it('con un medio con descuento, muestra subtotal publicado, descuento y el total del medio', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+
+    await renderConDatos(
+      {
+        metodo: 'TRANSFERENCIA_MANUAL',
+        subtotal: { valor: 145_000, moneda: 'COP' },
+        descuento: { valor: 5_000, moneda: 'COP' },
+      },
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioPedidosFalso(),
+      new RepositorioPagosFalso(),
+      DATOS_ENTREGA_A_DOMICILIO,
+    );
+
+    expect(await screen.findByText('Descuento por medio de pago')).toBeTruthy();
+    expect((await screen.findAllByText(/154\.540/)).length).toBeGreaterThan(0);
+    expect(screen.getByText(/150\.000/)).toBeTruthy();
+    expect(screen.getByText(/-\s?\$\s?5\.000/)).toBeTruthy();
+    // El total del publicado (159.540) no se pinta en ningún sitio.
+    expect(screen.queryByText(/159\.540/)).toBeFalsy();
+  });
+
+  it('con un medio sin descuento no pinta la fila de descuento', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+
+    await renderConDatos(
+      'WOMPI',
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioPedidosFalso(),
+      new RepositorioPagosFalso(),
+      DATOS_ENTREGA_A_DOMICILIO,
+    );
+
+    expect((await screen.findAllByText(/159\.540/)).length).toBeGreaterThan(0);
+    expect(screen.queryByText('Descuento por medio de pago')).toBeFalsy();
   });
 
   it('muestra correo, tipo de entrega, método de pago y subtotal', async () => {
