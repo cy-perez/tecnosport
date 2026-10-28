@@ -162,6 +162,7 @@ public final class AvisarPlazosDeEntregaVencidos {
     try {
       enviadorDeCorreo.enviar(
           pedido.correo(),
+          pedido.nombreDeQuienRecibe().orElse(null),
           textos.texto(TextoDeCorreo.PEDIDO_PLAZO_VENCIDO_ASUNTO, pedido.numeroPedido().valor()),
           cuerpo);
       return true;

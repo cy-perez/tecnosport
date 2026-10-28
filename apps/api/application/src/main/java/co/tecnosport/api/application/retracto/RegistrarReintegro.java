@@ -146,6 +146,7 @@ public final class RegistrarReintegro {
     try {
       enviadorDeCorreo.enviar(
           pedido.correo(),
+          pedido.nombreDeQuienRecibe().orElse(null),
           textos.texto(
               esAnulacionDeCredito
                   ? TextoDeCorreo.RETRACTO_REINTEGRO_SISTECREDITO_ASUNTO

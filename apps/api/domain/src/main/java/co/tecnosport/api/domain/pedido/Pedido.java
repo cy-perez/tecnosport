@@ -369,6 +369,15 @@ public final class Pedido {
     return Optional.ofNullable(contacto);
   }
 
+  /**
+   * Con el que se saluda en los correos del pedido (adr/0098). Es el de quien recibe, porque es el
+   * único que el checkout pide: si alguien compra un regalo, su correo saluda a quien lo recibe.
+   * Vacío en los pedidos anteriores al contacto.
+   */
+  public Optional<String> nombreDeQuienRecibe() {
+    return contacto().map(Contacto::nombre);
+  }
+
   public MetodoPago metodoPago() {
     return metodoPago;
   }

@@ -158,6 +158,7 @@ public final class EnviarComprobantesDeCompra {
 
     enviadorDeCorreo.enviar(
         pedido.correo(),
+        pedido.nombreDeQuienRecibe().orElse(null),
         textos.texto(TextoDeCorreo.PEDIDO_COMPROBANTE_ASUNTO, pedido.numeroPedido().valor()),
         cuerpo.toString());
   }

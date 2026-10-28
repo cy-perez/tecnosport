@@ -280,6 +280,7 @@ public final class CancelarPedido {
     try {
       enviadorDeCorreo.enviar(
           pedido.correo(),
+          pedido.nombreDeQuienRecibe().orElse(null),
           textos.texto(TextoDeCorreo.PEDIDO_CANCELACION_ASUNTO, pedido.numeroPedido().valor()),
           textos.texto(explicacion)
               + textos.texto(dinero)

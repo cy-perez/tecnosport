@@ -2,6 +2,7 @@ package co.tecnosport.api.application.pedido;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -12,6 +13,7 @@ import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.envio.Envio;
+import co.tecnosport.api.domain.pedido.Contacto;
 import co.tecnosport.api.domain.pedido.Direccion;
 import co.tecnosport.api.domain.pedido.EntregaNoAplicaException;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
@@ -48,6 +50,10 @@ class DespacharPedidoTest {
   }
 
   private Pedido pedidoEnPreparacion() {
+    return pedidoEnPreparacion(null);
+  }
+
+  private Pedido pedidoEnPreparacion(Contacto contacto) {
     Pedido pedido =
         Pedido.crear(
             NumeroPedido.de(2026, 1),
@@ -68,7 +74,9 @@ class DespacharPedidoTest {
             DIRECCION_MEDELLIN,
             MetodoPago.CONTRAENTREGA,
             "cliente@tecnosport.co",
-            AHORA);
+            AHORA,
+            null,
+            contacto);
     pedido.transicionar(EstadoPedido.EN_PREPARACION, "admin:test", "verificado", AHORA);
     pedidos.guardar(pedido);
     return pedido;
@@ -189,6 +197,19 @@ class DespacharPedidoTest {
     assertTrue(
         enviado.cuerpoHtml().startsWith("[" + TextoDeCorreo.PEDIDO_DESPACHO_CUERPO.clave() + "|"));
     assertTrue(enviado.cuerpoHtml().contains("|Servientrega|SE123456|"));
+    // Un pedido anterior al contacto no tiene nombre: el saludo sale sin él y nada falla.
+    assertNull(enviado.nombre());
+  }
+
+  /** El saludo lleva el nombre de quien recibe, el único que el checkout pide (adr/0098). */
+  @Test
+  void saludaConElNombreDeQuienRecibe() {
+    DespacharPedido caso = crear();
+    Pedido pedido = pedidoEnPreparacion(new Contacto("María José Restrepo", "3138816711"));
+
+    caso.ejecutar(comando(pedido.id()));
+
+    assertEquals("María José Restrepo", correos.enviados().get(0).nombre());
   }
 
   /**

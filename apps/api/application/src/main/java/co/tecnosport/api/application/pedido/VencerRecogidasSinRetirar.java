@@ -102,6 +102,7 @@ public final class VencerRecogidasSinRetirar {
     try {
       enviadorDeCorreo.enviar(
           pedido.correo(),
+          pedido.nombreDeQuienRecibe().orElse(null),
           textos.texto(TextoDeCorreo.PEDIDO_CANCELACION_ASUNTO, numero),
           textos.texto(TextoDeCorreo.PEDIDO_RECOGIDA_VENCIDA_CUERPO, numero)
               + textos.texto(TextoDeCorreo.PEDIDO_CANCELACION_SIN_COBRO)

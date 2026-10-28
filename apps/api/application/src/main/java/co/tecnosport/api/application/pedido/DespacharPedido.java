@@ -131,6 +131,7 @@ public final class DespacharPedido {
     try {
       enviadorDeCorreo.enviar(
           pedido.correo(),
+          pedido.nombreDeQuienRecibe().orElse(null),
           textos.texto(TextoDeCorreo.PEDIDO_DESPACHO_ASUNTO, pedido.numeroPedido().valor()),
           cuerpo);
     } catch (CorreoNoEnviadoException registradoPorElAdaptador) {
