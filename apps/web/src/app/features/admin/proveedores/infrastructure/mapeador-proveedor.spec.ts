@@ -15,6 +15,7 @@ describe('mapeador de proveedores', () => {
       dosChatsEnUnZip: false,
       activo: true,
       tiposExcluidos: ['PANTALON', 'SUDADERA'],
+      otrosRemitentes: [],
       armaSets: true,
       ajustesDeIngesta: {},
       local: true,
@@ -25,12 +26,14 @@ describe('mapeador de proveedores', () => {
     expect(proveedor.armaSets).toBe(true);
     expect(proveedor.local).toBe(true);
     expect(proveedor.ajustesDeIngesta).toEqual(AJUSTES_DE_INGESTA_POR_OMISION);
-    expect(aProveedor({ id: 'prov-2', tiposExcluidos: [], ajustesDeIngesta: {} }).armaSets).toBe(
-      false,
-    );
-    expect(aProveedor({ id: 'prov-2', tiposExcluidos: [], ajustesDeIngesta: {} }).local).toBe(
-      false,
-    );
+    expect(
+      aProveedor({ id: 'prov-2', tiposExcluidos: [], otrosRemitentes: [], ajustesDeIngesta: {} })
+        .armaSets,
+    ).toBe(false);
+    expect(
+      aProveedor({ id: 'prov-2', tiposExcluidos: [], otrosRemitentes: [], ajustesDeIngesta: {} })
+        .local,
+    ).toBe(false);
   });
 
   /** Los ajustes de Tenis Al Pie (ADR-0089) van y vuelven. */
@@ -38,6 +41,7 @@ describe('mapeador de proveedores', () => {
     const proveedor = aProveedor({
       id: 'prov-3',
       tiposExcluidos: [],
+      otrosRemitentes: [],
       ajustesDeIngesta: {
         unaFotoUnProducto: true,
         ventaBajoConfirmacion: true,
@@ -60,6 +64,20 @@ describe('mapeador de proveedores', () => {
     });
   });
 
+  /** Meraki publica también como «Merakiapartados» (28 de octubre de 2026). */
+  it('lee y manda los otros remitentes', () => {
+    const proveedor = aProveedor({
+      id: 'prov-4',
+      nombreEnExportacion: 'Meraki',
+      tiposExcluidos: [],
+      otrosRemitentes: ['Merakiapartados'],
+      ajustesDeIngesta: {},
+    });
+
+    expect(proveedor.otrosRemitentes).toEqual(['Merakiapartados']);
+    expect(aProveedorPeticion(proveedor).otrosRemitentes).toEqual(['Merakiapartados']);
+  });
+
   /** El servidor lo exige al crear y al editar: si la petición lo pierde, el cuerpo no se lee. */
   it('manda el orden en la petición', () => {
     const peticion = aProveedorPeticion({
@@ -73,6 +91,7 @@ describe('mapeador de proveedores', () => {
       dosChatsEnUnZip: false,
       activo: true,
       tiposExcluidos: ['SHORT'],
+      otrosRemitentes: [],
       armaSets: false,
       ajustesDeIngesta: AJUSTES_DE_INGESTA_POR_OMISION,
       local: true,

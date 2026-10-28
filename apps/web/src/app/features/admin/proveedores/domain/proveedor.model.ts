@@ -37,6 +37,12 @@ export interface Proveedor {
    * la ingesta no lee nada.
    */
   readonly nombreEnExportacion: string;
+  /**
+   * Los nombres de sus otras cuentas en el mismo chat, que la ingesta reconoce igual que el
+   * principal. Meraki publica también como «Merakiapartados» (28 de octubre de 2026). Vacía en casi
+   * todos, y siempre en la tecnología, que no tiene chat.
+   */
+  readonly otrosRemitentes: readonly string[];
   readonly telefonoWhatsApp: string;
   readonly linea: LineaProveedor;
   /** Multiplica el precio del proveedor para sugerir el de venta. Por lo menos 1. */

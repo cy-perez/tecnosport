@@ -1083,6 +1083,8 @@
       "nombre": "Nombre",
       "remitente": "Nombre en el chat exportado",
       "remitenteAyuda": "Tal como sale antes de los dos puntos en cada línea del chat exportado: el nombre con el que guardaste el contacto o, si no lo tienes guardado, el nombre que esa persona se puso (WhatsApp lo escribe como «~ Nombre»; aquí va sin la virgulilla). Si en el chat sale solo su número, basta con que el teléfono de arriba coincida. En un grupo o en los avisos de una comunidad solo se leen los mensajes de este remitente; los de los demás se ignoran.",
+      "otrosRemitentes": "Otros nombres en la exportación",
+      "otrosRemitentesAyuda": "Si publica en el mismo chat también desde otras cuentas, sus nombres tal como salen antes de los dos puntos, separados por comas. Sus mensajes se leen como los del remitente principal. Déjalo vacío si publica desde una sola cuenta.",
       "telefono": "Teléfono de WhatsApp",
       "telefonoAyuda": "Con indicativo y sin espacios: el 57 de Colombia seguido de los diez dígitos del celular.",
       "linea": "Línea",

@@ -22,6 +22,7 @@ export function aProveedor(dto: ProveedorDto): Proveedor {
     id: dto.id ?? '',
     nombre: dto.nombre ?? '',
     nombreEnExportacion: dto.nombreEnExportacion ?? '',
+    otrosRemitentes: [...(dto.otrosRemitentes ?? [])],
     telefonoWhatsApp: dto.telefonoWhatsApp ?? '',
     linea: (dto.linea ?? 'BOLSOS') as LineaProveedor,
     factorDeMargen: dto.factorDeMargen ?? 1,
@@ -55,6 +56,7 @@ export function aProveedorPeticion(datos: DatosProveedor): ProveedorPeticionDto 
   return {
     nombre: datos.nombre,
     nombreEnExportacion: datos.nombreEnExportacion,
+    otrosRemitentes: [...datos.otrosRemitentes],
     telefonoWhatsApp: datos.telefonoWhatsApp,
     linea: datos.linea,
     factorDeMargen: datos.factorDeMargen,

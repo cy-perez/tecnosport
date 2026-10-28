@@ -10,6 +10,7 @@ export function proveedorDePrueba(overrides: Partial<Proveedor> = {}): Proveedor
     id: 'prov-1',
     nombre: 'Bolsos Medellín',
     nombreEnExportacion: 'Bolsos Mayorista Med',
+    otrosRemitentes: [],
     telefonoWhatsApp: '573001234567',
     linea: 'BOLSOS',
     factorDeMargen: 1.35,

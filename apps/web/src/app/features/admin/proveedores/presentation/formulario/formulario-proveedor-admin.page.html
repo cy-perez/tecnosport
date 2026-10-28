@@ -35,6 +35,15 @@
         formControlName="nombreEnExportacion"
       />
 
+      @if (form.controls.linea.value !== 'TECNOLOGIA') {
+        <ts-campo
+          idCampo="proveedor-otros-remitentes"
+          [label]="'admin.proveedores.formulario.otrosRemitentes' | transloco"
+          [ayuda]="'admin.proveedores.formulario.otrosRemitentesAyuda' | transloco"
+          formControlName="otrosRemitentes"
+        />
+      }
+
       <ts-campo
         idCampo="proveedor-telefono"
         tipo="tel"

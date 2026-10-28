@@ -1083,6 +1083,8 @@
       "nombre": "Name",
       "remitente": "Name in the exported chat",
       "remitenteAyuda": "As it appears before the colon on every line of the exported chat: the name you saved the contact under or, if it is not saved, the name that person set for themselves (WhatsApp writes it as \"~ Name\"; enter it without the tilde). If the chat only shows their number, the phone above is enough. In a group or a community announcement channel only this sender's messages are read; everyone else's are ignored.",
+      "otrosRemitentes": "Other names in the export",
+      "otrosRemitentesAyuda": "If they also post in the same chat from other accounts, enter those names as they appear before the colon, separated by commas. Their messages are read like the main sender's. Leave it empty if they post from a single account.",
       "telefono": "WhatsApp phone",
       "telefonoAyuda": "With country code and no spaces: Colombia's 57 followed by the ten digits of the mobile number.",
       "linea": "Line",

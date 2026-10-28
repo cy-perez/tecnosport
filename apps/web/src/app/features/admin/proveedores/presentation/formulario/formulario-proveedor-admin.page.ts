@@ -121,6 +121,7 @@ export class FormularioProveedorAdminPage {
       nonNullable: true,
       validators: [Validators.required],
     }),
+    otrosRemitentes: new FormControl('', { nonNullable: true }),
     telefonoWhatsApp: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     linea: new FormControl<LineaProveedor | ''>('', {
       nonNullable: true,
@@ -185,6 +186,7 @@ export class FormularioProveedorAdminPage {
     return {
       nombre: proveedor.nombre,
       nombreEnExportacion: proveedor.nombreEnExportacion,
+      otrosRemitentes: proveedor.otrosRemitentes.join(', '),
       telefonoWhatsApp: proveedor.telefonoWhatsApp,
       linea: proveedor.linea,
       ordenDePublicacion: proveedor.ordenDePublicacion,
@@ -282,6 +284,8 @@ export class FormularioProveedorAdminPage {
     const datos: DatosProveedor = {
       nombre: valores.nombre.trim(),
       nombreEnExportacion: valores.nombreEnExportacion.trim(),
+      // La tecnología llega por listas: no tiene mensajes de nadie que reconocer.
+      otrosRemitentes: valores.linea === 'TECNOLOGIA' ? [] : remitentesDe(valores.otrosRemitentes),
       telefonoWhatsApp: valores.telefonoWhatsApp.trim(),
       linea: valores.linea as LineaProveedor,
       ordenDePublicacion: valores.ordenDePublicacion as OrdenDePublicacion,
@@ -357,6 +361,14 @@ export class FormularioProveedorAdminPage {
 }
 
 /** «36 37 38 39» o «36, 37»: números de una o dos cifras; `null` si alguno no lo es. */
+/** Separados por comas: un nombre de WhatsApp puede llevar espacios, como «Meraki Bodega». */
+function remitentesDe(texto: string): string[] {
+  return texto
+    .split(',')
+    .map((nombre) => nombre.trim())
+    .filter((nombre) => nombre !== '');
+}
+
 function tallasDe(texto: string): string[] | null {
   const tallas = texto.split(/[\s,]+/).filter((t) => t !== '');
   return tallas.every((t) => /^\d{1,2}$/.test(t)) ? tallas : null;

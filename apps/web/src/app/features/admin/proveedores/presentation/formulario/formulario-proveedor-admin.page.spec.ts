@@ -136,6 +136,52 @@ describe('FormularioProveedorAdminPage', () => {
   });
 
   /** La Riverah arma sets (12 de octubre de 2026): la casilla viaja en lo que se crea. */
+  /** Meraki publica también como «Merakiapartados» (28 de octubre de 2026). */
+  it('manda los otros remitentes separados por comas, sin espacios ni vacíos', async () => {
+    const { repositorio, fixture } = await renderPagina();
+    vi.spyOn(fixture.debugElement.injector.get(Router), 'navigate').mockResolvedValue(true);
+
+    escribir(f.nombre, 'Meraki');
+    escribir(f.remitente, 'Meraki');
+    escribir(f.telefono, '573219427252');
+    fireEvent.change(screen.getByLabelText(f.linea), { target: { value: 'ROPA' } });
+    fireEvent.change(screen.getByLabelText(f.orden), { target: { value: 'FOTOS_PRIMERO' } });
+    escribir(f.margen, '1,30');
+    await screen.findByLabelText(f.otrosRemitentes);
+    escribir(f.otrosRemitentes, ' Merakiapartados , ,Meraki Bodega ');
+    fireEvent.click(screen.getByRole('button', { name: f.crear }));
+
+    await vi.waitFor(() => expect(repositorio.creados).toHaveLength(1));
+    expect(repositorio.creados[0].otrosRemitentes).toEqual(['Merakiapartados', 'Meraki Bodega']);
+  });
+
+  it('al editar muestra los otros remitentes que ya tenía', async () => {
+    await renderPagina(
+      [proveedorDePrueba({ linea: 'ROPA', otrosRemitentes: ['Merakiapartados', 'Meraki Bodega'] })],
+      'prov-1',
+    );
+
+    const campo = (await screen.findByLabelText(f.otrosRemitentes)) as HTMLInputElement;
+    await vi.waitFor(() => expect(campo.value).toBe('Merakiapartados, Meraki Bodega'));
+  });
+
+  /** La tecnología llega por listas: no tiene mensajes de nadie que reconocer. */
+  it('no ofrece otros remitentes a la tecnología, ni los manda', async () => {
+    const { repositorio, fixture } = await renderPagina(
+      [proveedorDePrueba({ linea: 'ROPA', otrosRemitentes: ['Merakiapartados'] })],
+      'prov-1',
+    );
+    vi.spyOn(fixture.debugElement.injector.get(Router), 'navigate').mockResolvedValue(true);
+    await screen.findByDisplayValue('Merakiapartados');
+
+    fireEvent.change(screen.getByLabelText(f.linea), { target: { value: 'TECNOLOGIA' } });
+    await vi.waitFor(() => expect(screen.queryByLabelText(f.otrosRemitentes)).toBeNull());
+    fireEvent.click(screen.getByRole('button', { name: f.guardar }));
+
+    await vi.waitFor(() => expect(repositorio.editados).toHaveLength(1));
+    expect(repositorio.editados[0].datos.otrosRemitentes).toEqual([]);
+  });
+
   it('manda que arma sets cuando se marca', async () => {
     const { repositorio, fixture } = await renderPagina();
     vi.spyOn(fixture.debugElement.injector.get(Router), 'navigate').mockResolvedValue(true);
