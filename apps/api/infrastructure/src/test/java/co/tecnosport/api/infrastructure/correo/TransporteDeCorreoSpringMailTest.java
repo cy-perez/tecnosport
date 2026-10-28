@@ -58,7 +58,8 @@ class TransporteDeCorreoSpringMailTest {
   void unCorreoEnviadoLlegaAlServidorSmtp() throws IOException, InterruptedException {
     TransporteDeCorreo enviador =
         new TransporteDeCorreoSpringMail(
-            mailSender, new PropiedadesCorreo("no-responder@tecnosport.co"));
+            mailSender,
+            new PropiedadesCorreo("no-responder@tecnosport.co", "contacto@tecnosport.co"));
 
     enviador.enviar(
         new CorreoElectronico("cliente@tecnosport.co"),
@@ -78,5 +79,30 @@ class TransporteDeCorreoSpringMailTest {
         .contains("Verifica tu correo")
         .contains("cliente@tecnosport.co")
         .contains("no-responder@tecnosport.co");
+
+    // El mensaje completo: lo que el resumen de la lista no trae.
+    HttpResponse<String> mensaje =
+        HttpClient.newHttpClient()
+            .send(
+                HttpRequest.newBuilder(
+                        URI.create(
+                            "http://"
+                                + mailpit.getHost()
+                                + ":"
+                                + mailpit.getMappedPort(8025)
+                                + "/api/v1/message/latest"))
+                    .GET()
+                    .build(),
+                HttpResponse.BodyHandlers.ofString());
+
+    assertThat(mensaje.statusCode()).isEqualTo(200);
+    assertThat(mensaje.body())
+        .as(
+            "lo que el cliente conteste llega a una persona, no al remitente no-responder (adr/0098)")
+        .containsPattern("\"ReplyTo\":\\[\\{[^}]*\"Address\":\"contacto@tecnosport.co\"")
+        .as("va también en texto plano, sacado del mismo HTML")
+        .contains("\"Text\":\"Hola, verifica tu cuenta.")
+        // Mailpit escapa los ángulos dentro de su JSON.
+        .contains("\"HTML\":\"\\u003cp\\u003eHola, verifica tu cuenta.");
   }
 }
