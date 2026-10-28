@@ -21,12 +21,16 @@ import java.util.UUID;
  * reclama el paquete con un nombre. Va aparte del correo porque el correo identifica al comprador y
  * el contacto a quien recibe, que no siempre son la misma persona.
  *
+ * <p>{@code nombreComprador} es el nombre de quien compra, a quien se le escriben los correos
+ * (adr/0099). Cuando compra para sí, el checkout manda el mismo nombre en los dos sitios.
+ *
  * <p>{@code transportadora} es la que eligió el comprador en el checkout (ADR-0073), por nombre, o
  * nulo para la más económica. El costo no viaja: lo fija la cotización de este caso de uso.
  */
 public record CrearPedidoComando(
     UUID usuarioId,
     String correo,
+    String nombreComprador,
     Contacto contacto,
     List<LineaComando> lineas,
     TipoEntrega tipoEntrega,
@@ -40,6 +44,7 @@ public record CrearPedidoComando(
   public CrearPedidoComando(
       UUID usuarioId,
       String correo,
+      String nombreComprador,
       Contacto contacto,
       List<LineaComando> lineas,
       TipoEntrega tipoEntrega,
@@ -50,6 +55,7 @@ public record CrearPedidoComando(
     this(
         usuarioId,
         correo,
+        nombreComprador,
         contacto,
         lineas,
         tipoEntrega,

@@ -53,6 +53,7 @@ public class MapeadorRespuestasPedido {
         pedido.numeroPedido().valor(),
         pedido.usuarioId().orElse(null),
         pedido.correo().valor(),
+        pedido.nombreDelComprador().orElse(null),
         pedido.contacto().map(this::aRespuesta).orElse(null),
         pedido.lineas().stream().map(this::aRespuesta).toList(),
         pedido.tipoEntrega().name(),

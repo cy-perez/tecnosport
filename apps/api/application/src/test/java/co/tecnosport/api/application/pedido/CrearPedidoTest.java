@@ -61,6 +61,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -104,6 +105,7 @@ class CrearPedidoTest {
   private static final String VERSION_POLITICA = "2026-09-07";
   private static final String IP = "190.24.10.5";
   private static final Contacto CONTACTO = new Contacto("Ana Pérez", "3138816711");
+  private static final String NOMBRE_COMPRADOR = "Carlos Ruiz";
 
   private Variante variante;
   private Producto primerProducto;
@@ -226,6 +228,7 @@ class CrearPedidoTest {
     return new CrearPedidoComando(
         null,
         "cliente@tecnosport.co",
+        NOMBRE_COMPRADOR,
         CONTACTO,
         lineas,
         TipoEntrega.ENVIO_A_DOMICILIO,
@@ -477,6 +480,7 @@ class CrearPedidoTest {
     return new CrearPedidoComando(
         null,
         "cliente@tecnosport.co",
+        NOMBRE_COMPRADOR,
         CONTACTO,
         List.of(new CrearPedidoComando.LineaComando(variante.id(), cantidad)),
         TipoEntrega.RETIRO_EN_PUNTO,
@@ -490,6 +494,7 @@ class CrearPedidoTest {
     return new CrearPedidoComando(
         null,
         "cliente@tecnosport.co",
+        NOMBRE_COMPRADOR,
         CONTACTO,
         List.of(new CrearPedidoComando.LineaComando(variante.id(), cantidad)),
         TipoEntrega.ENVIO_A_DOMICILIO,
@@ -551,6 +556,7 @@ class CrearPedidoTest {
         new CrearPedidoComando(
             null,
             "cliente@tecnosport.co",
+            NOMBRE_COMPRADOR,
             CONTACTO,
             List.of(
                 new CrearPedidoComando.LineaComando(variante.id(), 1),
@@ -580,6 +586,7 @@ class CrearPedidoTest {
         new CrearPedidoComando(
             null,
             "cliente@tecnosport.co",
+            NOMBRE_COMPRADOR,
             CONTACTO,
             List.of(
                 new CrearPedidoComando.LineaComando(deLaRiverah.id(), 1),
@@ -620,6 +627,7 @@ class CrearPedidoTest {
         new CrearPedidoComando(
             null,
             "cliente@tecnosport.co",
+            NOMBRE_COMPRADOR,
             null,
             List.of(new CrearPedidoComando.LineaComando(variante.id(), 1)),
             TipoEntrega.RETIRO_EN_PUNTO,
@@ -633,6 +641,49 @@ class CrearPedidoTest {
     assertEquals(
         5, inventarios.buscarPorVarianteId(variante.id()).orElseThrow().saldoDisponible(AHORA));
     assertTrue(pedidos.todos().isEmpty());
+  }
+
+  private CrearPedidoComando conComprador(String nombreComprador) {
+    return new CrearPedidoComando(
+        null,
+        "cliente@tecnosport.co",
+        nombreComprador,
+        CONTACTO,
+        List.of(new CrearPedidoComando.LineaComando(variante.id(), 1)),
+        TipoEntrega.ENVIO_A_DOMICILIO,
+        DIRECCION_MEDELLIN,
+        MetodoPago.WOMPI,
+        true,
+        IP);
+  }
+
+  /**
+   * El nombre de quien compra es el que saluda en los correos (adr/0099). Se exige igual que el
+   * contacto: aquí, antes de reservar, y no en el agregado, que reconstruye pedidos viejos sin él.
+   */
+  @Test
+  void sinNombreDeCompradorNoCreaElPedidoNiReservaNada() {
+    CrearPedido caso = crear();
+    publicarProductoConVarianteYExistencia(5);
+
+    assertThrows(ExcepcionDeDominio.class, () -> caso.ejecutar(conComprador(null)));
+    assertThrows(ExcepcionDeDominio.class, () -> caso.ejecutar(conComprador("   ")));
+    assertThrows(ExcepcionDeDominio.class, () -> caso.ejecutar(conComprador("@#$%")));
+
+    assertEquals(
+        5, inventarios.buscarPorVarianteId(variante.id()).orElseThrow().saldoDisponible(AHORA));
+    assertTrue(pedidos.todos().isEmpty());
+  }
+
+  @Test
+  void elPedidoCreadoGuardaElNombreDeQuienCompraAparteDelDeQuienRecibe() {
+    CrearPedido caso = crear();
+    publicarProductoConVarianteYExistencia(5);
+
+    Pedido pedido = caso.ejecutar(conComprador("  Carlos Ruiz "));
+
+    assertEquals(Optional.of("Carlos Ruiz"), pedido.nombreDelComprador());
+    assertEquals("Ana Pérez", pedido.contacto().orElseThrow().nombre());
   }
 
   @Test
@@ -684,6 +735,7 @@ class CrearPedidoTest {
     return new CrearPedidoComando(
         null,
         "cliente@tecnosport.co",
+        NOMBRE_COMPRADOR,
         CONTACTO,
         List.of(new CrearPedidoComando.LineaComando(variante.id(), 1)),
         TipoEntrega.ENVIO_A_DOMICILIO,
@@ -731,6 +783,7 @@ class CrearPedidoTest {
                 new CrearPedidoComando(
                     null,
                     "cliente@tecnosport.co",
+                    NOMBRE_COMPRADOR,
                     CONTACTO,
                     List.of(new CrearPedidoComando.LineaComando(variante.id(), 1)),
                     TipoEntrega.ENVIO_A_DOMICILIO,
@@ -1166,6 +1219,7 @@ class CrearPedidoTest {
         new CrearPedidoComando(
             null,
             "cliente@tecnosport.co",
+            NOMBRE_COMPRADOR,
             CONTACTO,
             List.of(new CrearPedidoComando.LineaComando(variante.id(), 1)),
             TipoEntrega.RETIRO_EN_PUNTO,
@@ -1237,6 +1291,7 @@ class CrearPedidoTest {
         new CrearPedidoComando(
             null,
             "cliente@tecnosport.co",
+            NOMBRE_COMPRADOR,
             CONTACTO,
             List.of(new CrearPedidoComando.LineaComando(UUID.randomUUID(), 1)),
             TipoEntrega.ENVIO_A_DOMICILIO,
@@ -1274,6 +1329,7 @@ class CrearPedidoTest {
         new CrearPedidoComando(
             null,
             "cliente@tecnosport.co",
+            NOMBRE_COMPRADOR,
             CONTACTO,
             List.of(new CrearPedidoComando.LineaComando(varianteSinPublicar.id(), 1)),
             TipoEntrega.ENVIO_A_DOMICILIO,
@@ -1403,6 +1459,7 @@ class CrearPedidoTest {
     return new CrearPedidoComando(
         null,
         "cliente@tecnosport.co",
+        NOMBRE_COMPRADOR,
         CONTACTO,
         List.of(new CrearPedidoComando.LineaComando(varianteId, 1)),
         TipoEntrega.ENVIO_A_DOMICILIO,
@@ -1462,6 +1519,7 @@ class CrearPedidoTest {
         new CrearPedidoComando(
             null,
             "cliente@tecnosport.co",
+            NOMBRE_COMPRADOR,
             CONTACTO,
             List.of(new CrearPedidoComando.LineaComando(variante.id(), 1)),
             TipoEntrega.ENVIO_A_DOMICILIO,
@@ -1486,6 +1544,7 @@ class CrearPedidoTest {
         new CrearPedidoComando(
             null,
             "cliente@tecnosport.co",
+            NOMBRE_COMPRADOR,
             CONTACTO,
             List.of(new CrearPedidoComando.LineaComando(variante.id(), 1)),
             TipoEntrega.ENVIO_A_DOMICILIO,

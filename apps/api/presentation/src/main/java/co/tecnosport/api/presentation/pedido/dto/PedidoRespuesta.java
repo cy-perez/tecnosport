@@ -12,6 +12,8 @@ public record PedidoRespuesta(
     String numeroPedido,
     UUID usuarioId,
     String correo,
+    /** Quien compra (adr/0099). Nulo en los pedidos anteriores a que el checkout lo pidiera. */
+    String nombreComprador,
     ContactoRespuesta contacto,
     List<LineaPedidoRespuesta> lineas,
     String tipoEntrega,

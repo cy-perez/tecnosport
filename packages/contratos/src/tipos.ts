@@ -2881,6 +2881,7 @@ export interface components {
             /** @enum {string} */
             metodoPago?: "WOMPI" | "SISTECREDITO" | "TRANSFERENCIA_MANUAL" | "CONTRAENTREGA" | "PAGO_EN_PUNTO";
             nombre?: string;
+            nombreComprador: string;
             telefono?: string;
             tipoEntrega?: string;
             transportadora?: string;
@@ -3583,6 +3584,7 @@ export interface components {
             lineas?: components["schemas"]["LineaPedidoRespuesta"][];
             /** @enum {string} */
             metodoPago?: "WOMPI" | "SISTECREDITO" | "TRANSFERENCIA_MANUAL" | "CONTRAENTREGA" | "PAGO_EN_PUNTO";
+            nombreComprador?: string;
             numeroPedido?: string;
             plazoDeEntrega?: components["schemas"]["PlazoDeEntregaRespuesta"];
             /** Format: date-time */
