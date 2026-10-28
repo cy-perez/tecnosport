@@ -183,6 +183,7 @@ class PedidoControladorTest {
       MetodoPago metodoPago) {
     return new CrearPedidoRequest(
         "cliente@tecnosport.co",
+        "Carlos Ruiz",
         "Ana Pérez",
         "313 881 6711",
         List.of(new CrearPedidoRequest.LineaRequest(variante.id(), 2)),
@@ -226,6 +227,7 @@ class PedidoControladorTest {
     CrearPedidoRequest cuerpo =
         new CrearPedidoRequest(
             "cliente@tecnosport.co",
+            "Carlos Ruiz",
             "Ana Pérez",
             "313 881 6711",
             List.of(new CrearPedidoRequest.LineaRequest(variante.id(), 2)),
@@ -250,6 +252,7 @@ class PedidoControladorTest {
     CrearPedidoRequest cuerpo =
         new CrearPedidoRequest(
             "cliente@tecnosport.co",
+            "Carlos Ruiz",
             "Ana Pérez",
             "313 881 6711",
             List.of(new CrearPedidoRequest.LineaRequest(variante.id(), 2)),
@@ -404,6 +407,7 @@ class PedidoControladorTest {
     CrearPedidoRequest cuerpo =
         new CrearPedidoRequest(
             "cliente@tecnosport.co",
+            "Carlos Ruiz",
             "Ana Pérez",
             "313 881 6711",
             List.of(new CrearPedidoRequest.LineaRequest(variante.id(), 1)),
@@ -427,7 +431,7 @@ class PedidoControladorTest {
     Variante variante = publicarProductoConVarianteYExistencia(5);
     String cuerpo =
         """
-        {"correo":"cliente@tecnosport.co","nombre":"Ana Pérez","telefono":"",
+        {"correo":"cliente@tecnosport.co","nombreComprador":"Carlos Ruiz","nombre":"Ana Pérez","telefono":"",
          "lineas":[{"varianteId":"%s","cantidad":1}],
          "tipoEntrega":"RETIRO_EN_PUNTO","metodoPago":"WOMPI","autorizaDatos":true}
         """
@@ -450,7 +454,25 @@ class PedidoControladorTest {
                 .content(json.writeValueAsString(cuerpo)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.contacto.nombre").value("Ana Pérez"))
-        .andExpect(jsonPath("$.contacto.telefono").value("3138816711"));
+        .andExpect(jsonPath("$.contacto.telefono").value("3138816711"))
+        .andExpect(jsonPath("$.nombreComprador").value("Carlos Ruiz"));
+  }
+
+  /** Sin el nombre de quien compra, el cuerpo no llega al caso de uso (adr/0099). */
+  @Test
+  void crearPedidoSinNombreDeCompradorDevuelve422() throws Exception {
+    Variante variante = publicarProductoConVarianteYExistencia(5);
+    String cuerpo =
+        """
+        {"correo":"cliente@tecnosport.co","nombre":"Ana Pérez","telefono":"3138816711",
+         "lineas":[{"varianteId":"%s","cantidad":1}],
+         "tipoEntrega":"RETIRO_EN_PUNTO","metodoPago":"WOMPI","autorizaDatos":true}
+        """
+            .formatted(variante.id());
+
+    mockMvc
+        .perform(post("/api/v1/pedidos").contentType(MediaType.APPLICATION_JSON).content(cuerpo))
+        .andExpect(status().isUnprocessableEntity());
   }
 
   @Test
@@ -458,6 +480,7 @@ class PedidoControladorTest {
     CrearPedidoRequest cuerpo =
         new CrearPedidoRequest(
             "cliente@tecnosport.co",
+            "Carlos Ruiz",
             "Ana Pérez",
             "313 881 6711",
             List.of(new CrearPedidoRequest.LineaRequest(java.util.UUID.randomUUID(), 1)),

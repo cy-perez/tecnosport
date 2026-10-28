@@ -211,6 +211,17 @@
                     }
                   </ul>
 
+                  <!-- Quien compra solo cuando no es quien recibe (ADR-0099): si es la misma
+                       persona, el nombre de abajo ya lo dice. -->
+                  @if (pedido.nombreComprador; as comprador) {
+                    @if (comprador.toLowerCase() !== pedido.contacto?.nombre?.toLowerCase()) {
+                      <h2 class="mt-16 mb-8 text-base font-medio">
+                        {{ 'admin.pedidos.detalle.comprador' | transloco }}
+                      </h2>
+                      <p>{{ comprador }}</p>
+                    }
+                  }
+
                   @if (pedido.contacto; as contacto) {
                     <h2 class="mt-16 mb-8 text-base font-medio">
                       {{ 'admin.pedidos.detalle.contacto' | transloco }}

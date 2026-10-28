@@ -142,6 +142,7 @@ const DATOS_ENTREGA: DatosEntrega = {
   correo: 'compra@ejemplo.co',
   tipoEntrega: 'RETIRO_EN_PUNTO',
   direccion: null,
+  nombreComprador: 'Ana Pérez',
   contacto: { nombre: 'Ana Pérez', telefono: '3138816711' },
   autorizaDatos: true,
   transportadora: null,

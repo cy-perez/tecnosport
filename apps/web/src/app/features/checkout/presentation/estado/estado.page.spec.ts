@@ -107,6 +107,7 @@ function pedidoDePrueba(overrides: Partial<Pedido> = {}): Pedido {
     numeroPedido: 'TS-2026-000001',
     usuarioId: null,
     correo: 'cliente@tecnosport.co',
+    nombreComprador: null,
     lineas: [
       {
         id: 'linea-1',

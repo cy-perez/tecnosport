@@ -195,22 +195,27 @@ class RepositorioPedidosJpaTest {
             "cliente@tecnosport.co",
             Instant.now(),
             null,
-            contacto);
+            contacto,
+            "Carlos Ruiz");
 
     repositorio.guardar(pedido);
 
     Pedido encontrado = repositorio.buscarPorId(pedido.id()).orElseThrow();
     assertThat(encontrado.contacto()).contains(contacto);
+    // Quien compra va aparte de quien recibe (V148, adr/0099).
+    assertThat(encontrado.nombreDelComprador()).contains("Carlos Ruiz");
   }
 
-  /** Los pedidos anteriores a V36 no tienen contacto y siguen leyéndose. */
+  /** Los pedidos anteriores a V36 no tienen contacto, ni los anteriores a V148 comprador. */
   @Test
   void unPedidoSinContactoVuelveVacio() {
     Pedido pedido = pedidoAlDomicilio(MetodoPago.WOMPI);
 
     repositorio.guardar(pedido);
 
-    assertThat(repositorio.buscarPorId(pedido.id()).orElseThrow().contacto()).isEmpty();
+    Pedido encontrado = repositorio.buscarPorId(pedido.id()).orElseThrow();
+    assertThat(encontrado.contacto()).isEmpty();
+    assertThat(encontrado.nombreDelComprador()).isEmpty();
   }
 
   @Test

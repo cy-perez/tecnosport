@@ -226,6 +226,7 @@ public class PedidoControlador {
     return new CrearPedidoComando(
         null,
         cuerpo.correo(),
+        cuerpo.nombreComprador(),
         new Contacto(cuerpo.nombre(), cuerpo.telefono()),
         lineas,
         TipoEntrega.valueOf(cuerpo.tipoEntrega()),

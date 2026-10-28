@@ -90,7 +90,7 @@ public final class RegistrarRetracto {
     try {
       enviadorDeCorreo.enviar(
           pedido.correo(),
-          pedido.nombreDeQuienRecibe().orElse(null),
+          pedido.nombreParaSaludar().orElse(null),
           textos.texto(TextoDeCorreo.RETRACTO_ACUSE_ASUNTO),
           textos.texto(TextoDeCorreo.RETRACTO_ACUSE_CUERPO, pedido.numeroPedido().valor()));
     } catch (CorreoNoEnviadoException registradoPorElAdaptador) {

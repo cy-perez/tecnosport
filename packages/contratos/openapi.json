@@ -1349,6 +1349,9 @@
           "nombre" : {
             "type" : "string"
           },
+          "nombreComprador" : {
+            "type" : "string"
+          },
           "telefono" : {
             "type" : "string"
           },
@@ -1359,6 +1362,9 @@
             "type" : "string"
           }
         },
+        "required" : [
+          "nombreComprador"
+        ],
         "type" : "object"
       },
       "CrearProductoPeticion" : {
@@ -3425,6 +3431,9 @@
               "CONTRAENTREGA",
               "PAGO_EN_PUNTO"
             ],
+            "type" : "string"
+          },
+          "nombreComprador" : {
             "type" : "string"
           },
           "numeroPedido" : {

@@ -109,6 +109,7 @@ function pedidoDePrueba(overrides: Partial<PedidoAdmin> = {}): PedidoAdmin {
     numeroPedido: 'TS-2026-000123',
     usuarioId: null,
     correo: 'cliente@example.com',
+    nombreComprador: null,
     lineas: [
       {
         id: 'l1',
@@ -487,6 +488,38 @@ describe('ListaPedidosAdminPage', () => {
     // Quien despacha ve qué talla y color empacar, no solo el SKU.
     expect(screen.getByText(/Negro · M/)).toBeTruthy();
     expect(screen.queryByText(/Pídela al proveedor/)).toBeNull();
+  });
+
+  /** Un regalo: el panel dice quién compró además de a quién se entrega (ADR-0099). */
+  it('el detalle nombra a quien compra cuando no es quien recibe', async () => {
+    await renderLista([
+      pedidoDePrueba({
+        nombreComprador: 'Carlos Ruiz',
+        contacto: { nombre: 'Ana Pérez', telefono: '3138816711' },
+      }),
+    ]);
+    await screen.findByText('TS-2026-000123');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ver detalle' }));
+
+    expect(await screen.findByRole('heading', { name: 'Quien compra' })).toBeTruthy();
+    expect(screen.getByText('Carlos Ruiz')).toBeTruthy();
+    expect(screen.getByText(/Ana Pérez/)).toBeTruthy();
+  });
+
+  it('si compra para sí, no repite el nombre como quien compra', async () => {
+    await renderLista([
+      pedidoDePrueba({
+        nombreComprador: 'Ana Pérez',
+        contacto: { nombre: 'Ana Pérez', telefono: '3138816711' },
+      }),
+    ]);
+    await screen.findByText('TS-2026-000123');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ver detalle' }));
+
+    expect(await screen.findByRole('heading', { name: 'Quien recibe' })).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'Quien compra' })).toBeNull();
   });
 
   /** El polo de horma reducida se vende en S y al proveedor se le pide la M (ADR-0085). */

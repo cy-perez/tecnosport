@@ -1,6 +1,7 @@
 package co.tecnosport.api.presentation.pedido.dto;
 
 import co.tecnosport.api.domain.pedido.MetodoPago;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.UUID;
 
@@ -16,6 +17,11 @@ import java.util.UUID;
  */
 public record CrearPedidoRequest(
     String correo,
+    /**
+     * Quien compra, a quien se le escriben los correos (adr/0099). Si compra para sí, el checkout
+     * manda el mismo que {@code nombre}. El formato lo valida el dominio.
+     */
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String nombreComprador,
     /**
      * Quien recibe: va en la guía y es a quien llama el mensajero. El formato lo valida el dominio.
      */
@@ -37,6 +43,7 @@ public record CrearPedidoRequest(
   /** Sin transportadora elegida. */
   public CrearPedidoRequest(
       String correo,
+      String nombreComprador,
       String nombre,
       String telefono,
       List<LineaRequest> lineas,
@@ -44,12 +51,25 @@ public record CrearPedidoRequest(
       DireccionRequest direccion,
       MetodoPago metodoPago,
       boolean autorizaDatos) {
-    this(correo, nombre, telefono, lineas, tipoEntrega, direccion, metodoPago, autorizaDatos, null);
+    this(
+        correo,
+        nombreComprador,
+        nombre,
+        telefono,
+        lineas,
+        tipoEntrega,
+        direccion,
+        metodoPago,
+        autorizaDatos,
+        null);
   }
 
   public CrearPedidoRequest {
     if (correo == null || correo.isBlank()) {
       throw new IllegalArgumentException("correo es obligatorio.");
+    }
+    if (nombreComprador == null || nombreComprador.isBlank()) {
+      throw new IllegalArgumentException("nombreComprador es obligatorio.");
     }
     if (nombre == null || nombre.isBlank()) {
       throw new IllegalArgumentException("nombre es obligatorio.");

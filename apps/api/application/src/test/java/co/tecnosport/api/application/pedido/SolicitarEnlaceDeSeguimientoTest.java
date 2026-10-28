@@ -86,7 +86,8 @@ class SolicitarEnlaceDeSeguimientoTest {
             correo,
             AHORA,
             null,
-            new Contacto("Ana Pérez", "3138816711"));
+            new Contacto("Ana Pérez", "3138816711"),
+            "Carlos Ruiz");
     pedidos.guardar(pedido);
     return pedido;
   }
@@ -103,7 +104,7 @@ class SolicitarEnlaceDeSeguimientoTest {
 
     assertEquals(1, correos.enviados().size());
     EnviadorDeCorreoFalso.CorreoEnviado enviado = correos.enviados().getFirst();
-    assertEquals("Ana Pérez", correos.enviados().get(0).nombre());
+    assertEquals("Carlos Ruiz", correos.enviados().get(0).nombre());
     assertEquals(CORREO, enviado.destinatario().valor());
     assertEquals("[pedido.enlace_seguimiento.asunto|TS-2026-000001]", enviado.asunto());
     // El mismo enlace del comprobante y del despacho: entra por el id, no por el número.

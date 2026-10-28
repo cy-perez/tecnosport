@@ -53,6 +53,7 @@ export class PedidoHttpRepositorio implements RepositorioPedidos {
       headers: { 'Idempotency-Key': this.llaveDeCreacion },
       body: {
         correo: comando.correo,
+        nombreComprador: comando.nombreComprador,
         nombre: comando.contacto.nombre,
         telefono: comando.contacto.telefono,
         lineas: comando.lineas.map((linea) => ({

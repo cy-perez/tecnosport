@@ -57,6 +57,9 @@ class EnviarComprobantesDeCompraTest {
         "Azul · M");
   }
 
+  private String quienCompra = "Carlos Ruiz";
+  private String quienRecibe = "Ana Pérez";
+
   private Pedido pedidoEn(
       MetodoPago metodoPago, TipoEntrega tipoEntrega, EstadoPedido... transiciones) {
     Pedido pedido =
@@ -74,7 +77,8 @@ class EnviarComprobantesDeCompraTest {
             "cliente@tecnosport.co",
             COMPRADO,
             null,
-            new Contacto("Ana Pérez", "3138816711"));
+            new Contacto(quienRecibe, "3138816711"),
+            quienCompra);
     Instant momento = COMPRADO;
     for (EstadoPedido siguiente : transiciones) {
       momento = momento.plusSeconds(60);
@@ -97,7 +101,7 @@ class EnviarComprobantesDeCompraTest {
 
     assertEquals(new ResultadoComprobantes(1, 1, 0), resultado);
     assertEquals(pedido.correo(), correos.enviados().getFirst().destinatario());
-    assertEquals("Ana Pérez", correos.enviados().get(0).nombre());
+    assertEquals("Carlos Ruiz", correos.enviados().get(0).nombre());
     String cuerpo = cuerpoUnico();
     assertTrue(cuerpo.contains(TextoDeCorreo.PEDIDO_COMPROBANTE_CUERPO.clave()), cuerpo);
     assertTrue(cuerpo.contains(TextoDeCorreo.PEDIDO_COMPROBANTE_VENDEDOR.clave()), cuerpo);
@@ -228,6 +232,37 @@ class EnviarComprobantesDeCompraTest {
         cuerpo.contains(TextoDeCorreo.PEDIDO_COMPROBANTE_TOTALES.clave() + "|179800"), cuerpo);
   }
 
+  /**
+   * El comprobante es el soporte para reclamar la garantía: dice a nombre de quién quedó la compra
+   * y, si es un regalo, quién lo recibe (adr/0099).
+   */
+  @Test
+  void elComprobanteDiceQuienComproYQuienRecibeSiEsOtraPersona() {
+    pedidoEn(MetodoPago.CONTRAENTREGA, TipoEntrega.ENVIO_A_DOMICILIO);
+
+    casoDeUso().ejecutar();
+
+    String cuerpo = cuerpoUnico();
+    assertTrue(
+        cuerpo.contains("[" + TextoDeCorreo.PEDIDO_COMPROBANTE_COMPRADOR.clave() + "|Carlos Ruiz]"),
+        cuerpo);
+    assertTrue(
+        cuerpo.contains("[" + TextoDeCorreo.PEDIDO_COMPROBANTE_RECIBE.clave() + "|Ana Pérez]"),
+        cuerpo);
+  }
+
+  @Test
+  void siCompraParaSiNoRepiteElNombreComoQuienRecibe() {
+    quienCompra = "Ana Pérez";
+    pedidoEn(MetodoPago.CONTRAENTREGA, TipoEntrega.ENVIO_A_DOMICILIO);
+
+    casoDeUso().ejecutar();
+
+    String cuerpo = cuerpoUnico();
+    assertTrue(cuerpo.contains(TextoDeCorreo.PEDIDO_COMPROBANTE_COMPRADOR.clave()), cuerpo);
+    assertFalse(cuerpo.contains(TextoDeCorreo.PEDIDO_COMPROBANTE_RECIBE.clave()), cuerpo);
+  }
+
   /** Sin descuento el comprobante no habla de él: los totales de siempre. */
   @Test
   void sinDescuentoNoHayLineaDeDescuento() {
@@ -271,7 +306,8 @@ class EnviarComprobantesDeCompraTest {
             "cliente@tecnosport.co",
             COMPRADO,
             null,
-            new Contacto("Ana Pérez", "3138816711"));
+            new Contacto("Ana Pérez", "3138816711"),
+            "Carlos Ruiz");
     pedido.transicionar(EstadoPedido.PAGADO, "sistema", "prueba", COMPRADO.plusSeconds(60));
     pedidos.guardar(pedido);
 
@@ -309,7 +345,8 @@ class EnviarComprobantesDeCompraTest {
                 2,
                 true,
                 COMPRADO.plusSeconds(86_400)),
-            new Contacto("Ana Pérez", "3138816711"));
+            new Contacto("Ana Pérez", "3138816711"),
+            "Carlos Ruiz");
     pedidos.guardar(pedido);
 
     casoDeUso().ejecutar();

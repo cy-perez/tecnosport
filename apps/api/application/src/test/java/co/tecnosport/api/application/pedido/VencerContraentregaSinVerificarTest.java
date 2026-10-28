@@ -70,7 +70,8 @@ class VencerContraentregaSinVerificarTest {
             "cliente@tecnosport.co",
             AHORA.minus(hace),
             null,
-            new Contacto("Ana Pérez", "3138816711"));
+            new Contacto("Ana Pérez", "3138816711"),
+            "Carlos Ruiz");
     pedidos.guardar(pedido);
     return pedido;
   }
@@ -94,7 +95,7 @@ class VencerContraentregaSinVerificarTest {
     assertEquals(1, disponible(pedido));
     assertEquals(1, correos.enviados().size());
     assertTrue(correos.enviados().get(0).cuerpoHtml().contains("contraentrega_vencida"));
-    assertEquals("Ana Pérez", correos.enviados().get(0).nombre());
+    assertEquals("Carlos Ruiz", correos.enviados().get(0).nombre());
   }
 
   @Test

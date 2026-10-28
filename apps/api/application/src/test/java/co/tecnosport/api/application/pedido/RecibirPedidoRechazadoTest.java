@@ -97,7 +97,8 @@ class RecibirPedidoRechazadoTest {
             "cliente@tecnosport.co",
             AHORA.minusSeconds(4000),
             null,
-            new Contacto("Ana Pérez", "3138816711"));
+            new Contacto("Ana Pérez", "3138816711"),
+            "Carlos Ruiz");
     if (pagoEnLinea) {
       pedido.transicionar(EstadoPedido.PAGADO, "webhook-wompi", "pago aprobado", AHORA);
     }
@@ -144,7 +145,7 @@ class RecibirPedidoRechazadoTest {
 
     assertEquals(1, correos.enviados().size());
     String cuerpo = correos.enviados().get(0).cuerpoHtml();
-    assertEquals("Ana Pérez", correos.enviados().get(0).nombre());
+    assertEquals("Carlos Ruiz", correos.enviados().get(0).nombre());
     assertTrue(cuerpo.contains("pedido.devuelto.cuerpo"), cuerpo);
     assertTrue(cuerpo.contains("pedido.cancelacion.con_reintegro"), cuerpo);
   }
@@ -250,7 +251,8 @@ class RecibirPedidoRechazadoTest {
             "cliente@tecnosport.co",
             AHORA,
             null,
-            new Contacto("Ana Pérez", "3138816711"));
+            new Contacto("Ana Pérez", "3138816711"),
+            "Carlos Ruiz");
     pedidos.guardar(otro);
 
     assertThrows(

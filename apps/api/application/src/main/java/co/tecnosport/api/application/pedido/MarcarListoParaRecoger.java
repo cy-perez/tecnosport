@@ -79,7 +79,7 @@ public final class MarcarListoParaRecoger {
     try {
       enviadorDeCorreo.enviar(
           pedido.correo(),
-          pedido.nombreDeQuienRecibe().orElse(null),
+          pedido.nombreParaSaludar().orElse(null),
           textos.texto(TextoDeCorreo.PEDIDO_LISTO_PARA_RECOGER_ASUNTO, numero),
           textos.texto(TextoDeCorreo.PEDIDO_LISTO_PARA_RECOGER_CUERPO, numero)
               + pago

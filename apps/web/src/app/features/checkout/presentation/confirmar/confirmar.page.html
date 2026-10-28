@@ -11,13 +11,20 @@
     <dl
       class="m-0 mb-24 grid grid-cols-[auto_1fr] gap-x-16 gap-y-8 [&_dt]:text-ts-texto-suave [&_dd]:m-0"
     >
+      <!-- Quien compra primero: es a quien le escribimos (ADR-0099). -->
+      <dt>{{ 'checkout.resumen.nombre_comprador' | transloco }}</dt>
+      <dd>{{ datos.nombreComprador }}</dd>
+
       <dt>{{ 'checkout.resumen.correo' | transloco }}</dt>
       <dd>{{ datos.correo }}</dd>
 
       <!-- Aquí se finaliza la transacción: quien recibe y a qué número se le llama se revisan
-           junto con la dirección, no se descubren en el correo de confirmación. -->
-      <dt>{{ 'checkout.resumen.nombre' | transloco }}</dt>
-      <dd>{{ datos.contacto.nombre }}</dd>
+           junto con la dirección, no se descubren en el correo de confirmación. Si es quien compra,
+           el nombre ya está arriba y no se repite. -->
+      @if (datos.contacto.nombre.toLowerCase() !== datos.nombreComprador.toLowerCase()) {
+        <dt>{{ 'checkout.resumen.nombre' | transloco }}</dt>
+        <dd>{{ datos.contacto.nombre }}</dd>
+      }
 
       <dt>{{ 'checkout.resumen.telefono' | transloco }}</dt>
       <dd>{{ datos.contacto.telefono }}</dd>

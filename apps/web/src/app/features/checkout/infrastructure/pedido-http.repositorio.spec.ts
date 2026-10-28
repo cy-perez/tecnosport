@@ -20,6 +20,7 @@ describe('PedidoHttpRepositorio: la llave de idempotencia', () => {
 
   const COMANDO: CrearPedidoComando = {
     correo: 'cliente@tecnosport.co',
+    nombreComprador: 'Cliente de prueba',
     contacto: { nombre: 'Cliente de prueba', telefono: '3001234567' },
     lineas: [{ varianteId: 'variante-1', cantidad: 1 }],
     tipoEntrega: 'ENVIO_A_DOMICILIO',
@@ -162,6 +163,7 @@ describe('PedidoHttpRepositorio: la transportadora elegida', () => {
 
     await new PedidoHttpRepositorio().crear({
       correo: 'cliente@tecnosport.co',
+      nombreComprador: 'Carlos Ruiz',
       contacto: { nombre: 'Cliente de prueba', telefono: '3001234567' },
       lineas: [{ varianteId: 'variante-1', cantidad: 1 }],
       tipoEntrega: 'ENVIO_A_DOMICILIO',
@@ -171,7 +173,12 @@ describe('PedidoHttpRepositorio: la transportadora elegida', () => {
       transportadora: 'Servientrega',
     });
 
-    expect(cuerpos[0]).toMatchObject({ transportadora: 'Servientrega' });
+    // Quien compra y quien recibe viajan por separado (ADR-0099).
+    expect(cuerpos[0]).toMatchObject({
+      transportadora: 'Servientrega',
+      nombreComprador: 'Carlos Ruiz',
+      nombre: 'Cliente de prueba',
+    });
   });
 
   it('va en el cuerpo al pedir los métodos de pago', async () => {
@@ -258,6 +265,7 @@ describe('PedidoHttpRepositorio: la transportadora elegida', () => {
 
     await new PedidoHttpRepositorio().crear({
       correo: 'cliente@tecnosport.co',
+      nombreComprador: 'Cliente de prueba',
       contacto: { nombre: 'Cliente de prueba', telefono: '3001234567' },
       lineas: [
         { varianteId: 'variante-1', cantidad: 1, enlaceCompra: 'token-1' },

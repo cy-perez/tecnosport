@@ -108,6 +108,8 @@ export interface Pedido {
   readonly numeroPedido: string;
   readonly usuarioId: string | null;
   readonly correo: string;
+  /** Quien compra (ADR-0099); `null` en pedidos anteriores a que se pidiera. */
+  readonly nombreComprador: string | null;
   /** `null` solo en pedidos anteriores a que se pidiera. */
   readonly contacto: Contacto | null;
   readonly lineas: readonly LineaPedido[];

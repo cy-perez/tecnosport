@@ -57,7 +57,7 @@ class MarcarListoParaRecogerTest {
     assertEquals(AHORA.plus(Duration.ofHours(48)), pedido.recogidaVenceEn().orElseThrow());
     assertEquals(1, correos.enviados().size());
     String cuerpo = correos.enviados().get(0).cuerpoHtml();
-    assertEquals("Ana Pérez", correos.enviados().get(0).nombre());
+    assertEquals("Carlos Ruiz", correos.enviados().get(0).nombre());
     assertTrue(
         cuerpo.contains("[pedido.listo_para_recoger.cuerpo|" + pedido.numeroPedido().valor()));
     assertTrue(cuerpo.contains("[pedido.listo_para_recoger.pago_en_punto|50000]"), cuerpo);
@@ -110,7 +110,8 @@ class MarcarListoParaRecogerTest {
             "cliente@tecnosport.co",
             AHORA,
             null,
-            new Contacto("Ana Pérez", "3138816711"));
+            new Contacto("Ana Pérez", "3138816711"),
+            "Carlos Ruiz");
     pedido.transicionar(EstadoPedido.EN_PREPARACION, "admin:1", "verificado", AHORA);
     pedidos.guardar(pedido);
 

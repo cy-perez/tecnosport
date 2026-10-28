@@ -493,6 +493,7 @@ export class ConfirmarPage {
     }
     const comando: CrearPedidoComando = {
       correo: datos.correo,
+      nombreComprador: datos.nombreComprador,
       contacto: datos.contacto,
       lineas: lineasPorPagar.map((linea) => ({
         varianteId: linea.varianteId,

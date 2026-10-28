@@ -74,6 +74,8 @@ public enum TextoDeCorreo {
   PEDIDO_COMPROBANTE_PAGO_TRANSFERENCIA("pedido.comprobante.pago_transferencia"),
   PEDIDO_COMPROBANTE_PAGO_EN_LINEA("pedido.comprobante.pago_en_linea"),
   PEDIDO_COMPROBANTE_VENDEDOR("pedido.comprobante.vendedor"),
+  PEDIDO_COMPROBANTE_COMPRADOR("pedido.comprobante.comprador"),
+  PEDIDO_COMPROBANTE_RECIBE("pedido.comprobante.recibe"),
   PEDIDO_COMPROBANTE_CIERRE("pedido.comprobante.cierre"),
   PEDIDO_ENLACE_SEGUIMIENTO_ASUNTO("pedido.enlace_seguimiento.asunto"),
   PEDIDO_ENLACE_SEGUIMIENTO_CUERPO("pedido.enlace_seguimiento.cuerpo"),

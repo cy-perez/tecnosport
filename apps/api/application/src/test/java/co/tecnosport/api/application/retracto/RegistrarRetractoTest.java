@@ -151,7 +151,7 @@ class RegistrarRetractoTest {
 
     assertEquals(1, correos.enviados().size());
     assertEquals("cliente@tecnosport.co", correos.enviados().get(0).destinatario().valor());
-    assertEquals("Ana Pérez", correos.enviados().get(0).nombre());
+    assertEquals("Carlos Ruiz", correos.enviados().get(0).nombre());
     // Que manda el acuse, con el numero del pedido dentro. Lo que la frase tiene que decir —quien
     // paga el flete de vuelta y el plazo del reintegro— se prueba donde vive el texto, en
     // TextosDeCorreoMessageSourceTest: aqui se afirmaba sobre la prosa y ademas sobre una version

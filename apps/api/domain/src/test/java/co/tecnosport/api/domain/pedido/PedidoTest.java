@@ -15,6 +15,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
@@ -80,6 +81,48 @@ class PedidoTest {
         metodoPago,
         "cliente@tecnosport.co",
         AHORA);
+  }
+
+  private Pedido crearCon(Contacto contacto, String nombreComprador) {
+    return Pedido.crear(
+        NUMERO,
+        null,
+        CORREO,
+        List.of(linea(BigDecimal.valueOf(50_000), 2)),
+        TipoEntrega.ENVIO_A_DOMICILIO,
+        DIRECCION_MEDELLIN,
+        MetodoPago.WOMPI,
+        "cliente@tecnosport.co",
+        AHORA,
+        null,
+        contacto,
+        nombreComprador);
+  }
+
+  /** Los correos le llegan a quien compra, y lo saludan a él aunque el pedido sea un regalo. */
+  @Test
+  void saludaAQuienCompraAunqueRecibaOtraPersona() {
+    Pedido pedido = crearCon(new Contacto("Luisa Gómez", "3138816711"), " Ana Pérez ");
+
+    assertEquals(Optional.of("Ana Pérez"), pedido.nombreDelComprador());
+    assertEquals(Optional.of("Ana Pérez"), pedido.nombreParaSaludar());
+  }
+
+  /** Un pedido anterior a adr/0099 no tiene comprador: saluda, como antes, a quien recibe. */
+  @Test
+  void sinCompradorSaludaAQuienRecibeYSinContactoANadie() {
+    Pedido sinComprador = crearCon(new Contacto("Luisa Gómez", "3138816711"), null);
+    assertEquals(Optional.empty(), sinComprador.nombreDelComprador());
+    assertEquals(Optional.of("Luisa Gómez"), sinComprador.nombreParaSaludar());
+
+    assertEquals(Optional.empty(), crearCon(null, null).nombreParaSaludar());
+  }
+
+  @Test
+  void rechazaUnNombreDeCompradorInvalido() {
+    assertThrows(
+        ExcepcionDeDominio.class,
+        () -> crearCon(new Contacto("Luisa Gómez", "3138816711"), "@#$%"));
   }
 
   /**

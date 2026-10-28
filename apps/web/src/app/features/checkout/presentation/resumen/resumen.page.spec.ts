@@ -306,9 +306,14 @@ function clienteDePrueba(): QueryClient {
   return new QueryClient({ defaultOptions: { queries: { retry: false } } });
 }
 
+/** La de la Ley 1581: desde ADR-0099 hay otra casilla, «Lo recibe otra persona». */
+function casillaDeAutorizacion(): HTMLElement {
+  return screen.getByRole('checkbox', { name: /Autorizo el tratamiento/ });
+}
+
 /** Deja el formulario en el estado que dispara la cotización: ciudad y calle. */
 function llenarContacto() {
-  fireEvent.input(screen.getByLabelText('Nombre de quien recibe'), {
+  fireEvent.input(screen.getByLabelText('Tu nombre'), {
     target: { value: 'Ana Pérez' },
   });
   fireEvent.input(screen.getByLabelText('Teléfono de contacto'), {
@@ -385,7 +390,7 @@ describe('ResumenPage', () => {
     });
     llenarContacto();
     await llenarDireccionEnMedellin();
-    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(casillaDeAutorizacion());
 
     expect(await screen.findByText(/Portátil para diseño/)).toBeTruthy();
     expect(screen.getByText(/supera el máximo/)).toBeTruthy();
@@ -416,7 +421,7 @@ describe('ResumenPage', () => {
     });
     llenarContacto();
     await llenarDireccionEnMedellin();
-    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(casillaDeAutorizacion());
 
     expect(
       await screen.findByText(/No podemos calcular el envío a domicilio de este pedido/),
@@ -529,7 +534,7 @@ describe('ResumenPage', () => {
     });
     llenarContacto();
     await llenarDireccionEnMedellin();
-    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(casillaDeAutorizacion());
     expect(await screen.findByText(/No tenemos transporte hasta esta dirección/)).toBeTruthy();
 
     const continuar = screen.getByRole('button', { name: 'Continuar' });
@@ -567,7 +572,7 @@ describe('ResumenPage', () => {
     });
     llenarContacto();
     await llenarDireccionEnMedellin();
-    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(casillaDeAutorizacion());
 
     // Sin esperar la cotización: es justo el instante en el que antes se colaba.
     fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
@@ -601,7 +606,7 @@ describe('ResumenPage', () => {
     });
     llenarContacto();
     await llenarDireccionEnMedellin();
-    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(casillaDeAutorizacion());
     fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
 
     envios.resolverCon(COTIZACION);
@@ -632,7 +637,7 @@ describe('ResumenPage', () => {
     });
     llenarContacto();
     await llenarDireccionEnMedellin();
-    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(casillaDeAutorizacion());
 
     // Timeout explícito: la consulta reintenta una vez antes de darse por vencida (ver
     // `usarCotizacionEnvio`), así que `isError()` llega alrededor de un segundo después del
@@ -966,16 +971,14 @@ describe('ResumenPage', () => {
     await renderResumen(new RepositorioCarritoFalso(CARRITO_CON_LINEAS));
     await screen.findByText('Morral urbano');
 
-    for (const etiqueta of ['Nombre de quien recibe', 'Correo electrónico', 'Dirección']) {
+    for (const etiqueta of ['Tu nombre', 'Correo electrónico', 'Dirección']) {
       expect(screen.getByLabelText(etiqueta).getAttribute('aria-required'), etiqueta).toBe('true');
     }
-    expect(screen.getByRole('checkbox').getAttribute('aria-required')).toBe('true');
+    expect(casillaDeAutorizacion().getAttribute('aria-required')).toBe('true');
 
     fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
 
-    await vi.waitFor(() =>
-      expect(document.activeElement).toBe(screen.getByLabelText('Nombre de quien recibe')),
-    );
+    await vi.waitFor(() => expect(document.activeElement).toBe(screen.getByLabelText('Tu nombre')));
   });
 
   /**
@@ -992,14 +995,14 @@ describe('ResumenPage', () => {
     await screen.findByText('Morral urbano');
     const checkout = fixture.debugElement.injector.get(CheckoutStore);
 
-    fireEvent.input(screen.getByLabelText('Nombre de quien recibe'), {
+    fireEvent.input(screen.getByLabelText('Tu nombre'), {
       target: { value: 'Ana Pérez' },
     });
     fireEvent.input(screen.getByLabelText('Correo electrónico'), {
       target: { value: 'compra@ejemplo.co' },
     });
     await llenarDireccionEnMedellin();
-    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(casillaDeAutorizacion());
 
     fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
 
@@ -1025,7 +1028,7 @@ describe('ResumenPage', () => {
       target: { value: 'compra@ejemplo.co' },
     });
     await llenarDireccionEnMedellin();
-    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(casillaDeAutorizacion());
 
     fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
 
@@ -1039,16 +1042,8 @@ describe('ResumenPage', () => {
    * transportadora, con un destinatario por el que el mensajero no puede preguntar.
    */
   it.each([
-    [
-      'Nombre de quien recibe',
-      '@#$%',
-      'Escribe un nombre válido: letras, sin números ni símbolos.',
-    ],
-    [
-      'Nombre de quien recibe',
-      'Ana 123',
-      'Escribe un nombre válido: letras, sin números ni símbolos.',
-    ],
+    ['Tu nombre', '@#$%', 'Escribe un nombre válido: letras, sin números ni símbolos.'],
+    ['Tu nombre', 'Ana 123', 'Escribe un nombre válido: letras, sin números ni símbolos.'],
     [
       'Dirección',
       '@#$%',
@@ -1075,7 +1070,7 @@ describe('ResumenPage', () => {
     });
     await llenarDireccionEnMedellin();
     fireEvent.input(screen.getByLabelText(etiqueta), { target: { value: valor } });
-    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(casillaDeAutorizacion());
 
     fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
 
@@ -1102,7 +1097,7 @@ describe('ResumenPage', () => {
       target: { value: 'compra@ejemplo' },
     });
     await llenarDireccionEnMedellin();
-    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(casillaDeAutorizacion());
 
     fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
 
@@ -1129,7 +1124,7 @@ describe('ResumenPage', () => {
       target: { value: 'compra@ejemplo.co' },
     });
     await llenarDireccionEnMedellin();
-    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(casillaDeAutorizacion());
 
     fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
 
@@ -1161,7 +1156,7 @@ describe('ResumenPage', () => {
     fireEvent.change(await screen.findByLabelText('Tipo de entrega'), {
       target: { value: 'RETIRO_EN_PUNTO' },
     });
-    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(casillaDeAutorizacion());
 
     fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
 
@@ -1249,6 +1244,7 @@ describe('ResumenPage', () => {
       const checkout = fixture.debugElement.injector.get(CheckoutStore);
       checkout.guardarDatosEntrega({
         correo: 'compra@ejemplo.co',
+        nombreComprador: 'Ana Pérez',
         contacto: { nombre: 'Ana Pérez', telefono: '3138816711' },
         tipoEntrega: 'ENVIO_A_DOMICILIO',
         direccion: null,
@@ -1306,10 +1302,78 @@ describe('ResumenPage', () => {
         indicaciones: null,
         barrio: null,
       },
+      // Sin marcar «Lo recibe otra persona», quien compra es quien recibe (ADR-0099).
+      nombreComprador: 'Ana Pérez',
       contacto: { nombre: 'Ana Pérez', telefono: '3138816711' },
       autorizaDatos: true,
       transportadora: null,
     });
+    expect(screen.queryByLabelText('Nombre de quien recibe')).toBeNull();
+  });
+
+  /**
+   * Un regalo: quien compra recibe los correos y quien recibe va en la guía (ADR-0099). El campo
+   * aparece al marcar la casilla y, desde ahí, es obligatorio.
+   */
+  it('si lo recibe otra persona, pide su nombre y guarda los dos', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+    const { fixture } = await renderResumen(
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioEnviosFalso(COTIZACION),
+    );
+    await screen.findByText('Morral urbano');
+    const checkout = fixture.debugElement.injector.get(CheckoutStore);
+
+    fireEvent.input(screen.getByLabelText('Correo electrónico'), {
+      target: { value: 'compra@ejemplo.co' },
+    });
+    llenarContacto();
+    await llenarDireccionEnMedellin();
+    fireEvent.click(casillaDeAutorizacion());
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Lo recibe otra persona' }));
+
+    const quienRecibe = await screen.findByLabelText('Nombre de quien recibe');
+    expect(quienRecibe.getAttribute('aria-required')).toBe('true');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+    expect(await screen.findByText('Escribe el nombre de quien recibe.')).toBeTruthy();
+    expect(checkout.datosEntrega()).toBeNull();
+
+    fireEvent.input(quienRecibe, { target: { value: 'Luisa Gómez' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+    await vi.waitFor(() => expect(checkout.datosEntrega()).not.toBeNull());
+
+    expect(checkout.datosEntrega()?.nombreComprador).toBe('Ana Pérez');
+    expect(checkout.datosEntrega()?.contacto).toEqual({
+      nombre: 'Luisa Gómez',
+      telefono: '3138816711',
+    });
+  });
+
+  it('sin el nombre de quien compra no continúa y dice por qué', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+    const { fixture } = await renderResumen(
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioEnviosFalso(COTIZACION),
+    );
+    await screen.findByText('Morral urbano');
+    const checkout = fixture.debugElement.injector.get(CheckoutStore);
+
+    fireEvent.input(screen.getByLabelText('Correo electrónico'), {
+      target: { value: 'compra@ejemplo.co' },
+    });
+    fireEvent.input(screen.getByLabelText('Teléfono de contacto'), {
+      target: { value: '3138816711' },
+    });
+    await llenarDireccionEnMedellin();
+    fireEvent.click(casillaDeAutorizacion());
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+
+    expect(await screen.findByText('Escribe tu nombre.')).toBeTruthy();
+    expect(checkout.datosEntrega()).toBeNull();
   });
 
   /**
@@ -1421,6 +1485,46 @@ describe('ResumenPage', () => {
    * lo escrito guardado en `CheckoutStore.datosEntrega`. La casilla de autorización es la excepción,
    * a propósito: ver `rellenarConLoYaEscrito`.
    */
+  it('al volver de un regalo, la casilla de otra persona vuelve marcada con su nombre', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+
+    @Component({
+      selector: 'app-anfitrion-de-prueba',
+      imports: [ResumenPage],
+      template: `<app-resumen />`,
+    })
+    class ConUnRegalo {
+      constructor() {
+        inject(CheckoutStore).guardarDatosEntrega({
+          correo: 'compra@ejemplo.co',
+          nombreComprador: 'Ana Pérez',
+          contacto: { nombre: 'Luisa Gómez', telefono: '3138816711' },
+          tipoEntrega: 'ENVIO_A_DOMICILIO',
+          direccion: null,
+          autorizaDatos: true,
+          transportadora: null,
+        });
+      }
+    }
+
+    await renderResumen(
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioEnviosFalso(COTIZACION),
+      ConUnRegalo,
+    );
+    await screen.findByText('Morral urbano');
+
+    expect((screen.getByLabelText('Tu nombre') as HTMLInputElement).value).toBe('Ana Pérez');
+    expect(
+      (screen.getByRole('checkbox', { name: 'Lo recibe otra persona' }) as HTMLInputElement)
+        .checked,
+    ).toBe(true);
+    expect(
+      ((await screen.findByLabelText('Nombre de quien recibe')) as HTMLInputElement).value,
+    ).toBe('Luisa Gómez');
+  });
+
   it('al volver, el formulario trae lo ya escrito salvo la casilla de autorización', async () => {
     sembrarCarritoId('carrito-1');
     sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
@@ -1434,6 +1538,7 @@ describe('ResumenPage', () => {
       constructor() {
         inject(CheckoutStore).guardarDatosEntrega({
           correo: 'compra@ejemplo.co',
+          nombreComprador: 'Ana Pérez',
           contacto: { nombre: 'Ana Pérez', telefono: '3138816711' },
           tipoEntrega: 'ENVIO_A_DOMICILIO',
           direccion: {
@@ -1461,7 +1566,7 @@ describe('ResumenPage', () => {
     const valor = (etiqueta: string) =>
       (screen.getByLabelText(etiqueta) as HTMLInputElement | HTMLSelectElement).value;
     expect(valor('Correo electrónico')).toBe('compra@ejemplo.co');
-    expect(valor('Nombre de quien recibe')).toBe('Ana Pérez');
+    expect(valor('Tu nombre')).toBe('Ana Pérez');
     expect(valor('Teléfono de contacto')).toBe('3138816711');
     expect(valor('Departamento')).toBe('05');
     expect(valor('Ciudad')).toBe('05001');

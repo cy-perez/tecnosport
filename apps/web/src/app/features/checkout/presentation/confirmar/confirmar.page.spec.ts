@@ -179,6 +179,7 @@ function pedidoDePrueba(overrides: Partial<Pedido> = {}): Pedido {
     numeroPedido: 'TS-2026-000001',
     usuarioId: null,
     correo: 'compra@ejemplo.co',
+    nombreComprador: null,
     lineas: [],
     tipoEntrega: 'RETIRO_EN_PUNTO',
     direccion: null,
@@ -368,6 +369,7 @@ const DATOS_ENTREGA: DatosEntrega = {
   correo: 'compra@ejemplo.co',
   tipoEntrega: 'RETIRO_EN_PUNTO',
   direccion: null,
+  nombreComprador: 'Ana Pérez',
   contacto: { nombre: 'Ana Pérez', telefono: '3138816711' },
   autorizaDatos: true,
   transportadora: null,
@@ -385,6 +387,7 @@ const DATOS_ENTREGA_A_DOMICILIO: DatosEntrega = {
     indicaciones: null,
     barrio: null,
   },
+  nombreComprador: 'Ana Pérez',
   contacto: { nombre: 'Ana Pérez', telefono: '3138816711' },
   autorizaDatos: true,
   transportadora: null,
@@ -860,6 +863,27 @@ describe('ConfirmarPage', () => {
     expect(screen.queryByText('Descuento por medio de pago')).toBeFalsy();
   });
 
+  it('en un regalo muestra quien compra y quien recibe', async () => {
+    sembrarCarritoId('carrito-1');
+
+    await renderConDatos(
+      'CONTRAENTREGA',
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioPedidosFalso(),
+      undefined,
+      {
+        ...DATOS_ENTREGA,
+        nombreComprador: 'Carlos Ruiz',
+        contacto: { nombre: 'Luisa Gómez', telefono: '3138816711' },
+      },
+    );
+
+    expect(await screen.findByText('Carlos Ruiz')).toBeTruthy();
+    expect(screen.getByText('Tu nombre')).toBeTruthy();
+    expect(screen.getByText('Luisa Gómez')).toBeTruthy();
+    expect(screen.getByText('Nombre de quien recibe')).toBeTruthy();
+  });
+
   it('muestra correo, tipo de entrega, método de pago y subtotal', async () => {
     sembrarCarritoId('carrito-1');
 
@@ -1318,6 +1342,7 @@ describe('ConfirmarPage', () => {
       tipoEntrega: 'RETIRO_EN_PUNTO',
       direccion: null,
       metodoPago: 'CONTRAENTREGA',
+      nombreComprador: 'Ana Pérez',
       contacto: { nombre: 'Ana Pérez', telefono: '3138816711' },
       autorizaDatos: true,
       transportadora: null,
@@ -1351,6 +1376,7 @@ describe('ConfirmarPage', () => {
       tipoEntrega: 'RETIRO_EN_PUNTO',
       direccion: null,
       metodoPago: 'CONTRAENTREGA',
+      nombreComprador: 'Ana Pérez',
       contacto: { nombre: 'Ana Pérez', telefono: '3138816711' },
       autorizaDatos: true,
       transportadora: null,

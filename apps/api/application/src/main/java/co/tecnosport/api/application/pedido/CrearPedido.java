@@ -28,6 +28,7 @@ import co.tecnosport.api.domain.pedido.EnlaceDeCompra;
 import co.tecnosport.api.domain.pedido.EnlaceDeCompraNoVigenteException;
 import co.tecnosport.api.domain.pedido.LineaPedido;
 import co.tecnosport.api.domain.pedido.MetodoPago;
+import co.tecnosport.api.domain.pedido.NombreDePersona;
 import co.tecnosport.api.domain.pedido.NumeroPedido;
 import co.tecnosport.api.domain.pedido.Pedido;
 import co.tecnosport.api.domain.pedido.TipoEntrega;
@@ -147,6 +148,12 @@ public final class CrearPedido {
     if (comando.contacto() == null) {
       throw new ExcepcionDeDominio("Un pedido exige el nombre y el teléfono de quien recibe.");
     }
+    // Lo mismo para quien compra (adr/0099), y antes de reservar nada: un nombre inválido rompe
+    // aquí y no después de haber comprometido existencias.
+    if (comando.nombreComprador() == null || comando.nombreComprador().isBlank()) {
+      throw new ExcepcionDeDominio("Un pedido exige el nombre de quien compra.");
+    }
+    String nombreComprador = new NombreDePersona(comando.nombreComprador()).valor();
     Instant ahora = reloj.ahora();
     CorreoElectronico correoComprador = new CorreoElectronico(comando.correo());
     if (!limitadorDeIntentos.permitir(
@@ -253,7 +260,8 @@ public final class CrearPedido {
             comando.correo(),
             ahora,
             tarifaEnvio,
-            comando.contacto());
+            comando.contacto(),
+            nombreComprador);
 
     repositorioPedidos.guardar(pedido);
     for (EnlaceDeCompra enlace : enlacesUsados) {

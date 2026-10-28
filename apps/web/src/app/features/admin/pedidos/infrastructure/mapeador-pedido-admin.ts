@@ -63,6 +63,7 @@ export function aPedidoAdmin(
     numeroPedido: dto.numeroPedido ?? '',
     usuarioId: dto.usuarioId ?? null,
     correo: dto.correo ?? '',
+    nombreComprador: dto.nombreComprador ?? null,
     contacto: dto.contacto
       ? { nombre: dto.contacto.nombre ?? '', telefono: dto.contacto.telefono ?? '' }
       : null,
