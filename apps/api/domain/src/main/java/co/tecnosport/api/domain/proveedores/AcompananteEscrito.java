@@ -24,6 +24,10 @@ import java.util.regex.Pattern;
  * Si la línea no dice la prenda —«Dúo $95.000»—, es la del único acompañante que el texto escribe.
  * Sin leer el combo, el set del polo saldría a 90.000 (55.000 más la gorra) cuando el anuncio dice
  * 85.000.
+ *
+ * <p>Lo tachado no se lee, como en {@link PatronDePrecio}: «Jean + Básica 🤑~$75.000~» y debajo
+ * «Descuento aniversario $68.000» (La Riverah, 26 de octubre de 2026) era un combo a 75.000, y el
+ * combo manda en el set.
  */
 public final class AcompananteEscrito {
 
@@ -64,7 +68,7 @@ public final class AcompananteEscrito {
     }
     List<PrecioAdicional> leidos = new ArrayList<>();
     List<Dinero> combosSinPrenda = new ArrayList<>();
-    for (String linea : texto.split("\\R")) {
+    for (String linea : PatronDePrecio.sinTachado(texto).split("\\R")) {
       if (esTelefono(linea)) {
         continue;
       }

@@ -25,10 +25,13 @@ import java.util.regex.Pattern;
  * <h2>Los precios en miles</h2>
  *
  * <p>Violeta escribe {@code 💲124} por 124.000 (exportación del 2 de octubre de 2026). Dos o tres
- * cifras sueltas se leen en miles, pero <b>solo pegadas a 💲</b>, que es donde se vieron: detrás de
- * la palabra PRECIO lo que viene suele ser una cantidad —«precio x 12 unidades»—, sin marca es una
- * talla, y {@code 💰 500} se decidió antes que no es un precio. Si otro proveedor abrevia con otra
- * marca, se agrega con su ejemplo. Una sola cifra no es un precio de nada que se venda aquí.
+ * cifras sueltas se leen en miles, pero <b>solo pegadas a 💲 o a {@code $}</b>, que es donde se
+ * vieron: detrás de la palabra PRECIO lo que viene suele ser una cantidad —«precio x 12 unidades»—,
+ * sin marca es una talla, y {@code 💰 500} se decidió antes que no es un precio. El {@code $} entró
+ * el 28 de octubre de 2026, con el {@code $ 39} de un body de Violeta al lado del {@code 💲78} de
+ * su pantalón: leyendo solo el segundo, el anuncio de dos prendas salía con un precio y ninguno se
+ * contrastaba. Si otro proveedor abrevia con otra marca, se agrega con su ejemplo. Una sola cifra
+ * no es un precio de nada que se venda aquí.
  *
  * <h2>El cierre doble</h2>
  *
@@ -40,9 +43,18 @@ import java.util.regex.Pattern;
  * <p>La Riverah tacha el precio por mayor y escribe debajo el que vale: {@code ~~ PRECIO x
  * MAYOR🤑99.900🥳~~~} y luego {@code Súper descuento $69.900} (exportación del 9 de octubre de
  * 2026). Leído tal cual, el primer precio era el tachado. Por eso, antes de buscar, se borra todo
- * tramo tachado: el que abre con virgulillas al principio de la línea o detrás de un espacio, como
- * abre WhatsApp, y cierra con virgulillas en la misma línea. El cierre doble de arriba no se
- * confunde con eso porque va pegado al número: {@code 🎽55.000~~} no abre nada.
+ * tramo tachado: el que abre con virgulillas donde no las precede una letra ni una cifra —al
+ * principio de la línea, detrás de un espacio o de un emoji— y cierra con virgulillas en la misma
+ * línea. El emoji entró el 28 de octubre de 2026: {@code 🤑~$65.000~} y debajo {@code Promo
+ * $59.900}, y el jean salía a 65.000. El cierre doble de arriba no se confunde con eso porque va
+ * pegado al número: {@code 🎽55.000~~} no abre nada.
+ *
+ * <h2>El precio por docena no es el de un par</h2>
+ *
+ * <p>Imperio Wicho escribe {@code 📦Docena *$120,000*} y debajo {@code 💰*$12,000*}, o {@code Detal
+ * 💰*$20,000*} (exportación del 27 de octubre de 2026). La tienda compra de a uno: si el texto trae
+ * un precio fuera de una línea que nombra la docena, los de esas líneas no cuentan. Si solo trae el
+ * de la docena, se queda: es el único precio que hay, y quien revisa lo ve.
  *
  * <h2>El precio por mayor manda</h2>
  *
@@ -70,7 +82,7 @@ public final class PatronDePrecio {
               + "[\\s*]*\\$?\\s*"
               + NUMERO
               + ")"
-              + "|(?:💲\\s*"
+              + "|(?:(?:💲|\\$)\\s*"
               + EN_MILES
               + ")"
               + "|(?:PRECIO[^\\d\\n]{0,12}[\\s*]*\\$?\\s*"
@@ -95,7 +107,13 @@ public final class PatronDePrecio {
           Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
 
   /** Un tramo tachado de WhatsApp con alguna cifra dentro, sin salir de su línea. */
-  private static final Pattern TACHADO = Pattern.compile("(?<!\\S)~+[^~\\n]*\\d[^~\\n]*~+");
+  private static final Pattern TACHADO =
+      Pattern.compile("(?<![\\p{L}\\p{N}])~+[^~\\n]*\\d[^~\\n]*~+");
+
+  /** La línea nombra la docena: «📦Docena *$120,000*», «x docena», «docenas». */
+  private static final Pattern DOCENA =
+      Pattern.compile(
+          "(?<!\\p{L})docenas?(?!\\p{L})", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
 
   private static final BigDecimal MINIMO = BigDecimal.valueOf(1_000);
 
@@ -135,22 +153,33 @@ public final class PatronDePrecio {
       return List.copyOf(porMayor);
     }
     List<Dinero> precios = new ArrayList<>();
+    List<Dinero> deUno = new ArrayList<>();
     Matcher m = CANDIDATO.matcher(legible);
     while (m.find()) {
       BigDecimal valor = valorDe(m);
       if (valor.compareTo(MINIMO) >= 0) {
         precios.add(Dinero.deCop(valor));
+        if (!DOCENA.matcher(lineaDe(legible, m.start())).find()) {
+          deUno.add(Dinero.deCop(valor));
+        }
       }
     }
-    return List.copyOf(precios);
+    return List.copyOf(deUno.isEmpty() ? precios : deUno);
   }
 
   public static boolean tienePrecio(String texto) {
     return extraer(texto).isPresent();
   }
 
-  private static String sinTachado(String texto) {
+  /** El texto con cada tramo tachado cambiado por un espacio: lo tachado ya no vale. */
+  static String sinTachado(String texto) {
     return TACHADO.matcher(texto).replaceAll(" ");
+  }
+
+  private static String lineaDe(String texto, int posicion) {
+    int desde = texto.lastIndexOf('\n', posicion) + 1;
+    int hasta = texto.indexOf('\n', posicion);
+    return texto.substring(desde, hasta < 0 ? texto.length() : hasta);
   }
 
   private static BigDecimal valorDe(Matcher m) {
