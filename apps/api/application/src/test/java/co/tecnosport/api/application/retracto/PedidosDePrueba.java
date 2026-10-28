@@ -3,6 +3,7 @@ package co.tecnosport.api.application.retracto;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
+import co.tecnosport.api.domain.pedido.Contacto;
 import co.tecnosport.api.domain.pedido.Direccion;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
 import co.tecnosport.api.domain.pedido.LineaPedido;
@@ -43,7 +44,9 @@ final class PedidosDePrueba {
             Direccion.sinBarrio("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", null),
             metodoPago,
             "cliente@tecnosport.co",
-            entregadoEn.minusSeconds(86_400));
+            entregadoEn.minusSeconds(86_400),
+            null,
+            new Contacto("Ana Pérez", "3138816711"));
     if (metodoPago != MetodoPago.CONTRAENTREGA) {
       pedido.transicionar(EstadoPedido.PAGADO, "sistema", "pago aprobado", entregadoEn);
     }
@@ -64,7 +67,9 @@ final class PedidosDePrueba {
             Direccion.sinBarrio("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", null),
             metodoPago,
             "cliente@tecnosport.co",
-            ahora);
+            ahora,
+            null,
+            new Contacto("Ana Pérez", "3138816711"));
     if (metodoPago != MetodoPago.CONTRAENTREGA) {
       pedido.transicionar(EstadoPedido.PAGADO, "sistema", "pago aprobado", ahora);
     }

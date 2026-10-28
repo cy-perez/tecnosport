@@ -10,6 +10,7 @@ import co.tecnosport.api.application.compartido.TextosDeCorreoFalso;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
+import co.tecnosport.api.domain.pedido.Contacto;
 import co.tecnosport.api.domain.pedido.Direccion;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
 import co.tecnosport.api.domain.pedido.LineaPedido;
@@ -64,7 +65,9 @@ class AvisarPlazosDeEntregaVencidosTest {
             Direccion.sinBarrio("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", null),
             metodoPago,
             "cliente@tecnosport.co",
-            CONFIRMADO);
+            CONFIRMADO,
+            null,
+            new Contacto("Ana Pérez", "3138816711"));
     Instant momento = CONFIRMADO;
     for (EstadoPedido siguiente : transiciones) {
       momento = momento.plusSeconds(3600);
@@ -88,6 +91,7 @@ class AvisarPlazosDeEntregaVencidosTest {
     assertEquals(new ResultadoVigilanciaPlazos(1, 1), resultado);
     assertEquals(1, correos.enviados().size());
     assertEquals(pedido.correo(), correos.enviados().get(0).destinatario());
+    assertEquals("Ana Pérez", correos.enviados().get(0).nombre());
     assertTrue(correos.enviados().get(0).asunto().contains(pedido.numeroPedido().valor()));
   }
 

@@ -19,6 +19,7 @@ import co.tecnosport.api.domain.envio.EstadoEmision;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.inventario.MovimientoInventario;
 import co.tecnosport.api.domain.inventario.TipoMovimientoInventario;
+import co.tecnosport.api.domain.pedido.Contacto;
 import co.tecnosport.api.domain.pedido.Direccion;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
 import co.tecnosport.api.domain.pedido.LineaPedido;
@@ -104,7 +105,9 @@ class CancelarPedidoTest {
             Direccion.sinBarrio("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", null),
             metodoPago,
             "cliente@tecnosport.co",
-            AHORA.minusSeconds(500));
+            AHORA.minusSeconds(500),
+            null,
+            new Contacto("Ana Pérez", "3138816711"));
     // Pedido.crear ya deja el pedido en PAGO_PENDIENTE o en CONFIRMADO_CONTRAENTREGA segun el
     // metodo de pago: desde ahi solo hay que avanzar lo que pida el escenario.
     if (metodoPago != MetodoPago.CONTRAENTREGA && estado != EstadoPedido.PAGO_PENDIENTE) {
@@ -503,6 +506,7 @@ class CancelarPedidoTest {
     assertEquals(EstadoPedido.CANCELADO, pedido.estado());
     assertEquals(MotivoReintegro.NO_RECOGIDO, reintegros.guardados().get(0).motivo());
     assertTrue(correos.enviados().get(0).cuerpoHtml().contains("[pedido.cancelacion.no_recogido]"));
+    assertEquals("Ana Pérez", correos.enviados().get(0).nombre());
   }
 
   @Test
