@@ -46,7 +46,8 @@ final class PedidosDePrueba {
             "cliente@tecnosport.co",
             entregadoEn.minusSeconds(86_400),
             null,
-            new Contacto("Ana Pérez", "3138816711"));
+            new Contacto("Ana Pérez", "3138816711"),
+            "Carlos Ruiz");
     if (metodoPago != MetodoPago.CONTRAENTREGA) {
       pedido.transicionar(EstadoPedido.PAGADO, "sistema", "pago aprobado", entregadoEn);
     }
@@ -69,7 +70,8 @@ final class PedidosDePrueba {
             "cliente@tecnosport.co",
             ahora,
             null,
-            new Contacto("Ana Pérez", "3138816711"));
+            new Contacto("Ana Pérez", "3138816711"),
+            "Carlos Ruiz");
     if (metodoPago != MetodoPago.CONTRAENTREGA) {
       pedido.transicionar(EstadoPedido.PAGADO, "sistema", "pago aprobado", ahora);
     }

@@ -108,6 +108,9 @@ public class PedidoJpaEntity {
   @Column(name = "telefono_contacto")
   private String telefonoContacto;
 
+  @Column(name = "nombre_comprador")
+  private String nombreComprador;
+
   protected PedidoJpaEntity() {}
 
   public PedidoJpaEntity(
@@ -135,7 +138,9 @@ public class PedidoJpaEntity {
       Boolean tarifaEnvioAdmiteContraentrega,
       Instant tarifaEnvioVenceEn,
       String nombreContacto,
-      String telefonoContacto) {
+      String telefonoContacto,
+      String nombreComprador) {
+    this.nombreComprador = nombreComprador;
     this.nombreContacto = nombreContacto;
     this.telefonoContacto = telefonoContacto;
     this.id = id;
@@ -262,5 +267,9 @@ public class PedidoJpaEntity {
 
   public String getTelefonoContacto() {
     return telefonoContacto;
+  }
+
+  public String getNombreComprador() {
+    return nombreComprador;
   }
 }

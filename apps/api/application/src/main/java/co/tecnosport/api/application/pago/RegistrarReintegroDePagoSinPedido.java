@@ -85,7 +85,7 @@ public final class RegistrarReintegroDePagoSinPedido {
     try {
       enviadorDeCorreo.enviar(
           pedido.correo(),
-          pedido.nombreDeQuienRecibe().orElse(null),
+          pedido.nombreParaSaludar().orElse(null),
           textos.texto(TextoDeCorreo.PAGO_SIN_PEDIDO_ASUNTO, pedido.numeroPedido().valor()),
           textos.texto(TextoDeCorreo.PAGO_SIN_PEDIDO_CUERPO, pedido.numeroPedido().valor())
               + textos.texto(dinero));

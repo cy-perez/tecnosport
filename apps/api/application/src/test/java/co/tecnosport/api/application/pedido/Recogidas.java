@@ -84,7 +84,8 @@ final class Recogidas {
             "cliente@tecnosport.co",
             creado,
             null,
-            new Contacto("Ana Pérez", "3138816711"));
+            new Contacto("Ana Pérez", "3138816711"),
+            "Carlos Ruiz");
     if (!pagaAlRecoger) {
       pedido.transicionar(EstadoPedido.PAGADO, "webhook-wompi", "pago aprobado", creado);
     }

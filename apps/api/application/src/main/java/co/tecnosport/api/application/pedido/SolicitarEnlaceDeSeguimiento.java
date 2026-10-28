@@ -100,7 +100,7 @@ public final class SolicitarEnlaceDeSeguimiento {
     String numero = pedido.numeroPedido().valor();
     enviadorDeCorreo.enviar(
         pedido.correo(),
-        pedido.nombreDeQuienRecibe().orElse(null),
+        pedido.nombreParaSaludar().orElse(null),
         textos.texto(TextoDeCorreo.PEDIDO_ENLACE_SEGUIMIENTO_ASUNTO, numero),
         textos.texto(
             TextoDeCorreo.PEDIDO_ENLACE_SEGUIMIENTO_CUERPO,

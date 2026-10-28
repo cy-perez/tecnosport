@@ -57,6 +57,7 @@ public final class Pedido {
   private final Instant avisoDePlazoEnviadoEn;
   private final TarifaEnvio tarifaEnvio;
   private final Contacto contacto;
+  private final String nombreComprador;
 
   public Pedido(
       UUID id,
@@ -181,7 +182,48 @@ public final class Pedido {
       Instant avisoDePlazoEnviadoEn,
       TarifaEnvio tarifaEnvio,
       Contacto contacto) {
+    this(
+        id,
+        numeroPedido,
+        usuarioId,
+        correo,
+        lineas,
+        tipoEntrega,
+        direccion,
+        metodoPago,
+        estado,
+        historial,
+        creadoEn,
+        avisoDePlazoEnviadoEn,
+        tarifaEnvio,
+        contacto,
+        null);
+  }
+
+  /**
+   * El canónico desde adr/0099: el anterior, más el nombre de quien compra. Nulo solo en los
+   * pedidos anteriores a que el checkout lo pidiera; la exigencia para un pedido nuevo vive en
+   * {@code CrearPedido}, igual que la del contacto.
+   */
+  public Pedido(
+      UUID id,
+      NumeroPedido numeroPedido,
+      UUID usuarioId,
+      CorreoElectronico correo,
+      List<LineaPedido> lineas,
+      TipoEntrega tipoEntrega,
+      Direccion direccion,
+      MetodoPago metodoPago,
+      EstadoPedido estado,
+      List<HistorialPedido> historial,
+      Instant creadoEn,
+      Instant avisoDePlazoEnviadoEn,
+      TarifaEnvio tarifaEnvio,
+      Contacto contacto,
+      String nombreComprador) {
     this.contacto = contacto;
+    this.nombreComprador =
+        nombreComprador == null ? null : new NombreDePersona(nombreComprador).valor();
     this.avisoDePlazoEnviadoEn = avisoDePlazoEnviadoEn;
     this.id = Objects.requireNonNull(id, "El id del pedido no puede ser nulo.");
     this.numeroPedido =
@@ -284,6 +326,35 @@ public final class Pedido {
       Instant ahora,
       TarifaEnvio tarifaEnvio,
       Contacto contacto) {
+    return crear(
+        numeroPedido,
+        usuarioId,
+        correo,
+        lineas,
+        tipoEntrega,
+        direccion,
+        metodoPago,
+        actor,
+        ahora,
+        tarifaEnvio,
+        contacto,
+        null);
+  }
+
+  /** El mismo, con el nombre de quien compra (adr/0099). Es el que usa {@code CrearPedido}. */
+  public static Pedido crear(
+      NumeroPedido numeroPedido,
+      UUID usuarioId,
+      CorreoElectronico correo,
+      List<LineaPedido> lineas,
+      TipoEntrega tipoEntrega,
+      Direccion direccion,
+      MetodoPago metodoPago,
+      String actor,
+      Instant ahora,
+      TarifaEnvio tarifaEnvio,
+      Contacto contacto,
+      String nombreComprador) {
     Objects.requireNonNull(metodoPago, "El método de pago no puede ser nulo.");
     exigirVariantesSinRepetir(lineas.stream().map(LineaPedido::varianteId).toList());
     EstadoPedido estadoInicial = estadoInicial(metodoPago);
@@ -304,7 +375,8 @@ public final class Pedido {
         ahora,
         null,
         tarifaEnvio,
-        contacto);
+        contacto,
+        nombreComprador);
   }
 
   /**
@@ -369,13 +441,18 @@ public final class Pedido {
     return Optional.ofNullable(contacto);
   }
 
+  /** Quien compra, tal como se guardó. Vacío en los pedidos anteriores a adr/0099. */
+  public Optional<String> nombreDelComprador() {
+    return Optional.ofNullable(nombreComprador);
+  }
+
   /**
-   * Con el que se saluda en los correos del pedido (adr/0098). Es el de quien recibe, porque es el
-   * único que el checkout pide: si alguien compra un regalo, su correo saluda a quien lo recibe.
-   * Vacío en los pedidos anteriores al contacto.
+   * Con el que se saluda en los correos del pedido, que le llegan a quien compra (adr/0099). Un
+   * pedido anterior a que se pidiera ese nombre saluda, como antes, a quien recibe; y uno anterior
+   * al contacto, sin nombre.
    */
-  public Optional<String> nombreDeQuienRecibe() {
-    return contacto().map(Contacto::nombre);
+  public Optional<String> nombreParaSaludar() {
+    return nombreDelComprador().or(() -> contacto().map(Contacto::nombre));
   }
 
   public MetodoPago metodoPago() {

@@ -48,7 +48,7 @@ class VencerRecogidasSinRetirarTest {
     assertEquals(EstadoPedido.CANCELADO, pedido.estado());
     assertEquals(1, disponible(pedido));
     String cuerpo = correos.enviados().get(0).cuerpoHtml();
-    assertEquals("Ana Pérez", correos.enviados().get(0).nombre());
+    assertEquals("Carlos Ruiz", correos.enviados().get(0).nombre());
     assertTrue(cuerpo.contains("[pedido.recogida_vencida.cuerpo|"), cuerpo);
     assertTrue(cuerpo.contains("[pedido.cancelacion.sin_cobro]"), cuerpo);
   }

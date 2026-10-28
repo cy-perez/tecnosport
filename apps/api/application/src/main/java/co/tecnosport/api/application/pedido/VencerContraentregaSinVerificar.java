@@ -120,7 +120,7 @@ public final class VencerContraentregaSinVerificar {
     try {
       enviadorDeCorreo.enviar(
           pedido.correo(),
-          pedido.nombreDeQuienRecibe().orElse(null),
+          pedido.nombreParaSaludar().orElse(null),
           textos.texto(
               TextoDeCorreo.PEDIDO_CONTRAENTREGA_VENCIDA_ASUNTO, pedido.numeroPedido().valor()),
           textos.texto(

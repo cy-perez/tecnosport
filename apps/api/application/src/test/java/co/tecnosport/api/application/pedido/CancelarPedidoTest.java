@@ -107,7 +107,8 @@ class CancelarPedidoTest {
             "cliente@tecnosport.co",
             AHORA.minusSeconds(500),
             null,
-            new Contacto("Ana Pérez", "3138816711"));
+            new Contacto("Ana Pérez", "3138816711"),
+            "Carlos Ruiz");
     // Pedido.crear ya deja el pedido en PAGO_PENDIENTE o en CONFIRMADO_CONTRAENTREGA segun el
     // metodo de pago: desde ahi solo hay que avanzar lo que pida el escenario.
     if (metodoPago != MetodoPago.CONTRAENTREGA && estado != EstadoPedido.PAGO_PENDIENTE) {
@@ -506,7 +507,7 @@ class CancelarPedidoTest {
     assertEquals(EstadoPedido.CANCELADO, pedido.estado());
     assertEquals(MotivoReintegro.NO_RECOGIDO, reintegros.guardados().get(0).motivo());
     assertTrue(correos.enviados().get(0).cuerpoHtml().contains("[pedido.cancelacion.no_recogido]"));
-    assertEquals("Ana Pérez", correos.enviados().get(0).nombre());
+    assertEquals("Carlos Ruiz", correos.enviados().get(0).nombre());
   }
 
   @Test

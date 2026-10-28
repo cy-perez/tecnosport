@@ -113,6 +113,24 @@ public final class EnviarComprobantesDeCompra {
     return new ResultadoComprobantes(pendientes.size(), enviados, fallidos);
   }
 
+  /**
+   * A nombre de quién quedó la compra —es el soporte para reclamar la garantía— y, si es otra
+   * persona, quién la recibe (adr/0099). Un pedido anterior a que se pidiera el nombre de quien
+   * compra no dice ninguno de los dos, como antes.
+   */
+  private String personas(Pedido pedido) {
+    if (pedido.nombreDelComprador().isEmpty()) {
+      return "";
+    }
+    String comprador = pedido.nombreDelComprador().get();
+    String texto = textos.texto(TextoDeCorreo.PEDIDO_COMPROBANTE_COMPRADOR, comprador);
+    String recibe = pedido.contacto().map(c -> c.nombre()).orElse(null);
+    if (recibe != null && !recibe.equalsIgnoreCase(comprador)) {
+      texto += textos.texto(TextoDeCorreo.PEDIDO_COMPROBANTE_RECIBE, recibe);
+    }
+    return texto;
+  }
+
   private String totales(Pedido pedido) {
     if (pedido.descuento().valor().signum() == 0) {
       return textos.texto(
@@ -149,6 +167,7 @@ public final class EnviarComprobantesDeCompra {
               textos.dinero(linea.subtotalPublicado())));
     }
     cuerpo.append(totales(pedido));
+    cuerpo.append(personas(pedido));
     cuerpo.append(entrega(pedido));
     cuerpo.append(textos.texto(pago(pedido)));
     cuerpo.append(textos.texto(TextoDeCorreo.PEDIDO_COMPROBANTE_VENDEDOR));
@@ -158,7 +177,7 @@ public final class EnviarComprobantesDeCompra {
 
     enviadorDeCorreo.enviar(
         pedido.correo(),
-        pedido.nombreDeQuienRecibe().orElse(null),
+        pedido.nombreParaSaludar().orElse(null),
         textos.texto(TextoDeCorreo.PEDIDO_COMPROBANTE_ASUNTO, pedido.numeroPedido().valor()),
         cuerpo.toString());
   }

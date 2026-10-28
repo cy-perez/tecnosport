@@ -312,7 +312,8 @@ public class RepositorioPedidosJpa implements RepositorioPedidos {
         entidad.getCreadoEn(),
         entidad.getAvisoPlazoEntregaEnviadoEn(),
         aTarifa(entidad),
-        aContacto(entidad));
+        aContacto(entidad),
+        entidad.getNombreComprador());
   }
 
   /** Los dos o ninguno, garantizado por el {@code check} de {@code V36}; basta mirar el nombre. */
@@ -393,7 +394,8 @@ public class RepositorioPedidosJpa implements RepositorioPedidos {
         tarifa == null ? null : tarifa.admiteContraentrega(),
         tarifa == null ? null : tarifa.venceEn(),
         contacto == null ? null : contacto.nombre(),
-        contacto == null ? null : contacto.telefono());
+        contacto == null ? null : contacto.telefono(),
+        pedido.nombreDelComprador().orElse(null));
   }
 
   private LineaPedidoJpaEntity aEntidadLinea(UUID pedidoId, LineaPedido l) {

@@ -67,7 +67,8 @@ class AvisarPlazosDeEntregaVencidosTest {
             "cliente@tecnosport.co",
             CONFIRMADO,
             null,
-            new Contacto("Ana Pérez", "3138816711"));
+            new Contacto("Ana Pérez", "3138816711"),
+            "Carlos Ruiz");
     Instant momento = CONFIRMADO;
     for (EstadoPedido siguiente : transiciones) {
       momento = momento.plusSeconds(3600);
@@ -91,7 +92,7 @@ class AvisarPlazosDeEntregaVencidosTest {
     assertEquals(new ResultadoVigilanciaPlazos(1, 1), resultado);
     assertEquals(1, correos.enviados().size());
     assertEquals(pedido.correo(), correos.enviados().get(0).destinatario());
-    assertEquals("Ana Pérez", correos.enviados().get(0).nombre());
+    assertEquals("Carlos Ruiz", correos.enviados().get(0).nombre());
     assertTrue(correos.enviados().get(0).asunto().contains(pedido.numeroPedido().valor()));
   }
 

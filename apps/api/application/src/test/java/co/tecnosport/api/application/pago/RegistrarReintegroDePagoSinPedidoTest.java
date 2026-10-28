@@ -84,7 +84,8 @@ class RegistrarReintegroDePagoSinPedidoTest {
             "cliente@tecnosport.co",
             AHORA,
             null,
-            new Contacto("Ana Pérez", "3138816711"));
+            new Contacto("Ana Pérez", "3138816711"),
+            "Carlos Ruiz");
     pedidos.conPedido(pedido);
     return pedido;
   }
@@ -123,7 +124,7 @@ class RegistrarReintegroDePagoSinPedidoTest {
     assertEquals(1, reintegros.guardados().size());
     assertTrue(asuntos.get(0).contains("pago.sin_pedido.asunto"), asuntos.toString());
     assertTrue(cuerpos.get(0).contains("pedido.cancelacion.con_reintegro"), cuerpos.toString());
-    assertEquals("Ana Pérez", nombres.get(0));
+    assertEquals("Carlos Ruiz", nombres.get(0));
   }
 
   @Test

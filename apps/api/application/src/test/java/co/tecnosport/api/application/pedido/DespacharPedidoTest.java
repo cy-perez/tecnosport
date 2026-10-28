@@ -201,9 +201,13 @@ class DespacharPedidoTest {
     assertNull(enviado.nombre());
   }
 
-  /** El saludo lleva el nombre de quien recibe, el único que el checkout pide (adr/0098). */
+  /**
+   * Un pedido anterior a que el checkout pidiera el nombre de quien compra (adr/0099) saluda, como
+   * antes, a quien recibe. Los nuevos saludan a quien compra: lo afirman las demás pruebas de
+   * correo del pedido.
+   */
   @Test
-  void saludaConElNombreDeQuienRecibe() {
+  void sinCompradorSaludaAQuienRecibe() {
     DespacharPedido caso = crear();
     Pedido pedido = pedidoEnPreparacion(new Contacto("María José Restrepo", "3138816711"));
 
