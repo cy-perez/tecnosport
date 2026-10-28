@@ -8,6 +8,7 @@ import co.tecnosport.api.application.compartido.TextosDeCorreoFalso;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
+import co.tecnosport.api.domain.pedido.Contacto;
 import co.tecnosport.api.domain.pedido.LineaPedido;
 import co.tecnosport.api.domain.pedido.MetodoPago;
 import co.tecnosport.api.domain.pedido.NumeroPedido;
@@ -83,7 +84,9 @@ class SolicitarEnlaceDeSeguimientoTest {
             null,
             MetodoPago.CONTRAENTREGA,
             correo,
-            AHORA);
+            AHORA,
+            null,
+            new Contacto("Ana Pérez", "3138816711"));
     pedidos.guardar(pedido);
     return pedido;
   }
@@ -100,6 +103,7 @@ class SolicitarEnlaceDeSeguimientoTest {
 
     assertEquals(1, correos.enviados().size());
     EnviadorDeCorreoFalso.CorreoEnviado enviado = correos.enviados().getFirst();
+    assertEquals("Ana Pérez", correos.enviados().get(0).nombre());
     assertEquals(CORREO, enviado.destinatario().valor());
     assertEquals("[pedido.enlace_seguimiento.asunto|TS-2026-000001]", enviado.asunto());
     // El mismo enlace del comprobante y del despacho: entra por el id, no por el número.

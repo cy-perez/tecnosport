@@ -11,6 +11,7 @@ import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.inventario.MovimientoInventario;
+import co.tecnosport.api.domain.pedido.Contacto;
 import co.tecnosport.api.domain.pedido.Direccion;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
 import co.tecnosport.api.domain.pedido.LineaPedido;
@@ -67,7 +68,9 @@ class VencerContraentregaSinVerificarTest {
             Direccion.sinBarrio("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", null),
             MetodoPago.CONTRAENTREGA,
             "cliente@tecnosport.co",
-            AHORA.minus(hace));
+            AHORA.minus(hace),
+            null,
+            new Contacto("Ana Pérez", "3138816711"));
     pedidos.guardar(pedido);
     return pedido;
   }
@@ -91,6 +94,7 @@ class VencerContraentregaSinVerificarTest {
     assertEquals(1, disponible(pedido));
     assertEquals(1, correos.enviados().size());
     assertTrue(correos.enviados().get(0).cuerpoHtml().contains("contraentrega_vencida"));
+    assertEquals("Ana Pérez", correos.enviados().get(0).nombre());
   }
 
   @Test

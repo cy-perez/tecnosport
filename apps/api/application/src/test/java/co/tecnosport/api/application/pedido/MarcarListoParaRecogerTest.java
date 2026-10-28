@@ -9,6 +9,7 @@ import co.tecnosport.api.application.compartido.TextosDeCorreoFalso;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
+import co.tecnosport.api.domain.pedido.Contacto;
 import co.tecnosport.api.domain.pedido.Direccion;
 import co.tecnosport.api.domain.pedido.EntregaNoAplicaException;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
@@ -56,6 +57,7 @@ class MarcarListoParaRecogerTest {
     assertEquals(AHORA.plus(Duration.ofHours(48)), pedido.recogidaVenceEn().orElseThrow());
     assertEquals(1, correos.enviados().size());
     String cuerpo = correos.enviados().get(0).cuerpoHtml();
+    assertEquals("Ana Pérez", correos.enviados().get(0).nombre());
     assertTrue(
         cuerpo.contains("[pedido.listo_para_recoger.cuerpo|" + pedido.numeroPedido().valor()));
     assertTrue(cuerpo.contains("[pedido.listo_para_recoger.pago_en_punto|50000]"), cuerpo);
@@ -106,7 +108,9 @@ class MarcarListoParaRecogerTest {
             Direccion.sinBarrio("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", null),
             MetodoPago.CONTRAENTREGA,
             "cliente@tecnosport.co",
-            AHORA);
+            AHORA,
+            null,
+            new Contacto("Ana Pérez", "3138816711"));
     pedido.transicionar(EstadoPedido.EN_PREPARACION, "admin:1", "verificado", AHORA);
     pedidos.guardar(pedido);
 

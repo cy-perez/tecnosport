@@ -5,6 +5,7 @@ import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.inventario.MovimientoInventario;
+import co.tecnosport.api.domain.pedido.Contacto;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
 import co.tecnosport.api.domain.pedido.LineaPedido;
 import co.tecnosport.api.domain.pedido.MetodoPago;
@@ -81,7 +82,9 @@ final class Recogidas {
             null,
             metodoPago,
             "cliente@tecnosport.co",
-            creado);
+            creado,
+            null,
+            new Contacto("Ana Pérez", "3138816711"));
     if (!pagaAlRecoger) {
       pedido.transicionar(EstadoPedido.PAGADO, "webhook-wompi", "pago aprobado", creado);
     }

@@ -16,6 +16,7 @@ import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.inventario.MovimientoInventario;
 import co.tecnosport.api.domain.inventario.TipoMovimientoInventario;
+import co.tecnosport.api.domain.pedido.Contacto;
 import co.tecnosport.api.domain.pedido.Direccion;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
 import co.tecnosport.api.domain.pedido.LineaPedido;
@@ -94,7 +95,9 @@ class RecibirPedidoRechazadoTest {
             Direccion.sinBarrio("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", null),
             metodoPago,
             "cliente@tecnosport.co",
-            AHORA.minusSeconds(4000));
+            AHORA.minusSeconds(4000),
+            null,
+            new Contacto("Ana Pérez", "3138816711"));
     if (pagoEnLinea) {
       pedido.transicionar(EstadoPedido.PAGADO, "webhook-wompi", "pago aprobado", AHORA);
     }
@@ -141,6 +144,7 @@ class RecibirPedidoRechazadoTest {
 
     assertEquals(1, correos.enviados().size());
     String cuerpo = correos.enviados().get(0).cuerpoHtml();
+    assertEquals("Ana Pérez", correos.enviados().get(0).nombre());
     assertTrue(cuerpo.contains("pedido.devuelto.cuerpo"), cuerpo);
     assertTrue(cuerpo.contains("pedido.cancelacion.con_reintegro"), cuerpo);
   }
@@ -244,7 +248,9 @@ class RecibirPedidoRechazadoTest {
             Direccion.sinBarrio("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", null),
             MetodoPago.CONTRAENTREGA,
             "cliente@tecnosport.co",
-            AHORA);
+            AHORA,
+            null,
+            new Contacto("Ana Pérez", "3138816711"));
     pedidos.guardar(otro);
 
     assertThrows(

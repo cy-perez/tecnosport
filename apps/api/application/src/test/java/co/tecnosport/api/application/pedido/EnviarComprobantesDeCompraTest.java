@@ -10,6 +10,7 @@ import co.tecnosport.api.application.compartido.TextosDeCorreoFalso;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
+import co.tecnosport.api.domain.pedido.Contacto;
 import co.tecnosport.api.domain.pedido.Direccion;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
 import co.tecnosport.api.domain.pedido.LineaPedido;
@@ -71,7 +72,9 @@ class EnviarComprobantesDeCompraTest {
                     "05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", null),
             metodoPago,
             "cliente@tecnosport.co",
-            COMPRADO);
+            COMPRADO,
+            null,
+            new Contacto("Ana Pérez", "3138816711"));
     Instant momento = COMPRADO;
     for (EstadoPedido siguiente : transiciones) {
       momento = momento.plusSeconds(60);
@@ -94,6 +97,7 @@ class EnviarComprobantesDeCompraTest {
 
     assertEquals(new ResultadoComprobantes(1, 1, 0), resultado);
     assertEquals(pedido.correo(), correos.enviados().getFirst().destinatario());
+    assertEquals("Ana Pérez", correos.enviados().get(0).nombre());
     String cuerpo = cuerpoUnico();
     assertTrue(cuerpo.contains(TextoDeCorreo.PEDIDO_COMPROBANTE_CUERPO.clave()), cuerpo);
     assertTrue(cuerpo.contains(TextoDeCorreo.PEDIDO_COMPROBANTE_VENDEDOR.clave()), cuerpo);
@@ -265,7 +269,9 @@ class EnviarComprobantesDeCompraTest {
             null,
             MetodoPago.TRANSFERENCIA_MANUAL,
             "cliente@tecnosport.co",
-            COMPRADO);
+            COMPRADO,
+            null,
+            new Contacto("Ana Pérez", "3138816711"));
     pedido.transicionar(EstadoPedido.PAGADO, "sistema", "prueba", COMPRADO.plusSeconds(60));
     pedidos.guardar(pedido);
 
@@ -302,7 +308,8 @@ class EnviarComprobantesDeCompraTest {
                 co.tecnosport.api.domain.compartido.Dinero.deCop(12_000),
                 2,
                 true,
-                COMPRADO.plusSeconds(86_400)));
+                COMPRADO.plusSeconds(86_400)),
+            new Contacto("Ana Pérez", "3138816711"));
     pedidos.guardar(pedido);
 
     casoDeUso().ejecutar();

@@ -14,6 +14,7 @@ import co.tecnosport.api.domain.pago.EstadoPago;
 import co.tecnosport.api.domain.pago.EventoPago;
 import co.tecnosport.api.domain.pago.Pago;
 import co.tecnosport.api.domain.pago.ReferenciaPago;
+import co.tecnosport.api.domain.pedido.Contacto;
 import co.tecnosport.api.domain.pedido.Direccion;
 import co.tecnosport.api.domain.pedido.LineaPedido;
 import co.tecnosport.api.domain.pedido.MetodoPago;
@@ -40,6 +41,7 @@ class RegistrarReintegroDePagoSinPedidoTest {
   private final RepositorioReintegrosFalso reintegros = new RepositorioReintegrosFalso();
   private final List<String> asuntos = new ArrayList<>();
   private final List<String> cuerpos = new ArrayList<>();
+  private final List<String> nombres = new ArrayList<>();
 
   private RegistrarReintegroDePagoSinPedido registrar() {
     return new RegistrarReintegroDePagoSinPedido(
@@ -49,6 +51,7 @@ class RegistrarReintegroDePagoSinPedidoTest {
         (destinatario, nombre, asunto, cuerpo) -> {
           asuntos.add(asunto);
           cuerpos.add(cuerpo);
+          nombres.add(nombre);
         },
         new TextosDeCorreoFalso(),
         new RelojFalso(AHORA));
@@ -79,7 +82,9 @@ class RegistrarReintegroDePagoSinPedidoTest {
             Direccion.sinBarrio("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", null),
             MetodoPago.WOMPI,
             "cliente@tecnosport.co",
-            AHORA);
+            AHORA,
+            null,
+            new Contacto("Ana Pérez", "3138816711"));
     pedidos.conPedido(pedido);
     return pedido;
   }
@@ -118,6 +123,7 @@ class RegistrarReintegroDePagoSinPedidoTest {
     assertEquals(1, reintegros.guardados().size());
     assertTrue(asuntos.get(0).contains("pago.sin_pedido.asunto"), asuntos.toString());
     assertTrue(cuerpos.get(0).contains("pedido.cancelacion.con_reintegro"), cuerpos.toString());
+    assertEquals("Ana Pérez", nombres.get(0));
   }
 
   @Test

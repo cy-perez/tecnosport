@@ -406,5 +406,6 @@ class RegistrarReintegroTest {
 
     assertEquals(1, correos.enviados().size());
     assertTrue(correos.enviados().get(0).cuerpoHtml().contains("50000"));
+    assertEquals("Ana Pérez", correos.enviados().get(0).nombre());
   }
 }
