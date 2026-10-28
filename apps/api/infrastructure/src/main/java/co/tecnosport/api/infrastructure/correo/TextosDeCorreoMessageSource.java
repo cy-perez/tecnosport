@@ -34,9 +34,9 @@ import org.springframework.stereotype.Component;
 public class TextosDeCorreoMessageSource implements TextosDeCorreo, InitializingBean {
 
   /** Ver el javadoc de la clase: la versión en castellano es la que rige. */
-  private static final Locale IDIOMA_QUE_RIGE = Locale.of("es");
+  static final Locale IDIOMA_QUE_RIGE = Locale.of("es");
 
-  private static final Locale[] IDIOMAS_QUE_DEBEN_EXISTIR = {Locale.of("es"), Locale.of("en")};
+  static final Locale[] IDIOMAS_QUE_DEBEN_EXISTIR = {Locale.of("es"), Locale.of("en")};
 
   /**
    * Argumentos de relleno para la comprobación de arranque, y no son decorativos: {@code
@@ -87,7 +87,7 @@ public class TextosDeCorreoMessageSource implements TextosDeCorreo, Initializing
    * <p>De paso deja de compartir {@code spring.messages} con cualquier otro uso futuro de mensajes,
    * que habría podido cambiarle el {@code basename} por debajo.
    */
-  private static MessageSource paquetePropio() {
+  static MessageSource paquetePropio() {
     ResourceBundleMessageSource fuente = new ResourceBundleMessageSource();
     fuente.setBasename("correos");
     // Explícito y no por omisión: los .properties se leen en ISO-8859-1 si nadie dice otra cosa, y

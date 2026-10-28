@@ -41,6 +41,9 @@ if (!soloApi) {
   // celular del negocio estuvo mal en el pie y en tres parrafos de los legales durante una fase
   // entera, y al corregirlo no quedo nada que impidiera que volviera a pasar.
   ejecutar("node tools/verificar-datos-de-negocio.mjs");
+  // Y la otra mitad de la regla dura #2, la que Tailwind no cubre: los correos escriben sus
+  // colores en HEX y en línea, porque Gmail no lee variables CSS. Que todos sean de tokens.json.
+  ejecutar("node tools/verificar-correo.mjs");
   // Y por el mismo motivo: que ningun fixture nombre una categoria que el catalogo no tiene, ni la
   // llame distinto de como se llama. Un slug inventado en una prueba **no falla** —el doble acepta
   // cualquier cadena—, y asi `bolsos`, que V63 borro, sobrevivio en 43 usos de 26 archivos. El

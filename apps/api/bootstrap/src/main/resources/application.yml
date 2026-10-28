@@ -74,6 +74,9 @@ tecnosport:
   correo:
     # Dato de negocio real, no inventado (regla dura #5): dominio real del proyecto.
     remitente: ${CORREO_REMITENTE:no-responder@tecnosport.co}
+    # El Reply-To (adr/0098). El remitente no recibe nada, y varios correos le piden al cliente
+    # que conteste: eso tiene que llegarle a una persona. Es el correo publico del pie del sitio.
+    responder-a: ${CORREO_RESPONDER_A:contacto@tecnosport.co}
     bandeja:
       # La bandeja de salida (adr/0045). Un minuto, que es lo mas corto razonable: lo que separa
       # esto de un envio sincrono es exactamente esta espera, y quien acaba de registrarse esta

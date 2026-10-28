@@ -165,6 +165,34 @@ for (const ruta of [...jsons(TEXTOS), ...CORREOS, ...KIT]) {
   });
 }
 
+// --- 2b. Las redes y el WhatsApp del pie de los correos (adr/0098). Las reglas de arriba ven el
+// número dentro de la URL de wa.me, pero no una URL de Facebook o Instagram mal copiada, que es un
+// enlace vivo a la cuenta de otro.
+for (const ruta of CORREOS) {
+  const propiedades = Object.fromEntries(
+    readFileSync(ruta, "utf8")
+      .split("\n")
+      .filter((linea) => linea.startsWith("plantilla."))
+      .map((linea) => [
+        linea.slice(0, linea.indexOf("=")),
+        linea.slice(linea.indexOf("=") + 1).trim(),
+      ]),
+  );
+  const esperadas = {
+    "plantilla.redes.facebook_url": es.pie.facebook_url,
+    "plantilla.redes.instagram_url": es.pie.instagram_url,
+    "plantilla.dudas.whatsapp_url": `https://wa.me/${es.pie.whatsapp_numero}`,
+    "plantilla.dudas.correo": es.pie.correo,
+  };
+  for (const [clave, esperada] of Object.entries(esperadas)) {
+    if (propiedades[clave] !== esperada) {
+      problemas.push(
+        `${relative(RAIZ, ruta)}: ${clave} es ${JSON.stringify(propiedades[clave])} y el pie dice ${JSON.stringify(esperada)}`,
+      );
+    }
+  }
+}
+
 // --- 3. La versión de los legales, en los cuatro sitios donde vive.
 const legalesEs = leer(join(TEXTOS, "scopes/legales/es.json"));
 const legalesEn = leer(join(TEXTOS, "scopes/legales/en.json"));

@@ -55,11 +55,13 @@ public class TransporteDeCorreoSpringMail implements TransporteDeCorreo {
   public void enviar(CorreoElectronico destinatario, String asunto, String cuerpoHtml) {
     try {
       MimeMessage mensaje = mailSender.createMimeMessage();
-      MimeMessageHelper helper = new MimeMessageHelper(mensaje, false, "UTF-8");
+      // Multiparte: texto plano y HTML como alternativas del mismo correo (adr/0098).
+      MimeMessageHelper helper = new MimeMessageHelper(mensaje, true, "UTF-8");
       helper.setFrom(propiedades.remitente());
+      helper.setReplyTo(propiedades.responderA());
       helper.setTo(destinatario.valor());
       helper.setSubject(asunto);
-      helper.setText(cuerpoHtml, true);
+      helper.setText(TextoPlanoDeCorreo.desde(cuerpoHtml), cuerpoHtml);
       mailSender.send(mensaje);
     } catch (MessagingException | MailException excepcion) {
       // Sin volcar la excepción entera, y sin su mensaje crudo: un rechazo de SMTP repite la

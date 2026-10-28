@@ -42,7 +42,8 @@ class TransporteDeCorreoSpringMailFalloTest {
     try {
       TransporteDeCorreo enviador =
           new TransporteDeCorreoSpringMail(
-              new JavaMailSenderQueFalla(), new PropiedadesCorreo("no-responder@tecnosport.co"));
+              new JavaMailSenderQueFalla(),
+              new PropiedadesCorreo("no-responder@tecnosport.co", "contacto@tecnosport.co"));
 
       // Se propaga: es de lo que depende que DrenarBandejaDeSalida sepa que este correo no salió y
       // lo reintente. Sin esto, la bandeja marcaría como enviado lo que se quedó en el camino, que

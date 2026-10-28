@@ -43,6 +43,8 @@ class EnviadorDeCorreoBandejaDeSalidaTest {
   private static final CorreoElectronico DESTINATARIO =
       new CorreoElectronico("quien.compro@example.com");
 
+  private static final PlantillaDeCorreo PLANTILLA = new PlantillaDeCorreo("https://tecnosport.co");
+
   @Autowired private CorreoPendienteJpaRepository correos;
   @Autowired private PlatformTransactionManager transactionManager;
 
@@ -53,7 +55,8 @@ class EnviadorDeCorreoBandejaDeSalidaTest {
 
   @Test
   void loEncoladoDentroDeUnaTransaccionQueRevierteNoQuedaEnLaBandeja() {
-    EnviadorDeCorreo enviador = new EnviadorDeCorreoBandejaDeSalida(correos, () -> AHORA);
+    EnviadorDeCorreo enviador =
+        new EnviadorDeCorreoBandejaDeSalida(correos, () -> AHORA, PLANTILLA);
     TransactionTemplate transaccion = new TransactionTemplate(transactionManager);
 
     transaccion.execute(
@@ -70,7 +73,8 @@ class EnviadorDeCorreoBandejaDeSalidaTest {
 
   @Test
   void loEncoladoDentroDeUnaTransaccionQueConfirmaSiQuedaEnLaBandeja() {
-    EnviadorDeCorreo enviador = new EnviadorDeCorreoBandejaDeSalida(correos, () -> AHORA);
+    EnviadorDeCorreo enviador =
+        new EnviadorDeCorreoBandejaDeSalida(correos, () -> AHORA, PLANTILLA);
     TransactionTemplate transaccion = new TransactionTemplate(transactionManager);
 
     transaccion.execute(
@@ -87,6 +91,11 @@ class EnviadorDeCorreoBandejaDeSalidaTest {
         .satisfies(
             fila -> {
               assertThat(fila.getDestinatario()).isEqualTo(DESTINATARIO.valor());
+              assertThat(fila.getCuerpoHtml())
+                  .as("la fila guarda el correo tal como sale: ya envuelto en la plantilla")
+                  .startsWith("<!doctype html>")
+                  .contains("Reintegramos el dinero.")
+                  .contains("NIT 1054994043-9");
               assertThat(fila.getEnviadoEn()).isNull();
               assertThat(fila.getIntentos()).isZero();
               assertThat(fila.getProximoIntentoEn())
@@ -102,7 +111,8 @@ class EnviadorDeCorreoBandejaDeSalidaTest {
    */
   @Test
   void encolarSinTransaccionAbiertaTambienFunciona() {
-    EnviadorDeCorreo enviador = new EnviadorDeCorreoBandejaDeSalida(correos, () -> AHORA);
+    EnviadorDeCorreo enviador =
+        new EnviadorDeCorreoBandejaDeSalida(correos, () -> AHORA, PLANTILLA);
 
     enviador.enviar(DESTINATARIO, "Plazo de entrega vencido", "<p>Tu pedido se demoró.</p>");
 
