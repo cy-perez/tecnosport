@@ -41,4 +41,13 @@ if (existsSync(manifiestoKit)) {
   rmSync(manifiestoKit);
 }
 
+// El logo de los correos transaccionales (adr/0098). PNG y no SVG: Gmail no pinta SVG. El negativo,
+// porque va sobre la franja grafito de la cabecera. El de 800 px se pinta a 200: nítido en pantallas
+// de alta densidad. La API arma su URL con APP_URL_PUBLICA, así que el nombre del archivo es
+// contrato — `PlantillaDeCorreo` lo espera aquí.
+copiar(
+  join(marca, "dist/raster/logo-mono-negativo-800w.png"),
+  join(web, "public/imagenes/correo/logo-tecnosport.png"),
+);
+
 console.log("copiar-marca: listo.");

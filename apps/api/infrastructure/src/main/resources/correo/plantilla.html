@@ -1,0 +1,86 @@
+<!doctype html>
+<!-- La envoltura de todos los correos del sistema (adr/0098). La rellena PlantillaDeCorreo:
+     {{titulo}}, {{previa}} y {{contenido}} cambian en cada correo; el resto sale de los
+     correos_*.properties (llaves plantilla.*) y de APP_URL_PUBLICA una sola vez, al arrancar.
+
+     Por qué está escrita así, para quien la quiera "modernizar":
+     - Tablas y estilos en línea, no flexbox ni clases: Gmail descarta buena parte del <style> y
+       Outlook pinta con el motor de Word. Lo único que vive en <style> es el ajuste al teléfono,
+       que si se pierde deja el correo a 600 px y con desplazamiento, no roto.
+     - Ningún color fuera de packages/marca/tokens.json: lo verifica tools/verificar-correo.mjs,
+       dentro de `npm run verificar`.
+     - Sin fuentes web: la mayoría de los clientes no las cargan y pedirlas a un tercero le dice a
+       ese tercero quién abrió el correo. Las listas de respaldo son las de tokens.json.
+     - Nada de marcadores de auditoría en el texto que se publica (regla dura #4). -->
+<html lang="{{plantilla.idioma}}" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="x-apple-disable-message-reformatting">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+<title>{{titulo}}</title>
+<style>
+  body { margin: 0; padding: 0; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+  table, td { border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+  img { border: 0; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; }
+  @media only screen and (max-width: 620px) {
+    .tarjeta { width: 100% !important; }
+    .relleno { padding-left: 20px !important; padding-right: 20px !important; }
+    .titulo { font-size: 22px !important; }
+  }
+</style>
+</head>
+<body style="margin:0;padding:0;background-color:#F5F6F8;">
+<!--previa--><div style="display:none;max-height:0;max-width:0;overflow:hidden;opacity:0;mso-hide:all;">{{previa}}</div><!--/previa-->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F5F6F8;">
+  <tr>
+    <td align="center" style="padding:24px 12px;">
+
+      <table role="presentation" class="tarjeta" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background-color:#FFFFFF;border:1px solid #DFE3E9;">
+        <tr>
+          <td class="relleno" align="left" style="background-color:#1B1F26;padding:24px 40px;">
+            <a href="{{url_sitio}}" style="text-decoration:none;"><img src="{{logo}}" width="200" height="28" alt="{{plantilla.logo_alt}}" style="display:block;width:200px;height:28px;border:0;color:#FFFFFF;font-family:'Archivo','Arial Narrow','Helvetica Neue',Arial,sans-serif;font-size:20px;font-weight:700;line-height:28px;"></a>
+          </td>
+        </tr>
+        <tr>
+          <td style="background-color:#F5B301;height:4px;line-height:4px;font-size:0;">&nbsp;</td>
+        </tr>
+        <tr>
+          <td class="relleno titulo" style="padding:32px 40px 8px;font-family:'Archivo','Arial Narrow','Helvetica Neue',Arial,sans-serif;font-size:26px;line-height:1.2;font-weight:700;color:#14171C;">{{titulo}}</td>
+        </tr>
+        <tr>
+          <td class="relleno" style="padding:16px 40px 8px;font-family:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:16px;line-height:1.55;color:#14171C;">{{contenido}}</td>
+        </tr>
+        <tr>
+          <td class="relleno" style="padding:8px 40px 32px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F5F6F8;border:1px solid #DFE3E9;">
+              <tr>
+                <td style="padding:20px 24px;font-family:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:1.55;color:#14171C;">
+                  <p style="margin:0 0 4px;font-size:16px;font-weight:700;">{{plantilla.dudas.titulo}}</p>
+                  <p style="margin:0 0 12px;color:#5B6472;">{{plantilla.dudas.texto}}</p>
+                  <p style="margin:0;"><strong>{{plantilla.dudas.whatsapp_etiqueta}}</strong> <a href="{{plantilla.dudas.whatsapp_url}}" style="color:#14171C;text-decoration:underline;">{{plantilla.dudas.whatsapp}}</a><br><strong>{{plantilla.dudas.correo_etiqueta}}</strong> <a href="mailto:{{plantilla.dudas.correo}}" style="color:#14171C;text-decoration:underline;">{{plantilla.dudas.correo}}</a></p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+
+      <table role="presentation" class="tarjeta" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
+        <tr>
+          <td class="relleno" align="center" style="padding:24px 40px 8px;font-family:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:1.55;color:#5B6472;">
+            <p style="margin:0 0 12px;"><a href="{{url_sitio}}" style="color:#14171C;font-weight:700;text-decoration:none;">{{sitio}}</a></p>
+            <p style="margin:0 0 12px;">{{plantilla.redes.titulo}} <a href="{{plantilla.redes.facebook_url}}" style="color:#14171C;text-decoration:underline;">{{plantilla.redes.facebook}}</a> &middot; <a href="{{plantilla.redes.instagram_url}}" style="color:#14171C;text-decoration:underline;">{{plantilla.redes.instagram}}</a></p>
+            <p style="margin:0 0 16px;"><a href="{{url_sitio}}{{plantilla.ruta.terminos}}" style="color:#5B6472;text-decoration:underline;">{{plantilla.enlace.terminos}}</a> &nbsp;|&nbsp; <a href="{{url_sitio}}{{plantilla.ruta.privacidad}}" style="color:#5B6472;text-decoration:underline;">{{plantilla.enlace.privacidad}}</a> &nbsp;|&nbsp; <a href="{{url_sitio}}{{plantilla.ruta.contacto}}" style="color:#5B6472;text-decoration:underline;">{{plantilla.enlace.contacto}}</a> &nbsp;|&nbsp; <a href="{{url_sitio}}{{plantilla.ruta.estado_pedido}}" style="color:#5B6472;text-decoration:underline;">{{plantilla.enlace.estado_pedido}}</a></p>
+            <p style="margin:0 0 8px;font-size:12px;">{{plantilla.vendedor}}</p>
+            <p style="margin:0;font-size:12px;">{{plantilla.aviso}}</p>
+          </td>
+        </tr>
+      </table>
+
+    </td>
+  </tr>
+</table>
+</body>
+</html>

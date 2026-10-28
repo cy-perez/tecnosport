@@ -29,6 +29,10 @@ import java.util.Objects;
  * el reclamo —eso lo siguen cubriendo el {@code reclamar}/{@code liberar} de cada tarea— pero sí se
  * gana lo que la bandeja da a todos: reintentos y constancia.
  *
+ * <p><b>Aquí se envuelve el correo con la plantilla de marca</b> (adr/0098), y no en el transporte:
+ * la fila guarda el correo tal como sale, que es la constancia de lo que se le dijo a quien compró.
+ * El precio es que un cambio de la plantilla no alcanza a lo que ya estaba encolado.
+ *
  * <p>No lanza {@code CorreoNoEnviadoException} salvo que la base de datos falle, y en ese caso la
  * transacción de quien llama ya está condenada de todas formas.
  */
@@ -36,10 +40,13 @@ public class EnviadorDeCorreoBandejaDeSalida implements EnviadorDeCorreo {
 
   private final CorreoPendienteJpaRepository correos;
   private final Reloj reloj;
+  private final PlantillaDeCorreo plantilla;
 
-  public EnviadorDeCorreoBandejaDeSalida(CorreoPendienteJpaRepository correos, Reloj reloj) {
+  public EnviadorDeCorreoBandejaDeSalida(
+      CorreoPendienteJpaRepository correos, Reloj reloj, PlantillaDeCorreo plantilla) {
     this.correos = Objects.requireNonNull(correos);
     this.reloj = Objects.requireNonNull(reloj);
+    this.plantilla = Objects.requireNonNull(plantilla);
   }
 
   @Override
@@ -56,7 +63,7 @@ public class EnviadorDeCorreoBandejaDeSalida implements EnviadorDeCorreo {
             GeneradorIdentificador.nuevo(),
             destinatario.valor(),
             asunto,
-            cuerpoHtml,
+            plantilla.envolver(asunto, cuerpoHtml),
             ahora,
             ahora,
             0,

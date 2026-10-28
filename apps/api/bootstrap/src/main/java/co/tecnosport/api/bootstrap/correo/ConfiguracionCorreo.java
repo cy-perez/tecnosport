@@ -5,8 +5,10 @@ import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.compartido.RepositorioCorreosPendientes;
 import co.tecnosport.api.application.compartido.TransporteDeCorreo;
+import co.tecnosport.api.bootstrap.compartido.PropiedadesApp;
 import co.tecnosport.api.infrastructure.correo.CorreoPendienteJpaRepository;
 import co.tecnosport.api.infrastructure.correo.EnviadorDeCorreoBandejaDeSalida;
+import co.tecnosport.api.infrastructure.correo.PlantillaDeCorreo;
 import co.tecnosport.api.infrastructure.correo.PropiedadesCorreo;
 import co.tecnosport.api.infrastructure.correo.TransporteDeCorreoSpringMail;
 import java.time.Duration;
@@ -28,10 +30,22 @@ import org.springframework.mail.javamail.JavaMailSender;
 @EnableConfigurationProperties({PropiedadesCorreo.class, PropiedadesBandejaDeSalida.class})
 public class ConfiguracionCorreo {
 
-  /** Lo que llaman los trece casos de uso: escribe la fila y se va. */
+  /**
+   * Lo que llaman los trece casos de uso: escribe la fila, ya envuelta en la plantilla, y se va.
+   */
   @Bean
-  public EnviadorDeCorreo enviadorDeCorreo(CorreoPendienteJpaRepository correos, Reloj reloj) {
-    return new EnviadorDeCorreoBandejaDeSalida(correos, reloj);
+  public EnviadorDeCorreo enviadorDeCorreo(
+      CorreoPendienteJpaRepository correos, Reloj reloj, PlantillaDeCorreo plantilla) {
+    return new EnviadorDeCorreoBandejaDeSalida(correos, reloj, plantilla);
+  }
+
+  /**
+   * La envoltura de marca (adr/0098). Con la URL pública arma el logo y los enlaces del pie; si le
+   * falta un texto, el servicio no arranca.
+   */
+  @Bean
+  public PlantillaDeCorreo plantillaDeCorreo(PropiedadesApp app) {
+    return new PlantillaDeCorreo(app.urlPublica());
   }
 
   /** El envío de verdad, contra SMTP. Solo lo usa {@link #drenarBandejaDeSalida}. */
