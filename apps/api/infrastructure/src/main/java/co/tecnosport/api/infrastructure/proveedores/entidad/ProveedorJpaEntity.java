@@ -82,6 +82,13 @@ public class ProveedorJpaEntity {
   @Column(name = "tipo", nullable = false)
   private Set<String> tiposExcluidos = new HashSet<>();
 
+  @ElementCollection(fetch = FetchType.EAGER)
+  @CollectionTable(
+      name = "proveedor_otro_remitente",
+      joinColumns = @JoinColumn(name = "proveedor_id"))
+  @Column(name = "remitente", nullable = false)
+  private Set<String> otrosRemitentes = new HashSet<>();
+
   @Column(name = "creado_en", nullable = false)
   private Instant creadoEn;
 
@@ -178,6 +185,15 @@ public class ProveedorJpaEntity {
   }
 
   /** Como {@link #conArmaSets}. */
+  public Set<String> getOtrosRemitentes() {
+    return otrosRemitentes;
+  }
+
+  public ProveedorJpaEntity conOtrosRemitentes(Set<String> otrosRemitentes) {
+    this.otrosRemitentes = new HashSet<>(otrosRemitentes);
+    return this;
+  }
+
   public ProveedorJpaEntity conEsLocal(boolean esLocal) {
     this.esLocal = esLocal;
     return this;

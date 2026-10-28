@@ -153,6 +153,45 @@ class RepositoriosDeIngestaJpaTest {
         .isZero();
   }
 
+  /** Los otros remitentes (V149) van, vuelven por nombre, se reemplazan y se van con él. */
+  @Test
+  void losOtrosRemitentesVanVuelvenSeReemplazanYSeVanConElProveedor() {
+    Proveedor meraki =
+        Proveedor.crear(
+            "Meraki",
+            LineaCatalogo.ROPA,
+            "+57 321 9427252",
+            "Meraki",
+            null,
+            OrdenDePublicacion.FOTOS_PRIMERO);
+    meraki.definirOtrosRemitentes(List.of("Merakiapartados", "Meraki Bodega"));
+    proveedores.guardar(meraki);
+    entityManager.flush();
+    entityManager.clear();
+
+    Proveedor leido = proveedores.buscarPorId(meraki.id()).orElseThrow();
+    assertThat(leido.otrosRemitentes()).containsExactly("Meraki Bodega", "Merakiapartados");
+    assertThat(leido.esRemitente("Merakiapartados")).isTrue();
+
+    meraki.definirOtrosRemitentes(List.of());
+    proveedores.actualizar(meraki);
+    entityManager.flush();
+    entityManager.clear();
+    assertThat(proveedores.buscarPorId(meraki.id()).orElseThrow().otrosRemitentes()).isEmpty();
+
+    meraki.definirOtrosRemitentes(List.of("Merakiapartados"));
+    proveedores.actualizar(meraki);
+    entityManager.flush();
+    entityManager.clear();
+    proveedores.eliminarConSuHistorial(meraki.id());
+    assertThat(
+            jdbc.queryForObject(
+                "select count(*) from proveedor_otro_remitente where proveedor_id = ?",
+                Integer.class,
+                meraki.id()))
+        .isZero();
+  }
+
   /** La Riverah arma sets (12 de octubre de 2026); los demás nacen sin, y se puede quitar. */
   @Test
   void armaSetsVaYVuelve() {

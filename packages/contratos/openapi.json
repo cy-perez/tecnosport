@@ -4108,6 +4108,12 @@
           "ordenDePublicacion" : {
             "type" : "string"
           },
+          "otrosRemitentes" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
           "publicacionAutomatica" : {
             "type" : "boolean"
           },
@@ -4166,6 +4172,12 @@
           "ordenDePublicacion" : {
             "type" : "string"
           },
+          "otrosRemitentes" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
           "publicacionAutomatica" : {
             "type" : "boolean"
           },
@@ -4181,6 +4193,7 @@
         },
         "required" : [
           "ajustesDeIngesta",
+          "otrosRemitentes",
           "tiposExcluidos"
         ],
         "type" : "object"

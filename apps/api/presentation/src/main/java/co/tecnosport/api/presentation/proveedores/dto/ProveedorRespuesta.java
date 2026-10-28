@@ -20,7 +20,8 @@ public record ProveedorRespuesta(
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<String> tiposExcluidos,
     boolean armaSets,
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED) AjustesDeIngestaDto ajustesDeIngesta,
-    boolean local) {
+    boolean local,
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<String> otrosRemitentes) {
 
   public static ProveedorRespuesta de(Proveedor p) {
     return new ProveedorRespuesta(
@@ -38,6 +39,7 @@ public record ProveedorRespuesta(
         p.tiposExcluidos().stream().sorted().map(Enum::name).toList(),
         p.armaSets(),
         AjustesDeIngestaDto.de(p.ajustesDeIngesta()),
-        p.esLocal());
+        p.esLocal(),
+        p.otrosRemitentes());
   }
 }

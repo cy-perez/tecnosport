@@ -3810,6 +3810,7 @@ export interface components {
             nombre: string;
             nombreEnExportacion: string;
             ordenDePublicacion: string;
+            otrosRemitentes?: string[];
             publicacionAutomatica?: boolean;
             telefonoWhatsApp: string;
             tiposExcluidos?: string[];
@@ -3827,6 +3828,7 @@ export interface components {
             nombre?: string;
             nombreEnExportacion?: string;
             ordenDePublicacion?: string;
+            otrosRemitentes: string[];
             publicacionAutomatica?: boolean;
             telefonoWhatsApp?: string;
             tiposExcluidos: string[];

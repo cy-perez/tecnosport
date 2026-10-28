@@ -32,6 +32,7 @@ public final class EditarProveedor {
     proveedor.definirArmaSets(comando.armaSets());
     proveedor.definirAjustesDeIngesta(comando.ajustesDeIngesta());
     proveedor.definirLocal(comando.local());
+    proveedor.definirOtrosRemitentes(comando.otrosRemitentes());
     repositorioProveedores.actualizar(proveedor);
     return proveedor;
   }

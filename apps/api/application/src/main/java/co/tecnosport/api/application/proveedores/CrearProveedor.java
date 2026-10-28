@@ -27,6 +27,7 @@ public final class CrearProveedor {
     proveedor.definirArmaSets(comando.armaSets());
     proveedor.definirAjustesDeIngesta(comando.ajustesDeIngesta());
     proveedor.definirLocal(comando.local());
+    proveedor.definirOtrosRemitentes(comando.otrosRemitentes());
     repositorioProveedores.guardar(proveedor);
     return proveedor;
   }
