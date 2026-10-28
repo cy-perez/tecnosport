@@ -64,6 +64,10 @@ SIN_GARANTIA = f"le falta la sección «{GARANTIA}», con las declaraciones que 
 SIN_FICHA = f"no tiene «{FICHA}»: falta la ficha oficial del fabricante"
 SIN_PESO = "la ficha técnica no dice peso ni dimensiones"
 SIN_CAJA = f"no tiene «{CAJA}»"
+SIN_PLAZO_DE_GARANTIA = (f"la última nota de «{GARANTIA}» no dice el plazo de garantía "
+                         "(«Un año de garantía.» o «6 meses de garantía.»)")
+# La última viñeta de «Garantía y notas» desde el 27/10/2026: la escribe `redactar_fichas.nota_de_garantia`.
+RE_NOTA_DE_GARANTIA = re.compile(r"^- (?:Un año|1 mes|(?:[2-9]|1[01]) meses) de garantía\.$")
 NOMBRA_CONFIGURACION = "nombra una configuración"
 HABLA_DE_LA_FUENTE = "nombra de dónde salió un dato"
 
@@ -171,6 +175,10 @@ def defectos(texto: str) -> list[str]:
                         "se reescribe con el dato solo y la fuente queda en fuentes_ficha")
     if GARANTIA not in por_titulo:
         hallados.append(SIN_GARANTIA)
+    elif not ultima_nota_es_el_plazo(por_titulo[GARANTIA]):
+        # No bloquea: el bloqueo saca al modelo entero de la lista para la API, y con él el costo y la
+        # existencia de lo que ya se vende. Las publicadas antes del 27/10/2026 no lo dicen todavía.
+        hallados.append(SIN_PLAZO_DE_GARANTIA)
     ficha = por_titulo.get(FICHA)
     if ficha is None or not _filas(ficha):
         hallados.append(SIN_FICHA)
@@ -186,6 +194,11 @@ def defectos(texto: str) -> list[str]:
         hallados.append(f"{NOMBRA_CONFIGURACION} («{frase}»): la descripción es del modelo y vale para "
                         "todas sus memorias")
     return hallados
+
+
+def ultima_nota_es_el_plazo(cuerpo: str) -> bool:
+    vinetas = [l.strip() for l in cuerpo.splitlines() if l.strip().startswith("- ")]
+    return bool(vinetas) and bool(RE_NOTA_DE_GARANTIA.match(vinetas[-1]))
 
 
 def formatos_que_no_se_pintan(texto: str) -> list[str]:

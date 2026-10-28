@@ -246,6 +246,21 @@ lista:
     investigación: el producto sigue en `productos.json`, en la base y en el
     Excel con su margen, para que la próxima lista lo vuelva a evaluar con el
     costo de ese día.
+19. **La ficha dice el plazo de garantía, el del mercado hasta un año**
+    (decisión del negocio, 27/10/2026). Por modelo se consulta la garantía que
+    ofrece el mercado colombiano —paso 4—. Si es de un año o menos, la ficha
+    dice esos meses («6 meses de garantía.»); si es mayor, dice un año, que es lo
+    máximo que ofrece la tienda; si ninguna tienda lo publica, un año, que es el
+    supletorio del art. 8 de la Ley 1480. Va **siempre como la última viñeta** de
+    «Garantía y notas»: la escribe `redactar_fichas.nota_de_garantia`, nunca la
+    prosa. El numeral 10 de los términos dice lo mismo desde la versión
+    2026-10-27.3, y si esta regla cambia, ese texto cambia con ella —por la skill
+    `textos-legales-comerciales`, no a mano—. El tope está en
+    `TOPE_GARANTIA_MESES` de `scripts/redactar_fichas.py`.
+    Las descripciones publicadas antes de esa fecha no dicen el plazo: aparecen
+    en `revisar` y en `avisos-panel.json` con «no dice el plazo de garantía», sin
+    bloquear —bloquear sacaría de la lista para la API el costo y la existencia
+    de lo que ya se vende—, y ponérselo es un trabajo aparte.
 
 Si el negocio cambia de opinión, se ajustan `CATEGORIAS_INCLUIDAS`,
 `CONDICIONES_PUBLICABLES`, `PRECIO_MINIMO_CELULAR_COP`, `DESCARTAR_SIN_PRECIO`,
@@ -487,6 +502,15 @@ de la primera vez que se investigó el producto.
   Los que marca la lista —o la paleta entera, si no marca ninguno— se sugieren
   en `colores_sugeridos` (`referencias/colores.md`), y se confirman en el panel
   al revisar el borrador.
+- **Garantía que ofrece el mercado nacional** — regla 19. Una consulta por
+  modelo, en este orden: Ktronix, que publica la garantía en la ficha de cada
+  producto; después Alkosto y Falabella. Se anotan los meses tal como los ofrece
+  la tienda —24 si dice dos años: el tope lo aplica el script—, la URL y la fecha
+  en `"garantia"` de `prosa.json`. Si dos tiendas dicen distinto, vale la de
+  Ktronix y la otra va en `supuestos`. Si ninguna lo publica, `"meses_mercado":
+  null` con la fecha de la consulta: la ficha dice un año. Sin `"garantia"` la
+  ficha también dice un año, pero el producto queda con «garantia sin
+  consultar» en `revisar`: la consulta no se omite.
 - **¿Esa configuración existe?** La ficha oficial dice qué combinaciones de RAM y
   almacenamiento vende el fabricante, y el proveedor a veces ofrece otras. En la
   lista del 12/09/2026 aparecieron dos: un Redmi Note 15 Pro 5G de 8+512 cuando
@@ -542,6 +566,13 @@ publica—, `"fuente_caja"` y `"fecha_caja"` la atribuyen bien en `fuentes_ficha
 Watch8 del 22/10/2026 tenía la ficha en samsung.com/co y la caja solo en
 samsung.com/es. **Ninguna fuente se publica** (23/10/2026, «Sin fuentes» en
 `referencias/descripciones.md`): todas van a `fuentes_ficha`, nunca al texto.
+
+`prosa.json` lleva, por id de modelo, la apertura, `"vinetas"`, `"caja"`,
+`"notas"` y `"garantia"`: `{"meses_mercado": 24, "fuente":
+"https://www.ktronix.com/…", "fecha": "2026-10-27"}`. Las `"notas"` no llevan el
+plazo de garantía: el script lo agrega de último, con el tope de la regla 19, y
+`conocidos.json` guarda los meses del mercado en `garantia` del modelo, con su
+fuente, para no volver a consultarlos.
 
 **Completar una descripción heredada** (tarea `completar`): `redactar_fichas.py`
 inserta en su sitio solo lo que falta —la tabla, con el mismo orden de fuentes, y

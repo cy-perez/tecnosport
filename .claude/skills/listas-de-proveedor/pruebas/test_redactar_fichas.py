@@ -17,6 +17,7 @@ sys.path.insert(0, str(SCRIPTS))
 # imprimir y la prueba dependía de la codificación de quien la corre (revisión del PR #268).
 ENTORNO_UTF8 = {**os.environ, "PYTHONIOENCODING": "utf-8"}
 
+import descripciones  # noqa: E402
 import redactar_fichas  # noqa: E402
 
 PROSA = {"samsung-galaxy-a57-5g": {"apertura": "El Galaxy A57 es un celular 5G.", "caja": ["Cable USB-C"]}}
@@ -115,6 +116,60 @@ class SinProsa(unittest.TestCase):
         self.assertTrue(any(r.startswith("sin descripcion") for r in b["revisar"]))
 
 
+class PlazoDeGarantia(unittest.TestCase):
+    """Decisión del negocio del 27/10/2026: la última nota dice el plazo que ofrece el mercado
+    colombiano, con un tope de un año; sin dato publicado, un año (art. 8 de la Ley 1480)."""
+
+    def con_garantia(self, garantia, notas=None):
+        prosa = {"samsung-galaxy-a57-5g": dict(PROSA["samsung-galaxy-a57-5g"], garantia=garantia,
+                                               notas=notas or [])}
+        return redactar(DOS, marca=MARCA, prosa=prosa)
+
+    def ultima_nota(self, descripcion):
+        return [l for l in descripcion.splitlines() if l.startswith("- ")][-1]
+
+    def test_menos_de_un_ano_se_publica_tal_cual_y_de_ultima(self):
+        garantia = {"meses_mercado": 6, "fuente": "https://www.ktronix.com/x", "fecha": "2026-10-27"}
+        a, b = self.con_garantia(garantia, notas=["Funciona con eSIM: no tiene bandeja para SIM física."])
+        self.assertEqual("- 6 meses de garantía.", self.ultima_nota(a["descripcion"]))
+        self.assertEqual(garantia, a["garantia_mercado"])
+        self.assertEqual(garantia, b["garantia_mercado"])
+        self.assertNotIn(redactar_fichas.SIN_CONSULTA_DE_GARANTIA, a["revisar"])
+        self.assertNotIn(descripciones.SIN_PLAZO_DE_GARANTIA, descripciones.defectos(a["descripcion"]))
+
+    def test_mas_de_un_ano_se_queda_en_un_ano_y_la_base_guarda_lo_del_mercado(self):
+        garantia = {"meses_mercado": 24, "fuente": "https://www.ktronix.com/x", "fecha": "2026-10-27"}
+        [a, _] = self.con_garantia(garantia)
+        self.assertEqual("- Un año de garantía.", self.ultima_nota(a["descripcion"]))
+        self.assertEqual(24, a["garantia_mercado"]["meses_mercado"])
+
+    def test_sin_dato_del_mercado_es_un_ano(self):
+        [a, _] = self.con_garantia({"meses_mercado": None, "fuente": None, "fecha": "2026-10-27"})
+        self.assertEqual("- Un año de garantía.", self.ultima_nota(a["descripcion"]))
+        self.assertNotIn(redactar_fichas.SIN_CONSULTA_DE_GARANTIA, a["revisar"])
+
+    def test_sin_consultar_es_un_ano_y_se_avisa(self):
+        [a, _] = redactar(DOS, marca=MARCA)
+        self.assertEqual("- Un año de garantía.", self.ultima_nota(a["descripcion"]))
+        self.assertIn(redactar_fichas.SIN_CONSULTA_DE_GARANTIA, a["revisar"])
+        self.assertIsNone(a["garantia_mercado"])
+
+    def test_la_nota_generica_ya_no_remite_el_plazo_a_la_politica(self):
+        [a, _] = redactar(DOS, marca=MARCA)
+        self.assertIn("- Producto nuevo, sellado y sin activar.\n", a["descripcion"])
+        self.assertNotIn("política de garantías", a["descripcion"])
+
+    def test_la_nota(self):
+        self.assertEqual("1 mes de garantía.", redactar_fichas.nota_de_garantia(1))
+        self.assertEqual("11 meses de garantía.", redactar_fichas.nota_de_garantia(11))
+        self.assertEqual("Un año de garantía.", redactar_fichas.nota_de_garantia(12))
+        self.assertEqual("Un año de garantía.", redactar_fichas.nota_de_garantia(36))
+        self.assertEqual("Un año de garantía.", redactar_fichas.nota_de_garantia(None))
+        for invalido in (0, -3, 6.5, "6", True):
+            with self.assertRaises(ValueError):
+                redactar_fichas.nota_de_garantia(invalido)
+
+
 class CompletarHeredada(unittest.TestCase):
     """La descripción heredada de la base se completa con la ficha y la caja, sin tocar la prosa."""
 
@@ -142,8 +197,10 @@ class CompletarHeredada(unittest.TestCase):
         self.assertEqual("samsung.com/co", a["fuentes_ficha"][0]["fuente"])
         self.assertEqual({"seccion": "caja", "fuente": "samsung.com/co", "url": "https://www.samsung.com/co/",
                           "fecha": "2026-10-08"}, a["fuentes_ficha"][1])
-        # Lo que faltaba ya no se pide; lo que la ficha de la marca no trae —el peso— se sigue diciendo.
-        self.assertEqual(["descripción de la base: la ficha técnica no dice peso ni dimensiones"],
+        # Lo que faltaba ya no se pide; lo que la ficha de la marca no trae —el peso— se sigue diciendo,
+        # y el plazo de garantía tampoco: completar no reescribe las notas de una heredada.
+        self.assertEqual([f"descripción de la base: {descripciones.SIN_PLAZO_DE_GARANTIA}",
+                          "descripción de la base: la ficha técnica no dice peso ni dimensiones"],
                          [r for r in a["revisar"] if r.startswith("descripción de la base")])
 
     def test_la_caja_de_otra_pagina_lleva_su_propia_fuente(self):

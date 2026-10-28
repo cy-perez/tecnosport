@@ -43,10 +43,11 @@ Lo que este script NO hace, a propósito:
 - **No inventa.** Si un atributo no está en la ficha, la fila no aparece. Un
   producto sin prosa autorada queda sin descripción y marcado, no con una
   descripción genérica.
-- **No promete garantía en plazos.** El texto remite a la garantía legal
-  colombiana y a la política de la tienda, porque el plazo es un dato del
-  negocio. Nunca un marcador `[[ ]]`, que la regla 4 del proyecto prohíbe en
-  texto publicado.
+- **No inventa el plazo de garantía.** Desde el 27/10/2026 la última nota dice
+  el plazo: el que ofrece el mercado colombiano, que se consulta en el paso 4 y
+  llega en `garantia` de la prosa, con un tope de un año, que es lo máximo que
+  ofrece la tienda. Si el mercado no lo publica, un año: el supletorio del art. 8
+  de la Ley 1480 y lo que dicen los términos. Nunca un marcador `[[ ]]`.
 - **No omite el aviso de Icecat.** Cuando la ficha sale de Open Icecat, el
   bloque de fuentes lleva el aviso literal, el enlace a la licencia y la nota de
   la modificación: son condiciones de la licencia, no un crédito opcional.
@@ -58,6 +59,7 @@ import argparse
 import json
 import re
 import sys
+from copy import deepcopy
 from datetime import date
 from pathlib import Path
 
@@ -169,6 +171,31 @@ def meta_descripcion(producto, prosa):
     return corte.rstrip(" ,.;:") + "."
 
 
+# Lo máximo que ofrece la tienda (decisión del negocio del 27/10/2026), y lo que rige cuando nadie
+# publica un plazo: el art. 8 de la Ley 1480 lo fija en un año para los bienes nuevos, y el numeral
+# 10 de los términos (versión 2026-10-27.3) dice lo mismo.
+TOPE_GARANTIA_MESES = 12
+SIN_CONSULTA_DE_GARANTIA = ("garantia sin consultar: la ficha dice un año por omisión; consulta la del "
+                            "mercado (Ktronix primero) y escríbela en `garantia` de la prosa")
+
+
+def meses_de_garantia(meses_mercado):
+    """Los meses que dice la ficha: los del mercado hasta un año, y un año si no se conocen."""
+    if meses_mercado is None:
+        return TOPE_GARANTIA_MESES
+    if isinstance(meses_mercado, bool) or not isinstance(meses_mercado, int) or meses_mercado <= 0:
+        raise ValueError(f"meses de garantía del mercado inválidos: {meses_mercado!r}")
+    return min(meses_mercado, TOPE_GARANTIA_MESES)
+
+
+def nota_de_garantia(meses_mercado):
+    """La última viñeta de «Garantía y notas»: «Un año de garantía.» o «6 meses de garantía.»."""
+    meses = meses_de_garantia(meses_mercado)
+    if meses == 12:
+        return "Un año de garantía."
+    return f"{meses} {'mes' if meses == 1 else 'meses'} de garantía."
+
+
 def notas_obligatorias(producto):
     """
     Las declaraciones que `descripciones.md` no deja omitir, cuando el dato del
@@ -182,10 +209,7 @@ def notas_obligatorias(producto):
             f"Es un accesorio de la marca {producto.get('marca') or 'indicada'}, "
             f"compatible con equipos {producto['compatible_con']}. No es un producto "
             f"original de {producto['compatible_con']}.")
-    notas.append(
-        "Producto nuevo, sellado y sin activar. Aplica la garantía legal que la ley "
-        "colombiana reconoce para bienes nuevos; el plazo y el procedimiento son los "
-        "de la política de garantías de la tienda.")
+    notas.append("Producto nuevo, sellado y sin activar.")
     return notas
 
 
@@ -296,7 +320,9 @@ def componer(producto, prosa, ficha_icecat, ficha_marca, fecha):
         partes += [f"- {c}" for c in caja] + [""]
 
     partes += ["## Garantía y notas", ""]
-    partes += [f"- {n}" for n in (prosa.get("notas") or []) + notas_obligatorias(producto)]
+    # El plazo va siempre de último: es lo que el cliente busca al final de la ficha.
+    garantia = nota_de_garantia((prosa.get("garantia") or {}).get("meses_mercado"))
+    partes += [f"- {n}" for n in (prosa.get("notas") or []) + notas_obligatorias(producto) + [garantia]]
     partes += [""]
 
     return "\n".join(partes).strip() + "\n"
@@ -442,7 +468,11 @@ def main():
             p["meta_titulo"] = meta_titulo(p)
             p["meta_descripcion"] = meta_descripcion(p, prosa)
             p["fuentes_ficha"] = [fuente] if fuente else []
-            p["revisar"] = [r for r in p["revisar"] if "sin descripcion" not in r]
+            p["garantia_mercado"] = deepcopy(prosa.get("garantia"))
+            p["revisar"] = [r for r in p["revisar"]
+                            if "sin descripcion" not in r and not r.startswith(SIN_CONSULTA_DE_GARANTIA)]
+            if not prosa.get("garantia"):
+                p["revisar"].append(SIN_CONSULTA_DE_GARANTIA)
         hechas += 1
 
     paletas = llevar_paletas(datos["productos"], marca)

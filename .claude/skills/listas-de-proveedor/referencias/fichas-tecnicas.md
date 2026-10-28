@@ -282,11 +282,12 @@ modelos nuevos que Icecat no cubrió.
 
 ## Lo que no se inventa nunca
 
-- **La garantía.** El plazo y el procedimiento son un dato del negocio, no del
-  fabricante. La ficha dice que aplica la garantía legal que la ley colombiana
-  reconoce para bienes nuevos y remite a la política de garantías de la tienda.
-  Poner un número inventado es peor que no ponerlo, y un marcador `[[ ]]` en un
-  texto publicado está prohibido por la regla 4 del proyecto.
+- **La garantía.** Desde el 27/10/2026 la ficha dice el plazo, pero sale de una
+  consulta con fuente —la garantía que ofrece el mercado colombiano, Ktronix
+  primero—, con el tope de un año de la tienda, y nunca de la ficha del
+  fabricante de otro mercado (regla 19 de `SKILL.md`). Sin dato publicado, un
+  año: es el supletorio de la ley, no un número inventado. Nunca un marcador
+  `[[ ]]`, que la regla 4 del proyecto prohíbe en texto publicado.
 - **El contenido de la caja.** Casi ninguna ficha lo detalla. Si se toma del
   estándar de la línea, se dice en `supuestos` y se confirma con el proveedor
   antes de prometerlo. Lo que sí se afirma cuando consta: que Samsung y Apple no
