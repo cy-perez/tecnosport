@@ -122,6 +122,7 @@ const A_DOMICILIO: DatosEntrega = {
     indicaciones: null,
     barrio: null,
   },
+  nombreComprador: 'Ana Pérez',
   contacto: { nombre: 'Ana Pérez', telefono: '3138816711' },
   autorizaDatos: true,
   transportadora: null,

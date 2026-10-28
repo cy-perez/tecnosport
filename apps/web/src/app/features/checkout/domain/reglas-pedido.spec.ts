@@ -13,6 +13,7 @@ function pedidoDePrueba(overrides: Partial<Pedido>): Pedido {
     numeroPedido: 'TS-2026-000123',
     usuarioId: null,
     correo: 'compra@ejemplo.co',
+    nombreComprador: null,
     lineas: [],
     tipoEntrega: 'ENVIO_A_DOMICILIO',
     direccion: null,

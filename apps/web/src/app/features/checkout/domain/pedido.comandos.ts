@@ -15,6 +15,8 @@ export interface LineaComando {
 
 export interface CrearPedidoComando {
   readonly correo: string;
+  /** Quien compra, a quien se le escribe (ADR-0099). Si compra para sí, el mismo que `contacto`. */
+  readonly nombreComprador: string;
   readonly contacto: Contacto;
   readonly lineas: readonly LineaComando[];
   readonly tipoEntrega: TipoEntrega;
@@ -48,6 +50,8 @@ export interface MetodosDePagoDisponiblesComando {
  */
 export interface DatosEntrega {
   readonly correo: string;
+  /** Ver `CrearPedidoComando.nombreComprador`. */
+  readonly nombreComprador: string;
   readonly contacto: Contacto;
   readonly tipoEntrega: TipoEntrega;
   readonly direccion: Direccion | null;

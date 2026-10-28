@@ -56,6 +56,7 @@ export function aPedido(dto: PedidoDto): Pedido {
     numeroPedido: dto.numeroPedido ?? '',
     usuarioId: dto.usuarioId ?? null,
     correo: dto.correo ?? '',
+    nombreComprador: dto.nombreComprador ?? null,
     contacto: dto.contacto ? aContacto(dto.contacto) : null,
     lineas: (dto.lineas ?? []).map(aLineaPedido),
     tipoEntrega: (dto.tipoEntrega ?? 'ENVIO_A_DOMICILIO') as TipoEntrega,
@@ -152,6 +153,9 @@ export function aSeguimiento(dto: SeguimientoDto): Seguimiento {
     // El seguimiento no devuelve `usuarioId`: es dato del panel, no de quien compró.
     usuarioId: null,
     correo: dto.correo ?? '',
+    // Tampoco el nombre de quien compra (ADR-0099): el seguimiento se abre con un enlace, y lo que
+    // necesita mostrar es a quién se entrega, que ya va en el contacto.
+    nombreComprador: null,
     contacto: dto.contacto ? aContacto(dto.contacto) : null,
     lineas: (dto.lineas ?? []).map(aLineaPedido),
     tipoEntrega: (dto.tipoEntrega ?? 'ENVIO_A_DOMICILIO') as TipoEntrega,

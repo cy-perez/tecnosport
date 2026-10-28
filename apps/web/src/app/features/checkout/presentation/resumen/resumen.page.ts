@@ -125,6 +125,15 @@ export class ResumenPage {
   private readonly ultimaCotizacion = signal<CotizacionEnvio | null>(null);
 
   protected readonly form = new FormGroup({
+    // Quien compra, a quien se le escriben los correos (ADR-0099). Las mismas reglas que el de quien
+    // recibe: el servidor las aplica igual (`NombreDePersona.java`).
+    nombreComprador: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required, Validators.maxLength(120), nombreDePersona],
+    }),
+    // Desmarcada, quien compra es quien recibe y se manda el mismo nombre dos veces: la mayoría
+    // compra para sí y no tiene por qué escribirlo de nuevo. Marcada, aparece el campo de abajo.
+    otraPersonaRecibe: new FormControl(false, { nonNullable: true }),
     // Quien recibe: va en la guía de la transportadora y es a quien llama el mensajero. El
     // patrón del teléfono es laxo a propósito —dígitos, espacios, paréntesis, guiones y un `+`
     // opcional—: el servidor lo normaliza y es quien decide (`Contacto.java`); aquí solo se evita
@@ -222,6 +231,29 @@ export class ResumenPage {
    * invalidez, así que quien escribía `@#$%` —que el campo aceptaba sin chistar hasta ahora— o un
    * nombre de 300 caracteres leía que no había escrito nada, mirando lo que acababa de escribir.
    */
+  private readonly tickNombreComprador = toSignal(this.form.controls.nombreComprador.events, {
+    initialValue: null,
+  });
+  protected readonly errorNombreComprador = computed(() => {
+    this.tickNombreComprador();
+    const control = this.form.controls.nombreComprador;
+    if (!control.touched || control.valid) {
+      return null;
+    }
+    if (control.hasError('required')) {
+      return this.traducir()('checkout.resumen.errores.nombre_comprador_requerido');
+    }
+    return control.hasError('maxlength')
+      ? this.traducir()('checkout.resumen.errores.nombre_largo')
+      : this.traducir()('checkout.resumen.errores.nombre_invalido');
+  });
+
+  /** Si se pide aparte el nombre de quien recibe. */
+  protected readonly otraPersonaRecibe = toSignal(
+    this.form.controls.otraPersonaRecibe.valueChanges,
+    { initialValue: this.form.controls.otraPersonaRecibe.value },
+  );
+
   private readonly tickNombre = toSignal(this.form.controls.nombre.events, { initialValue: null });
   protected readonly errorNombre = computed(() => {
     this.tickNombre();
@@ -529,6 +561,18 @@ export class ResumenPage {
   constructor() {
     this.rellenarConLoYaEscrito();
 
+    // El nombre de quien recibe solo se exige cuando es otra persona. Apagado, el campo ni se ve: un
+    // control inválido fuera de pantalla dejaría «Continuar» sin hacer nada y sin nada que señalar.
+    effect(() => {
+      const control = this.form.controls.nombre;
+      control.setValidators(
+        this.otraPersonaRecibe()
+          ? [Validators.required, Validators.maxLength(120), nombreDePersona]
+          : [],
+      );
+      control.updateValueAndValidity({ emitEvent: false });
+    });
+
     // Recordar la última cotización buena para poder decir cuánto se ahorra
     // quien cambia a recogida. Se guarda al llegar, no se recalcula después:
     // al cambiar a retiro la consulta se deshabilita y `data()` se vacía.
@@ -612,8 +656,12 @@ export class ResumenPage {
     if (!datos) {
       return;
     }
+    const otraPersona =
+      datos.contacto.nombre.toLocaleLowerCase() !== datos.nombreComprador.toLocaleLowerCase();
     this.form.patchValue({
-      nombre: datos.contacto.nombre,
+      nombreComprador: datos.nombreComprador,
+      otraPersonaRecibe: otraPersona,
+      nombre: otraPersona ? datos.contacto.nombre : '',
       telefono: datos.contacto.telefono,
       correo: datos.correo,
       tipoEntrega: datos.tipoEntrega,
@@ -688,9 +736,14 @@ export class ResumenPage {
     const valores = this.form.getRawValue();
     const direccion = this.direccionDesdeFormulario(valores.direccion);
 
+    const nombreComprador = valores.nombreComprador.trim();
     this.checkout.guardarDatosEntrega({
       correo: valores.correo,
-      contacto: { nombre: valores.nombre.trim(), telefono: valores.telefono.trim() },
+      nombreComprador,
+      contacto: {
+        nombre: valores.otraPersonaRecibe ? valores.nombre.trim() : nombreComprador,
+        telefono: valores.telefono.trim(),
+      },
       tipoEntrega: valores.tipoEntrega,
       direccion,
       autorizaDatos: valores.autorizaDatos,

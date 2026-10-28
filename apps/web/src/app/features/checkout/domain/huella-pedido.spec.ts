@@ -3,6 +3,7 @@ import { CrearPedidoComando } from './pedido.comandos';
 
 const COMANDO: CrearPedidoComando = {
   correo: 'compra@ejemplo.co',
+  nombreComprador: 'Ana Pérez',
   contacto: { nombre: 'Ana Pérez', telefono: '3138816711' },
   lineas: [
     { varianteId: 'variante-1', cantidad: 1 },
@@ -42,6 +43,7 @@ describe('huellaDePedido', () => {
     ['otra entrega', { tipoEntrega: 'RETIRO_EN_PUNTO', direccion: null, transportadora: null }],
     ['otra dirección', { direccion: { ...COMANDO.direccion!, direccion: 'Calle 10 # 1-1' } }],
     ['otro correo', { correo: 'otra@ejemplo.co' }],
+    ['otro comprador', { nombreComprador: 'Carlos Ruiz' }],
     ['otro teléfono', { contacto: { nombre: 'Ana Pérez', telefono: '3000000000' } }],
   ])('cambia con %s', (_caso, cambio) => {
     expect(huellaDePedido({ ...COMANDO, ...cambio })).not.toBe(huellaDePedido(COMANDO));

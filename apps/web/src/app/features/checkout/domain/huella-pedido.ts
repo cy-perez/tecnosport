@@ -17,6 +17,7 @@ export function huellaDePedido(comando: CrearPedidoComando): string {
   const direccion = comando.direccion;
   return JSON.stringify([
     comando.correo,
+    comando.nombreComprador,
     comando.contacto.nombre,
     comando.contacto.telefono,
     lineas,

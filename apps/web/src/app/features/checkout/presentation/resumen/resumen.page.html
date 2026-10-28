@@ -225,15 +225,14 @@
         [formGroup]="form"
         (submit)="$event.preventDefault(); enviar()"
       >
-        <!-- Nombre y teléfono de quien recibe, antes del correo: son los datos de la entrega, y
-             hasta ahora el pedido nacía sin ellos —sin guía posible ni mensajero que avisara—. El
-             comentario de la casilla de autorización ya los daba por recogidos. -->
+        <!-- Quien compra y su correo primero: a esa persona le escribimos (ADR-0099). Después, si
+             es un regalo, el nombre de quien recibe; y el teléfono al que llama el mensajero. -->
         <ts-campo
-          idCampo="resumen-nombre"
+          idCampo="resumen-nombre-comprador"
           [obligatorio]="true"
-          [label]="'checkout.resumen.nombre' | transloco"
-          [error]="errorNombre()"
-          formControlName="nombre"
+          [label]="'checkout.resumen.nombre_comprador' | transloco"
+          [error]="errorNombreComprador()"
+          formControlName="nombreComprador"
         />
 
         <ts-campo
@@ -243,6 +242,23 @@
           [error]="errorCorreo()"
           formControlName="correo"
         />
+
+        <ts-checkbox
+          idCasilla="resumen-otra-persona-recibe"
+          [etiqueta]="'checkout.resumen.otra_persona_recibe' | transloco"
+          [marcado]="form.controls.otraPersonaRecibe.value"
+          (marcadoCambio)="form.controls.otraPersonaRecibe.setValue($event)"
+        />
+
+        @if (otraPersonaRecibe()) {
+          <ts-campo
+            idCampo="resumen-nombre"
+            [obligatorio]="true"
+            [label]="'checkout.resumen.nombre' | transloco"
+            [error]="errorNombre()"
+            formControlName="nombre"
+          />
+        }
 
         <ts-campo
           idCampo="resumen-telefono"

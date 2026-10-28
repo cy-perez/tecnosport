@@ -13,6 +13,7 @@ describe('aPedido', () => {
       numeroPedido: 'TS-2026-000001',
       usuarioId: 'usuario-1',
       correo: 'compra@ejemplo.co',
+      nombreComprador: 'Carlos Ruiz',
       contacto: { nombre: 'Ana Pérez', telefono: '3138816711' },
       lineas: [
         {
@@ -64,6 +65,7 @@ describe('aPedido', () => {
       numeroPedido: 'TS-2026-000001',
       usuarioId: 'usuario-1',
       correo: 'compra@ejemplo.co',
+      nombreComprador: 'Carlos Ruiz',
       contacto: { nombre: 'Ana Pérez', telefono: '3138816711' },
       lineas: [
         {
@@ -141,6 +143,7 @@ describe('aPedido', () => {
       numeroPedido: '',
       usuarioId: null,
       correo: '',
+      nombreComprador: null,
       contacto: null,
       lineas: [],
       tipoEntrega: 'ENVIO_A_DOMICILIO',
