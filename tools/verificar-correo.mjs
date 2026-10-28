@@ -33,7 +33,9 @@ for (const archivo of ARCHIVOS) {
   readFileSync(ruta, "utf8")
     .split("\n")
     .forEach((linea, indice) => {
-      for (const [hex] of linea.matchAll(/#[0-9A-Fa-f]{3,8}\b/g)) {
+      // Sin el `&` delante: `&#123;` es una entidad HTML —la llave que se escapa del nombre en el
+      // saludo—, no un color. La primera versión las leía como HEX y tumbó la CI.
+      for (const [hex] of linea.matchAll(/(?<!&)#[0-9A-Fa-f]{3,8}\b/g)) {
         vistos += 1;
         if (!permitidos.has(hex.toUpperCase())) {
           problemas.push(
