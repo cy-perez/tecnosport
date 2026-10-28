@@ -147,6 +147,54 @@ class PlantillaDeCorreoTest {
   }
 
   @Test
+  void saludaConElPrimerNombre() {
+    String correo =
+        PLANTILLA.envolver("Asunto - Tecno Sport", "  María José Restrepo ", "<p>Tu pedido.</p>");
+
+    assertThat(correo)
+        .contains(">Hola, María:</p><p style=\"margin:0 0 16px;\">Tu pedido.</p>")
+        .doesNotContain("Restrepo");
+  }
+
+  @Test
+  void sinNombreSaludaIgual() {
+    assertThat(PLANTILLA.envolver("Asunto - Tecno Sport", null, "<p>x</p>")).contains(">Hola:</p>");
+    assertThat(PLANTILLA.envolver("Asunto - Tecno Sport", "   ", "<p>x</p>"))
+        .contains(">Hola:</p>");
+    assertThat(PLANTILLA.envolver("Asunto - Tecno Sport", "<p>x</p>")).contains(">Hola:</p>");
+  }
+
+  @Test
+  void elNombreNoPuedeAbrirEtiquetasNiParecerUnMarcador() {
+    String correo =
+        PLANTILLA.envolver("Asunto - Tecno Sport", "<b>{{contenido}}</b>", "<p>cuerpo</p>");
+
+    assertThat(correo)
+        .contains("Hola, &lt;b&gt;&#123;&#123;contenido&#125;&#125;&lt;/b&gt;:")
+        .doesNotContain("<b>");
+    assertThat(correo.split("<p style=\"margin:0 0 16px;\">cuerpo</p>", -1))
+        .as("el contenido aparece una sola vez: el nombre no lo pudo duplicar")
+        .hasSize(2);
+  }
+
+  @Test
+  void unSaludoSinDondePonerElNombreNoArranca() {
+    var propio = TextosDeCorreoMessageSource.paquetePropio();
+    StaticMessageSource fuente = new StaticMessageSource();
+    for (Locale idioma : TextosDeCorreoMessageSource.IDIOMAS_QUE_DEBEN_EXISTIR) {
+      for (String clave : PlantillaDeCorreo.TEXTOS) {
+        fuente.addMessage(clave, idioma, propio.getMessage(clave, null, idioma));
+      }
+      fuente.addMessage("plantilla.saludo_sin_nombre", idioma, "Hola:");
+      fuente.addMessage("plantilla.saludo", idioma, "Hola:");
+    }
+
+    assertThatThrownBy(() -> new PlantillaDeCorreo("https://tecnosport.co", fuente))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessageContaining("{0}");
+  }
+
+  @Test
   void unaUrlPublicaSinDominioNoArranca() {
     assertThatThrownBy(() -> new PlantillaDeCorreo("/solo/una/ruta"))
         .isInstanceOf(IllegalStateException.class);

@@ -7,5 +7,9 @@ import co.tecnosport.api.domain.compartido.CorreoElectronico;
 final class EnviadorDeCorreoDobleDePrueba implements EnviadorDeCorreo {
 
   @Override
-  public void enviar(CorreoElectronico destinatario, String asunto, String cuerpoHtml) {}
+  public void enviar(
+      CorreoElectronico destinatario,
+      String nombreDelDestinatario,
+      String asunto,
+      String cuerpoHtml) {}
 }

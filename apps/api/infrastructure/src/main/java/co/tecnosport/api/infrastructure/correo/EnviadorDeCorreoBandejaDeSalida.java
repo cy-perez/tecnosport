@@ -50,7 +50,11 @@ public class EnviadorDeCorreoBandejaDeSalida implements EnviadorDeCorreo {
   }
 
   @Override
-  public void enviar(CorreoElectronico destinatario, String asunto, String cuerpoHtml) {
+  public void enviar(
+      CorreoElectronico destinatario,
+      String nombreDelDestinatario,
+      String asunto,
+      String cuerpoHtml) {
     Objects.requireNonNull(destinatario, "El destinatario no puede ser nulo.");
     Objects.requireNonNull(asunto, "El asunto no puede ser nulo.");
     Objects.requireNonNull(cuerpoHtml, "El cuerpo no puede ser nulo.");
@@ -63,7 +67,7 @@ public class EnviadorDeCorreoBandejaDeSalida implements EnviadorDeCorreo {
             GeneradorIdentificador.nuevo(),
             destinatario.valor(),
             asunto,
-            plantilla.envolver(asunto, cuerpoHtml),
+            plantilla.envolver(asunto, nombreDelDestinatario, cuerpoHtml),
             ahora,
             ahora,
             0,

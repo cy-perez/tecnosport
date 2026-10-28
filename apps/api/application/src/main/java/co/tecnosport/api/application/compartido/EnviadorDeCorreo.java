@@ -50,8 +50,20 @@ public interface EnviadorDeCorreo {
   /**
    * Deja el correo en la bandeja de salida.
    *
+   * @param nombreDelDestinatario para el saludo («Hola, María:»), tal como se guardó: el adaptador
+   *     decide cuánto de él usa. Puede ser nulo —una cuenta, una PQR, un aviso interno no tienen
+   *     nombre— y entonces el saludo sale sin él (adr/0098).
    * @throws CorreoNoEnviadoException si ni siquiera se pudo encolar, que en la práctica es un fallo
    *     de base de datos. Un SMTP caído ya no llega hasta aquí.
    */
-  void enviar(CorreoElectronico destinatario, String asunto, String cuerpoHtml);
+  void enviar(
+      CorreoElectronico destinatario,
+      String nombreDelDestinatario,
+      String asunto,
+      String cuerpoHtml);
+
+  /** Sin nombre que poner en el saludo. Lo usan los correos que no lo tienen. */
+  default void enviar(CorreoElectronico destinatario, String asunto, String cuerpoHtml) {
+    enviar(destinatario, null, asunto, cuerpoHtml);
+  }
 }

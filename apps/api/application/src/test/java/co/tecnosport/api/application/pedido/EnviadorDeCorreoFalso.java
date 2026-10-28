@@ -15,7 +15,8 @@ import java.util.List;
  */
 final class EnviadorDeCorreoFalso implements EnviadorDeCorreo {
 
-  record CorreoEnviado(CorreoElectronico destinatario, String asunto, String cuerpoHtml) {}
+  record CorreoEnviado(
+      CorreoElectronico destinatario, String asunto, String cuerpoHtml, String nombre) {}
 
   private final List<CorreoEnviado> enviados = new ArrayList<>();
   private boolean falla;
@@ -37,7 +38,11 @@ final class EnviadorDeCorreoFalso implements EnviadorDeCorreo {
   }
 
   @Override
-  public void enviar(CorreoElectronico destinatario, String asunto, String cuerpoHtml) {
+  public void enviar(
+      CorreoElectronico destinatario,
+      String nombreDelDestinatario,
+      String asunto,
+      String cuerpoHtml) {
     if (fallaUnaVez) {
       fallaUnaVez = false;
       throw new CorreoNoEnviadoException(
@@ -47,7 +52,7 @@ final class EnviadorDeCorreoFalso implements EnviadorDeCorreo {
       throw new CorreoNoEnviadoException(
           new IllegalStateException("el servidor de correo no respondió"));
     }
-    enviados.add(new CorreoEnviado(destinatario, asunto, cuerpoHtml));
+    enviados.add(new CorreoEnviado(destinatario, asunto, cuerpoHtml, nombreDelDestinatario));
   }
 
   List<CorreoEnviado> enviados() {

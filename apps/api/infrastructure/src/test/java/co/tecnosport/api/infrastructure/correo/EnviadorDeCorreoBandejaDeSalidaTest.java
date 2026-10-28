@@ -79,7 +79,11 @@ class EnviadorDeCorreoBandejaDeSalidaTest {
 
     transaccion.execute(
         estado -> {
-          enviador.enviar(DESTINATARIO, "Reintegro de tu pedido", "<p>Reintegramos el dinero.</p>");
+          enviador.enviar(
+              DESTINATARIO,
+              "Ana Pérez",
+              "Reintegro de tu pedido",
+              "<p>Reintegramos el dinero.</p>");
           return null;
         });
 
@@ -95,6 +99,7 @@ class EnviadorDeCorreoBandejaDeSalidaTest {
                   .as("la fila guarda el correo tal como sale: ya envuelto en la plantilla")
                   .startsWith("<!doctype html>")
                   .contains("Reintegramos el dinero.")
+                  .contains("Hola, Ana:")
                   .contains("NIT 1054994043-9");
               assertThat(fila.getEnviadoEn()).isNull();
               assertThat(fila.getIntentos()).isZero();
