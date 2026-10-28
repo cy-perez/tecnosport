@@ -124,6 +124,11 @@ sabiendas.
 Dile a la persona que los borradores están en **`/admin/tecnologia`**, y qué hace
 ahí con cada uno:
 
+- confirmar que la **última nota** de «Garantía y notas» es el plazo de
+  garantía —«Un año de garantía.» o «6 meses de garantía.»— y que no pasa de un
+  año (regla 19 de `listas-de-proveedor`). Si falta, la descripción salió de una
+  redacción anterior al 27/10/2026 o se escribió a mano: no se aprueba así, se
+  rehace con `redactar_fichas.py` en el bloque 1;
 - abrir **«Ficha»** y leerla como la va a leer el cliente: el panel la pinta con
   el mismo componente que la ficha del sitio —subtítulos, viñetas y la ficha
   técnica en tabla, **sin fuentes**—. Si algo sale con `##`, `|` o `**` a la

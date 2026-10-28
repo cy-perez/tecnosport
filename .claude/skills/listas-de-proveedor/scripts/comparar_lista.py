@@ -109,6 +109,7 @@ def comparar(datos: dict, base: dict, hoy: date, excluidos: dict | None = None) 
             # consolidar no lo lleva a la base.
             p["supuestos_lista"].append(SUPUESTO_PALETA_COMPLETA)
         p["fuentes_ficha"] = deepcopy(m["fuentes_ficha"])
+        p["garantia_mercado"] = deepcopy(m.get("garantia"))
         p["supuestos"] = list(dict.fromkeys(
             p["supuestos_lista"] + m["supuestos_investigacion"] + m["supuestos_paleta"]))
         p["revisar"] = [r for r in p.get("revisar") or []

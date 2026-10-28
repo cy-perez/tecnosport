@@ -1,7 +1,7 @@
 {
   "comun": {
     "version_etiqueta": "Version",
-    "version": "2026-10-27.2",
+    "version": "2026-10-27.3",
     "vigencia": "In force since 27 October 2026.",
     "otros_documentos": "Other legal documents",
     "titular_aviso": "This site is operated by Cristhian Yurday Pérez Hoyos, NIT 1054994043-9, Carrera 26C # 38B-31, Medellín, Antioquia, Colombia.",
@@ -228,7 +228,7 @@
           "If you choose pickup, we email you when the order is ready at our location. It is an apartment, not a shop, so we agree with you on a time for the handover by WhatsApp or email, any day between 8:00 a.m. and 9:00 p.m.",
           "We hand the order over to whoever shows us its order number, which appears in the purchase confirmation email and in the notice that it is ready. Do not share it with anyone you do not want to pick it up.",
           "From the notice that it is ready we hold the order for forty-eight (48) hours. If you do not pick it up within that time, we cancel the order and release the products: if you had already paid, we refund everything you paid within the following fifteen (15) calendar days, through the method you paid with; if you were going to pay at pickup, there is nothing to refund.",
-          "The day you receive the order at our location is the delivery date: the five (5) business days of the right of withdrawal (section 9) and the one-year legal warranty (section 10) run from then.",
+          "The day you receive the order at our location is the delivery date: the five (5) business days of the right of withdrawal (section 9) and the legal warranty term (section 10) run from then.",
           "If we do not deliver within the applicable term, you may terminate the contract and recover your money, including any shipping cost you paid."
         ]
       },
@@ -246,7 +246,7 @@
         "titulo": "10. Statutory warranty",
         "parrafos": [
           "All our products carry the statutory warranty: if the product fails, does not work for what it was offered for, or does not match what you bought, you are entitled to have it repaired, replaced, or refunded, as applicable.",
-          "The legal warranty term is one (1) year from delivery, unless the producer announces a longer one, in which case the longer term applies. That one-year term applies to every new product we sell, technology devices included: there is no separate warranty regime for phones, computers, consoles, tablets or anything else.",
+          "The legal warranty term is the one shown on each product's page, counted from delivery. It matches the term offered for that product in the Colombian market, up to a maximum of one (1) year. If the product page shows no term, it is one (1) year.",
           "Claiming the warranty costs you nothing: repair, and shipping the product for repair, are on us, as provided in article 11 of Law 1480 of 2011.",
           "The warranty does not cover damage arising from force majeure or a fortuitous event, from the act of a third party, from improper use of the product (including unauthorised modification) or from failure to follow the installation, use or maintenance instructions where the product was supplied with a manual in Spanish. These are the grounds listed in article 16 of Law 1480 of 2011, and proving that the damage arises from one of them is on us, not on you.",
           "To claim it, write to contacto@tecnosport.co with your order number and a description of the problem."

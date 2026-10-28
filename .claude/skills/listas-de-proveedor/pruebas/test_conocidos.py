@@ -121,6 +121,38 @@ class Modelos(unittest.TestCase):
         self.assertEqual([{"nombre": "samsung-galaxy-a57-5g_1.jpg"}], m["fotos"])
 
 
+class Garantia(unittest.TestCase):
+    """27/10/2026: el modelo guarda la garantía que ofrece el mercado, con su fuente; la ficha la
+    lleva hasta un año, pero la base guarda lo que se vio, para poder defenderlo."""
+
+    GARANTIA = {"meses_mercado": 24, "fuente": "https://www.ktronix.com/x", "fecha": "2026-10-27"}
+
+    def test_se_guarda_y_una_lista_que_no_la_trae_no_la_borra(self):
+        base, _ = consolidar(conocidos.base_vacia(), lista(producto(garantia_mercado=self.GARANTIA)))
+        self.assertEqual(self.GARANTIA, base["modelos"]["samsung-galaxy-a57-5g"]["garantia"])
+        base, _ = consolidar(base, lista(producto()))
+        self.assertEqual(self.GARANTIA, base["modelos"]["samsung-galaxy-a57-5g"]["garantia"])
+        conocidos.validar(base)
+
+    def test_sin_consultar_queda_vacia(self):
+        base, _ = consolidar(conocidos.base_vacia(), lista(producto()))
+        self.assertIsNone(base["modelos"]["samsung-galaxy-a57-5g"]["garantia"])
+        conocidos.validar(base)
+
+    def test_consultada_sin_dato_vale_con_su_fecha(self):
+        g = {"meses_mercado": None, "fuente": None, "fecha": "2026-10-27"}
+        base, _ = consolidar(conocidos.base_vacia(), lista(producto(garantia_mercado=g)))
+        conocidos.validar(base)
+
+    def test_meses_sin_fuente_o_sin_fecha_no_se_aceptan(self):
+        for g, falta in (({"meses_mercado": 6, "fuente": None, "fecha": "2026-10-27"}, "sin fuente"),
+                         ({"meses_mercado": 6, "fuente": "https://x.co"}, "fecha"),
+                         ({"meses_mercado": 0, "fuente": "https://x.co", "fecha": "2026-10-27"}, "entero positivo")):
+            base, _ = consolidar(conocidos.base_vacia(), lista(producto(garantia_mercado=g)))
+            with self.assertRaisesRegex(ValueError, falta):
+                conocidos.validar(base)
+
+
 class Configuraciones(unittest.TestCase):
     def conf(self, base, cid="samsung-galaxy-a57-5g-8gb-ram-256gb"):
         return base["configuraciones"][cid]

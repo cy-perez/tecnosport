@@ -28,10 +28,10 @@ import java.util.UUID;
  * agujero que el bloque de atención vino a cerrar.
  *
  * <p><b>El término sale de la categoría del producto, no de una constante.</b> El catálogo mezcla
- * ropa, calzado y celulares, y los términos publicados prometen un año desde la entrega salvo que
- * el productor anuncie uno mayor. Una categoría cuyo término no esté decidido responde vacío y deja
- * la vigencia {@code INDETERMINADA} en vez de caer al término general — que sería inventarlo. Hoy
- * ninguna lo está.
+ * ropa, calzado y celulares, y los términos publicados dan el término que indica la ficha de cada
+ * producto, con un máximo de un año. Una categoría cuyo término no esté decidido responde vacío y
+ * deja la vigencia {@code INDETERMINADA} en vez de caer al término general — que sería inventarlo.
+ * Hoy ninguna lo está.
  */
 public final class RadicarReclamacionGarantia {
 

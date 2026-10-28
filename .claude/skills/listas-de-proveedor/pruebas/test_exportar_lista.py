@@ -213,7 +213,7 @@ class AvisosParaElPanel(unittest.TestCase):
     def test_un_modelo_sin_nada_que_resolver_no_aparece(self):
         descripcion = ("El Galaxy A17 5G.\n\n## Ficha técnica\n\n| Atributo | Detalle |\n|---|---|\n"
                        "| Dimensiones y peso | 164 × 77 mm · 192 g |\n\n## Contenido de la caja\n\n"
-                       "- El equipo\n\n## Garantía y notas\n\n- Producto nuevo.\n")
+                       "- El equipo\n\n## Garantía y notas\n\n- Producto nuevo.\n- Un año de garantía.\n")
         avisos = self.avisos(descripcion=descripcion)
         self.assertEqual({}, avisos["modelos"])
 

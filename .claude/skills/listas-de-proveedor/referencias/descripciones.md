@@ -30,7 +30,8 @@ lo distingue de su versión anterior o de su competencia directa.]
 - [lo que trae realmente]
 
 ## Garantía y notas
-- [garantía, condición del equipo, aclaraciones de eSIM o compatibilidad]
+- [condición del equipo, aclaraciones de eSIM o compatibilidad]
+- [plazo de garantía, siempre de último: «Un año de garantía.» o «6 meses de garantía.»]
 ```
 
 ## Lo que la ficha del sitio sabe pintar
@@ -98,8 +99,11 @@ capacidades («microSD de hasta 1 TB»).
 - **RAM extendida**: si la lista trae `(8+8+256)`, la ficha dice 8 GB de RAM y
   menciona aparte los 8 GB de RAM virtual que el equipo toma del almacenamiento.
   Sumarlas es una afirmación falsa que el cliente verifica en dos toques.
-- **Garantía**: quién responde y por cuánto tiempo. En Colombia la garantía legal
-  aplica aunque no se mencione; lo que evita el reclamo es que esté escrita.
+- **Garantía**: el plazo, como la última viñeta de «Garantía y notas». Es el que
+  ofrece el mercado colombiano hasta un año, y un año si nadie lo publica (regla
+  19 de `SKILL.md`, 27/10/2026). La escribe `redactar_fichas.py`; la prosa no la
+  repite ni la cambia de sitio, porque `descripciones.defectos` busca el plazo en
+  la última viñeta y avisa si no está ahí.
 
 ## Sin fuentes: la descripción no dice de dónde salió un dato
 

@@ -12,7 +12,7 @@ import descripciones  # noqa: E402
 APERTURA = "El iPhone 16 lleva el chip A18.\n\n"
 VINETAS = "## Características principales\n\n- Pantalla de 6,1 pulgadas.\n\n"
 CAJA = "## Contenido de la caja\n\n- iPhone 16\n- Cable USB-C\n\n"
-GARANTIA = "## Garantía y notas\n\n- Producto nuevo, sellado y sin activar.\n"
+GARANTIA = "## Garantía y notas\n\n- Producto nuevo, sellado y sin activar.\n- Un año de garantía.\n"
 FICHA_VACIA = "## Ficha técnica\n\n| Atributo | Detalle |\n|---|---|\n\n"
 FICHA = ("## Ficha técnica\n\n| Atributo | Detalle |\n|---|---|\n| Pantalla | OLED 6,1\" |\n"
          "| Dimensiones y peso | 147,6 x 71,6 x 7,8 mm · 170 g |\n\n")
@@ -51,7 +51,7 @@ class Sanear(unittest.TestCase):
         saneada = descripciones.sanear(APERTURA + FICHA_VACIA + GARANTIA + PIE_ICECAT)
         self.assertNotIn("Icecat", saneada)
         self.assertNotIn("---", saneada)
-        self.assertTrue(saneada.endswith("sin activar.\n"))
+        self.assertTrue(saneada.endswith("Un año de garantía.\n"))
 
     def test_una_lista_sin_vinetas_tambien_se_quita(self):
         texto = APERTURA + "## Contenido de la caja\n\n" + GARANTIA
@@ -81,6 +81,34 @@ class Defectos(unittest.TestCase):
         con_marcador = APERTURA + FICHA + CAJA + "## Garantía y notas\n\n- Plazo de [[PLAZO]] días.\n"
         self.assertEqual([descripciones.MARCADOR], descripciones.bloqueantes(con_marcador))
         self.assertEqual([], descripciones.bloqueantes(APERTURA + GARANTIA))
+
+
+class PlazoDeGarantia(unittest.TestCase):
+    """27/10/2026: la última nota de «Garantía y notas» dice el plazo. Sin él se avisa, sin bloquear:
+    el bloqueo sacaría de la lista para la API el costo y la existencia de lo que ya se vende."""
+
+    SIN_PLAZO = "## Garantía y notas\n\n- Producto nuevo, sellado y sin activar.\n"
+
+    def test_sin_plazo_se_dice_y_no_bloquea(self):
+        texto = APERTURA + FICHA + CAJA + self.SIN_PLAZO
+        self.assertEqual([descripciones.SIN_PLAZO_DE_GARANTIA], descripciones.defectos(texto))
+        self.assertEqual([], descripciones.bloqueantes(texto))
+
+    def test_el_plazo_tiene_que_ir_de_ultimo(self):
+        texto = APERTURA + FICHA + CAJA + ("## Garantía y notas\n\n- 6 meses de garantía.\n"
+                                           "- Producto nuevo, sellado y sin activar.\n")
+        self.assertIn(descripciones.SIN_PLAZO_DE_GARANTIA, descripciones.defectos(texto))
+
+    def test_los_plazos_que_escribe_el_redactor_valen(self):
+        for nota in ("Un año de garantía.", "1 mes de garantía.", "6 meses de garantía.", "11 meses de garantía."):
+            texto = APERTURA + FICHA + CAJA + f"## Garantía y notas\n\n- {nota}\n"
+            self.assertEqual([], descripciones.defectos(texto), nota)
+
+    def test_mas_de_un_ano_no_vale(self):
+        # El tope es un año: «24 meses» o «2 años» en la ficha es lo que la regla no deja publicar.
+        for nota in ("24 meses de garantía.", "2 años de garantía.", "12 meses de garantía."):
+            texto = APERTURA + FICHA + CAJA + f"## Garantía y notas\n\n- {nota}\n"
+            self.assertIn(descripciones.SIN_PLAZO_DE_GARANTIA, descripciones.defectos(texto), nota)
 
 
 class NombraUnaConfiguracion(unittest.TestCase):

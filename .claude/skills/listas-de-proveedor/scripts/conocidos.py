@@ -144,6 +144,8 @@ def consolidar(base: dict, datos: dict, hoy: date):
                 + [s for s in investigados
                    if not s.startswith("colores") and not RE_SUPUESTO_DE_LA_LISTA.search(s)])),
             "fuentes_ficha": deepcopy(p.get("fuentes_ficha") or (anterior_m or {}).get("fuentes_ficha") or []),
+            # La garantía que ofrece el mercado, con su fuente: la ficha la lleva hasta un año.
+            "garantia": deepcopy(p.get("garantia_mercado") or (anterior_m or {}).get("garantia")),
             "fotos": deepcopy((anterior_m or {}).get("fotos") or []),
             "fecha_alta": anterior_m["fecha_alta"] if anterior_m else fecha_lista,
         }
@@ -191,6 +193,23 @@ def _dinero(errores, clave, e):
             errores.append(f"{clave}: {campo} tiene que ser pesos enteros, no {valor!r}")
 
 
+def _garantia(errores, clave, g):
+    """Sin consultar es None. Consultada y sin dato publicado: meses_mercado null, con su fecha. Con
+    meses, siempre con la fuente: un plazo que no se puede mostrar de dónde salió no se defiende."""
+    if g is None:
+        return
+    if not isinstance(g, dict) or not g.get("fecha"):
+        errores.append(f"modelo {clave}: garantia tiene que llevar meses_mercado, fuente y fecha")
+        return
+    meses = g.get("meses_mercado")
+    if meses is None:
+        return
+    if isinstance(meses, bool) or not isinstance(meses, int) or meses <= 0:
+        errores.append(f"modelo {clave}: garantia.meses_mercado tiene que ser un entero positivo, no {meses!r}")
+    if not g.get("fuente"):
+        errores.append(f"modelo {clave}: garantía de {meses} meses sin fuente; no se podría defender")
+
+
 def validar(base: dict) -> dict:
     """Se niega a cargar una base que daría por bueno un dato que no lo es."""
     errores = []
@@ -205,6 +224,7 @@ def validar(base: dict) -> dict:
                 errores.append(f"modelo {clave}: {campo} tiene que ser una lista")
         if not m.get("fecha_alta"):
             errores.append(f"modelo {clave}: falta fecha_alta")
+        _garantia(errores, clave, m.get("garantia"))
         for foto in m.get("fotos") or []:
             if not foto.get("nombre") or not foto.get("huella"):
                 errores.append(f"modelo {clave}: una foto registrada sin nombre o sin huella")
