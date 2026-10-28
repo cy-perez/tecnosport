@@ -324,19 +324,25 @@ RE_PRECIO = re.compile(r"\$\s*([\d][\d.,]*)")
 # y un año salía como precio. Detrás solo puede venir la SIM.
 RE_PRECIO_SIN_SIGNO = re.compile(
     r"\(\s*\d{1,2}\s*\+[^)]*\)\s*(\d{1,2}\.\d{3}|\d{3,4})"
-    r"(?=\s*(?:1\s*SIM|DUAL\s*SIM|SIM\s*/\s*ESIM|ESIM)?\s*$)")
+    r"(?=\s*(?:1\s*SIM|(?:DUAL|2)\s*SIM|SIM\s*/\s*ESIM|ESIM)?\s*$)")
 RE_PORCENTAJE = re.compile(r"\d{2,3}\s*%")
 RE_FECHA = re.compile(r"(\d{1,2})\s*[/ ]\s*([A-ZÁÉÍÓÚ]{3,}|\d{1,2})\s*/\s*(\d{4})", re.I)
 RE_TELEFONO = re.compile(r"^\D*\d{7,12}\D*$")
 # Prefijo que agrega WhatsApp cuando se exporta el chat en vez de copiar el mensaje.
 RE_EXPORTADO = re.compile(r"^\[[^\]]{5,30}\]\s*(\+?[\d ]{7,20}|[^:]{1,30}):\s*")
 RE_ANOTACION = re.compile(
-    r"^(1\s*SIM|DUAL\s*SIM|SIM\s*/?\s*ESIM|ESIM|NFC|INCLUYE\b.*|CON\s+\w+)$", re.I
+    r"^(1\s*SIM|(?:DUAL|2)\s*SIM|SIM\s*/?\s*ESIM|ESIM|NFC|INCLUYE\b.*|CON\s+\w+)$", re.I
 )
 
 RE_MEM_3 = re.compile(r"\(?\s*(\d{1,2})\s*\+\s*(\d{1,2})\s*[+/]\s*(\d{2,4})\s*(?:GB)?\s*\)?", re.I)
 RE_MEM_2 = re.compile(r"\(\s*(\d{1,2})\s*\+\s*(\d{2,4})\s*(?:GB)?\s*\)", re.I)
-RE_MEM_RAM = re.compile(r"(\d{1,2})\s*(?:GB)?\s*RAM\s*[-/+]\s*(\d{2,4})\s*(?:GB)?", re.I)
+# «8+8 RAM 512 GB» y «8 RAM 512 GB», sin separador entre la RAM y el almacenamiento: así llegan
+# los avisos de llegada (lista del 27/10/2026). Sin leerlos, la RAM se quedaba en el título del
+# modelo: «Xiaomi Redmi Note 17 Pro 8 5G 512GB». La virtual va primero: si no, el segundo 8 se
+# leía como la RAM y el «8+» quedaba suelto.
+RE_MEM_RAM_VIRTUAL = re.compile(
+    r"(\d{1,2})\s*\+\s*(\d{1,2})\s*(?:GB)?\s*RAM\s*[-/+]?\s*(\d{2,4})\s*(?:GB)?", re.I)
+RE_MEM_RAM = re.compile(r"(\d{1,2})\s*(?:GB)?\s*RAM\s*[-/+]?\s*(\d{2,4})\s*(?:GB)?", re.I)
 RE_MEM_BARRA = re.compile(r"\b(\d{1,2})\s*[/+]\s*(\d{2,4})\b")
 RE_MEM_COMPU = re.compile(r"\(?\s*(\d{1,2})\s*(?:GB)?\s*(?:RAM)?\s*(?:DDR\d)?\s*\+\s*(\d{2,4})\s*(?:GB)?\s*(?:SSD)?\s*\)?", re.I)
 
@@ -409,10 +415,10 @@ def vinetas_del_dia(lineas) -> set:
     return {v for v, n in usos.items() if n >= USOS_VINETA_DEL_DIA}
 
 
-# La SIM llega escrita de muchas formas —`1 SIM`, `1SIM`, `DUAL SIM`, `SIM/ESIM`,
+# La SIM llega escrita de muchas formas —`1 SIM`, `1SIM`, `DUAL SIM`, `2SIM`, `SIM/ESIM`,
 # `SIM / ESIM`—, en la misma línea o debajo. Tiene que salir siempre igual: dos
 # textos para la misma SIM son dos ids, y dos referencias que no se fusionan.
-RE_SIM = re.compile(r"\bSIM\s*[/+]\s*E\s*SIM\b|\bDUAL\s*SIM\b|\b1\s*SIM\b")
+RE_SIM = re.compile(r"\bSIM\s*[/+]\s*E\s*SIM\b|\b(?:DUAL|2)\s*SIM\b|\b1\s*SIM\b")
 
 
 def atributo_sim(texto: str):
@@ -420,7 +426,9 @@ def atributo_sim(texto: str):
     compacto = re.sub(r"\s+", "", texto.upper())
     if compacto.startswith("SIM") and "ESIM" in compacto:
         return "SIM + eSIM"   # como quedó publicado el Edge 50 Fusion el 02/10/2026
-    if compacto.startswith("DUAL"):
+    # `2SIM` es la Dual SIM: el 27/10/2026 el «A17 5G (8+256) *2SIM* $725» no se leyó, se
+    # fusionó con el de 1 SIM al menor precio y la referencia Dual SIM desapareció.
+    if compacto.startswith("DUAL") or compacto.startswith("2SIM"):
         return "Dual SIM"
     if compacto.startswith("1SIM"):
         return "1 SIM"
@@ -512,7 +520,7 @@ def extraer_colores(texto: str):
 
 def extraer_memoria(texto: str, estilo="movil"):
     """Devuelve (ram, ram_virtual, almacenamiento, texto_sin_memoria)."""
-    patrones = [RE_MEM_RAM, RE_MEM_3, RE_MEM_2, RE_MEM_BARRA]
+    patrones = [RE_MEM_RAM_VIRTUAL, RE_MEM_RAM, RE_MEM_3, RE_MEM_2, RE_MEM_BARRA]
     if estilo == "computador":
         patrones = [RE_MEM_COMPU, RE_MEM_RAM, RE_MEM_BARRA]
     for patron in patrones:

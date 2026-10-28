@@ -116,6 +116,39 @@ class PatronDePrecioTest {
     assertEquals(List.of(Dinero.deCop(69900)), PatronDePrecio.extraerTodos(texto));
   }
 
+  /**
+   * La Riverah, 26 de octubre de 2026: el tachado pegado al emoji. Leído, el jean salía a 65.000 y
+   * los conjuntos de niña al precio de antes del descuento.
+   */
+  @Test
+  void elTachadoPegadoAUnEmojiTampocoCuenta() {
+    assertEquals(
+        List.of(Dinero.deCop(59900)),
+        PatronDePrecio.extraerTodos("       🤑~$65.000~🥳🥳\nPromo $59.900\n"));
+    assertEquals(
+        List.of(Dinero.deCop(68000)),
+        PatronDePrecio.extraerTodos(
+            "  Jean + Básica 🤑~$75.000~ \n\n*Descuento aniversario $68.000💙*"));
+  }
+
+  /** Imperio Wicho, 27 de octubre de 2026: la tienda compra un par, no la docena. */
+  @Test
+  void elPrecioPorDocenaNoEsElDeUnPar() {
+    assertEquals(
+        List.of(Dinero.deCop(12000)),
+        PatronDePrecio.extraerTodos(
+            "📦Docena *$120,000*\n💰*$12,000*\nPedidos 📲wa.me/573114817126"));
+    assertEquals(
+        Optional.of(Dinero.deCop(20000)),
+        PatronDePrecio.extraer("📦Docena *$204,000*\nDetal 💰*$20,000*"));
+  }
+
+  /** Sin otro precio, el de la docena es el único que hay y abre la publicación. */
+  @Test
+  void soloConElPrecioPorDocenaSeQueda() {
+    assertEquals(Optional.of(Dinero.deCop(120000)), PatronDePrecio.extraer("📦Docena *$120,000*"));
+  }
+
   /** Una virgulilla suelta delante del precio no es una tachadura: no cierra en ninguna parte. */
   @Test
   void unaVirgulillaSinCierreNoTachaNada() {
@@ -132,6 +165,11 @@ class PatronDePrecioTest {
         PatronDePrecio.extraer("Chaleco Denim Oversize(Q287)\n💲124\nTalla U"));
     assertEquals(Optional.of(Dinero.deCop(52000)), PatronDePrecio.extraer("💲52  \nTalla S M L"));
     assertEquals(Optional.of(Dinero.deCop(119900)), PatronDePrecio.extraer("💲119900"));
+    // 27 de octubre de 2026: el body con «$ 39» y el pantalón con «💲78» en el mismo anuncio.
+    assertEquals(
+        List.of(Dinero.deCop(39000), Dinero.deCop(78000)),
+        PatronDePrecio.extraerTodos(
+            "Body Herraje(VY3193)\nTalla S M L \n$ 39\n\nPantalón prenses (VY2598)\n💲78\nTalla S M L XL"));
   }
 
   /**
@@ -144,6 +182,7 @@ class PatronDePrecioTest {
     assertFalse(PatronDePrecio.tienePrecio("PRECIO X 12 unidades"));
     assertFalse(PatronDePrecio.tienePrecio("Tallas 6 8 10 12 14"));
     assertFalse(PatronDePrecio.tienePrecio("💲5"));
+    assertFalse(PatronDePrecio.tienePrecio("$5"));
     assertFalse(PatronDePrecio.tienePrecio("Nota: Las gorras tiene un valor de 35mil-"));
     assertEquals(
         Optional.of(Dinero.deCop(55000)), PatronDePrecio.extraer("Antes ~70.000~ hoy 💰55.000"));

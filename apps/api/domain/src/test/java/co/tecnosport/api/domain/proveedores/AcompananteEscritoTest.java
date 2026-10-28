@@ -138,6 +138,15 @@ class AcompananteEscritoTest {
         AcompananteEscrito.en("Falda 🤑$49.900\nSet, falda + básica $ 88.000"));
   }
 
+  /** La Riverah, 26 de octubre de 2026: el combo tachado era el precio de antes del descuento. */
+  @Test
+  void elComboTachadoNoEsUnCombo() {
+    assertTrue(
+        AcompananteEscrito.en(
+                "✅jeans + Básica\n\n  Jean + Básica 🤑~$75.000~ \n\n*Descuento aniversario $68.000💙*")
+            .isEmpty());
+  }
+
   @Test
   void sinTextoNoHayNada() {
     assertTrue(AcompananteEscrito.en(null).isEmpty());

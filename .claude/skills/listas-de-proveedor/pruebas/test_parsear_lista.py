@@ -640,5 +640,39 @@ class NombresDel22DeOctubre(unittest.TestCase):
         self.assertEqual("cables", d["categoria"])
 
 
+class ListaDel27DeOctubre(unittest.TestCase):
+    """27/10/2026: una referencia perdida y dos títulos con la RAM dentro del modelo."""
+
+    def test_dos_sim_pegado_es_la_dual_sim_y_no_se_fusiona_con_la_de_una(self):
+        datos = parsear("*SAMSUNG*\n🎃A17 5G (8+256) *1SIM* $700\n🎃A17 5G (8+256) *2SIM* $725\n")
+        self.assertEqual([], datos["duplicados_fusionados"])
+        self.assertEqual(
+            [("Samsung Galaxy A17 5G 8GB RAM 256GB 1 SIM", 700_000),
+             ("Samsung Galaxy A17 5G 8GB RAM 256GB Dual SIM", 725_000)],
+            [(p["titulo"], p["precio_proveedor_cop"]) for p in datos["productos"]])
+
+    def test_dos_sim_con_espacio_tambien(self):
+        self.assertEqual("Dual SIM", parsear_lista.atributo_sim("2 SIM"))
+
+    def test_dos_sim_detras_del_precio_sin_signo_o_en_la_linea_siguiente(self):
+        for texto in ("🎃A17 5G (8+256) 725 *2SIM*\n", "🎃A17 5G (8+256)$725\n*2 SIM*\n"):
+            with self.subTest(texto=texto):
+                datos = parsear("*SAMSUNG*\n" + texto)
+                self.assertEqual([("Samsung Galaxy A17 5G 8GB RAM 256GB Dual SIM", 725_000)],
+                                 [(p["titulo"], p["precio_proveedor_cop"])
+                                  for p in datos["productos"]])
+                self.assertEqual([], datos["sin_clasificar"])
+
+    def test_el_aviso_de_llegada_con_la_ram_sin_separador(self):
+        datos = parsear("------\n\nLLEGANDO REDMI NOTE 17 PRO 5G\n\n8 RAM \n512 GB \n\n$1.250 🔥🔥🔥\n")
+        self.assertEqual(["Xiaomi Redmi Note 17 Pro 5G 8GB RAM 512GB"], titulos(datos))
+
+    def test_el_aviso_de_llegada_con_la_ram_virtual(self):
+        datos = parsear("------\n\nLLEGANDO REDMI NOTE 17 PRO MAX 5G\n\n8+8 RAM \n512 GB \n\n$1.590 🔥\n")
+        [producto] = datos["productos"]
+        self.assertEqual("Xiaomi Redmi Note 17 Pro Max 5G 8GB RAM 512GB", producto["titulo"])
+        self.assertEqual("8GB", producto["ram_virtual"])
+
+
 if __name__ == "__main__":
     unittest.main()

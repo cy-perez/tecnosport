@@ -23,6 +23,10 @@ class GeneroDelAnuncioTest {
     assertEquals(
         Optional.of(GeneroDeCalzado.UNISEX),
         GeneroDelAnuncio.de("Horma normal Dama, Aumenta 1 Cab⚠️"));
+    // Imperio Wicho, 27 de octubre de 2026: salía caballero.
+    assertEquals(
+        Optional.of(GeneroDeCalzado.UNISEX),
+        GeneroDelAnuncio.de("Importado AAA Dam y Cab👨🏻🔥\nTallas disponibles 37/40/41 Eur"));
   }
 
   @Test
