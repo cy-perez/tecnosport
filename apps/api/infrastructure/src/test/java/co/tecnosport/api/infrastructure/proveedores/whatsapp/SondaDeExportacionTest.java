@@ -4,6 +4,7 @@ import co.tecnosport.api.application.catalogo.UrlFirmada;
 import co.tecnosport.api.application.proveedores.AlmacenDeArchivosDeProveedor;
 import co.tecnosport.api.application.proveedores.ChatExportado;
 import co.tecnosport.api.application.proveedores.MensajeCrudo;
+import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.proveedores.AcompananteEscrito;
 import co.tecnosport.api.domain.proveedores.AgrupadorDePublicaciones;
 import co.tecnosport.api.domain.proveedores.AjusteDelAnuncio;
@@ -15,6 +16,7 @@ import co.tecnosport.api.domain.proveedores.MensajeProveedor;
 import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
 import co.tecnosport.api.domain.proveedores.PatronDePrecio;
 import co.tecnosport.api.domain.proveedores.PatronDeReplica;
+import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.domain.proveedores.PublicacionProveedor;
 import co.tecnosport.api.domain.proveedores.TextoDeAnuncio;
 import co.tecnosport.api.domain.proveedores.TipoMensaje;
@@ -51,9 +53,10 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
  * -- <zip o carpeta>}, que llama a la tarea {@code :infrastructure:sondearExportacion}.
  *
  * <ul>
- *   <li>El remitente del proveedor es el que más mensajes manda, y los demás se ignoran como en la
- *       ingesta. Si otro remitente manda anuncios, la sonda lo avisa: la ingesta solo reconoce el
- *       nombre configurado en el proveedor (y su teléfono), y lo de esa otra cuenta se perdería.
+ *   <li>El remitente del proveedor es el que más mensajes manda, más los otros nombres que se le
+ *       den con {@code --remitentes}, como los «Otros nombres en la exportación» de su ficha; se
+ *       comparan con la misma regla de la ingesta, y los demás se ignoran. Si otro remitente manda
+ *       anuncios, la sonda lo avisa: sin ese nombre en la ficha, lo de esa cuenta se perdería.
  *   <li>Un zip con dos chats ({@code X.txt} y {@code XMen.txt}) se lee como lo hace la ingesta:
  *       primero el de caballero, y en el general se marca {@code [YA-EN-MEN]} el anuncio que el de
  *       caballero ya trajo.
@@ -62,6 +65,17 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 @Tag("sonda")
 @EnabledIfEnvironmentVariable(named = "SONDA_ZIP", matches = ".+")
 class SondaDeExportacionTest {
+
+  /**
+   * Los otros nombres del proveedor en la exportación, como en su ficha del panel: separados por
+   * comas en {@code SONDA_REMITENTES}. Vacío si no se dan.
+   */
+  private static final List<String> OTROS_REMITENTES =
+      java.util.Arrays.stream(
+              Optional.ofNullable(System.getenv("SONDA_REMITENTES")).orElse("").split(","))
+          .map(String::strip)
+          .filter(n -> !n.isEmpty())
+          .toList();
 
   /** Lo que el lector deja descomprimir; la sonda no mira el tamaño del archivo. */
   private static final long SIN_TOPE = Integer.MAX_VALUE;
@@ -118,11 +132,17 @@ class SondaDeExportacionTest {
         chat.mensajes().stream()
             .collect(Collectors.groupingBy(MensajeCrudo::remitente, Collectors.counting()));
     out.println("remitentes: " + remitentes);
-    String proveedor =
+    String principal =
         remitentes.entrySet().stream().max(Map.Entry.comparingByValue()).orElseThrow().getKey();
+    // Con la misma regla de la ingesta: el principal y los otros remitentes del proveedor.
+    Proveedor proveedor =
+        Proveedor.crear(
+            "sonda", LineaCatalogo.ROPA, "0", principal, null, OrdenDePublicacion.FOTOS_PRIMERO);
+    proveedor.definirOtrosRemitentes(OTROS_REMITENTES);
+    out.println("remitentes del proveedor: «" + principal + "» y " + proveedor.otrosRemitentes());
     Map<String, Long> otrosConPrecio =
         chat.mensajes().stream()
-            .filter(m -> !m.remitente().equals(proveedor))
+            .filter(m -> !proveedor.esRemitente(m.remitente()))
             .filter(m -> m.texto() != null && PatronDePrecio.extraer(m.texto()).isPresent())
             .collect(Collectors.groupingBy(MensajeCrudo::remitente, Collectors.counting()));
     if (!otrosConPrecio.isEmpty()) {
@@ -145,7 +165,7 @@ class SondaDeExportacionTest {
     Map<UUID, MensajeCrudo> crudoDe = new HashMap<>();
     int n = 0;
     for (MensajeCrudo crudo : chat.mensajes()) {
-      if (!crudo.remitente().equals(proveedor)) {
+      if (!proveedor.esRemitente(crudo.remitente())) {
         continue;
       }
       UUID id = UUID.randomUUID();
