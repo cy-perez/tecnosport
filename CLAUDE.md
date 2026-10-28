@@ -152,6 +152,7 @@ npm run formato                          ¿los scripts de tools/ están en forma
 npm run cruce-catalogo                   ¿qué productos de la lista están listos para publicar?
 npm run sondear -- <zip o carpeta>      ¿cómo quedaría la ingesta de ese zip? lector, agrupador y reglas
                                          de texto, sin Claude; antes de subirlo al panel
+npm run sondear -- <zip> --remitentes "A, B"   con los otros nombres de la ficha del proveedor
 npm run huerfanos -- --bucket X --api Y  ¿qué objetos del bucket no los reclama nadie? (informa, no borra)
 node tools/cargar-catalogo.mjs           carga por la API del panel; simula si no le pasas --escribir
                                          --api elige el ambiente (por omisión localhost:8080), y el

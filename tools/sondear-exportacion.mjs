@@ -10,8 +10,10 @@
 // entonces se hacían con una prueba temporal que se borraba. La prueba vive en
 // `SondaDeExportacionTest` (infraestructura) y no corre en el build.
 //
-// Uso:  npm run sondear -- <zip o carpeta de zips> [--salida archivo.txt]
-// Por omisión escribe en apps/api/infrastructure/build/sonda/<nombre>.txt.
+// Uso:  npm run sondear -- <zip o carpeta de zips> [--remitentes "A, B"] [--salida archivo.txt]
+// Por omisión escribe en apps/api/infrastructure/build/sonda/<nombre>.txt. `--remitentes` son los
+// «Otros nombres en la exportación» de la ficha del proveedor: sin ellos, lo que mandan esas
+// cuentas sale como ignorado, aunque la ingesta sí lo lea.
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
@@ -20,15 +22,29 @@ import { fileURLToPath } from "node:url";
 const RAIZ = fileURLToPath(new URL("..", import.meta.url));
 const API = join(RAIZ, "apps/api");
 
+const USO =
+  'Uso: npm run sondear -- <zip o carpeta de zips> [--remitentes "A, B"] [--salida archivo.txt]';
+const OPCIONES = ["--salida", "--remitentes"];
 const argumentos = process.argv.slice(2);
-const indiceSalida = argumentos.indexOf("--salida");
-const salidaPedida = indiceSalida >= 0 ? argumentos[indiceSalida + 1] : null;
-const origen = argumentos.find(
-  (a, i) => !a.startsWith("--") && (indiceSalida < 0 || i !== indiceSalida + 1),
-);
+const opciones = {};
+const sueltos = [];
+for (let i = 0; i < argumentos.length; i++) {
+  if (OPCIONES.includes(argumentos[i])) {
+    if (argumentos[i + 1] === undefined) {
+      console.error(USO);
+      process.exit(2);
+    }
+    opciones[argumentos[i]] = argumentos[++i];
+  } else {
+    sueltos.push(argumentos[i]);
+  }
+}
+const salidaPedida = opciones["--salida"] ?? null;
+const remitentes = opciones["--remitentes"] ?? "";
+const origen = sueltos[0];
 
-if (!origen || (indiceSalida >= 0 && !salidaPedida)) {
-  console.error("Uso: npm run sondear -- <zip o carpeta de zips> [--salida archivo.txt]");
+if (!origen || sueltos.length > 1 || sueltos.some((a) => a.startsWith("--"))) {
+  console.error(USO);
   process.exit(2);
 }
 const zip = resolve(origen);
@@ -40,8 +56,9 @@ const nombre = basename(zip).replace(/\.zip$/i, "");
 const salida = resolve(salidaPedida ?? join(API, "infrastructure/build/sonda", `${nombre}.txt`));
 
 // Gradle quiere las rutas con «/» también en Windows, y entre comillas: el .bat corre por el cmd,
-// que partiría «Imperio Wicho.zip» en dos argumentos.
+// que partiría «Imperio Wicho.zip» —o «Meraki (apartados)»— en dos argumentos.
 const enWindows = process.platform === "win32";
+const entreComillas = (texto) => (enWindows ? `"${texto}"` : texto);
 const comoGradle = (ruta) => {
   const conBarras = ruta.replaceAll("\\", "/");
   return enWindows ? `"${conBarras}"` : conBarras;
@@ -54,6 +71,7 @@ const resultado = spawnSync(
     ":infrastructure:sondearExportacion",
     `-Pzip=${comoGradle(zip)}`,
     `-Psalida=${comoGradle(salida)}`,
+    `-Premitentes=${entreComillas(remitentes)}`,
     "-q",
   ],
   { cwd: API, stdio: "inherit", shell: enWindows },

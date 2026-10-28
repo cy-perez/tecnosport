@@ -58,6 +58,7 @@ val sondearExportacion by
         useJUnitPlatform { includeTags("sonda") }
         maxHeapSize = "4g"
         environment("SONDA_ZIP", providers.gradleProperty("zip").getOrElse(""))
+        environment("SONDA_REMITENTES", providers.gradleProperty("remitentes").getOrElse(""))
         environment(
             "SONDA_SALIDA",
             providers
