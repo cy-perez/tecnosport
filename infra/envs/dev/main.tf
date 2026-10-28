@@ -440,7 +440,10 @@ module "api" {
   region             = var.region
   imagen             = local.imagen_de_arranque
   cuenta_de_servicio = google_service_account.api.email
-  memoria            = "1Gi" # una JVM en 512Mi arranca demasiado justa
+  # 3Gi desde el 28 de octubre de 2026, por el tope de la exportación de abajo: el lector tiene en
+  # memoria el zip, su copia en /tmp —que en Cloud Run también es memoria— y lo descomprimido, y
+  # la de Meraki pesa 293 MB. Con 1Gi y el tope de 30 MB bastaba. La JVM toma el 75 % del límite.
+  memoria = "3Gi"
 
   # Las de la base se agregan solo cuando hay a dónde conectarse. Un DB_HOST vacío armaría
   # `jdbc:postgresql://:5432/` y el arranque moriría con un error sobre la URL, no sobre lo que
@@ -449,11 +452,16 @@ module "api" {
     APP_URL_PUBLICA        = var.dominio_publico_web
     GCS_BUCKET_IMAGENES    = var.bucket_imagenes
     GCS_BUCKET_PROVEEDORES = var.bucket_proveedores
-    SMTP_HOST              = "smtp.resend.com"
-    SMTP_PUERTO            = "587"
-    SMTP_AUTH              = "true"
-    SMTP_USUARIO           = "resend"
-    CORREO_REMITENTE       = "no-responder@dev.tecnosport.co"
+    # El tope de una exportación del chat, que en dev sube de 30 MB a 400 MB (28 de octubre de
+    # 2026): Meraki exporta sus dos chats con las fotos en 293 MB, y Tenis Al Pie en 44 MB. Lo
+    # descomprimido puede pesar un poco más que el zip, y el servidor exige que no sea menos.
+    PROVEEDORES_EXPORTACION_MAXIMA_BYTES   = "419430400"
+    PROVEEDORES_DESCOMPRIMIDO_MAXIMO_BYTES = "419430400"
+    SMTP_HOST                              = "smtp.resend.com"
+    SMTP_PUERTO                            = "587"
+    SMTP_AUTH                              = "true"
+    SMTP_USUARIO                           = "resend"
+    CORREO_REMITENTE                       = "no-responder@dev.tecnosport.co"
     # La cuenta del panel. **Estaba puesta a mano en el servicio y no aquí**, y se descubrió el 22
     # de septiembre porque el plan de un cambio ajeno proponía borrarla: un `apply` la habría
     # quitado, el arranque habría vuelto al valor por omisión de `application.yml`
