@@ -46,10 +46,21 @@ Al revisarlo apareció además un defecto real: el remitente es `no-responder@te
 
 Los correos internos —saldo bajo, revisión pendiente, sugerencias— llevan la misma plantilla.
 
+## El saludo (añadido el mismo 27 de octubre)
+
+Todos los correos abren con «Hola, María:» o, sin nombre, con «Hola:». `EnviadorDeCorreo` recibe el
+nombre como argumento opcional; el método de tres argumentos queda como método por omisión sin
+nombre, así que solo cambiaron los doce casos de uso que lo tienen: los del pedido, que pasan
+`Pedido.nombreDeQuienRecibe()`. Del nombre se usa el primero, escapado.
+
+**Es el nombre de quien recibe**, porque es el único que el checkout pide. Quien compra un regalo
+recibe sus correos saludando a quien lo recibe: se aceptó, porque la mayoría compra para sí
+misma. Pedir el nombre de quien compra es un cambio del checkout, del contrato y de la base, y no
+entró aquí. Las cuentas, las PQR y los avisos internos no tienen nombre y saludan con «Hola:».
+
 ## Lo que queda fuera
 
-- **El saludo con el nombre** («Hola, Ana»). Los casos de uso no pasan el nombre, y agregarlo toca
-  unos quince. Va en otro PR si se quiere.
+- **El nombre de quien compra**, distinto del de quien recibe (ver arriba).
 - **Modo oscuro propio.** La plantilla se declara clara (`color-scheme: light`); los clientes que
   invierten colores por su cuenta lo siguen haciendo.
 - **Iconos de redes.** Enlaces de texto: no se rompen con las imágenes bloqueadas.
