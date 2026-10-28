@@ -150,6 +150,8 @@ npm run datos-negocio                    ¿el teléfono, el NIT y la versión le
 npm run categorias                       ¿nombra algún fixture una categoría que el catálogo no tiene?
 npm run formato                          ¿los scripts de tools/ están en formato? (Prettier, 100 columnas)
 npm run cruce-catalogo                   ¿qué productos de la lista están listos para publicar?
+npm run sondear -- <zip o carpeta>      ¿cómo quedaría la ingesta de ese zip? lector, agrupador y reglas
+                                         de texto, sin Claude; antes de subirlo al panel
 npm run huerfanos -- --bucket X --api Y  ¿qué objetos del bucket no los reclama nadie? (informa, no borra)
 node tools/cargar-catalogo.mjs           carga por la API del panel; simula si no le pasas --escribir
                                          --api elige el ambiente (por omisión localhost:8080), y el

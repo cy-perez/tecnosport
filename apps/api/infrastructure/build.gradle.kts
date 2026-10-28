@@ -45,3 +45,27 @@ dependencies {
     testImplementation("org.testcontainers:testcontainers-junit-jupiter")
     testImplementation("org.testcontainers:testcontainers-postgresql")
 }
+
+// La sonda de una exportación de WhatsApp (SondaDeExportacionTest): cómo quedaría la ingesta de un
+// zip antes de subirlo al panel. No es una prueba y no corre en el build; se lanza con
+//   npm run sondear -- <zip o carpeta>
+// El heap es aparte porque un zip de Meraki pesa ~300 MB y el lector lo descomprime en memoria.
+val sondearExportacion by
+    tasks.registering(Test::class) {
+        description = "Pasa un zip de WhatsApp por el lector, el agrupador y las reglas de texto."
+        testClassesDirs = sourceSets["test"].output.classesDirs
+        classpath = sourceSets["test"].runtimeClasspath
+        useJUnitPlatform { includeTags("sonda") }
+        maxHeapSize = "4g"
+        environment("SONDA_ZIP", providers.gradleProperty("zip").getOrElse(""))
+        environment(
+            "SONDA_SALIDA",
+            providers
+                .gradleProperty("salida")
+                .getOrElse(layout.buildDirectory.file("sonda/sonda.txt").get().asFile.path),
+        )
+        testLogging { showStandardStreams = true }
+        outputs.upToDateWhen { false }
+    }
+
+tasks.named<Test>("test") { useJUnitPlatform { excludeTags("sonda") } }

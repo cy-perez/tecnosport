@@ -30,6 +30,7 @@
     "formato": "prettier --check \"tools/**/*.mjs\"",
     "legales-impresos": "node tools/imprimir-legales.mjs",
     "cruce-catalogo": "node tools/cruce-catalogo.mjs",
+    "sondear": "node tools/sondear-exportacion.mjs",
     "huerfanos": "node tools/huerfanos-bucket.mjs"
   },
   "allowScripts": {
