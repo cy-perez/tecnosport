@@ -36,7 +36,9 @@ test('de la portada al pedido creado, pagando por transferencia', async ({ page 
   // Resumen: datos de entrega y la casilla de autorización.
   await expect(page.getByLabel('Correo electrónico')).toBeVisible();
   await page.getByLabel('Correo electrónico').fill('e2e@tecnosport.co');
-  await page.getByLabel('Nombre de quien recibe').fill('Ana Pérez');
+  // Quien compra es quien recibe (ADR-0099): el nombre de quien recibe solo aparece si se marca
+  // «Lo recibe otra persona».
+  await page.getByLabel('Tu nombre').fill('Ana Pérez');
   await page.getByLabel('Teléfono de contacto').fill('3138816711');
   await page.getByLabel('Departamento').selectOption('05');
   await page.getByLabel('Ciudad').selectOption('05001');
