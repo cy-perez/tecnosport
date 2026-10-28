@@ -219,7 +219,7 @@ class AdminPagosControladorTest {
           pagos,
           pedidos,
           reintegros,
-          (destinatario, asunto, cuerpo) -> {},
+          (destinatario, nombre, asunto, cuerpo) -> {},
           new TextosDeCorreoDobleDePrueba(),
           reloj);
     }

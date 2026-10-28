@@ -46,7 +46,7 @@ class RegistrarReintegroDePagoSinPedidoTest {
         pagos,
         pedidos,
         reintegros,
-        (destinatario, asunto, cuerpo) -> {
+        (destinatario, nombre, asunto, cuerpo) -> {
           asuntos.add(asunto);
           cuerpos.add(cuerpo);
         },

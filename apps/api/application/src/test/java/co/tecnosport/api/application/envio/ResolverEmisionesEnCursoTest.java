@@ -286,7 +286,11 @@ class ResolverEmisionesEnCursoTest {
     private final List<String> destinatarios = new ArrayList<>();
 
     @Override
-    public void enviar(CorreoElectronico destinatario, String asunto, String cuerpo) {
+    public void enviar(
+        CorreoElectronico destinatario,
+        String nombreDelDestinatario,
+        String asunto,
+        String cuerpo) {
       destinatarios.add(destinatario.valor());
     }
 

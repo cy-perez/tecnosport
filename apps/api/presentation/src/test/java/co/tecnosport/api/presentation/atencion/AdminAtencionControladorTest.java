@@ -181,7 +181,7 @@ class AdminAtencionControladorTest {
 
     @Bean
     EnviadorDeCorreo enviadorDeCorreo() {
-      return (destinatario, asunto, cuerpo) -> {};
+      return (destinatario, nombre, asunto, cuerpo) -> {};
     }
 
     @Bean

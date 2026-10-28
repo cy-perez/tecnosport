@@ -137,6 +137,7 @@ public final class RecibirPedidoRechazado {
     try {
       enviadorDeCorreo.enviar(
           pedido.correo(),
+          pedido.nombreDeQuienRecibe().orElse(null),
           textos.texto(TextoDeCorreo.PEDIDO_DEVUELTO_ASUNTO, pedido.numeroPedido().valor()),
           textos.texto(TextoDeCorreo.PEDIDO_DEVUELTO_CUERPO)
               + textos.texto(dinero)

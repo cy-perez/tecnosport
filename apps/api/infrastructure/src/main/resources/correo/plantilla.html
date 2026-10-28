@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- La envoltura de todos los correos del sistema (adr/0098). La rellena PlantillaDeCorreo:
-     {{titulo}}, {{previa}} y {{contenido}} cambian en cada correo; el resto sale de los
+     {{titulo}}, {{previa}}, {{saludo}} y {{contenido}} cambian en cada correo; el resto sale de los
      correos_*.properties (llaves plantilla.*) y de APP_URL_PUBLICA una sola vez, al arrancar.
 
      Por qué está escrita así, para quien la quiera "modernizar":
@@ -50,7 +50,7 @@
           <td class="relleno titulo" style="padding:32px 40px 8px;font-family:'Archivo','Arial Narrow','Helvetica Neue',Arial,sans-serif;font-size:26px;line-height:1.2;font-weight:700;color:#14171C;">{{titulo}}</td>
         </tr>
         <tr>
-          <td class="relleno" style="padding:16px 40px 8px;font-family:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:16px;line-height:1.55;color:#14171C;">{{contenido}}</td>
+          <td class="relleno" style="padding:16px 40px 8px;font-family:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:16px;line-height:1.55;color:#14171C;"><p style="margin:0 0 16px;">{{saludo}}</p>{{contenido}}</td>
         </tr>
         <tr>
           <td class="relleno" style="padding:8px 40px 32px;">

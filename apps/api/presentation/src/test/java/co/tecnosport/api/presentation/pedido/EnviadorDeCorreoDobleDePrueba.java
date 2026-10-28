@@ -11,7 +11,11 @@ final class EnviadorDeCorreoDobleDePrueba implements EnviadorDeCorreo {
   private final List<String> destinatarios = new ArrayList<>();
 
   @Override
-  public void enviar(CorreoElectronico destinatario, String asunto, String cuerpoHtml) {
+  public void enviar(
+      CorreoElectronico destinatario,
+      String nombreDelDestinatario,
+      String asunto,
+      String cuerpoHtml) {
     destinatarios.add(destinatario.valor());
   }
 

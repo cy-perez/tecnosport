@@ -45,7 +45,7 @@ public class PlantillaDeCorreo {
 
   private static final String RECURSO = "correo/plantilla.html";
 
-  private static final List<String> TEXTOS =
+  static final List<String> TEXTOS =
       List.of(
           "plantilla.idioma",
           "plantilla.logo_alt",
@@ -103,7 +103,18 @@ public class PlantillaDeCorreo {
           + "font-size:16px;line-height:1.2;text-decoration:none;padding:14px 28px;"
           + "border:1px solid #1B1F26;border-radius:4px;";
 
+  /**
+   * Los dos saludos (adr/0098): con nombre, «Hola, {0}:», y sin él, «Hola:». Se leen sin
+   * MessageFormat —sin argumentos no interviene— y el {0} se rellena aquí a mano, con el nombre ya
+   * escapado.
+   */
+  private static final String SALUDO = "plantilla.saludo";
+
+  private static final String SALUDO_SIN_NOMBRE = "plantilla.saludo_sin_nombre";
+
   private final String esqueleto;
+  private final String saludo;
+  private final String saludoSinNombre;
 
   public PlantillaDeCorreo(String urlPublica) {
     this(urlPublica, TextosDeCorreoMessageSource.paquetePropio());
@@ -122,7 +133,15 @@ public class PlantillaDeCorreo {
       for (String clave : TEXTOS) {
         texto(mensajes, clave, idioma);
       }
+      if (!texto(mensajes, SALUDO, idioma).contains("{0}")) {
+        throw new IllegalStateException(
+            SALUDO + " en " + idioma.getLanguage() + " no tiene dónde poner el nombre: falta {0}.");
+      }
+      texto(mensajes, SALUDO_SIN_NOMBRE, idioma);
     }
+    this.saludo = texto(mensajes, SALUDO, TextosDeCorreoMessageSource.IDIOMA_QUE_RIGE);
+    this.saludoSinNombre =
+        texto(mensajes, SALUDO_SIN_NOMBRE, TextosDeCorreoMessageSource.IDIOMA_QUE_RIGE);
 
     String plantilla = COMENTARIO.matcher(leerRecurso()).replaceAll("");
     for (String clave : TEXTOS) {
@@ -142,6 +161,7 @@ public class PlantillaDeCorreo {
             plantilla
                 .replace("{{titulo}}", "")
                 .replace("{{previa}}", "")
+                .replace("{{saludo}}", "")
                 .replace("{{contenido}}", ""));
     if (sobrante.find()) {
       throw new IllegalStateException(
@@ -156,6 +176,15 @@ public class PlantillaDeCorreo {
    * etiqueta y nadie lo escribió pensando en eso.
    */
   public String envolver(String asunto, String cuerpoHtml) {
+    return envolver(asunto, null, cuerpoHtml);
+  }
+
+  /**
+   * Con el saludo. Del nombre se usa solo el primero —«Hola, María:» y no el nombre completo de
+   * quien recibe—: suena a persona y deja menos dato personal en la fila de la bandeja. Nulo o en
+   * blanco, el saludo sale sin nombre.
+   */
+  public String envolver(String asunto, String nombreDelDestinatario, String cuerpoHtml) {
     Objects.requireNonNull(asunto, "El asunto no puede ser nulo.");
     Objects.requireNonNull(cuerpoHtml, "El cuerpo no puede ser nulo.");
     String titulo =
@@ -170,7 +199,27 @@ public class PlantillaDeCorreo {
     return esqueleto
         .replace("{{titulo}}", titulo)
         .replace("{{previa}}", previa(cuerpoHtml))
+        .replace("{{saludo}}", saludo(nombreDelDestinatario))
         .replace("{{contenido}}", estilizar(cuerpoHtml));
+  }
+
+  private String saludo(String nombreDelDestinatario) {
+    if (nombreDelDestinatario == null || nombreDelDestinatario.isBlank()) {
+      return saludoSinNombre;
+    }
+    String primerNombre = nombreDelDestinatario.strip().split("\\s+")[0];
+    // Lo escribió una persona en el checkout: se escapa para HTML, y las llaves también, para que
+    // un nombre no pueda parecerse a un marcador de la plantilla.
+    String escapado =
+        primerNombre
+            .replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace("\"", "&quot;")
+            .replace("'", "&#39;")
+            .replace("{", "&#123;")
+            .replace("}", "&#125;");
+    return saludo.replace("{0}", escapado);
   }
 
   static String estilizar(String fragmento) {

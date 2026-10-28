@@ -100,7 +100,7 @@ class ConfirmarActivacionSegundoFactorIntegracionTest {
             repositorioSegundosFactores,
             repositorioSesiones,
             (u, alcance, instante) -> "token",
-            (destinatario, asunto, cuerpo) -> {},
+            (destinatario, nombre, asunto, cuerpo) -> {},
             TEXTOS,
             () -> ahora,
             Duration.ofDays(30),

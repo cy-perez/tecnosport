@@ -264,7 +264,11 @@ class AvisarRevisionPendienteTest {
     }
 
     @Override
-    public void enviar(CorreoElectronico destinatario, String asunto, String cuerpo) {
+    public void enviar(
+        CorreoElectronico destinatario,
+        String nombreDelDestinatario,
+        String asunto,
+        String cuerpo) {
       if (falla) {
         throw new CorreoNoEnviadoException(
             new IllegalStateException("el servidor de correo no respondió"));

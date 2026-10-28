@@ -1161,7 +1161,7 @@ class AdminPedidosControladorTest {
       return new DespacharPedido(
           repositorioPedidos,
           repositorioEnvios,
-          (destinatario, asunto, cuerpo) -> {},
+          (destinatario, nombre, asunto, cuerpo) -> {},
           new TextosDeCorreoDobleDePrueba(),
           Instant::now,
           "https://tecnosport.co/es/checkout/estado");
@@ -1238,7 +1238,7 @@ class AdminPedidosControladorTest {
           repositorioEmisiones,
           emisorDeGuias,
           new TopeDeReintegro(repositorioReintegros, new RepositorioSolicitudesReversionVacio()),
-          (destinatario, asunto, cuerpo) -> {},
+          (destinatario, nombre, asunto, cuerpo) -> {},
           new TextosDeCorreoDobleDePrueba(),
           Instant::now);
     }
@@ -1260,7 +1260,7 @@ class AdminPedidosControladorTest {
           repositorioInventario,
           repositorioReintegros,
           new TopeDeReintegro(repositorioReintegros, new RepositorioSolicitudesReversionVacio()),
-          (destinatario, asunto, cuerpo) -> {},
+          (destinatario, nombre, asunto, cuerpo) -> {},
           new TextosDeCorreoDobleDePrueba(),
           Instant::now);
     }
@@ -1274,7 +1274,7 @@ class AdminPedidosControladorTest {
     MarcarListoParaRecoger marcarListoParaRecoger(RepositorioPedidos repositorioPedidos) {
       return new MarcarListoParaRecoger(
           repositorioPedidos,
-          (destinatario, asunto, cuerpo) -> {},
+          (destinatario, nombre, asunto, cuerpo) -> {},
           new TextosDeCorreoDobleDePrueba(),
           Instant::now,
           "https://tecnosport.co/es/checkout/estado");

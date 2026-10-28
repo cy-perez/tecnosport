@@ -50,7 +50,11 @@ class EnviarSugerenciaTest {
     private boolean falla;
 
     @Override
-    public void enviar(CorreoElectronico destinatario, String asunto, String cuerpoHtml) {
+    public void enviar(
+        CorreoElectronico destinatario,
+        String nombreDelDestinatario,
+        String asunto,
+        String cuerpoHtml) {
       if (falla) {
         throw new CorreoNoEnviadoException(new IllegalStateException("smtp caído"));
       }

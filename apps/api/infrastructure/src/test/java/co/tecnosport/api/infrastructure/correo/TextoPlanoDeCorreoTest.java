@@ -59,7 +59,7 @@ class TextoPlanoDeCorreoTest {
 
     assertThat(texto)
         .startsWith(
-            "Despachamos tu pedido TS-1\n\nTu pedido ya salió.\n\nVer: https://tecnosport.co/x")
+            "Despachamos tu pedido TS-1\n\nHola:\n\nTu pedido ya salió.\n\nVer: https://tecnosport.co/x")
         .contains("NIT 1054994043-9")
         .contains("Términos y condiciones: https://tecnosport.co/es/legales/terminos")
         .doesNotContain("<")
