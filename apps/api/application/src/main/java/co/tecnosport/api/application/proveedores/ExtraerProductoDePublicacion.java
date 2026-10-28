@@ -91,6 +91,9 @@ public final class ExtraerProductoDePublicacion {
   /** Decidido por el negocio el 2 de octubre de 2026. */
   static final int TOPE_DE_PRODUCTOS = 5;
 
+  /** El uso de un anuncio que se descartó sin llamar al extractor. */
+  private static final UsoDelExtractor SIN_LEER = new UsoDelExtractor("ninguno", 0, 0, 0);
+
   private final ExtractorDeProductos extractor;
   private final LectorDeFotos lector;
   private final LectorDeFotos lectorDeCalzado;
@@ -166,6 +169,31 @@ public final class ExtraerProductoDePublicacion {
     }
     TextoDePublicacion texto =
         new TextoDePublicacion(principal.textoLegible().orElse(""), adicionales, lineaDelProveedor);
+
+    // La chola o la sandalia que el texto ya nombra no se lee: ni el extractor ni el lector de
+    // fotos
+    // tienen nada que decidir en ella (ADR-0092, decisión 7).
+    if (lineaDelProveedor == LineaCatalogo.CALZADO) {
+      Optional<CierreDePublicacion> porElTexto = CalzadoSinTenis.porElTexto(texto.completo());
+      if (porElTexto.isPresent()) {
+        ProductoExtraido base =
+            soloConElPrecio(PatronDePrecio.extraerTodos(texto.completo()), lineaDelProveedor);
+        return List.of(
+            new ExtraccionEvaluada(
+                    base,
+                    "{}",
+                    base.precioProveedorOpcional().orElse(null),
+                    Set.of(),
+                    SIN_LEER,
+                    List.of(),
+                    null,
+                    null,
+                    false,
+                    List.of(),
+                    null)
+                .descartada(porElTexto.get()));
+      }
+    }
 
     ResultadoExtraccion resultado = extractor.extraer(texto);
     List<ProductoExtraido> productos = resultado.productos();

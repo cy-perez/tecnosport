@@ -46,6 +46,17 @@ Decidida por el negocio el 26 de octubre de 2026, para Imperio Wicho y Tenis Al 
    - **Sin fotos, o con fotos que no se pudieron leer, se descarta** (`CALZADO_SIN_FOTOS_LEIDAS`):
      nadie vio que fuera un tenis.
    - Un «AGOTADO» no se descarta: agota lo que ya se vende.
+7. **Antes que las fotos, el texto** (añadida el 28 de octubre de 2026: a Imperio Wicho solo se le
+   compran tenis). El anuncio de un proveedor de calzado que se nombra chancla, chola, playera,
+   sandalia, Crocs, zueco, bota, botín, pantufla o babucha, y no dice «tenis», se descarta con
+   `CALZADO_QUE_NO_ES_TENIS` y el calzado que nombra primero, **sin llamar al extractor ni al
+   lector de fotos**.
+   - El 27 de octubre de 2026 eran 7 de los 33 anuncios de Imperio Wicho —la chola playera, cuatro
+     sandalias de correa, las sandalias Bob y Elmo y una playera—, y cada uno gastaba dos lecturas
+     con Claude para que la foto dijera lo que el texto ya decía.
+   - «Deportivo» no cuenta como tenis: Imperio Wicho anuncia la «Sandalia Correa Deportiva». Si el
+     texto dice «tenis», deciden las fotos, como en la decisión 6.
+   - Solo en el calzado: en la ropa, una playera es una camiseta.
 
 ## Consecuencias
 

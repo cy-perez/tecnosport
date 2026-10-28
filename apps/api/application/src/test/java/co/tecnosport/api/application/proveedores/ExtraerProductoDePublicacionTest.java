@@ -1057,8 +1057,9 @@ class ExtraerProductoDePublicacionTest {
   /** Imperio Wicho manda también chanclas: ninguna de sus fotos muestra un tenis. */
   @Test
   void laChanclaDeUnProveedorDeCalzadoSeDescarta() {
+    // El texto no dice qué es: lo dicen las fotos.
     PublicacionProveedor publicacion =
-        PublicacionProveedor.abrir(texto("CHANCLA IMPORTADA DAMA 💰*$55,000*"));
+        PublicacionProveedor.abrir(texto("IMPORTADA DAMA 💰*$55,000*"));
     publicacion.anexar(foto("p/1.jpg"));
     publicacion.anexar(foto("p/2.jpg"));
 
@@ -1075,6 +1076,50 @@ class ExtraerProductoDePublicacionTest {
         Optional.of(
             new CierreDePublicacion(MotivoDePublicacion.CALZADO_QUE_NO_ES_TENIS, "CHANCLA")),
         chancla.descarteOpcional());
+  }
+
+  /** La chola que el texto nombra se descarta sin gastar el extractor ni el lector de fotos. */
+  @Test
+  void laCholaQueElTextoNombraSeDescartaSinLeerNada() {
+    PublicacionProveedor publicacion =
+        PublicacionProveedor.abrir(
+            texto("Chola Playera Eva🧸🐻🧸\n📦Docena *$120,000*\n💰*$12,000*"));
+    publicacion.anexar(foto("p/1.jpg"));
+    ApoyoDeIngesta.ExtractorFalso extractor =
+        ApoyoDeIngesta.ExtractorFalso.varios(List.of(deWicho("Chola playera", false)));
+    List<FotosParaLeer> leidas = new ArrayList<>();
+    LectorDeFotos lector =
+        fotos -> {
+          leidas.add(fotos);
+          return Optional.empty();
+        };
+
+    List<ExtraccionEvaluada> evaluadas =
+        new ExtraerProductoDePublicacion(extractor, lector, lector, almacenCon("p/1.jpg"), UMBRAL)
+            .ejecutar(publicacion, mensajes, LineaCatalogo.CALZADO);
+
+    assertEquals(1, evaluadas.size());
+    assertEquals(
+        Optional.of(
+            new CierreDePublicacion(MotivoDePublicacion.CALZADO_QUE_NO_ES_TENIS, "CHANCLA")),
+        evaluadas.getFirst().descarteOpcional());
+    assertEquals(0, extractor.llamadas);
+    assertTrue(leidas.isEmpty());
+  }
+
+  /** En la ropa, una «playera» es una camiseta: la regla es solo del calzado. */
+  @Test
+  void laPlayeraDeRopaNoSeDescarta() {
+    PublicacionProveedor publicacion = PublicacionProveedor.abrir(texto("Playera básica $35.000"));
+
+    ExtraccionEvaluada playera =
+        new ExtraerProductoDePublicacion(
+                ApoyoDeIngesta.ExtractorFalso.varios(List.of(prenda("Playera básica", null))),
+                UMBRAL)
+            .ejecutar(publicacion, mensajes, LineaCatalogo.ROPA)
+            .getFirst();
+
+    assertTrue(playera.descarteOpcional().isEmpty());
   }
 
   /** Con un tenis y una sandalia no se sabe de cuál es el precio: lo decide quien revisa. */
