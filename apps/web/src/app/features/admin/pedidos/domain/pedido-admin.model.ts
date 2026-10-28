@@ -183,6 +183,8 @@ export interface PedidoAdmin {
   readonly numeroPedido: string;
   readonly usuarioId: string | null;
   readonly correo: string;
+  /** Quien compra (ADR-0099); `null` en pedidos anteriores a que se pidiera. */
+  readonly nombreComprador: string | null;
   readonly contacto: ContactoAdmin | null;
   readonly lineas: readonly LineaPedidoAdmin[];
   readonly tipoEntrega: TipoEntrega;
