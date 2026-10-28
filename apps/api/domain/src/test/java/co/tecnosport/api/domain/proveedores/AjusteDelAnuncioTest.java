@@ -51,6 +51,11 @@ class AjusteDelAnuncioTest {
     // Tenis Al Pie, 23 de octubre de 2026: la marca delante y abreviada.
     assertEquals(de(1), AjusteDelAnuncio.de("Tallas hombre \nEu 40 41 42 43 44"));
     assertEquals(de(1), AjusteDelAnuncio.de("Talla dama EUR 36 37 38 39"));
+    // Imperio Wicho, 27 de octubre de 2026: la exclamación entre el rango y la marca.
+    assertEquals(
+        de(1),
+        AjusteDelAnuncio.de(
+            "Importado AAA Dama y Cab👸🏻👨🏻🔥\nTallas disponibles 36 a la 43! Eur"));
   }
 
   @Test
