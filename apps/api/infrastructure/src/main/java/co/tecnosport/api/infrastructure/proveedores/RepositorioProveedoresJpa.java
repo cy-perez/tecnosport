@@ -14,6 +14,7 @@ import co.tecnosport.api.infrastructure.proveedores.entidad.ProveedorJpaEntity;
 import jakarta.persistence.EntityManager;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -142,6 +143,7 @@ public class RepositorioProveedoresJpa implements RepositorioProveedores {
             actualizadoEn)
         .conArmaSets(p.armaSets())
         .conEsLocal(p.esLocal())
+        .conOtrosRemitentes(new HashSet<>(p.otrosRemitentes()))
         .conAjustesDeIngesta(
             p.ajustesDeIngesta().unaFotoUnProducto(),
             p.ajustesDeIngesta().ventaBajoConfirmacion(),
@@ -200,6 +202,8 @@ public class RepositorioProveedoresJpa implements RepositorioProveedores {
             .collect(Collectors.toSet()));
     proveedor.definirArmaSets(fila.isArmaSets());
     proveedor.definirLocal(fila.isEsLocal());
+    // La tabla no guarda el orden: se devuelven por nombre, que es como los muestra el panel.
+    proveedor.definirOtrosRemitentes(fila.getOtrosRemitentes().stream().sorted().toList());
     proveedor.definirAjustesDeIngesta(ajustesDe(fila));
     return proveedor;
   }

@@ -4,7 +4,10 @@ import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -44,6 +47,9 @@ public final class Proveedor {
   static final String MARCA_DE_DIRECCION = String.valueOf((char) 0x200E);
 
   static final String ESPACIO_ANGOSTO = String.valueOf((char) 0x202F);
+
+  /** El de la columna, como el del nombre principal. */
+  static final int LARGO_MAXIMO_DE_REMITENTE = 120;
 
   /**
    * Las líneas que llegan por la exportación del chat: el extractor, el factor de margen y la
@@ -106,6 +112,13 @@ public final class Proveedor {
    * línea: que sea local lo dice dónde está, no cómo manda su surtido.
    */
   private boolean local;
+
+  /**
+   * Los nombres de las otras cuentas desde las que publica en el mismo chat. Meraki publica también
+   * como «Merakiapartados», y del 16 al 18 de octubre de 2026 tres conjuntos llegaron solo desde
+   * esa cuenta: la ingesta los ignoraba (28 de octubre de 2026). Vacía en casi todos.
+   */
+  private List<String> otrosRemitentes = List.of();
 
   /** Lo que su chat tiene de distinto: ver {@link AjustesDeIngesta}. */
   private AjustesDeIngesta ajustesDeIngesta = AjustesDeIngesta.POR_OMISION;
@@ -187,14 +200,16 @@ public final class Proveedor {
    * verdad publican— el remitente no siempre es el nombre del contacto: si no está guardado,
    * WhatsApp escribe {@code ~ Nombre} con el nombre que esa persona se puso, o el número con el
    * indicativo y espacios. Se acepta cualquiera de las tres formas: el nombre configurado con o sin
-   * la virgulilla, y el número del proveedor comparando solo los dígitos.
+   * la virgulilla, y el número del proveedor comparando solo los dígitos. Y el de sus otras cuentas
+   * ({@link #otrosRemitentes()}), igual que el principal.
    */
   public boolean esRemitente(String remitente) {
     if (remitente == null) {
       return false;
     }
     String normalizado = normalizar(remitente);
-    if (normalizado.equals(normalizar(nombreEnExportacion))) {
+    if (normalizado.equals(normalizar(nombreEnExportacion))
+        || otrosRemitentes.stream().anyMatch(otro -> normalizado.equals(normalizar(otro)))) {
       return true;
     }
     String digitos = soloDigitos(normalizado);
@@ -338,6 +353,45 @@ public final class Proveedor {
           "Solo un proveedor que entra por la exportación del chat puede excluir tipos de prenda.");
     }
     this.tiposExcluidos = Set.copyOf(excluidos);
+  }
+
+  /**
+   * Define los otros nombres con que aparece en la exportación. Se guardan sin espacios a los
+   * lados, sin vacíos y sin repetir —tampoco el nombre principal—, comparando como compara {@link
+   * #esRemitente}.
+   */
+  public void definirOtrosRemitentes(Collection<String> nombres) {
+    List<String> definidos = new ArrayList<>();
+    List<String> vistos = new ArrayList<>(List.of(normalizar(nombreEnExportacion)));
+    if (nombres != null) {
+      for (String nombreDeOtro : nombres) {
+        if (nombreDeOtro == null || nombreDeOtro.isBlank()) {
+          continue;
+        }
+        String normalizado = normalizar(nombreDeOtro);
+        if (normalizado.isEmpty() || vistos.contains(normalizado)) {
+          continue;
+        }
+        if (nombreDeOtro.strip().length() > LARGO_MAXIMO_DE_REMITENTE) {
+          throw new ExcepcionDeDominio(
+              "Un nombre de remitente tiene como mucho "
+                  + LARGO_MAXIMO_DE_REMITENTE
+                  + " caracteres.");
+        }
+        vistos.add(normalizado);
+        definidos.add(nombreDeOtro.strip());
+      }
+    }
+    if (!definidos.isEmpty() && !entraPorExportacion()) {
+      throw new ExcepcionDeDominio(
+          "Solo un proveedor que entra por la exportación del chat tiene otros remitentes.");
+    }
+    this.otrosRemitentes = List.copyOf(definidos);
+  }
+
+  /** Vacía si publica solo desde la cuenta de {@link #nombreEnExportacion()}. */
+  public List<String> otrosRemitentes() {
+    return otrosRemitentes;
   }
 
   /** Vacío cuando se le compra todo lo que anuncia. */

@@ -21,6 +21,8 @@ import java.util.Objects;
  *     deja los que tenía. Si viene, reemplaza los cuatro
  * @param local si surte desde Medellín y lo suyo se puede recoger en el punto (ADR-0093); nulo en
  *     el alta es que no, y al editar deja lo que tenía
+ * @param otrosRemitentes los nombres de sus otras cuentas en la exportación; nulo en el alta es
+ *     ninguno, y al editar deja los que tenía
  */
 public record ProveedorPeticion(
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String nombre,
@@ -35,7 +37,8 @@ public record ProveedorPeticion(
     List<String> tiposExcluidos,
     Boolean armaSets,
     AjustesDeIngestaDto ajustesDeIngesta,
-    Boolean local) {
+    Boolean local,
+    List<String> otrosRemitentes) {
 
   public ProveedorPeticion {
     Objects.requireNonNull(nombre, "El nombre es obligatorio.");

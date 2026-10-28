@@ -91,7 +91,8 @@ public class AdminProveedorControlador {
                         cuerpo.ajustesDeIngesta() == null
                             ? null
                             : cuerpo.ajustesDeIngesta().aDominio(),
-                        Boolean.TRUE.equals(cuerpo.local()))));
+                        Boolean.TRUE.equals(cuerpo.local()),
+                        remitentesDe(cuerpo.otrosRemitentes()))));
     return ProveedorRespuesta.de(proveedor);
   }
 
@@ -126,7 +127,8 @@ public class AdminProveedorControlador {
                         cuerpo.ajustesDeIngesta() != null
                             ? cuerpo.ajustesDeIngesta().aDominio()
                             : actual.ajustesDeIngesta(),
-                        cuerpo.local() != null ? cuerpo.local() : actual.esLocal())));
+                        cuerpo.local() != null ? cuerpo.local() : actual.esLocal(),
+                        remitentesAlEditar(cuerpo, actual))));
     return ProveedorRespuesta.de(proveedor);
   }
 
@@ -152,6 +154,27 @@ public class AdminProveedorControlador {
     return LineaCatalogo.valueOf(cuerpo.linea()) == LineaCatalogo.TECNOLOGIA
         ? Set.of()
         : actual.tiposExcluidos();
+  }
+
+  /** Sin el campo quedan los que tenía, salvo si pasa a tecnología, como los tipos excluidos. */
+  private static List<String> remitentesAlEditar(ProveedorPeticion cuerpo, Proveedor actual) {
+    if (cuerpo.otrosRemitentes() != null) {
+      return remitentesDe(cuerpo.otrosRemitentes());
+    }
+    return LineaCatalogo.valueOf(cuerpo.linea()) == LineaCatalogo.TECNOLOGIA
+        ? List.of()
+        : actual.otrosRemitentes();
+  }
+
+  /** Un nulo dentro de la lista es un cuerpo inválido, no un 500. */
+  private static List<String> remitentesDe(List<String> nombres) {
+    if (nombres == null) {
+      return List.of();
+    }
+    if (nombres.contains(null)) {
+      throw new IllegalArgumentException("Un remitente no puede ser nulo.");
+    }
+    return nombres;
   }
 
   /**

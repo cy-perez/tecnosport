@@ -5,12 +5,14 @@ import co.tecnosport.api.domain.proveedores.AjustesDeIngesta;
 import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
 import co.tecnosport.api.domain.proveedores.TipoProductoProveedor;
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
 /**
  * @param factorDeMargen nulo para usar el de la línea
  * @param tiposExcluidos los que no se le compran; vacío para comprarle todo
+ * @param otrosRemitentes los nombres de sus otras cuentas en la exportación; vacío si no tiene
  * @param armaSets si la prenda que anuncia con su acompañante se publica como set
  * @param ajustesDeIngesta cómo se ingiere su chat; nulo es como el de todos
  * @param local si surte desde Medellín y lo suyo se puede recoger en el punto (ADR-0093)
@@ -29,11 +31,47 @@ public record EditarProveedorComando(
     Set<TipoProductoProveedor> tiposExcluidos,
     boolean armaSets,
     AjustesDeIngesta ajustesDeIngesta,
-    boolean local) {
+    boolean local,
+    List<String> otrosRemitentes) {
 
   public EditarProveedorComando {
     tiposExcluidos = tiposExcluidos == null ? Set.of() : Set.copyOf(tiposExcluidos);
     ajustesDeIngesta = ajustesDeIngesta == null ? AjustesDeIngesta.POR_OMISION : ajustesDeIngesta;
+    otrosRemitentes = otrosRemitentes == null ? List.of() : List.copyOf(otrosRemitentes);
+  }
+
+  /** Sin otras cuentas: publica solo desde la de su nombre en la exportación. */
+  public EditarProveedorComando(
+      UUID id,
+      String nombre,
+      LineaCatalogo linea,
+      String telefonoWhatsApp,
+      String nombreEnExportacion,
+      boolean activo,
+      boolean publicacionAutomatica,
+      BigDecimal factorDeMargen,
+      OrdenDePublicacion ordenDePublicacion,
+      boolean dosChatsEnUnZip,
+      Set<TipoProductoProveedor> tiposExcluidos,
+      boolean armaSets,
+      AjustesDeIngesta ajustesDeIngesta,
+      boolean local) {
+    this(
+        id,
+        nombre,
+        linea,
+        telefonoWhatsApp,
+        nombreEnExportacion,
+        activo,
+        publicacionAutomatica,
+        factorDeMargen,
+        ordenDePublicacion,
+        dosChatsEnUnZip,
+        tiposExcluidos,
+        armaSets,
+        ajustesDeIngesta,
+        local,
+        List.of());
   }
 
   /** Sin marcarlo local: lo suyo no se recoge en el punto. */

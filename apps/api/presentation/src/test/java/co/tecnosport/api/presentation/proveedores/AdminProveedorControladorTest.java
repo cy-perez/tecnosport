@@ -419,6 +419,63 @@ class AdminProveedorControladorTest {
         .andExpect(jsonPath("$.tiposExcluidos.length()").value(0));
   }
 
+  /**
+   * Meraki publica también como «Merakiapartados» (28 de octubre de 2026): se dan al crear, editar
+   * sin el campo los conserva, y una lista vacía los quita.
+   */
+  @Test
+  void losOtrosRemitentesSeDanAlCrearYEditarSinElCampoLosConserva() throws Exception {
+    String meraki =
+        "{\"nombre\":\"Meraki\",\"linea\":\"ROPA\",\"telefonoWhatsApp\":\"+57 321\","
+            + "\"nombreEnExportacion\":\"Meraki\",\"ordenDePublicacion\":\"FOTOS_PRIMERO\"";
+    mockMvc
+        .perform(
+            post("/api/v1/admin/proveedores")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(meraki + ",\"otrosRemitentes\":[\" Merakiapartados \",\"Meraki\"]}"))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.otrosRemitentes.length()").value(1))
+        .andExpect(jsonPath("$.otrosRemitentes[0]").value("Merakiapartados"));
+    UUID id = proveedores.porId.keySet().iterator().next();
+
+    mockMvc
+        .perform(
+            put("/api/v1/admin/proveedores/{id}", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(meraki + "}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.otrosRemitentes[0]").value("Merakiapartados"));
+
+    mockMvc
+        .perform(
+            put("/api/v1/admin/proveedores/{id}", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(meraki + ",\"otrosRemitentes\":[]}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.otrosRemitentes.length()").value(0));
+  }
+
+  /** Sin el campo, el alta nace sin otros remitentes; y un nulo en la lista es 422. */
+  @Test
+  void sinOtrosRemitentesNaceSinNingunoYUnNuloEs422() throws Exception {
+    String meraki =
+        "{\"nombre\":\"Meraki\",\"linea\":\"ROPA\",\"telefonoWhatsApp\":\"+57 321\","
+            + "\"nombreEnExportacion\":\"Meraki\",\"ordenDePublicacion\":\"FOTOS_PRIMERO\"";
+    mockMvc
+        .perform(
+            post("/api/v1/admin/proveedores")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(meraki + ",\"otrosRemitentes\":[\"Merakiapartados\",null]}"))
+        .andExpect(status().isUnprocessableContent());
+    mockMvc
+        .perform(
+            post("/api/v1/admin/proveedores")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(meraki + "}"))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.otrosRemitentes.length()").value(0));
+  }
+
   /** La tecnología llega por listas: no tiene chats que subir, y la regla llega como 422. */
   @Test
   void unProveedorDeTecnologiaNoSubeChatsEs422() throws Exception {

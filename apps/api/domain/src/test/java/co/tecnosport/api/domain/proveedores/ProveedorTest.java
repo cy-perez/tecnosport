@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
@@ -195,6 +196,62 @@ class ProveedorTest {
     assertFalse(
         proveedor.esRemitente("Bolsos 24"),
         "un número corto dentro de un nombre no es un teléfono");
+  }
+
+  /** Meraki publica también como «Merakiapartados» (28 de octubre de 2026). */
+  @Test
+  void reconoceTambienASusOtrasCuentas() {
+    Proveedor proveedor = bolsos();
+    assertFalse(proveedor.esRemitente("Bolsos Apartados"));
+
+    proveedor.definirOtrosRemitentes(List.of("Bolsos Apartados"));
+
+    assertTrue(proveedor.esRemitente("Bolsos Centro"));
+    assertTrue(proveedor.esRemitente("Bolsos Apartados"));
+    assertTrue(
+        proveedor.esRemitente("~" + ESPACIO_ANGOSTO + MARCA_DE_DIRECCION + "bolsos apartados "));
+    assertFalse(proveedor.esRemitente("Bolsos"), "un nombre parecido no es el proveedor");
+  }
+
+  @Test
+  void losOtrosRemitentesSeGuardanLimpiosYSinRepetir() {
+    Proveedor proveedor = bolsos();
+
+    proveedor.definirOtrosRemitentes(
+        java.util.Arrays.asList(
+            " Bolsos Apartados ", "bolsos apartados", "", null, "  ", "bolsos centro", "Bolsos 2"));
+
+    assertEquals(List.of("Bolsos Apartados", "Bolsos 2"), proveedor.otrosRemitentes());
+    proveedor.definirOtrosRemitentes(null);
+    assertEquals(List.of(), proveedor.otrosRemitentes());
+  }
+
+  @Test
+  void unRemitenteDeMasDe120CaracteresSeRechaza() {
+    Proveedor proveedor = bolsos();
+
+    assertThrows(
+        ExcepcionDeDominio.class, () -> proveedor.definirOtrosRemitentes(List.of("x".repeat(121))));
+    proveedor.definirOtrosRemitentes(List.of("x".repeat(120)));
+    assertEquals(1, proveedor.otrosRemitentes().size());
+  }
+
+  /** La tecnología llega por listas: no hay mensajes de nadie que reconocer. */
+  @Test
+  void soloQuienEntraPorElChatTieneOtrosRemitentes() {
+    Proveedor celulares =
+        Proveedor.crear(
+            "Celulares",
+            LineaCatalogo.TECNOLOGIA,
+            "+57 300",
+            "Celulares",
+            null,
+            OrdenDePublicacion.FOTOS_PRIMERO);
+
+    assertThrows(
+        ExcepcionDeDominio.class, () -> celulares.definirOtrosRemitentes(List.of("Celulares 2")));
+    celulares.definirOtrosRemitentes(List.of());
+    assertEquals(List.of(), celulares.otrosRemitentes());
   }
 
   @Test
