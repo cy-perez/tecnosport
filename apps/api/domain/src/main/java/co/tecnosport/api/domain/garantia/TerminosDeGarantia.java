@@ -10,10 +10,11 @@ import java.util.Set;
 /**
  * Cuántos meses dura la garantía legal según la categoría del producto.
  *
- * <p><b>No es un número global</b>, y ese es el punto. Los términos publicados prometen un año
- * desde la entrega "salvo que el productor anuncie uno mayor", y ese "mayor" es por productor y por
- * categoría: un único valor incrustado para todo el catálogo daría la respuesta equivocada la
- * primera vez que un fabricante anuncie dos años.
+ * <p><b>No es un número global</b>, y ese es el punto. Desde la versión legal 2026-10-27.3 los
+ * términos publicados dan el término que indica la ficha de cada producto —el del mercado, con un
+ * máximo de un año— y un año cuando la ficha no indica ninguno. Aquí se mide por categoría, no por
+ * producto: un producto cuya ficha diga seis meses sale amparado doce, que es el error del lado del
+ * comprador, y resolver nunca se bloquea por la vigencia.
  *
  * <p>{@code sinTerminoConocido} es lo que impide inventar el término que no se sabe. Una categoría
  * listada ahí no cae al término por defecto: responde {@link Optional#empty()}, y quien pregunte

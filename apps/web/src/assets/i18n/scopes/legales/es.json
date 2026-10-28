@@ -1,7 +1,7 @@
 {
   "comun": {
     "version_etiqueta": "Versión",
-    "version": "2026-10-27.2",
+    "version": "2026-10-27.3",
     "vigencia": "Vigente desde el 27 de octubre de 2026.",
     "otros_documentos": "Otros documentos legales",
     "titular_aviso": "Este sitio lo opera Cristhian Yurday Pérez Hoyos, NIT 1054994043-9, Carrera 26C # 38B-31, Medellín, Antioquia, Colombia.",
@@ -228,7 +228,7 @@
           "Si eliges recoger, te avisamos por correo cuando el pedido esté listo en el punto. El punto es un apartamento y no un local, así que la hora de la entrega la acordamos contigo por WhatsApp o por correo, cualquier día entre las 8:00 a. m. y las 9:00 p. m.",
           "Entregamos el pedido a quien nos muestre su número de pedido, que aparece en el correo de confirmación de la compra y en el aviso de que está listo. No lo compartas con nadie que no quieras que lo recoja.",
           "Desde el aviso de que está listo te guardamos el pedido cuarenta y ocho (48) horas. Si no lo recoges en ese plazo, cancelamos el pedido y liberamos los productos: si ya lo habías pagado, te devolvemos todo lo que pagaste dentro de los quince (15) días calendario siguientes, por el medio con que pagaste; si ibas a pagar al recoger, no hay nada que devolver.",
-          "El día en que recibes el pedido en el punto es el día de la entrega: desde entonces corren los cinco (5) días hábiles del derecho de retracto (numeral 9) y el año de la garantía legal (numeral 10).",
+          "El día en que recibes el pedido en el punto es el día de la entrega: desde entonces corren los cinco (5) días hábiles del derecho de retracto (numeral 9) y el término de la garantía legal (numeral 10).",
           "Si no entregamos dentro del plazo aplicable, puedes terminar el contrato y recuperar tu dinero, incluido el costo del envío que hayas pagado."
         ]
       },
@@ -246,7 +246,7 @@
         "titulo": "10. Garantía legal",
         "parrafos": [
           "Todos nuestros productos tienen garantía legal: si el producto falla, no sirve para lo que se ofreció o no corresponde a lo que compraste, tienes derecho a que lo reparemos, lo repongamos o te devolvamos el dinero, según el caso.",
-          "El término de la garantía legal es de un (1) año contado desde la entrega, salvo que el productor anuncie uno mayor, y en ese caso rige el mayor. Ese término de un año aplica a todos los productos nuevos que vendemos, equipos tecnológicos incluidos: no hay un régimen de garantía distinto para celulares, computadores, consolas, tablets ni ningún otro.",
+          "El término de la garantía legal es el que indica la ficha de cada producto y se cuenta desde la entrega. Es el mismo que se ofrece para ese producto en el mercado colombiano, con un máximo de un (1) año. Si la ficha no indica un término, es de un (1) año.",
           "Hacer efectiva la garantía no te cuesta: la reparación y el transporte del producto para repararlo corren por nuestra cuenta, como lo dispone el artículo 11 de la Ley 1480 de 2011.",
           "La garantía no cubre el daño que provenga de fuerza mayor o caso fortuito, del hecho de un tercero, del uso indebido del producto (incluida la modificación no autorizada) o del incumplimiento de las instrucciones de instalación, uso o mantenimiento cuando el producto se entregó con manual en castellano. Son las causales del artículo 16 de la Ley 1480 de 2011, y demostrar que el daño viene de una de ellas nos corresponde a nosotros, no a ti.",
           "Para hacerla efectiva, escríbenos a contacto@tecnosport.co con tu número de pedido y una descripción del problema."
