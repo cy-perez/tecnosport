@@ -654,6 +654,9 @@
           "estado" : {
             "type" : "string"
           },
+          "excepcionDeFotos" : {
+            "$ref" : "#/components/schemas/ExcepcionDeFotosRespuesta"
+          },
           "fichaEditada" : {
             "type" : "boolean"
           },
@@ -1940,6 +1943,38 @@
         ],
         "type" : "object"
       },
+      "ExcepcionDeFotosPeticion" : {
+        "properties" : {
+          "minimo" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "motivo" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "minimo",
+          "motivo"
+        ],
+        "type" : "object"
+      },
+      "ExcepcionDeFotosRespuesta" : {
+        "properties" : {
+          "minimo" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "motivo" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "minimo",
+          "motivo"
+        ],
+        "type" : "object"
+      },
       "ExistenciaAjustadaRespuesta" : {
         "properties" : {
           "dejaReservasSinRespaldo" : {
@@ -3065,6 +3100,10 @@
           },
           "descripcion" : {
             "type" : "string"
+          },
+          "excepcionDeFotos" : {
+            "$ref" : "#/components/schemas/ExcepcionDeFotosPeticion",
+            "description" : "Solo con los borradores: el modelo se aprueba con menos de cuatro fotos porque no hay más tomas oficiales. Nulo si pide las cuatro."
           },
           "idModelo" : {
             "type" : "string"

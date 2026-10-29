@@ -2,6 +2,7 @@ package co.tecnosport.api.application.proveedores.tecnologia;
 
 import co.tecnosport.api.domain.proveedores.ConfiguracionTecnologia;
 import co.tecnosport.api.domain.proveedores.ConfirmacionDeColor;
+import co.tecnosport.api.domain.proveedores.ExcepcionDeFotos;
 import co.tecnosport.api.domain.proveedores.ModeloDeLista;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -24,6 +25,8 @@ import java.util.UUID;
  *     borradores de lo que todavía no
  * @param modelosDesaparecidos ids de modelo de los que no vino ninguna configuración, con el mismo
  *     criterio
+ * @param excepcionesDeFotos por id de modelo, los que la skill de fotos dejó pasar con menos de
+ *     cuatro fotos (28/10/2026). Solo los usan los borradores
  */
 public record ImportarListaDeTecnologiaComando(
     UUID proveedorId,
@@ -32,7 +35,28 @@ public record ImportarListaDeTecnologiaComando(
     List<Modelo> modelos,
     List<String> configuracionesDesaparecidas,
     List<String> modelosDesaparecidos,
-    Map<String, List<String>> coloresMarcados) {
+    Map<String, List<String>> coloresMarcados,
+    Map<String, ExcepcionDeFotos> excepcionesDeFotos) {
+
+  /** Sin excepciones de fotos: el inventario no las usa. */
+  public ImportarListaDeTecnologiaComando(
+      UUID proveedorId,
+      LocalDate fechaLista,
+      Modo modo,
+      List<Modelo> modelos,
+      List<String> configuracionesDesaparecidas,
+      List<String> modelosDesaparecidos,
+      Map<String, List<String>> coloresMarcados) {
+    this(
+        proveedorId,
+        fechaLista,
+        modo,
+        modelos,
+        configuracionesDesaparecidas,
+        modelosDesaparecidos,
+        coloresMarcados,
+        Map.of());
+  }
 
   /** Sin los colores marcados aparte: se deducen de los sugeridos (ADR-0086). */
   public ImportarListaDeTecnologiaComando(
@@ -49,11 +73,13 @@ public record ImportarListaDeTecnologiaComando(
         modelos,
         configuracionesDesaparecidas,
         modelosDesaparecidos,
+        Map.of(),
         Map.of());
   }
 
   public ImportarListaDeTecnologiaComando {
     coloresMarcados = coloresMarcados == null ? Map.of() : Map.copyOf(coloresMarcados);
+    excepcionesDeFotos = excepcionesDeFotos == null ? Map.of() : Map.copyOf(excepcionesDeFotos);
     Objects.requireNonNull(proveedorId, "La lista es de un proveedor.");
     Objects.requireNonNull(fechaLista, "La lista tiene fecha.");
     Objects.requireNonNull(modo, "La lista dice qué parte se aplica.");
@@ -135,6 +161,14 @@ public record ImportarListaDeTecnologiaComando(
     return marcados != null
         ? marcados
         : ConfirmacionDeColor.marcadosSegunLosSugeridos(paleta, configuracion.coloresSugeridos());
+  }
+
+  /**
+   * La excepción de fotos de ese modelo, o nulo si pide las cuatro. Tampoco entra en la {@link
+   * #huella()}: no es de la lista sino de la tanda de fotos, y llega después que el inventario.
+   */
+  public ExcepcionDeFotos excepcionDeFotosDe(String idModelo) {
+    return excepcionesDeFotos.get(idModelo);
   }
 
   /** Un modelo con las configuraciones que trae la lista de hoy. */

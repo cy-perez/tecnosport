@@ -343,6 +343,64 @@ class BorradorTecnologiaTest {
   }
 
   @Test
+  void conExcepcionDeFotosSeApruebaConLasQueDeclara() {
+    // Decisión del 28/10/2026: los AirPods Pro 3 no tienen más de dos tomas oficiales.
+    BorradorTecnologia borrador = nuevo();
+    borrador.elegir(
+        List.of(
+            new BorradorTecnologia.Eleccion("a17-256", List.of("Negro"), Dinero.deCop(849_900))));
+    borrador.agregarFoto(foto("h0"));
+    borrador.declararExcepcionDeFotos(new ExcepcionDeFotos(2, "no hay más fotos oficiales"));
+
+    ExcepcionDeDominio error =
+        assertThrows(ExcepcionDeDominio.class, () -> borrador.aprobar(UUID.randomUUID(), MARGEN));
+    assertTrue(error.getMessage().contains("necesita 2"), error.getMessage());
+    assertEquals(1, borrador.fotosQueFaltan());
+
+    borrador.agregarFoto(foto("h1"));
+    assertEquals(0, borrador.fotosQueFaltan());
+    borrador.aprobar(UUID.randomUUID(), MARGEN);
+    assertEquals(EstadoBorrador.APROBADO, borrador.estado());
+  }
+
+  @Test
+  void quitarLaExcepcionVuelveAPedirLasCuatro() {
+    BorradorTecnologia borrador = nuevo();
+    borrador.declararExcepcionDeFotos(new ExcepcionDeFotos(2, "no hay más fotos oficiales"));
+    borrador.agregarFoto(foto("h0"));
+    borrador.agregarFoto(foto("h1"));
+    assertEquals(0, borrador.fotosQueFaltan());
+
+    borrador.declararExcepcionDeFotos(null);
+
+    assertEquals(BorradorTecnologia.MINIMO_DE_FOTOS - 2, borrador.fotosQueFaltan());
+    assertTrue(borrador.excepcionDeFotos().isEmpty());
+  }
+
+  @Test
+  void laExcepcionSoloBajaElMinimoYDicePorQue() {
+    assertThrows(ExcepcionDeDominio.class, () -> new ExcepcionDeFotos(0, "sin fotos"));
+    assertThrows(
+        ExcepcionDeDominio.class,
+        () -> new ExcepcionDeFotos(BorradorTecnologia.MINIMO_DE_FOTOS, "las de siempre"));
+    assertThrows(ExcepcionDeDominio.class, () -> new ExcepcionDeFotos(2, "  "));
+    assertEquals("no hay más", new ExcepcionDeFotos(3, "  no hay más ").motivo());
+  }
+
+  @Test
+  void unBorradorAprobadoNoCambiaSuExcepcion() {
+    BorradorTecnologia borrador = conCuatroFotos(nuevo());
+    borrador.elegir(
+        List.of(
+            new BorradorTecnologia.Eleccion("a17-256", List.of("Negro"), Dinero.deCop(849_900))));
+    borrador.aprobar(UUID.randomUUID(), MARGEN);
+
+    assertThrows(
+        ExcepcionDeDominio.class,
+        () -> borrador.declararExcepcionDeFotos(new ExcepcionDeFotos(2, "no hay más")));
+  }
+
+  @Test
   void lasConfiguracionesNuevasDeUnProductoNoPidenFotos() {
     BorradorTecnologia borrador =
         BorradorTecnologia.nuevo(

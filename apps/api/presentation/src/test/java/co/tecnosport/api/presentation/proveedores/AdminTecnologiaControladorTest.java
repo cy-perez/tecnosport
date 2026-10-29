@@ -200,6 +200,56 @@ class AdminTecnologiaControladorTest {
         .andExpect(jsonPath("$[0].configuraciones[0].coloresSugeridos[0]").value("Negro"));
   }
 
+  /** La excepción de fotos de la skill (28/10/2026) llega con el borrador y el panel la ve. */
+  @Test
+  void laExcepcionDeFotosLlegaConElBorradorYLaRespuestaLaDice() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/admin/proveedores/{id}/listas-tecnologia", tecnologia.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(INVENTARIO))
+        .andExpect(status().isOk());
+    mockMvc
+        .perform(
+            post("/api/v1/admin/proveedores/{id}/listas-tecnologia", tecnologia.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    LISTA.replace(
+                        "\"paleta\": [\"Negro\", \"Gris\", \"Azul\"],",
+                        "\"paleta\": [\"Negro\", \"Gris\", \"Azul\"],"
+                            + " \"excepcionDeFotos\": {\"minimo\": 2,"
+                            + " \"motivo\": \"no hay más fotos oficiales\"},")))
+        .andExpect(status().isOk());
+
+    mockMvc
+        .perform(get("/api/v1/admin/borradores-tecnologia"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].fotosQueFaltan").value(2))
+        .andExpect(jsonPath("$[0].excepcionDeFotos.minimo").value(2))
+        .andExpect(jsonPath("$[0].excepcionDeFotos.motivo").value("no hay más fotos oficiales"));
+  }
+
+  @Test
+  void unaExcepcionDeFotosDeCuatroOMasEs422() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/admin/proveedores/{id}/listas-tecnologia", tecnologia.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(INVENTARIO))
+        .andExpect(status().isOk());
+    mockMvc
+        .perform(
+            post("/api/v1/admin/proveedores/{id}/listas-tecnologia", tecnologia.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    LISTA.replace(
+                        "\"paleta\": [\"Negro\", \"Gris\", \"Azul\"],",
+                        "\"paleta\": [\"Negro\", \"Gris\", \"Azul\"],"
+                            + " \"excepcionDeFotos\": {\"minimo\": 4, \"motivo\": \"las de siempre\"},")))
+        .andExpect(status().isUnprocessableContent());
+    assertTrue(borradores.porId.isEmpty());
+  }
+
   /**
    * Los dos precios sugeridos de cada configuración (ADR-0095, decisión 8). Con el tope de prueba
    * de 150.000, al A17 de 675.000 lo limita el tope y no su mercado de 849.900: contado 825.000, y

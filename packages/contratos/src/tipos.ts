@@ -2662,6 +2662,7 @@ export interface components {
             descripcion: string;
             descripcionDeLaSkill: string;
             estado: string;
+            excepcionDeFotos?: components["schemas"]["ExcepcionDeFotosRespuesta"];
             fichaEditada: boolean;
             fichaNuevaDeLaSkill: boolean;
             fotos: components["schemas"]["FotoDeBorradorTecnologiaRespuesta"][];
@@ -3079,6 +3080,16 @@ export interface components {
             codigosDeRespaldoRestantes: number;
             obligatorio: boolean;
         };
+        ExcepcionDeFotosPeticion: {
+            /** Format: int32 */
+            minimo: number;
+            motivo: string;
+        };
+        ExcepcionDeFotosRespuesta: {
+            /** Format: int32 */
+            minimo: number;
+            motivo: string;
+        };
         ExistenciaAjustadaRespuesta: {
             dejaReservasSinRespaldo?: boolean;
             /** Format: int32 */
@@ -3478,6 +3489,8 @@ export interface components {
             categoria?: string;
             configuraciones: components["schemas"]["ConfiguracionPeticion"][];
             descripcion: string;
+            /** @description Solo con los borradores: el modelo se aprueba con menos de cuatro fotos porque no hay más tomas oficiales. Nulo si pide las cuatro. */
+            excepcionDeFotos?: components["schemas"]["ExcepcionDeFotosPeticion"];
             idModelo: string;
             marca?: string;
             metaDescripcion?: string;

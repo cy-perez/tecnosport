@@ -15,6 +15,7 @@ import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.domain.proveedores.BorradorTecnologia;
 import co.tecnosport.api.domain.proveedores.ConfiguracionTecnologia;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
+import co.tecnosport.api.domain.proveedores.ExcepcionDeFotos;
 import co.tecnosport.api.domain.proveedores.FotoDeBorradorTecnologia;
 import co.tecnosport.api.domain.proveedores.HuellaProveedor;
 import co.tecnosport.api.domain.proveedores.ModeloDeLista;
@@ -32,6 +33,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -366,6 +368,34 @@ class RepositoriosDeTecnologiaJpaTest {
     assertEquals(
         List.of(b.id(), a.id()),
         releido.fotos().stream().map(FotoDeBorradorTecnologia::id).toList());
+  }
+
+  /** La excepción de fotos (28/10/2026) va y vuelve, y quitarla deja las dos columnas en nulo. */
+  @Test
+  void laExcepcionDeFotosSeGuardaYSeQuita() {
+    Proveedor proveedor = proveedor();
+    BorradorTecnologia borrador =
+        BorradorTecnologia.nuevo(
+            proveedor.id(), a17(), List.of(config("a17-a", "1 SIM", null)), null, LUNES, LUNES);
+    borrador.declararExcepcionDeFotos(new ExcepcionDeFotos(2, "no hay más fotos oficiales"));
+    borradores.guardar(borrador);
+    em.flush();
+    em.clear();
+
+    BorradorTecnologia leido = borradores.buscarPorIdParaActualizar(borrador.id()).orElseThrow();
+    assertEquals(
+        Optional.of(new ExcepcionDeFotos(2, "no hay más fotos oficiales")),
+        leido.excepcionDeFotos());
+    assertEquals(2, leido.fotosQueFaltan());
+
+    leido.declararExcepcionDeFotos(null);
+    borradores.actualizar(leido);
+    em.flush();
+    em.clear();
+
+    BorradorTecnologia releido = borradores.buscarPorId(borrador.id()).orElseThrow();
+    assertTrue(releido.excepcionDeFotos().isEmpty());
+    assertEquals(BorradorTecnologia.MINIMO_DE_FOTOS, releido.fotosQueFaltan());
   }
 
   /**

@@ -15,6 +15,7 @@ import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.proveedores.BorradorTecnologia;
 import co.tecnosport.api.domain.proveedores.ConfiguracionTecnologia;
 import co.tecnosport.api.domain.proveedores.ConfirmacionDeColor;
+import co.tecnosport.api.domain.proveedores.ExcepcionDeFotos;
 import co.tecnosport.api.domain.proveedores.HuellaProveedor;
 import co.tecnosport.api.domain.proveedores.MargenMinimo;
 import co.tecnosport.api.domain.proveedores.Proveedor;
@@ -263,7 +264,15 @@ public final class ImportarListaDeTecnologia {
         refrescar(proveedor, entrada, porProponer, visto, cuenta);
         continue;
       }
-      proponer(proveedor, entrada, porProponer, producto.map(Producto::id), visto, ahora, cuenta);
+      proponer(
+          proveedor,
+          entrada,
+          porProponer,
+          producto.map(Producto::id),
+          visto,
+          ahora,
+          comando.excepcionDeFotosDe(entrada.modelo().idModelo()),
+          cuenta);
     }
 
     if (!inventario) {
@@ -326,6 +335,7 @@ public final class ImportarListaDeTecnologia {
       Optional<UUID> productoId,
       Instant visto,
       Instant ahora,
+      ExcepcionDeFotos excepcion,
       Contador cuenta) {
     Optional<BorradorTecnologia> enRevision =
         repositorioBorradores.buscarEnRevisionParaActualizar(
@@ -333,18 +343,21 @@ public final class ImportarListaDeTecnologia {
     if (enRevision.isPresent()) {
       BorradorTecnologia borrador = enRevision.get();
       borrador.actualizarConLista(entrada.modelo(), configuraciones, visto);
+      borrador.declararExcepcionDeFotos(excepcion);
       repositorioBorradores.actualizar(borrador);
       cuenta.borradoresActualizados++;
       return;
     }
-    repositorioBorradores.guardar(
+    BorradorTecnologia nuevo =
         BorradorTecnologia.nuevo(
             proveedor.id(),
             entrada.modelo(),
             configuraciones,
             productoId.orElse(null),
             visto,
-            ahora));
+            ahora);
+    nuevo.declararExcepcionDeFotos(excepcion);
+    repositorioBorradores.guardar(nuevo);
     cuenta.borradoresNuevos++;
   }
 
