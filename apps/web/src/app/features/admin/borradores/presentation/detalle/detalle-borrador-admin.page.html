@@ -227,6 +227,11 @@
     @if (errorMover(); as mensaje) {
       <p class="m-0 mb-8 text-ts-error" role="alert">{{ mensaje }}</p>
     }
+    @if (fotosNoExportadas() > 0) {
+      <p class="m-0 mb-12 text-ts-texto-suave">
+        {{ 'admin.borradores.detalle.fotosNoExportadas' | transloco: { n: fotosNoExportadas() } }}
+      </p>
+    }
     @if (fotos().length === 0) {
       <p class="mb-24 text-ts-texto-suave">
         {{

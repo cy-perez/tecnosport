@@ -1510,6 +1510,9 @@
       "SUDADERA": "Sweatpants",
       "BLAZER": "Blazer",
       "CHALECO": "Vest",
+      "CAMISA": "Shirt",
+      "GORRA": "Cap",
+      "BERMUDA": "Bermuda shorts",
       "OTRO": "Other"
     },
     "tallas": {
@@ -1531,7 +1534,8 @@
       "SET_SIN_DESCRIPCION": "This is a set and it has no description. Write one that mentions the cap or the blouse before approving.",
       "TALLAS_CORRIDAS": "The post names the sizes shifted (small fit, “go up” or EU sizes) and they were moved to the ones sold. Check in the post how many, under “How the supplier names the sizes”.",
       "TALLAS_SIN_CORRER": "The post names the sizes shifted, but one could not be moved: the post sizes were kept. Write the ones sold before approving.",
-      "MODELO_POR_CONFIRMAR": "The title carries the model the photo reader thinks it sees, but it is not sure: it could be one of two look-alikes, like a Shox R4 and a Shox TL. Confirm it in the photos or fix the title before approving."
+      "MODELO_POR_CONFIRMAR": "The title carries the model the photo reader thinks it sees, but it is not sure: it could be one of two look-alikes, like a Shox R4 and a Shox TL. Confirm it in the photos or fix the title before approving.",
+      "TIPO_CORREGIDO_POR_FOTO": "The post names a different garment than the one in the photos —a \"T-shirt\" with a collar and buttons all the way down is a shirt—, and the draft kept the one in the photos, which decides the category. Confirm it, and fix the title if it names the garment."
     },
     "detalle": {
       "miga": "Review",
@@ -1541,6 +1545,7 @@
       "fotos": "Draft photos",
       "sinFotos": "The post had no photos.",
       "sinFotosEditable": "The post had no photos. Upload them below to be able to approve it.",
+      "fotosNoExportadas": "WhatsApp left {{n}} photo(s) of this post out of the export: the phone had not downloaded them. Upload them below, or open the chat so they download and export it again.",
       "fotoAlt": "Photo {{numero}} of the draft",
       "textos": "What the supplier wrote",
       "sinTextos": "The post had no text.",

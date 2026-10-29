@@ -1510,6 +1510,9 @@
       "SUDADERA": "Sudadera",
       "BLAZER": "Blazer",
       "CHALECO": "Chaleco",
+      "CAMISA": "Camisa",
+      "GORRA": "Gorra",
+      "BERMUDA": "Bermuda",
       "OTRO": "Otro"
     },
     "tallas": {
@@ -1531,7 +1534,8 @@
       "SET_SIN_DESCRIPCION": "Es un set y no tiene descripción. Escríbela, nombrando la gorra o la blusa, antes de aprobar.",
       "TALLAS_CORRIDAS": "El anuncio nombra las tallas corridas (horma reducida, «aumentar» o tallas EUR) y se corrieron a las que se venden. Confirma en el anuncio cuántas, en «Cómo nombra las tallas el proveedor».",
       "TALLAS_SIN_CORRER": "El anuncio nombra las tallas corridas, pero alguna no se pudo correr: se quedaron las del anuncio. Escribe las que se venden antes de aprobar.",
-      "MODELO_POR_CONFIRMAR": "El título lleva el modelo que el lector de fotos cree ver, pero no está seguro: pueden ser dos parecidos, como un Shox R4 y un Shox TL. Confírmalo en las fotos o corrígelo en el título antes de aprobar."
+      "MODELO_POR_CONFIRMAR": "El título lleva el modelo que el lector de fotos cree ver, pero no está seguro: pueden ser dos parecidos, como un Shox R4 y un Shox TL. Confírmalo en las fotos o corrígelo en el título antes de aprobar.",
+      "TIPO_CORREGIDO_POR_FOTO": "El anuncio nombra otra prenda que la que se ve en las fotos —una «camiseta» con cuello y botones de arriba abajo es una camisa—, y el borrador se quedó con la de las fotos, que decide la categoría. Confírmalo, y corrige el título si la nombra."
     },
     "detalle": {
       "miga": "Revisión",
@@ -1541,6 +1545,7 @@
       "fotos": "Fotos del borrador",
       "sinFotos": "La publicación no trajo fotos.",
       "sinFotosEditable": "La publicación no trajo fotos. Súbelas aquí abajo para poder aprobarlo.",
+      "fotosNoExportadas": "WhatsApp no incluyó {{n}} foto(s) de esta publicación en la exportación: el teléfono no las había descargado. Súbelas aquí abajo, o abre el chat para que se descarguen y vuelve a exportarlo.",
       "fotoAlt": "Foto {{numero}} del borrador",
       "textos": "Lo que escribió el proveedor",
       "sinTextos": "La publicación no trajo texto.",
