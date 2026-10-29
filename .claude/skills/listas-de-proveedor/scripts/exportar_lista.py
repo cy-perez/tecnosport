@@ -24,8 +24,8 @@ precio de mercado y los colores que sugieren los emojis de la lista. Con eso:
 Solo se exportan los modelos terminados (con descripción): uno a medio investigar
 no puede convertirse en un producto. Los demás se informan.
 
-Y solo las configuraciones que le ganan al costo la ganancia mínima —el 10 %, con el tope de
-`TOPE_GANANCIA_TECNOLOGIA`— (regla 18, `margen.py`): las demás van como desaparecidas, y se
+Y solo las configuraciones que le ganan al costo la ganancia mínima —50.000 pesos,
+`GANANCIA_MINIMA_TECNOLOGIA`— (regla 18, `margen.py`): las demás van como desaparecidas, y se
 informan.
 """
 

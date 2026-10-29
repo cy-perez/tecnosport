@@ -112,8 +112,8 @@ class Exportar(unittest.TestCase):
 
 
 class MargenMinimo(unittest.TestCase):
-    """Regla 18, 15/10/2026: lo que no le gana al costo el 10 % no se ofrece (el umbral era 5 %
-    hasta el 24/10/2026), y desde el 27/10/2026 el mínimo no pasa de 400.000."""
+    """Regla 18: desde el 29/10/2026 lo que no le gana al costo 50.000 pesos frente al mercado no
+    se ofrece, sea cual sea el costo (antes, el 10 % con tope de 400.000)."""
 
     def a17(self, sim, costo, mercado):
         return producto(f"samsung-galaxy-a17-5g-8gb-ram-256gb-{sim}", f"Samsung Galaxy A17 5G 8GB RAM 256GB {sim}",
@@ -122,26 +122,22 @@ class MargenMinimo(unittest.TestCase):
     def exportar(self, *productos):
         return exportar_lista.exportar({**DATOS, "productos": list(productos)})
 
-    def test_por_debajo_del_diez_por_ciento_deja_de_ofrecerse_y_se_dice(self):
-        lista, fuera = self.exportar(self.a17("1-sim", 1_000_000, 1_099_000), self.a17("dual-sim", 690_000, 849_900))
+    def test_por_debajo_de_cincuenta_mil_deja_de_ofrecerse_y_se_dice(self):
+        lista, fuera = self.exportar(self.a17("1-sim", 1_000_000, 1_049_000), self.a17("dual-sim", 690_000, 849_900))
         self.assertEqual(["samsung-galaxy-a17-5g-8gb-ram-256gb-dual-sim"],
                          [c["sku"] for c in lista["modelos"][0]["configuraciones"]])
         self.assertIn("samsung-galaxy-a17-5g-8gb-ram-256gb-1-sim", lista["configuracionesDesaparecidas"])
         self.assertNotIn("samsung-galaxy-a17-5g", lista["modelosDesaparecidos"])
-        self.assertIn("margen de 9.9 %", dict(fuera)["Samsung Galaxy A17 5G 8GB RAM 256GB 1-sim"])
+        self.assertIn("la ganancia mínima es 50.000", dict(fuera)["Samsung Galaxy A17 5G 8GB RAM 256GB 1-sim"])
 
-    def test_el_diez_por_ciento_justo_se_ofrece(self):
-        lista, _ = self.exportar(self.a17("1-sim", 1_000_000, 1_100_000))
+    def test_cincuenta_mil_justos_se_ofrecen_aunque_no_lleguen_al_diez_por_ciento(self):
+        """El equipo de 1.900.000 que se vende a 1.950.000."""
+        lista, _ = self.exportar(self.a17("1-sim", 1_900_000, 1_950_000))
         self.assertEqual(1, len(lista["modelos"]))
 
-    def test_el_tope_de_ganancia_limita_el_minimo(self):
-        """Cinco millones pedirían 500.000 con el 10 %; el tope los baja a 400.000."""
-        lista, _ = self.exportar(self.a17("1-sim", 5_000_000, 5_400_000))
-        self.assertEqual(1, len(lista["modelos"]))
-
-        lista, fuera = self.exportar(self.a17("1-sim", 5_000_000, 5_399_000))
+    def test_en_lo_barato_tambien_piden_cincuenta_mil(self):
+        lista, _ = self.exportar(self.a17("1-sim", 100_000, 149_999))
         self.assertEqual([], lista["modelos"])
-        self.assertIn("la ganancia mínima es 400.000", dict(fuera)["Samsung Galaxy A17 5G 8GB RAM 256GB 1-sim"])
 
     def test_por_debajo_del_costo_tambien(self):
         lista, _ = self.exportar(self.a17("1-sim", 840_000, 799_010))
