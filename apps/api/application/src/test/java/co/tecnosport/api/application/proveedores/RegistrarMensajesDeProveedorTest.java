@@ -10,6 +10,7 @@ import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.AlmacenEnMemoria
 import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.RepositorioLotesEnMemoria;
 import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.RepositorioMensajesEnMemoria;
 import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.RepositorioProveedoresEnMemoria;
+import co.tecnosport.api.domain.proveedores.IdExternoDeMensaje;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
 import co.tecnosport.api.domain.proveedores.Proveedor;
@@ -166,6 +167,52 @@ class RegistrarMensajesDeProveedorTest {
                 MensajeCrudo.texto(T, ApoyoDeIngesta.REMITENTE, TEXTO)));
 
     assertEquals(1, resultado.cuantosNuevos());
+  }
+
+  /**
+   * Imperio Wicho, 27 de octubre de 2026: dos álbumes de sandalias con el mismo texto en el mismo
+   * minuto. El segundo texto queda como un separador que no es de nadie: si colapsaba, su álbum se
+   * iba al anuncio siguiente; si abría publicación, tenía la misma huella que el primero.
+   */
+  @Test
+  void elMismoTextoConUnAlbumEnMedioDejaUnSeparador() {
+    List<MensajeCrudo> crudos =
+        List.of(
+            MensajeCrudo.imagen(T, ApoyoDeIngesta.REMITENTE, null, ApoyoDeIngesta.foto("a.jpg")),
+            MensajeCrudo.texto(T, ApoyoDeIngesta.REMITENTE, TEXTO),
+            MensajeCrudo.imagen(T, ApoyoDeIngesta.REMITENTE, null, ApoyoDeIngesta.foto("b.jpg")),
+            MensajeCrudo.texto(T, ApoyoDeIngesta.REMITENTE, TEXTO));
+
+    MensajesRegistrados resultado = caso.ejecutar(lote.id(), crudos);
+
+    assertEquals(4, resultado.cuantosNuevos());
+    assertEquals(TipoMensaje.TEXTO, resultado.nuevos().get(1).tipo());
+    assertEquals(TipoMensaje.OTRO, resultado.nuevos().get(3).tipo());
+
+    // La primera aparición conserva su id: la exportación vieja vuelta a subir no crea nada.
+    LoteIngesta otro =
+        LoteIngesta.recibirExportacion(proveedor.id(), "proveedores/x/exportaciones/b.zip", T);
+    lotes.guardar(otro);
+    assertEquals(0, caso.ejecutar(otro.id(), crudos).cuantosNuevos());
+    assertEquals(
+        IdExternoDeMensaje.deExportacion(proveedor.id(), T, TEXTO),
+        resultado.nuevos().get(1).idExterno());
+  }
+
+  /** El separador reenviado sigue siendo un reenvío: texto, foto, texto, texto son tres. */
+  @Test
+  void elSeparadorReenviadoColapsa() {
+    MensajesRegistrados resultado =
+        caso.ejecutar(
+            lote.id(),
+            List.of(
+                MensajeCrudo.texto(T, ApoyoDeIngesta.REMITENTE, TEXTO),
+                MensajeCrudo.imagen(
+                    T, ApoyoDeIngesta.REMITENTE, null, ApoyoDeIngesta.foto("a.jpg")),
+                MensajeCrudo.texto(T, ApoyoDeIngesta.REMITENTE, TEXTO),
+                MensajeCrudo.texto(T, ApoyoDeIngesta.REMITENTE, TEXTO)));
+
+    assertEquals(3, resultado.cuantosNuevos());
   }
 
   /** Cuando la fuente ya trae identificador —el webhook— ese manda sobre el fabricado. */

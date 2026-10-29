@@ -61,6 +61,15 @@ import java.util.Objects;
  * OrdenDePublicacion}. Un precio que ya tiene fotos no recoge nada: ahí las sueltas son de otro
  * anuncio o de ninguno.
  *
+ * <h2>El álbum que cierra un texto sin precio es otro anuncio</h2>
+ *
+ * <p>Quien manda primero las fotos cierra cada álbum con su texto. Si después de un precio que ya
+ * tiene su álbum llegan más fotos y un texto sin precio que las cierra, eso es otro anuncio, uno
+ * sin precio, y no un resto del anterior. Imperio Wicho, 26 de octubre de 2026: el Onitsuka de las
+ * 17:16 con su álbum, y a las 17:30 tres fotos y «Colección Caballero 👨🏻🔥». Por la ventana, las
+ * tres caían en el Onitsuka, y eran de otro tenis. Se quedan sueltas, con su texto. La foto del
+ * mismo minuto que el precio sí es suya: es del mismo envío, aunque después venga un saludo.
+ *
  * <p>Lo que queda fuera —un texto sin precio lejos de todo, una foto huérfana, un audio— no es de
  * ninguna publicación. Se cuenta, y no se inventa un producto para darle sitio.
  */
@@ -185,6 +194,9 @@ public final class AgrupadorDePublicaciones {
         elegidaDe[i] = destino;
       }
     }
+    if (orden == OrdenDePublicacion.FOTOS_PRIMERO) {
+      sueltos += soltarAlbumesSinPrecio(enOrden, anclas, elegidaDe, suelto);
+    }
     for (int i = 0; i < enOrden.size(); i++) {
       if (elegidaDe[i] >= 0) {
         publicaciones.get(elegidaDe[i]).anexar(enOrden.get(i));
@@ -211,6 +223,48 @@ public final class AgrupadorDePublicaciones {
       }
     }
     return new Resultado(publicaciones, sueltos);
+  }
+
+  /**
+   * Suelta cada álbum que, después de un precio con su propio álbum delante, cierra un texto sin
+   * precio: es otro anuncio, sin precio, y no se le pega al anterior.
+   *
+   * @return cuántos mensajes quedaron sueltos
+   */
+  private static int soltarAlbumesSinPrecio(
+      List<MensajeProveedor> enOrden, List<Integer> anclas, int[] elegidaDe, boolean[] suelto) {
+    int soltados = 0;
+    for (int t = 0; t < enOrden.size(); t++) {
+      MensajeProveedor cierre = enOrden.get(t);
+      int publicacion = elegidaDe[t];
+      if (publicacion < 0
+          || cierre.tipo() != TipoMensaje.TEXTO
+          || cierre.textoLegible().map(String::isBlank).orElse(true)
+          || anclas.get(publicacion) > t) {
+        continue;
+      }
+      int primera = t;
+      while (primera - 1 > anclas.get(publicacion)
+          && enOrden.get(primera - 1).tipo() == TipoMensaje.IMAGEN
+          && elegidaDe[primera - 1] == publicacion) {
+        primera--;
+      }
+      // La foto del mismo minuto que el precio es de su envío, aunque la siga un saludo.
+      if (primera == t
+          || !enOrden
+              .get(primera)
+              .enviadoEn()
+              .isAfter(enOrden.get(anclas.get(publicacion)).enviadoEn())
+          || !tieneFotosDelOtroLado(enOrden, elegidaDe, publicacion, anclas.get(publicacion), -1)) {
+        continue;
+      }
+      for (int i = primera; i <= t; i++) {
+        elegidaDe[i] = -1;
+        suelto[i] = true;
+        soltados++;
+      }
+    }
+    return soltados;
   }
 
   /**
