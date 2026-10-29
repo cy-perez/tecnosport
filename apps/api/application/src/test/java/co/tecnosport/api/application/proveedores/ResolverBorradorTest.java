@@ -1209,6 +1209,21 @@ class ResolverBorradorTest {
     assertEquals(2, borradores.enEstado(EstadoBorrador.EN_REVISION).size());
   }
 
+  /** Meraki, 28 de octubre de 2026: la pijama no se vende, de ningún proveedor (ADR-0101). */
+  @Test
+  void laPijamaSeDescartaDeCualquierProveedor() {
+    PublicacionProveedor publicacion = publicacion("*PIJAMA SHORT* $30.000", "pijama");
+
+    Resolucion resolucion =
+        resolver(publicacion, deTipo("Pijama short", TipoProductoProveedor.SHORT, null));
+
+    assertEquals(TipoDeResolucion.DESCARTADA, resolucion.tipo());
+    assertEquals(
+        new CierreDePublicacion(MotivoDePublicacion.ARTICULO_QUE_NO_SE_VENDE, "pijama"),
+        resolucion.cierre());
+    assertTrue(borradores.enEstado(EstadoBorrador.EN_REVISION).isEmpty());
+  }
+
   /** Violeta: a quien no se le compran prendas inferiores. */
   private void sinInferiores() {
     proveedor.definirTiposExcluidos(

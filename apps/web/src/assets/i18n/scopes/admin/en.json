@@ -1292,6 +1292,7 @@
         "CALZADO_QUE_NO_ES_TENIS": "it isn't a sneaker: its photos show {{dato}}, and the store only sells sneakers.",
         "CALZADO_QUE_NO_ES_TENIS_SIN_TIPO": "none of its photos shows a sneaker, and the store only sells sneakers.",
         "CALZADO_SIN_FOTOS_LEIDAS": "it has no photos, or they couldn't be read: nobody saw that it was a sneaker.",
+        "ARTICULO_QUE_NO_SE_VENDE": "it's an item the store doesn't sell from any supplier ({{dato}}).",
         "EXTRACCION_FALLIDA": "the extractor couldn't read it: the API rejected the request or answered something unreadable.",
         "ERROR_AL_RESOLVER": "a program error happened while deciding what to do with it ({{dato}}).",
         "DESCONOCIDO": "the reason is unknown: it's from before reasons were saved."

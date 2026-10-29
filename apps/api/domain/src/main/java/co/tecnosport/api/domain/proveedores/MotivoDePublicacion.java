@@ -43,6 +43,11 @@ public enum MotivoDePublicacion {
    * que fuera un tenis, y se descarta (ADR-0092).
    */
   CALZADO_SIN_FOTOS_LEIDAS,
+  /**
+   * Algo que la tienda no vende, de ningún proveedor: la pijama y la correa ({@link
+   * ArticuloQueNoSeVende}, ADR-0101). El dato es el artículo: «pijama», «correa», «cinturón».
+   */
+  ARTICULO_QUE_NO_SE_VENDE,
   /** El extractor no pudo: la API rechazó la petición, se negó, o respondió algo ilegible. */
   EXTRACCION_FALLIDA,
   /** Algo falló al decidir qué hacer con lo extraído; el dato es el tipo de la excepción. */
