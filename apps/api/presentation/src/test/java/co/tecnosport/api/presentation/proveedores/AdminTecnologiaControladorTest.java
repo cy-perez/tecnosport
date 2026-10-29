@@ -246,7 +246,10 @@ class AdminTecnologiaControladorTest {
                         "\"paleta\": [\"Negro\", \"Gris\", \"Azul\"],",
                         "\"paleta\": [\"Negro\", \"Gris\", \"Azul\"],"
                             + " \"excepcionDeFotos\": {\"minimo\": 4, \"motivo\": \"las de siempre\"},")))
-        .andExpect(status().isUnprocessableContent());
+        .andExpect(status().isUnprocessableContent())
+        .andExpect(
+            jsonPath("$.detail")
+                .value(org.hamcrest.Matchers.containsString("samsung-galaxy-a17-5g")));
     assertTrue(borradores.porId.isEmpty());
   }
 

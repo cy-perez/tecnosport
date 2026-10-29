@@ -9,4 +9,4 @@ ALTER TABLE borrador_tecnologia
     ADD COLUMN motivo_minimo_de_fotos TEXT,
     ADD CONSTRAINT ck_borrador_tecnologia_minimo_de_fotos
         CHECK ((minimo_de_fotos IS NULL AND motivo_minimo_de_fotos IS NULL)
-            OR (minimo_de_fotos BETWEEN 1 AND 3 AND motivo_minimo_de_fotos IS NOT NULL));
+            OR (minimo_de_fotos BETWEEN 1 AND 3 AND btrim(motivo_minimo_de_fotos) <> ''));
