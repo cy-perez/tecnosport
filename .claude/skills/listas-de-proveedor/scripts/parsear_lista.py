@@ -744,8 +744,11 @@ def construir_producto(texto, categoria, marca, condicion, seccion, linea):
         # El código del chip es opcional y la generación puede venir separada:
         # `RYZEN 3 (8 RAM…` y `CORE i 5 7520U` (15/10/2026). Si el procesador no
         # se reconoce, se queda en la línea y pasa por referencia del equipo.
+        # `INTEL CELERON (8 RAM…` (27/10/2026) tampoco trae código: la familia sola
+        # no es una referencia.
         cpu = re.search(r"\b(RYZEN\s*\d(?:\s*\w*\d\w*)?|ATHLON\s*\w+|CORE\s*I\s*\d(?:[\s-]*\d{4,5}\w*)?"
-                        r"|INTEL\s*I\d\s*\w+|I\d[\s-]?\d{4,5}\w*|CELERON\s*\w+)\b", resto, re.I)
+                        r"|INTEL\s*I\d\s*\w+|I\d[\s-]?\d{4,5}\w*"
+                        r"|(?:INTEL\s*)?CELERON(?:\s*[A-Z]?\d\w*)?)\b", resto, re.I)
         if cpu:
             prod["atributos"].append(titulo_bonito(re.sub(r"\bI\s+(\d)", r"I\1", cpu.group(1), flags=re.I)))
             resto = resto.replace(cpu.group(1), " ")
@@ -1101,6 +1104,7 @@ def parsear(texto: str, equivalencias=None):
                 cat = cat_vineta or categoria_por_palabras(resto) or categoria or "celulares"
             cond = cond_vineta or condicion or "nuevo"
             prod = construir_producto(resto, cat, marca, cond, seccion, i)
+            condicion_que_no_es_de_iphone(prod)
             marcar_iphone_sin_condicion(prod, limpio)
             if generica and generica not in del_dia:
                 prod["revisar"].append(f"viñeta no reconocida ({generica}): verificar que sea un producto")
@@ -1130,6 +1134,7 @@ def parsear(texto: str, equivalencias=None):
             if cat:
                 prod = construir_producto(linea, cat, marca, condicion or "nuevo", seccion, i)
                 prod["revisar"].append("línea sin viñeta: verificar que sea un producto")
+                condicion_que_no_es_de_iphone(prod)
                 marcar_iphone_sin_condicion(prod, limpio)
                 clasificar(prod)
                 continue
@@ -1150,6 +1155,20 @@ def parsear(texto: str, equivalencias=None):
         "duplicados_fusionados": duplicados,
         "sin_clasificar": sin_clasificar,
     }
+
+
+def condicion_que_no_es_de_iphone(prod):
+    """«IPH CON CAJA» es un iPhone usado con su caja, no una condición de la sección
+    entera. El 22/10 y el 27/10/2026 el iPad A16 y los AirPods Pro 3 llegaron debajo
+    de esa sección, sin encabezado propio, y se descartaban como usados; el negocio
+    confirmó el 28/10/2026 que son nuevos sellados. Lo que no es un celular no hereda
+    esa condición. Solo esta: un usado o un activado se siguen heredando, porque
+    publicar un usado como nuevo es el error caro.
+    """
+    if prod["condicion"] == "con_caja" and prod["categoria"] != "celulares":
+        prod["condicion"] = "nuevo"
+        prod["supuestos"].append("vino debajo de «CON CAJA», que es la condición de los iPhone "
+                                 "de esa sección: se toma como nuevo (confirmado el 28/10/2026)")
 
 
 def marcar_iphone_sin_condicion(prod, limpio):

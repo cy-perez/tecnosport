@@ -263,6 +263,18 @@
       "fecha": "2026-10-02",
       "motivo": "título corregido a mano en la corrida del 02/10/2026"
     },
+    "xiaomi-poco-x8-pro-5g-12gb-ram-256gb": {
+      "id": "xiaomi-poco-x8-pro-5g-8gb-ram-256gb",
+      "titulo": "Xiaomi POCO X8 Pro 5G 8GB RAM 256GB",
+      "fecha": "2026-10-28",
+      "motivo": "la lista del 27/10/2026 trae el POCO X8 Pro 5G en 12+256 y el aviso de llegada en 8/256, al mismo precio; mi.com/co solo vende 256GB con 8GB de RAM, y el negocio confirmó el 28/10/2026 que es un solo equipo, el 8GB+256GB"
+    },
+    "xiaomi-poco-x8-pro-8gb-ram-256gb": {
+      "id": "xiaomi-poco-x8-pro-5g-8gb-ram-256gb",
+      "titulo": "Xiaomi POCO X8 Pro 5G 8GB RAM 256GB",
+      "fecha": "2026-10-28",
+      "motivo": "la lista del 27/10/2026 trae el POCO X8 Pro 5G en 12+256 y el aviso de llegada en 8/256, al mismo precio; mi.com/co solo vende 256GB con 8GB de RAM, y el negocio confirmó el 28/10/2026 que es un solo equipo, el 8GB+256GB"
+    },
     "xiaomi-redmi-note-15-128gb": {
       "id": "xiaomi-redmi-note-15-4g-6gb-ram-128gb",
       "titulo": "Xiaomi Redmi Note 15 4G 6GB RAM 128GB",

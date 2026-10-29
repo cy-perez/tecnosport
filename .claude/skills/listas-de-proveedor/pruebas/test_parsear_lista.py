@@ -252,6 +252,12 @@ class ProcesadorDelComputador(unittest.TestCase):
         self.assertEqual(["referencia"], p["sin_datos"])
         self.assertIn("Core i5 7520U", p["atributos"])
 
+    def test_el_celeron_sin_codigo_no_es_una_referencia(self):
+        # 27/10/2026: «Intel Celeron» entraba al análisis como la referencia del equipo.
+        [p] = self.computador('💻 *LAPTOP HP INTEL CELERON (8 RAM + 512 GB) 14" $1.100*')
+        self.assertEqual(["referencia"], p["sin_datos"])
+        self.assertIn("Intel Celeron", p["atributos"])
+
     def test_sin_referencia_va_a_descartados(self):
         datos = parsear(" 💻🖥️ *COMPUTADORES*\n\n"
                         '💻*LAPTOP ASUS RYZEN 3 ( 8 RAM + 512 GB SSD) 15.6" $1.320*\n')
@@ -263,6 +269,26 @@ class ProcesadorDelComputador(unittest.TestCase):
         [p] = self.computador('💻*LAPTOP ASUS VIVOBOOK X1504 CORE I5-1235U (8 RAM + 512 GB SSD) 15.6" $1.900*')
         self.assertEqual([], p["sin_datos"])
         self.assertEqual("Vivobook X1504", p["referencia"])
+
+
+class LoQueVieneDebajoDeConCaja(unittest.TestCase):
+    """27/10/2026: el iPad A16 y los AirPods Pro 3 llegan debajo de «IPH CON CAJA» y
+    se descartaban como usados; el negocio confirmó que son nuevos sellados."""
+
+    LISTA = (" *IPH CON CAJA*\n"
+             "12 128 💜$1.150\n\n\n"
+             "📲IPAD A16 $1.500 💙🤍\n\n"
+             "🎧AIRPODS PRO 3 $840 \n")
+
+    def test_lo_que_no_es_celular_entra_como_nuevo(self):
+        datos = parsear(self.LISTA)
+        nuevos = {p["categoria"]: p["condicion"] for p in datos["productos"]}
+        self.assertEqual({"tablets": "nuevo", "audifonos": "nuevo"}, nuevos)
+
+    def test_el_iphone_sigue_siendo_con_caja(self):
+        datos = parsear(self.LISTA)
+        self.assertEqual(["condición no publicable: con_caja"],
+                         [d["motivo"] for d in datos["descartados"]])
 
 
 class Bloques(unittest.TestCase):

@@ -486,6 +486,22 @@ salida imprime el comando para registrarlo en `referencias/excluidos.json` de
 siguiente lo vuelve a proponer, a investigar y a pedirle fotos. También lo
 decide la persona.
 
+**Un modelo sin más tomas oficiales puede pasar con menos de cuatro** (decisión del
+28/10/2026). Los AirPods Pro 3 no tienen más de dos fotos en los sitios que consultó la
+persona, así que esperar no los completaba nunca. La excepción la declara la persona, por
+modelo y con su motivo; queda en `_estudio/minimos.json`, vale para todas las tandas y el
+`estado-fotos.json` del modelo la anota en `minimo_por_excepcion`. Lo demás de la compuerta no
+cambia: cada foto que cuenta sigue siendo LISTA —o aprobada a ojo— en un lienzo de 1200 o más.
+No la declares por tu cuenta: es una excepción a la regla del 10/10/2026.
+
+```bash
+python3 "${CLAUDE_SKILL_DIR}/scripts/procesar_fichas.py" catalogo/4-entregables/fichas \
+    --tanda catalogo/5-api/por-proponer.json --minimo-fotos <id> --cuantas 2 \
+    --motivo "el fabricante no publica más tomas"
+```
+
+`--quitar-minimo <id>` la deshace.
+
 **En audífonos, el par con su estuche cuenta solo** (decisión del 22/10/2026). Dos
 auriculares y el estuche —a veces con la tapa aparte— son 3 o 4 piezas, y casi toda
 foto buena de unos TWS disparaba `varias_piezas`: 11 fotos de la tanda del 15/10.
