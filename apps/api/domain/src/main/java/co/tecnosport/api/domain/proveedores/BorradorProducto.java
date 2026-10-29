@@ -94,8 +94,12 @@ public final class BorradorProducto {
 
   /**
    * Para quién es el tenis, según la foto o el anuncio (ADR-0089): decide la rama del calzado que
-   * el panel propone al aprobar. Nulo si no es calzado o no se sabe. Lo pone la ingesta y lo
-   * devuelve el adaptador, como el ajuste de talla.
+   * el panel propone al aprobar. Nulo si no se sabe. Lo pone la ingesta y lo devuelve el adaptador,
+   * como el ajuste de talla.
+   *
+   * <p>Desde el 29 de octubre de 2026 también el de una prenda de ropa, y por eso el nombre se le
+   * quedó corto: la partición dama/caballero ya lo usaba para la ropa (ADR-0085), y con él el panel
+   * propone Ropa › Dama o Ropa › Caballero. Renombrarlo movía la columna y el contrato.
    */
   private GeneroDeCalzado generoDeCalzado;
 
@@ -385,7 +389,7 @@ public final class BorradorProducto {
     return ajusteDeTalla;
   }
 
-  /** Para la ingesta y el adaptador: para quién es el tenis. */
+  /** Para la ingesta y el adaptador: para quién es el tenis o la prenda. */
   public static BorradorProducto conGeneroDeCalzado(
       BorradorProducto borrador, GeneroDeCalzado genero) {
     borrador.generoDeCalzado = genero;

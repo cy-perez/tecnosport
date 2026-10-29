@@ -5,6 +5,7 @@ import co.tecnosport.api.domain.proveedores.AlertaBorrador;
 import co.tecnosport.api.domain.proveedores.CalzadoSinTenis;
 import co.tecnosport.api.domain.proveedores.CierreDePublicacion;
 import co.tecnosport.api.domain.proveedores.FotosDelProducto;
+import co.tecnosport.api.domain.proveedores.GeneroDeCalzado;
 import co.tecnosport.api.domain.proveedores.LecturaDeCalzado;
 import co.tecnosport.api.domain.proveedores.ProductoExtraido;
 import java.util.List;
@@ -32,6 +33,8 @@ import java.util.UUID;
  *     salen su género y sus tallas. Nulo en los demás
  * @param descarte por qué el producto no deja borrador aunque se haya leído: el anuncio de un
  *     proveedor de calzado que no trae un tenis ({@link CalzadoSinTenis}, ADR-0092). Nulo si sigue
+ * @param generoDePrenda para quién es la prenda de ropa, según el anuncio o, si no lo dice, según
+ *     las fotos (29 de octubre de 2026): de ahí sale su rama del catálogo. Nulo si no se sabe
  */
 public record ExtraccionEvaluada(
     ProductoExtraido producto,
@@ -45,7 +48,8 @@ public record ExtraccionEvaluada(
     boolean disenoDeAlbum,
     List<UUID> fotosParaSumar,
     LecturaDeCalzado calzado,
-    CierreDePublicacion descarte) {
+    CierreDePublicacion descarte,
+    GeneroDeCalzado generoDePrenda) {
 
   public ExtraccionEvaluada {
     fotosParaSumar = fotosParaSumar == null ? List.of() : List.copyOf(fotosParaSumar);
@@ -55,6 +59,36 @@ public record ExtraccionEvaluada(
     Objects.requireNonNull(uso);
     fotos = fotos == null ? List.of() : List.copyOf(fotos);
     reparto = reparto == null ? FotosDelProducto.todas() : reparto;
+  }
+
+  /** Sin el género de la prenda: la forma de antes del 29 de octubre de 2026. */
+  public ExtraccionEvaluada(
+      ProductoExtraido producto,
+      String jsonCrudo,
+      Dinero precioProveedor,
+      Set<AlertaBorrador> alertas,
+      UsoDelExtractor uso,
+      List<UUID> fotos,
+      FotosDelProducto reparto,
+      UUID exclusiva,
+      boolean disenoDeAlbum,
+      List<UUID> fotosParaSumar,
+      LecturaDeCalzado calzado,
+      CierreDePublicacion descarte) {
+    this(
+        producto,
+        jsonCrudo,
+        precioProveedor,
+        alertas,
+        uso,
+        fotos,
+        reparto,
+        exclusiva,
+        disenoDeAlbum,
+        fotosParaSumar,
+        calzado,
+        descarte,
+        null);
   }
 
   /** Sin descarte: la forma de antes del 26 de octubre de 2026. */
@@ -99,7 +133,26 @@ public record ExtraccionEvaluada(
         disenoDeAlbum,
         fotosParaSumar,
         calzado,
-        porQue);
+        porQue,
+        generoDePrenda);
+  }
+
+  /** Este mismo producto, para ese género. */
+  public ExtraccionEvaluada conGeneroDePrenda(GeneroDeCalzado genero) {
+    return new ExtraccionEvaluada(
+        producto,
+        jsonCrudo,
+        precioProveedor,
+        alertas,
+        uso,
+        fotos,
+        reparto,
+        exclusiva,
+        disenoDeAlbum,
+        fotosParaSumar,
+        calzado,
+        descarte,
+        genero);
   }
 
   /** Sin lectura de calzado: la forma de antes del 25 de octubre de 2026. */
@@ -172,6 +225,10 @@ public record ExtraccionEvaluada(
 
   public Optional<LecturaDeCalzado> calzadoOpcional() {
     return Optional.ofNullable(calzado);
+  }
+
+  public Optional<GeneroDeCalzado> generoDePrendaOpcional() {
+    return Optional.ofNullable(generoDePrenda);
   }
 
   public Optional<CierreDePublicacion> descarteOpcional() {

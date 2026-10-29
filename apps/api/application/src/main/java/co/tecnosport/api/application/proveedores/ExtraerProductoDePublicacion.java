@@ -5,9 +5,12 @@ import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.proveedores.AlertaBorrador;
 import co.tecnosport.api.domain.proveedores.CalzadoSinTenis;
 import co.tecnosport.api.domain.proveedores.CierreDePublicacion;
+import co.tecnosport.api.domain.proveedores.GeneroDeCalzado;
+import co.tecnosport.api.domain.proveedores.GeneroDelAnuncio;
 import co.tecnosport.api.domain.proveedores.LecturaDeCalzado;
 import co.tecnosport.api.domain.proveedores.LecturaDeFotos;
 import co.tecnosport.api.domain.proveedores.LecturaDeFotos.LecturaDeFoto;
+import co.tecnosport.api.domain.proveedores.LecturaDePrenda;
 import co.tecnosport.api.domain.proveedores.LecturaDelTenis;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
 import co.tecnosport.api.domain.proveedores.PatronDePrecio;
@@ -278,6 +281,29 @@ public final class ExtraerProductoDePublicacion {
       Set<AlertaBorrador> alertas = EnumSet.noneOf(AlertaBorrador.class);
       // Los diseños de un álbum comparten el único precio del texto.
       boolean album = repartido.disenoDeAlbum();
+      // La prenda de ropa: el género que el anuncio casi nunca dice y la prenda que a veces nombra
+      // mal, leídos de las fotos (29 de octubre de 2026). El tipo, solo si las fotos son de este
+      // producto y de nadie más; el género vale para todo el anuncio.
+      Optional<LecturaDePrenda> prenda =
+          producto.linea() == LineaCatalogo.ROPA && lectura != null
+              ? lectura.prendaOpcional()
+              : Optional.empty();
+      Optional<TipoProductoProveedor> tipoVisto = prenda.flatMap(LecturaDePrenda::tipoOpcional);
+      if (tipoVisto.isPresent()
+          && tipoVisto.get() != producto.tipo()
+          && !varios
+          && !album
+          && !repartido.compartidas()) {
+        producto = producto.conTipo(tipoVisto.get());
+        alertas.add(AlertaBorrador.TIPO_CORREGIDO_POR_FOTO);
+      }
+      // El anuncio que dice para quién es manda sobre la foto, como en el calzado (ADR-0092).
+      GeneroDeCalzado generoDePrenda =
+          producto.linea() == LineaCatalogo.ROPA
+              ? GeneroDelAnuncio.de(texto.completo())
+                  .or(() -> prenda.flatMap(LecturaDePrenda::generoOpcional))
+                  .orElse(null)
+              : null;
       int posicionEnElTexto = album ? 0 : i;
       Optional<Dinero> delTexto =
           precioDelTexto(preciosDelTexto, posicionEnElTexto, productosDelTexto);
@@ -317,7 +343,8 @@ public final class ExtraerProductoDePublicacion {
               varios || album ? repartido.conSuCodigo() : repartido.fotos(),
               // El de otro proveedor también: de ahí sale su género si el texto no lo dice.
               delTenis.orElse(null),
-              producto.estaAgotado() ? null : sinTenis.orElse(null)));
+              producto.estaAgotado() ? null : sinTenis.orElse(null),
+              generoDePrenda));
     }
     return evaluadas;
   }

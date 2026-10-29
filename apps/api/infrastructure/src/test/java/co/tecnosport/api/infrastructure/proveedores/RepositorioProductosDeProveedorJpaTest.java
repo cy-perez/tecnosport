@@ -72,7 +72,7 @@ class RepositorioProductosDeProveedorJpaTest {
 
   private void catalogoBase() {
     MarcaJpaEntity m =
-        marcas.save(new MarcaJpaEntity(UUID.randomUUID(), "Genérica", Instant.now()));
+        marcas.save(new MarcaJpaEntity(UUID.randomUUID(), "Marca de prueba", Instant.now()));
     CategoriaJpaEntity c =
         categorias.save(
             new CategoriaJpaEntity(

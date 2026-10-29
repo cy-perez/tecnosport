@@ -7,7 +7,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import co.tecnosport.api.domain.proveedores.GeneroDeCalzado;
 import co.tecnosport.api.domain.proveedores.LecturaDeCalzado;
 import co.tecnosport.api.domain.proveedores.LecturaDeFotos;
+import co.tecnosport.api.domain.proveedores.LecturaDePrenda;
 import co.tecnosport.api.domain.proveedores.TipoDeCalzado;
+import co.tecnosport.api.domain.proveedores.TipoProductoProveedor;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -30,6 +32,37 @@ class InterpreteDeLecturaDeFotosJsonTest {
     assertEquals(0, lectura.fotos().get(0).posicion());
     assertEquals(List.of("negro", "cocoa", "verde"), lectura.fotos().get(0).colores());
     assertEquals(List.of("negro"), lectura.fotos().get(1).colores());
+  }
+
+  /**
+   * La prenda y su género (29 de octubre de 2026); lo que no es ropa y lo viejo quedan sin ella.
+   */
+  @Test
+  void laPrendaSeLeeYLoQueNoEsRopaNiLoViejoQuedanSinElla() {
+    LecturaDeFotos camisa =
+        interprete
+            .interpretar("{\"prenda\":{\"tipo\":\"camisa\",\"genero\":\"dama\"},\"fotos\":[]}")
+            .orElseThrow();
+    LecturaDeFotos soloGenero =
+        interprete
+            .interpretar(
+                "{\"prenda\":{\"tipo\":\"otra_prenda\",\"genero\":\"caballero\"},"
+                    + "\"fotos\":[]}")
+            .orElseThrow();
+    LecturaDeFotos tenis =
+        interprete
+            .interpretar("{\"prenda\":{\"tipo\":\"no_es_ropa\",\"genero\":\"dama\"},\"fotos\":[]}")
+            .orElseThrow();
+    LecturaDeFotos vieja = interprete.interpretar("{\"fotos\":[]}").orElseThrow();
+
+    assertEquals(
+        Optional.of(new LecturaDePrenda(TipoProductoProveedor.CAMISA, GeneroDeCalzado.DAMA)),
+        camisa.prendaOpcional());
+    assertEquals(
+        Optional.of(new LecturaDePrenda(null, GeneroDeCalzado.CABALLERO)),
+        soloGenero.prendaOpcional());
+    assertEquals(Optional.empty(), tenis.prendaOpcional());
+    assertEquals(Optional.empty(), vieja.prendaOpcional());
   }
 
   /** El rótulo de tallas de la esquina (13 de octubre de 2026); las lecturas viejas no lo traen. */

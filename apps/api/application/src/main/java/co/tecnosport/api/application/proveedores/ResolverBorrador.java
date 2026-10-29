@@ -385,13 +385,17 @@ public final class ResolverBorrador {
                 && !proveedor.ajustesDeIngesta().unaFotoUnProducto()
             ? GeneroDelAnuncio.de(textoDelAnuncio)
             : Optional.empty();
+    // La ropa trae el suyo de la extracción: el del anuncio o, si no lo dice, el de las fotos (29
+    // de octubre de 2026). Con él el panel propone la rama del catálogo.
     GeneroDeCalzado genero =
-        delTextoDelAnuncio
-            .or(() -> evaluada.calzadoOpcional().flatMap(LecturaDeCalzado::generoOpcional))
-            .orElse(
-                tallasDelProveedor.isPresent() || evaluada.calzadoOpcional().isPresent()
-                    ? GeneroDeCalzado.UNISEX
-                    : null);
+        extraido.tipo() == TipoProductoProveedor.TENIS
+            ? delTextoDelAnuncio
+                .or(() -> evaluada.calzadoOpcional().flatMap(LecturaDeCalzado::generoOpcional))
+                .orElse(
+                    tallasDelProveedor.isPresent() || evaluada.calzadoOpcional().isPresent()
+                        ? GeneroDeCalzado.UNISEX
+                        : null)
+            : evaluada.generoDePrendaOpcional().orElse(null);
     if (tallasDelProveedor.isPresent()) {
       extraido = extraido.conTallas(Tallas.lista(tallasDelProveedor.get().delProveedor(genero)));
     }

@@ -14,6 +14,7 @@ import co.tecnosport.api.domain.proveedores.IdExternoDeMensaje;
 import co.tecnosport.api.domain.proveedores.LecturaDeCalzado;
 import co.tecnosport.api.domain.proveedores.LecturaDeFotos;
 import co.tecnosport.api.domain.proveedores.LecturaDeFotos.LecturaDeFoto;
+import co.tecnosport.api.domain.proveedores.LecturaDePrenda;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
 import co.tecnosport.api.domain.proveedores.MotivoDePublicacion;
 import co.tecnosport.api.domain.proveedores.ProductoExtraido;
@@ -441,6 +442,83 @@ class ExtraerProductoDePublicacionTest {
     return new ExtraerProductoDePublicacion(
             ApoyoDeIngesta.ExtractorFalso.varios(productos), lector, almacen, UMBRAL)
         .ejecutar(publicacion, mensajes, LineaCatalogo.ROPA);
+  }
+
+  // --- La prenda que se ve en las fotos (29 de octubre de 2026) ---
+
+  private static LectorDeFotos queVe(TipoProductoProveedor tipo, GeneroDeCalzado genero) {
+    return fotos ->
+        Optional.of(
+            new LecturaDeFotos(
+                false,
+                List.of(new LecturaDeFoto(0, List.of(), null, List.of(), List.of("blanco"), null)),
+                "{}",
+                new LecturaDePrenda(tipo, genero)));
+  }
+
+  private ExtraccionEvaluada camisetaDeMeraki(String anuncio, LectorDeFotos lector) {
+    PublicacionProveedor publicacion = PublicacionProveedor.abrir(texto(anuncio));
+    publicacion.anexar(foto("p/1.jpg"));
+    return evaluarConFotos(
+            publicacion,
+            List.of(prenda("Camiseta manga larga", null)),
+            lector,
+            almacenCon("p/1.jpg"))
+        .getFirst();
+  }
+
+  /**
+   * Meraki la anunció como camiseta y es una camisa: cuello rígido y botones de arriba abajo. La
+   * categoría sale de lo que se ve, y quien aprueba queda avisado.
+   */
+  @Test
+  void laPrendaQueSeVeCorrigeLaQueNombraElAnuncio() {
+    ExtraccionEvaluada evaluada =
+        camisetaDeMeraki(
+            "*CAMISETA MANGA LARGA* $45.000",
+            queVe(TipoProductoProveedor.CAMISA, GeneroDeCalzado.DAMA));
+
+    assertEquals(TipoProductoProveedor.CAMISA, evaluada.producto().tipo());
+    assertTrue(evaluada.alertas().contains(AlertaBorrador.TIPO_CORREGIDO_POR_FOTO));
+  }
+
+  @Test
+  void siLaFotoDiceLoMismoQueElAnuncioNoHayAlerta() {
+    ExtraccionEvaluada evaluada =
+        camisetaDeMeraki(
+            "*CAMISETA MANGA LARGA* $45.000", queVe(TipoProductoProveedor.CAMISETA, null));
+
+    assertEquals(TipoProductoProveedor.CAMISETA, evaluada.producto().tipo());
+    assertFalse(evaluada.alertas().contains(AlertaBorrador.TIPO_CORREGIDO_POR_FOTO));
+  }
+
+  /** «Buzo navideño» no dice para quién es; la foto sí. */
+  @Test
+  void sinGeneroEnElAnuncioValeElDeLasFotos() {
+    ExtraccionEvaluada evaluada =
+        camisetaDeMeraki(
+            "*BUSO NAVIDEÑO* $45.000", queVe(TipoProductoProveedor.CAMISETA, GeneroDeCalzado.DAMA));
+
+    assertEquals(Optional.of(GeneroDeCalzado.DAMA), evaluada.generoDePrendaOpcional());
+  }
+
+  @Test
+  void elGeneroQueDiceElAnuncioMandaSobreElDeLasFotos() {
+    ExtraccionEvaluada evaluada =
+        camisetaDeMeraki(
+            "*CAMISETA PARA CABALLERO* $45.000",
+            queVe(TipoProductoProveedor.CAMISETA, GeneroDeCalzado.DAMA));
+
+    assertEquals(Optional.of(GeneroDeCalzado.CABALLERO), evaluada.generoDePrendaOpcional());
+  }
+
+  @Test
+  void sinLecturaDeLaPrendaNoCambiaNada() {
+    ExtraccionEvaluada evaluada =
+        camisetaDeMeraki("*CAMISETA MANGA LARGA* $45.000", queVe(null, null));
+
+    assertEquals(TipoProductoProveedor.CAMISETA, evaluada.producto().tipo());
+    assertEquals(Optional.empty(), evaluada.generoDePrendaOpcional());
   }
 
   /**

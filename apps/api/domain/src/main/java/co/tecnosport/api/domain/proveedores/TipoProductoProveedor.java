@@ -45,5 +45,11 @@ public enum TipoProductoProveedor {
   // ponerlos. Desde V108 tiene Blazers y Chalecos en la rama de dama (11 de octubre de 2026).
   BLAZER,
   CHALECO,
+  // La camisa —cuello rígido y botones de arriba abajo—, que se anunciaba como camiseta; la gorra,
+  // que salía OTRO; y la bermuda, que como SHORT caía en las pantalonetas de caballero. Las tres
+  // tienen hoja propia en el catálogo, y la lectura de fotos las distingue (29 de octubre de 2026).
+  CAMISA,
+  GORRA,
+  BERMUDA,
   OTRO
 }
