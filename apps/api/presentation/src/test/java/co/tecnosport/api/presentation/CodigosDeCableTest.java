@@ -216,6 +216,9 @@ class CodigosDeCableTest {
           Map.entry(
               co.tecnosport.api.domain.proveedores.PrecioSinMargenMinimoException.class,
               "PRECIO_SIN_MARGEN_MINIMO"),
+          Map.entry(
+              co.tecnosport.api.domain.proveedores.PrecioSobreGananciaMaximaException.class,
+              "PRECIO_SOBRE_GANANCIA_MAXIMA"),
           Map.entry(ExportacionNoEncontradaException.class, "EXPORTACION_NO_ENCONTRADA"),
           Map.entry(ExportacionDemasiadoGrandeException.class, "EXPORTACION_DEMASIADO_GRANDE"),
           Map.entry(TipoDeExportacionNoAdmitidoException.class, "TIPO_DE_EXPORTACION_NO_ADMITIDO"),

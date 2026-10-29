@@ -33,6 +33,7 @@
     "proveedor_sin_listas": "This supplier is not a technology supplier: its catalog comes in through the chat export, not through a price list.",
     "lista_de_tecnologia_desactualizada": "That list is older than the last one imported: only import a list from that date or later.",
     "precio_sin_margen_minimo": "The cash price doesn't leave the minimum profit over the supplier cost: raise it before approving.",
+    "precio_sobre_ganancia_maxima": "The cash price leaves more than the maximum profit over the supplier cost: lower it before approving.",
     "lista_de_tecnologia_ya_importada": "That list was already imported with this same content: repeating it would restock what was sold.",
     "proveedor_con_productos": "The supplier has products in the catalogue. Deactivate it instead of deleting it.",
     "proveedor_con_ingesta_en_curso": "The supplier has an export being processed. Wait for it to finish and try again.",
@@ -1292,6 +1293,7 @@
         "CALZADO_QUE_NO_ES_TENIS": "it isn't a sneaker: its photos show {{dato}}, and the store only sells sneakers.",
         "CALZADO_QUE_NO_ES_TENIS_SIN_TIPO": "none of its photos shows a sneaker, and the store only sells sneakers.",
         "CALZADO_SIN_FOTOS_LEIDAS": "it has no photos, or they couldn't be read: nobody saw that it was a sneaker.",
+        "ARTICULO_QUE_NO_SE_VENDE": "it's an item the store doesn't sell from any supplier ({{dato}}).",
         "EXTRACCION_FALLIDA": "the extractor couldn't read it: the API rejected the request or answered something unreadable.",
         "ERROR_AL_RESOLVER": "a program error happened while deciding what to do with it ({{dato}}).",
         "DESCONOCIDO": "the reason is unknown: it's from before reasons were saved."

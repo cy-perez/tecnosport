@@ -564,7 +564,8 @@ class ExtractorClaudeTest {
             .path("properties");
     assertThat(item.path("tipo").path("enum").toString())
         .contains("falda_short")
-        .doesNotContain("conjunto_falda");
+        // Desde el 29 de octubre de 2026 el set a un solo precio es el producto (ADR-0101).
+        .contains("conjunto_falda");
     assertThat(item.path("precios_adicionales").path("items").path("required").toString())
         .contains("clase")
         .contains("prenda");

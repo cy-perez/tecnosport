@@ -289,11 +289,17 @@ public final class ExtraerProductoDePublicacion {
               ? lectura.prendaOpcional()
               : Optional.empty();
       Optional<TipoProductoProveedor> tipoVisto = prenda.flatMap(LecturaDePrenda::tipoOpcional);
+      // Pero el set no lo decide la foto (ADR-0101): el anuncio que vende el conjunto a un solo
+      // precio, o la prenda con su gorra o su blusa, ya dice cuántas piezas hay; y una foto con la
+      // blusa puesta no vuelve conjunto la falda que se vende sola.
       if (tipoVisto.isPresent()
           && tipoVisto.get() != producto.tipo()
           && !varios
           && !album
-          && !repartido.compartidas()) {
+          && !repartido.compartidas()
+          && !esConjunto(producto.tipo())
+          && !esConjunto(tipoVisto.get())
+          && !producto.ofreceAcompanante()) {
         producto = producto.conTipo(tipoVisto.get());
         alertas.add(AlertaBorrador.TIPO_CORREGIDO_POR_FOTO);
       }
@@ -347,6 +353,12 @@ public final class ExtraerProductoDePublicacion {
               generoDePrenda));
     }
     return evaluadas;
+  }
+
+  private static boolean esConjunto(TipoProductoProveedor tipo) {
+    return tipo == TipoProductoProveedor.CONJUNTO_FALDA
+        || tipo == TipoProductoProveedor.CONJUNTO_PANTALON
+        || tipo == TipoProductoProveedor.CONJUNTO_SHORT;
   }
 
   /**

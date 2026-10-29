@@ -12,6 +12,7 @@ import co.tecnosport.api.domain.proveedores.AlertaBorrador;
 import co.tecnosport.api.domain.proveedores.ArmadoDeSet;
 import co.tecnosport.api.domain.proveedores.ArmadorDeSets;
 import co.tecnosport.api.domain.proveedores.ArmadorDeSets.SetArmado;
+import co.tecnosport.api.domain.proveedores.ArticuloQueNoSeVende;
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
 import co.tecnosport.api.domain.proveedores.CalculadoraDeMargen;
 import co.tecnosport.api.domain.proveedores.CierreDePublicacion;
@@ -287,6 +288,13 @@ public final class ResolverBorrador {
       // El calzado que no es un tenis, o que nadie vio, se descartó al leer sus fotos (ADR-0092).
       if (evaluada.descarteOpcional().isPresent()) {
         resoluciones.add(Resolucion.descartada(evaluada.descarteOpcional().get()));
+        continue;
+      }
+      // La pijama y la correa no se venden, de ningún proveedor (ADR-0101).
+      Optional<CierreDePublicacion> queNoSeVende =
+          ArticuloQueNoSeVende.porElTitulo(evaluada.producto().tituloOpcional().orElse(null));
+      if (queNoSeVende.isPresent() && !evaluada.producto().estaAgotado()) {
+        resoluciones.add(Resolucion.descartada(queNoSeVende.get()));
         continue;
       }
       resoluciones.add(

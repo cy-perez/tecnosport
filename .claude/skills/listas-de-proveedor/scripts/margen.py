@@ -1,12 +1,14 @@
 """Regla 18: lo que no le gana al costo la ganancia mínima no se ofrece.
 
-    mercado − costo ≥ min(10 % del costo, TOPE_GANANCIA_TECNOLOGIA)
+    mercado − costo ≥ GANANCIA_MINIMA_TECNOLOGIA   (50.000 pesos)
 
-El 10 % es la decisión del negocio del 15/10/2026 (subió del 5 % al 10 % el 24/10/2026), y el
-tope, la del 27/10/2026: un equipo de cinco millones no tiene por qué ganarle 500.000 al costo
-cuando la API nunca le sugiere más de 400.000. Es la misma regla que la API exige al aprobar y
-al importar la lista (`MargenMinimo.deTecnologia` en `apps/api/domain`), sobre el precio de
-contado.
+Decisión del negocio del 29/10/2026 (ADR-0101): la ganancia mínima es fija, en pesos, y no un
+porcentaje del costo. Hasta ese día era min(10 % del costo, 400.000), que a un equipo de
+1.900.000 le pedía 190.000 y no dejaba venderlo con 50.000. Es la misma regla que la API exige al
+aprobar y al importar la lista (`MargenMinimo.deTecnologia` en `apps/api/domain`, con
+`PROVEEDORES_TECNOLOGIA_GANANCIA_MINIMA`), sobre el precio de contado. La API exige además un
+techo de 400.000 al aprobar; aquí no se descarta nada por ganar de más: el contado que se
+apruebe lo baja quien revisa.
 
 El margen es el precio de mercado que asignó el paso 4 sobre el costo del proveedor. La
 configuración que no llega no se propone si es nueva y deja de ofrecerse si ya se vendía.
@@ -19,12 +21,10 @@ tienen que leer el mismo umbral: si difirieran, se buscarían fotos de lo que nu
 
 from decimal import Decimal
 
-MARGEN_MINIMO = 0.10
-
-# El tope de la ganancia mínima, en pesos. Es el mismo `PROVEEDORES_TECNOLOGIA_GANANCIA_MAXIMA` de
-# la API (la ganancia máxima de `SugerenciaDePrecioTecnologia`, 400.000 por omisión): si cambia
-# allá, cambia aquí, o la skill dejaría fuera lo que la API aprueba, o propondría lo que rechaza.
-TOPE_GANANCIA_TECNOLOGIA = 400_000
+# La ganancia mínima, en pesos. Es el mismo `PROVEEDORES_TECNOLOGIA_GANANCIA_MINIMA` de la API
+# (50.000 por omisión): si cambia allá, cambia aquí, o la skill dejaría fuera lo que la API
+# aprueba, o propondría lo que rechaza.
+GANANCIA_MINIMA_TECNOLOGIA = 50_000
 
 
 def margen(producto) -> float | None:
@@ -35,12 +35,8 @@ def margen(producto) -> float | None:
 
 
 def ganancia_minima(costo) -> Decimal:
-    """Lo menos que hay que ganarle a ese costo: el 10 %, sin pasar del tope.
-
-    En decimal y no en flotante: el borde exacto —1.100.000 sobre 1.000.000— entra, y el
-    redondeo de 0,1 no lo decide.
-    """
-    return min(Decimal(costo) * Decimal(str(MARGEN_MINIMO)), Decimal(TOPE_GANANCIA_TECNOLOGIA))
+    """Lo menos que hay que ganarle a ese costo: los mismos pesos, sea cual sea el costo."""
+    return Decimal(GANANCIA_MINIMA_TECNOLOGIA)
 
 
 def se_ofrece(producto) -> bool:

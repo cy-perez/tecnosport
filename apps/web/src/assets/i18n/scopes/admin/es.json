@@ -33,6 +33,7 @@
     "proveedor_sin_listas": "Este proveedor no es de tecnología: su catálogo entra por la exportación del chat, no por una lista de precios.",
     "lista_de_tecnologia_desactualizada": "Esa lista es más vieja que la última que entró: impórtala solo si es de esa fecha o posterior.",
     "precio_sin_margen_minimo": "El precio de contado no deja la ganancia mínima sobre el costo del proveedor: súbelo antes de aprobar.",
+    "precio_sobre_ganancia_maxima": "El precio de contado le gana al costo del proveedor más de la ganancia máxima: bájalo antes de aprobar.",
     "lista_de_tecnologia_ya_importada": "Esa lista ya entró con este mismo contenido: repetirla volvería a reponer lo vendido.",
     "proveedor_con_productos": "El proveedor tiene productos en el catálogo. Desactívalo en vez de eliminarlo.",
     "proveedor_con_ingesta_en_curso": "El proveedor tiene una exportación en proceso. Espera a que termine e inténtalo de nuevo.",
@@ -1292,6 +1293,7 @@
         "CALZADO_QUE_NO_ES_TENIS": "no es un tenis: sus fotos muestran {{dato}}, y la tienda solo vende tenis.",
         "CALZADO_QUE_NO_ES_TENIS_SIN_TIPO": "ninguna de sus fotos muestra un tenis, y la tienda solo vende tenis.",
         "CALZADO_SIN_FOTOS_LEIDAS": "no trae fotos, o no se pudieron leer: nadie vio que fuera un tenis.",
+        "ARTICULO_QUE_NO_SE_VENDE": "es un artículo que la tienda no vende, de ningún proveedor ({{dato}}).",
         "EXTRACCION_FALLIDA": "el extractor no pudo leerla: la API rechazó la petición o respondió algo ilegible.",
         "ERROR_AL_RESOLVER": "falló por un error del programa al decidir qué hacer con ella ({{dato}}).",
         "DESCONOCIDO": "no se sabe el motivo: es de antes de que se guardara."

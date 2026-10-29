@@ -88,8 +88,8 @@ public final class ImportarListaDeTecnologia {
   private final MargenMinimo margenMinimo;
 
   /**
-   * @param margenMinimo el de tecnología: el 10 % del costo con el tope de ganancia de la
-   *     sugerencia
+   * @param margenMinimo el de tecnología: la ganancia mínima en pesos (ADR-0101); el techo solo lo
+   *     exige la aprobación
    */
   public ImportarListaDeTecnologia(
       RepositorioProveedores repositorioProveedores,

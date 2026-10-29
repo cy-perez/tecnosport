@@ -55,6 +55,58 @@ class RepartoDeFotosTest {
     return new LecturaDeFoto(posicion, List.of(), sku, tallas, List.of(color), diseno);
   }
 
+  private static LecturaDeFoto ajena(int posicion) {
+    return new LecturaDeFoto(
+        posicion, List.of(), null, List.of(), List.of(), null, List.of(), List.of(), null, false);
+  }
+
+  /**
+   * Imperio Wicho, 27 de octubre de 2026: el banner de Addi y Sistecrédito y el de contraentrega
+   * llegaron con el Runking, y el meme del chihuahua con el Wishops. No muestran nada que se venda:
+   * salen del producto y el borrador nace con ellas descartadas.
+   */
+  @Test
+  void lasFotosQueNoMuestranProductoNacenDescartadas() {
+    ProductoExtraido runking = producto("Tenis importados", TipoProductoProveedor.TENIS, null);
+    LecturaDeFotos lectura =
+        new LecturaDeFotos(
+            false, List.of(ajena(0), ajena(1), foto(2, List.of(), List.of("negro"))), "{}");
+
+    ProductoRepartido repartido =
+        RepartoDeFotos.repartir(List.of(runking), List.of(F1, F2, F3), lectura).getFirst();
+
+    assertEquals(List.of(F3), repartido.fotos());
+    assertEquals(Set.of(F1, F2), repartido.reparto().ajenas());
+    assertEquals(Map.of(F3, "negro"), repartido.reparto().tonosSugeridos());
+  }
+
+  /** Cuando cada foto es un producto, el banner no deja ninguno. */
+  @Test
+  void conUnaFotoPorProductoElBannerNoDejaProducto() {
+    ProductoExtraido tanda = producto("Blusa", TipoProductoProveedor.BLUSA, null);
+    LecturaDeFotos lectura =
+        new LecturaDeFotos(false, List.of(ajena(0), foto(1, List.of(), List.of("negro"))), "{}");
+
+    List<ProductoRepartido> repartidos =
+        RepartoDeFotos.unaPorFoto(tanda, List.of(F1, F2), lectura, false);
+
+    assertEquals(1, repartidos.size());
+    assertEquals(List.of(F2), repartidos.getFirst().fotos());
+  }
+
+  /** Si el lector dice que ninguna muestra el producto, no se le cree: quedan todas. */
+  @Test
+  void siNingunaMuestraProductoQuedanTodas() {
+    ProductoExtraido polo = producto("Polo", TipoProductoProveedor.POLO, null);
+    LecturaDeFotos lectura = new LecturaDeFotos(false, List.of(ajena(0), ajena(1)), "{}");
+
+    ProductoRepartido repartido =
+        RepartoDeFotos.repartir(List.of(polo), List.of(F1, F2), lectura).getFirst();
+
+    assertEquals(List.of(F1, F2), repartido.fotos());
+    assertEquals(Set.of(), repartido.reparto().ajenas());
+  }
+
   @Test
   void elBodiYElJeanDeVioletaSeRepartenPorLaReferenciaImpresa() {
     // 15:08: las dos primeras fotos muestran el bodi y el jean («B:VY3010 J:Q355»); las otras dos,

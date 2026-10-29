@@ -153,6 +153,28 @@ class AnalizadorDeExportacionWhatsAppTest {
     assertThat(audio.enviadoEn()).isEqualTo(Instant.parse("2026-09-28T19:45:00Z"));
   }
 
+  /**
+   * Imperio Wicho, 27 de octubre de 2026: un sticker trae extensión de imagen y no es una foto del
+   * producto, ni omitido; conserva su nombre de archivo, que es su id. El video omitido sigue
+   * contando como foto: marca dónde termina un álbum.
+   */
+  @Test
+  void elStickerNoEsFotoNiOmitido() {
+    String chat =
+        "27/10/2026, 08:27 - Imperio Wicho: \u200eSTK-20261027-WA0007.webp (archivo adjunto)\n"
+            + "27/10/2026, 08:28 - Imperio Wicho: <video omitido>\n"
+            + "27/10/2026, 08:29 - Imperio Wicho: <sticker omitido>\n"
+            + "27/10/2026, 08:35 - Imperio Wicho: \u200eIMG-20261027-WA0008.jpg (archivo adjunto)\n";
+    List<MensajeCrudo> mensajes =
+        new AnalizadorDeExportacionWhatsApp(n -> Optional.of(FOTO)).analizar(chat);
+
+    assertThat(mensajes)
+        .extracting(MensajeCrudo::tipo)
+        .containsExactly(
+            TipoMensaje.OTRO, TipoMensaje.IMAGEN, TipoMensaje.OTRO, TipoMensaje.IMAGEN);
+    assertThat(mensajes.get(0).adjunto().nombre()).isEqualTo("STK-20261027-WA0007.webp");
+  }
+
   /** Algunos teléfonos exportan en 24 horas, sin a. m. ni p. m. */
   @Test
   void unaCabeceraEnVeinticuatroHorasTambienSeReconoce() {

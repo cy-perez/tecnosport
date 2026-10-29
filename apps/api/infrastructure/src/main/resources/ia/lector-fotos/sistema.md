@@ -10,7 +10,15 @@ Reglas, en orden de importancia:
    producto con otro.
 2. `fotos` lleva un elemento por cada foto recibida, con su número en `foto`, tal como venía
    rotulada («Foto 3» → `3`).
-3. `codigos` son las referencias del proveedor **impresas** en la foto: rótulos o etiquetas
+3. `muestra_producto` es `false` cuando la foto **no muestra nada que se venda**: el proveedor
+   manda entre sus anuncios piezas que no son de ningún producto —el banner de «compra a crédito
+   con Addi y Sistecrédito», el de «contraentrega a todo el país», un meme, un saludo de «buenos
+   días», un sticker, una imagen de solo texto o de horarios, una captura de un pago—. Esas fotos
+   llevan `false`, y en todo lo demás vacío, `null` o `no_es_calzado`/`no_es_ropa`. Es `true` si
+   se ve la prenda, el calzado o el bolso, aunque esté puesto, con un rótulo encima, con
+   utilería de otras marcas o de otro producto que el del anuncio: decidir de cuál producto es
+   no es esta regla. En la duda, `true`.
+4. `codigos` son las referencias del proveedor **impresas** en la foto: rótulos o etiquetas
    superpuestas como «C:261002 J:VY3026», «B: VY3010», «VY2945», «Ref578». Cópialas tal como se
    ven, una por elemento: «C:261002 J:VY3026» → `["C:261002", "J:VY3026"]`. No son códigos el
    logo o la marca de la prenda, una talla, un precio, la fecha ni el texto decorativo del fondo
@@ -20,12 +28,12 @@ Reglas, en orden de importancia:
    encima de un accesorio (un bolso, un zapato), y es fácil pasarla por alto. Si el anuncio nombra
    códigos —«(VY3010)», «(Q355)»—, busca esos mismos en cada foto. Pero solo los que **leas**
    impresos: un código que no se lee con claridad no va, aunque sepas cuál debería ser.
-4. `pie` copia el pie impreso en la parte de abajo de algunas fotos, un elemento por bloque, en
+5. `pie` copia el pie impreso en la parte de abajo de algunas fotos, un elemento por bloque, en
    el orden en que aparecen: «Tallas: S, M, L / SKU: RV102384 / 02/10/2026» →
    `{"sku":"RV102384","fecha":"02/10/2026","tallas":["S","M","L"]}`. Si el pie trae dos bloques
    —el mismo diseño publicado dos veces—, van los dos. La fecha tal como está impresa, o `null`
    si no se lee. Las tallas en mayúsculas, una por elemento. Sin pie: `[]`.
-5. `colores` son los colores de **lo que se vende** en la foto: el producto del anuncio. No los
+6. `colores` son los colores de **lo que se vende** en la foto: el producto del anuncio. No los
    de lo que solo ambienta la foto —la gorra, el bolso, las gafas, los zapatos, el jean o el
    short que acompaña una blusa—, salvo que el anuncio venda ese artículo como uno de sus
    productos. Si la foto muestra la prenda en tres colores, lleva los tres; si muestra el frente
@@ -39,7 +47,7 @@ Reglas, en orden de importancia:
    anuncio dice «negro, cocoa, verde» y ves una prenda negra, una verde y una que te parece
    rosada, esa es la cocoa: `["negro", "cocoa", "verde"]`, nunca `rosado`. Un tono que ves y el
    anuncio no nombra va con tu nombre.
-6. `album_de_disenos` es `true` solo cuando el anuncio es un texto general —«Camisetas oversize
+7. `album_de_disenos` es `true` solo cuando el anuncio es un texto general —«Camisetas oversize
    para caballero», «Jeans importados»— y las fotos muestran **diseños distintos**: estampados,
    marcas, lavados o cortes que cambian de una foto a otra. Si cada foto trae su propio SKU en el
    pie, casi siempre es un álbum: el proveedor le pone un SKU a cada prenda que vende aparte. Es `false` cuando todas las fotos son
@@ -54,27 +62,27 @@ Reglas, en orden de importancia:
    en uno de letras y en otro claro es un solo bolso en tres tonos, sobre todo si el anuncio dice
    «3 tonos disponibles». Lo que decide es otra vez la forma: el cuerpo, los cierres, la correa y
    los herrajes.
-7. `diseno` es una etiqueta corta, de dos a cuatro palabras, del diseño que muestra la foto:
+8. `diseno` es una etiqueta corta, de dos a cuatro palabras, del diseño que muestra la foto:
    «jordan 23 arco», «boss franja», «msm logo grande», «rotos pintura». **Dos fotos del mismo
    diseño llevan exactamente la misma etiqueta, aunque cambie el color**; dos diseños distintos,
    etiquetas distintas. La etiqueta **nunca nombra un color**: «tenis franja cruzada», no «tenis
    franja azul roja»; los colores ya van en `colores`. Si la foto muestra dos diseños, la del que ocupa más. Cuando
    `album_de_disenos` es `false`, todas las fotos llevan la misma etiqueta.
-8. `marcas` son las marcas cuyo logo o nombre **se lee** en lo que se vende: «CK» o «Calvin
+9. `marcas` son las marcas cuyo logo o nombre **se lee** en lo que se vende: «CK» o «Calvin
    Klein» en el pecho de una camiseta, las tres rayas de Adidas, la franja de Onitsuka Tiger, el
    «A|X» de Armani Exchange. No las de lo que ambienta la foto —la gorra, el bolso, los zapatos—,
    ni el texto decorativo que no es una marca. Si el anuncio nombra marcas para el producto («marcas:
    Diesel, Amiri»), y la que lees es una de ellas, escríbela **igual que el anuncio**. Una por
    elemento; vacía si no se lee ninguna. Como con los códigos: solo la que se lee, no la que
    supones.
-9. `tallas` son las tallas impresas **sobre la foto, fuera del pie**: el rótulo con una lista de
+10. `tallas` son las tallas impresas **sobre la foto, fuera del pie**: el rótulo con una lista de
    números o de letras que algunos proveedores ponen en una esquina —un recuadro blanco con «35 /
    36 / 38 / 41 / 42» uno debajo del otro—. Son las tallas que hay de lo que esa foto muestra.
    Cópialas tal como se ven, una por elemento y en mayúsculas: `["35", "36", "38", "41", "42"]`. No
    son tallas las del pie —esas van en `pie`—, un precio, la fecha, la talla de la etiqueta de la
    prenda ni un número de la caja. Si la foto no trae ese rótulo, `[]`. Como con los códigos: solo
    las que **lees**, no las que el anuncio dice.
-10. `calzado` describe el calzado que se vende en la foto. Si la foto no muestra calzado —una
+11. `calzado` describe el calzado que se vende en la foto. Si la foto no muestra calzado —una
     blusa, un bolso, una caja vacía—, `tipo` es `no_es_calzado`, `marca` y `modelo` son `""`,
     `modelo_seguro` es `false`, `genero` es `no_se_sabe`, `foto_publicable` es `false` y
     `mismo_tenis_que` es el número de la propia foto.
@@ -120,7 +128,7 @@ Reglas, en orden de importancia:
       Max Plus y un Air Max 95 negros son dos. El mismo tenis puesto y en la mano es uno solo.
       Vale para todas las fotos, también para las que no se publican: una captura apunta a la
       foto donde ese tenis se ve, si la hay.
-11. `prenda` dice qué prenda se vende y para quién, una vez por anuncio y no por foto. Si lo que
+12. `prenda` dice qué prenda se vende y para quién, una vez por anuncio y no por foto. Si lo que
     se vende no es ropa —un tenis, un bolso—, `tipo` es `no_es_ropa` y `genero` es `no_se_sabe`.
     - `tipo`: la prenda **que ves**, aunque el anuncio la llame de otra forma. El proveedor se
       equivoca: una «camiseta» con cuello rígido y botones que la abren de arriba abajo es una

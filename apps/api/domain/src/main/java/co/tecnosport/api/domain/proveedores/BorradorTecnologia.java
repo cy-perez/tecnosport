@@ -342,8 +342,9 @@ public final class BorradorTecnologia {
       }
       // Vender al costo no es vender (tools/cargar-catalogo.mjs): un cero de menos al teclear se
       // publicaría y se vendería con pérdida en cada unidad. Y superarlo por poco tampoco: hace
-      // falta el margen mínimo de tecnología: el 10 % de la regla 18 con el tope de ganancia (27 de
-      // octubre de 2026). Se compara el de contado, que es lo que el negocio recibe: el publicado
+      // falta el margen de tecnología: una ganancia entre la mínima y la máxima, en pesos (29 de
+      // octubre de 2026, ADR-0101). Se compara el de contado, que es lo que el negocio recibe: el
+      // publicado
       // lleva encima la comisión, que no es ganancia.
       margenMinimo.exigir(c.precioVenta(), c.costoProveedor(), c.titulo());
     }

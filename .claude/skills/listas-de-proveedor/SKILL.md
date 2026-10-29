@@ -41,7 +41,7 @@ Están al inicio de `scripts/parsear_lista.py` y se cambian ahí:
 | Categorías que se publican | celulares, tablets, relojes, audífonos, consolas, computadores, proyectores, parlantes |
 | Condición publicable | solo `nuevo`, es decir sellado y sin activar |
 | Se descartan siempre | usados, "NUEVOS ACTIVOS", "IPH CON CAJA", cables, cargadores, power bank, accesorios sueltos (control de consola, pencil táctil, rastreador tipo tag), lo que quede sin precio, los celulares por debajo de 500.000 COP, los computadores sin marca o sin referencia, lo que la lista no permite identificar (regla 10, con confirmación) y **todo** lo de Krono, BMAX, itel, ZTE, Infinix y Tecno |
-| Margen mínimo para ofrecer | el precio de mercado le gana al costo del proveedor por lo menos **el 10 % del costo, sin pasar de 400.000 COP** —el tope es `PROVEEDORES_TECNOLOGIA_GANANCIA_MAXIMA` de la API—; por debajo, la configuración no se propone y, si ya se vendía, deja de ofrecerse y no se le crea carpeta de modelo (regla 18, `MARGEN_MINIMO` y `TOPE_GANANCIA_TECNOLOGIA` en `scripts/margen.py`) |
+| Margen mínimo para ofrecer | el precio de mercado le gana al costo del proveedor por lo menos **50.000 COP**, sea cual sea el costo —es `PROVEEDORES_TECNOLOGIA_GANANCIA_MINIMA` de la API—; por debajo, la configuración no se propone y, si ya se vendía, deja de ofrecerse y no se le crea carpeta de modelo (regla 18, `GANANCIA_MINIMA_TECNOLOGIA` en `scripts/margen.py`) |
 
 Estas ya están decididas por el negocio y no se vuelven a preguntar en cada
 lista:
@@ -212,14 +212,17 @@ lista:
     decidió que nunca entrarían.
 
 18. **Lo que no le gana al costo la ganancia mínima no se ofrece**:
-    `mercado − costo ≥ min(10 % del costo, 400.000)` (decisión del negocio,
-    15/10/2026; el umbral subió del 5 % al 10 % el 24/10/2026, y el tope de
-    400.000 entró el 27/10/2026). El margen es el precio de mercado que asignó
-    el paso 4 sobre el costo del proveedor. El tope es la ganancia máxima que
-    la API sugiere (`PROVEEDORES_TECNOLOGIA_GANANCIA_MAXIMA`), y la API exige
-    la misma regla al aprobar: un equipo de cinco millones no tiene que ganarle
-    500.000 al costo, le bastan 400.000. Si el tope cambia allá, cambia en
-    `TOPE_GANANCIA_TECNOLOGIA`. La configuración que no llega —incluida la que
+    `mercado − costo ≥ 50.000` (decisión del negocio del 29/10/2026, ADR-0101:
+    la ganancia mínima es fija, en pesos; hasta ese día era el 10 % del costo
+    con tope de 400.000, que a un equipo de 1.900.000 le pedía 190.000). El
+    margen es el precio de mercado que asignó el paso 4 sobre el costo del
+    proveedor. La API exige la misma mínima al aprobar
+    (`PROVEEDORES_TECNOLOGIA_GANANCIA_MINIMA`) y, además, un techo de 400.000
+    sobre el contado (`PROVEEDORES_TECNOLOGIA_GANANCIA_MAXIMA`), que aquí no
+    descarta nada: el contado lo baja quien aprueba. Si la mínima cambia allá,
+    cambia en `GANANCIA_MINIMA_TECNOLOGIA`. En lo barato la regla es más
+    estricta que el 10 %: un audífono de 100.000 necesita llegar a 150.000 en
+    el mercado. La configuración que no llega —incluida la que
     queda en 0 % o por debajo del costo— no se propone si es nueva y deja de ofrecerse si ya se
     vendía. Si todas las configuraciones de un modelo quedan
     por debajo, el modelo entero deja de ofrecerse.
@@ -263,7 +266,7 @@ lista:
 Si el negocio cambia de opinión, se ajustan `CATEGORIAS_INCLUIDAS`,
 `CONDICIONES_PUBLICABLES`, `PRECIO_MINIMO_CELULAR_COP`, `DESCARTAR_SIN_PRECIO`,
 `DESCARTAR_COMPUTADOR_SIN_REFERENCIA`, `MARCAS_EXCLUIDAS`, `LINEAS_EXCLUIDAS` o `DATOS_DEL_PROVEEDOR` al inicio
-de `scripts/parsear_lista.py`, y `MARGEN_MINIMO` y `TOPE_GANANCIA_TECNOLOGIA` en `scripts/margen.py`.
+de `scripts/parsear_lista.py`, y `GANANCIA_MINIMA_TECNOLOGIA` en `scripts/margen.py`.
 
 ## Dónde está corriendo esta skill
 

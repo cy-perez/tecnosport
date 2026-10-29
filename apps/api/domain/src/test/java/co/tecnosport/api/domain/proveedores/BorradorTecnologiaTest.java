@@ -19,7 +19,8 @@ class BorradorTecnologiaTest {
   private static final UUID PROVEEDOR = UUID.fromString("018f0000-0000-7000-8000-000000000001");
   private static final Instant LUNES = Instant.parse("2026-10-05T05:00:00Z");
   private static final Instant JUEVES = Instant.parse("2026-10-08T05:00:00Z");
-  private static final MargenMinimo MARGEN = MargenMinimo.deTecnologia(Dinero.deCop(400_000));
+  private static final MargenMinimo MARGEN =
+      MargenMinimo.deTecnologia(Dinero.deCop(50_000), Dinero.deCop(400_000));
 
   private static ModeloDeLista a17(List<String> paleta) {
     return new ModeloDeLista(
@@ -125,37 +126,29 @@ class BorradorTecnologiaTest {
   }
 
   /**
-   * Revisión adversarial del 27 de octubre de 2026: bastaba superar el costo. Ahora hace falta el
-   * margen mínimo de tecnología —el 10 % sobre el costo, con el tope de ganancia—, medido sobre el
-   * precio de contado.
+   * Revisión adversarial del 27 de octubre de 2026: bastaba superar el costo. Desde el 29 la
+   * ganancia sobre el contado va de 50.000 a 400.000 (ADR-0101).
    */
   @Test
-  void noSeApruebaConMenosDelMargenMinimo() {
+  void seApruebaConUnaGananciaEntreLaMinimaYLaMaxima() {
     BorradorTecnologia borrador = conCuatroFotos(nuevo());
-    // Costo 675.000: 740.000 le gana un 9,6 %.
+    // Costo 675.000: 724.999 le gana 49.999.
     borrador.elegir(
         List.of(
-            new BorradorTecnologia.Eleccion("a17-256", List.of("Negro"), Dinero.deCop(740_000))));
+            new BorradorTecnologia.Eleccion("a17-256", List.of("Negro"), Dinero.deCop(724_999))));
     assertThrows(
         PrecioSinMargenMinimoException.class, () -> borrador.aprobar(UUID.randomUUID(), MARGEN));
 
+    // 1.075.001 le gana 400.001.
     borrador.elegir(
         List.of(
-            new BorradorTecnologia.Eleccion("a17-256", List.of("Negro"), Dinero.deCop(742_500))));
-    borrador.aprobar(UUID.randomUUID(), MARGEN);
-    assertEquals(EstadoBorrador.APROBADO, borrador.estado());
-  }
+            new BorradorTecnologia.Eleccion("a17-256", List.of("Negro"), Dinero.deCop(1_075_001))));
+    assertThrows(PrecioSobreGananciaMaximaException.class, () -> borrador.exigirAprobable(MARGEN));
 
-  /** El margen que recibe es el que manda: con un tope de 50.000, el 10 % de 675.000 no aplica. */
-  @Test
-  void elTopeDeGananciaBajaElMinimoQueSeExige() {
-    BorradorTecnologia borrador = conCuatroFotos(nuevo());
     borrador.elegir(
         List.of(
             new BorradorTecnologia.Eleccion("a17-256", List.of("Negro"), Dinero.deCop(725_000))));
-    assertThrows(PrecioSinMargenMinimoException.class, () -> borrador.exigirAprobable(MARGEN));
-
-    borrador.aprobar(UUID.randomUUID(), MargenMinimo.deTecnologia(Dinero.deCop(50_000)));
+    borrador.aprobar(UUID.randomUUID(), MARGEN);
     assertEquals(EstadoBorrador.APROBADO, borrador.estado());
   }
 

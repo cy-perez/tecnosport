@@ -95,7 +95,8 @@ Decisiones del negocio del 08/10/2026:
   la importación lo informa (`coloresSinVariante`) y se añade desde el panel.
 - **La lista no mueve el precio de venta.** Avisa cuando el costo nuevo alcanza
   el precio (`sinMargen`), y alguien decide. Aprobar exige un precio que supere
-  el costo.
+  el costo; desde el 29 de octubre de 2026, una ganancia entre 50.000 y 400.000
+  (`adr/0101`).
 - Un modelo rechazado no vuelve a proponerse con las mismas configuraciones; una
   configuración nueva del mismo modelo sí.
 - El uso de las fotos y fichas de las marcas y de Icecat queda como punto para

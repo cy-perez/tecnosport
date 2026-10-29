@@ -343,6 +343,10 @@ tecnosport:
       # pasarse de costo + esto. Decision del negocio del 26 de octubre de 2026 (ADR-0095,
       # decision 8). Ajusta la sugerencia; quien revisa puede poner otro precio.
       ganancia-maxima: ${PROVEEDORES_TECNOLOGIA_GANANCIA_MAXIMA:400000}
+      # Lo menos que el precio de contado le gana al costo para aprobar y seguir vendiendo, en
+      # pesos; la maxima es ademas el techo al aprobar. Decision del negocio del 29 de octubre de
+      # 2026 (ADR-0101): reemplaza el 10 % del costo.
+      ganancia-minima: ${PROVEEDORES_TECNOLOGIA_GANANCIA_MINIMA:50000}
     cola-de-tareas:
       # La cola de ingestas en Cloud Tasks (ADR-0080): cada tramo de un lote es una tarea que llama
       # al endpoint interno. VACIA, la ingesta corre en un hilo con la cola en memoria, que es lo de

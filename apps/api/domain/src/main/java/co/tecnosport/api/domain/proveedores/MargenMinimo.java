@@ -2,7 +2,6 @@ package co.tecnosport.api.domain.proveedores;
 
 import co.tecnosport.api.domain.compartido.Dinero;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.Objects;
 
 /**
@@ -12,24 +11,25 @@ import java.util.Objects;
  *
  * <pre>
  * ganancia = contado − costo
- * alcanza  ⇔ ganancia ≥ gananciaMinima(costo)
+ * alcanza  ⇔ ganancia ≥ gananciaMinima
  * </pre>
  *
- * <h2>Depende de la línea (decisión del negocio del 27 de octubre de 2026)</h2>
+ * <h2>Depende de la línea</h2>
  *
  * <ul>
- *   <li><b>Tecnología</b> ({@link #deTecnologia}): {@code min(10 % del costo, tope)}. El 10 % es la
+ *   <li><b>Tecnología</b> ({@link #deTecnologia}): una ganancia entre {@code
+ *       PROVEEDORES_TECNOLOGIA_GANANCIA_MINIMA} (50.000) y {@code
+ *       PROVEEDORES_TECNOLOGIA_GANANCIA_MAXIMA} (400.000), en pesos y sin porcentaje. Decisión del
+ *       negocio del 29 de octubre de 2026 (ADR-0101): el 10 % del costo que se exigía desde el 27
+ *       pedía 190.000 a un equipo de 1.900.000 que se quería vender con 50.000. El mínimo es la
  *       regla 18 de la skill de listas —{@code se_ofrece} en {@code
- *       .claude/skills/listas-de-proveedor/scripts/margen.py}—, y el tope es la ganancia máxima de
- *       {@link SugerenciaDePrecioTecnologia} ({@code PROVEEDORES_TECNOLOGIA_GANANCIA_MAXIMA}): un
- *       equipo de cinco millones no puede exigir quinientos mil de ganancia mínima cuando la
- *       sugerencia nunca le propone más de la máxima. <b>Si la regla cambia allá, cambia aquí</b>:
- *       la skill decide qué se propone, y esto, qué se aprueba.
+ *       .claude/skills/listas-de-proveedor/scripts/margen.py}—; <b>si cambia allá, cambia aquí</b>:
+ *       la skill decide qué se propone, y esto, qué se aprueba. El máximo es el tope de la
+ *       sugerencia ({@link SugerenciaDePrecioTecnologia}) y solo lo exige la aprobación: un costo
+ *       que baja no agota nada por ganar de más.
  *   <li><b>Ropa, calzado y bolsos</b> ({@link #dePrendas}): la ganancia mínima de su sugerencia,
- *       {@link TopesDeGanancia#minima()} ({@code PROVEEDORES_GANANCIA_MINIMA}), en pesos y sin
- *       porcentaje. Del 27 de octubre en la mañana a esa tarde se les exigió también el 10 %, que
- *       sobre una prenda barata pide menos que la ganancia mínima y sobre una cara, más de lo que
- *       la sugerencia propone.
+ *       {@link TopesDeGanancia#minima()} ({@code PROVEEDORES_GANANCIA_MINIMA}), en pesos. Sin
+ *       máximo al aprobar.
  * </ul>
  *
  * <p>El precio que se mide es el <b>de contado</b> (ADR-0095): lo que el negocio recibe neto. El
@@ -41,26 +41,30 @@ import java.util.Objects;
  */
 public final class MargenMinimo {
 
-  /** El 10 % de la regla 18 de la skill de listas, solo para tecnología. */
-  public static final BigDecimal PORCENTAJE_DE_TECNOLOGIA = new BigDecimal("0.10");
+  private final Dinero minima;
 
-  /** Nulo en las prendas: su mínimo es fijo. */
-  private final BigDecimal porcentajeDelCosto;
+  /** Nula en las prendas: no tienen techo al aprobar. */
+  private final Dinero maxima;
 
-  /** En tecnología, el tope del porcentaje; en prendas, el mínimo entero. */
-  private final Dinero tope;
-
-  private MargenMinimo(BigDecimal porcentajeDelCosto, Dinero tope) {
-    this.porcentajeDelCosto = porcentajeDelCosto;
-    this.tope = tope;
+  private MargenMinimo(Dinero minima, Dinero maxima) {
+    this.minima = minima;
+    this.maxima = maxima;
   }
 
   /**
-   * @param topeDeGanancia la ganancia máxima de {@link SugerenciaDePrecioTecnologia}
+   * @param gananciaMinima lo menos que el contado le gana al costo ({@code
+   *     PROVEEDORES_TECNOLOGIA_GANANCIA_MINIMA})
+   * @param gananciaMaxima lo más que puede ganarle al aprobar: la de {@link
+   *     SugerenciaDePrecioTecnologia}
    */
-  public static MargenMinimo deTecnologia(Dinero topeDeGanancia) {
-    Objects.requireNonNull(topeDeGanancia, "El tope de ganancia de tecnología no puede ser nulo.");
-    return new MargenMinimo(PORCENTAJE_DE_TECNOLOGIA, topeDeGanancia);
+  public static MargenMinimo deTecnologia(Dinero gananciaMinima, Dinero gananciaMaxima) {
+    Objects.requireNonNull(gananciaMinima, "La ganancia mínima de tecnología no puede ser nula.");
+    Objects.requireNonNull(gananciaMaxima, "La ganancia máxima de tecnología no puede ser nula.");
+    if (gananciaMinima.valor().compareTo(gananciaMaxima.valor()) > 0) {
+      throw new IllegalArgumentException(
+          "La ganancia mínima de tecnología no puede pasar de la máxima.");
+    }
+    return new MargenMinimo(gananciaMinima, gananciaMaxima);
   }
 
   /**
@@ -68,19 +72,13 @@ public final class MargenMinimo {
    */
   public static MargenMinimo dePrendas(Dinero gananciaMinima) {
     Objects.requireNonNull(gananciaMinima, "La ganancia mínima de las prendas no puede ser nula.");
-    return new MargenMinimo(null, gananciaMinima);
+    return new MargenMinimo(gananciaMinima, null);
   }
 
-  /**
-   * Lo menos que hay que ganarle a ese costo, sin redondear: el 10 % de un costo impar tiene
-   * centavos, y redondearlo hacia abajo dejaría pasar un peso de menos.
-   */
+  /** Lo menos que hay que ganarle a ese costo, en pesos: no depende del costo. */
   public BigDecimal gananciaMinima(Dinero costo) {
     Objects.requireNonNull(costo, "El costo no puede ser nulo.");
-    if (porcentajeDelCosto == null) {
-      return tope.valor();
-    }
-    return costo.valor().multiply(porcentajeDelCosto).min(tope.valor());
+    return minima.valor();
   }
 
   /**
@@ -89,20 +87,25 @@ public final class MargenMinimo {
   public boolean alcanza(Dinero precioContado, Dinero costo) {
     Objects.requireNonNull(precioContado, "El precio de contado no puede ser nulo.");
     // Sin dividir: el costo puede ser cero en un dato mal escrito.
-    BigDecimal ganancia = precioContado.valor().subtract(Objects.requireNonNull(costo).valor());
+    BigDecimal ganancia = ganancia(precioContado, costo);
     return ganancia.compareTo(gananciaMinima(costo)) >= 0;
   }
 
   /**
-   * Lo mismo, pero lanza: lo usan las aprobaciones.
+   * Lo mismo, pero lanza, y en tecnología exige además el techo: lo usan las aprobaciones.
    *
    * @param que el producto o la configuración, para que quien aprueba sepa cuál
    */
   public void exigir(Dinero precioContado, Dinero costo, String que) {
     if (!alcanza(precioContado, costo)) {
-      // Hacia arriba: con un mínimo de 109.999,5 el contado entero tiene que ganar 110.000.
-      Dinero minima = Dinero.deCop(gananciaMinima(costo).setScale(0, RoundingMode.CEILING));
       throw new PrecioSinMargenMinimoException(que, precioContado, costo, minima);
     }
+    if (maxima != null && ganancia(precioContado, costo).compareTo(maxima.valor()) > 0) {
+      throw new PrecioSobreGananciaMaximaException(que, precioContado, costo, maxima);
+    }
+  }
+
+  private static BigDecimal ganancia(Dinero precioContado, Dinero costo) {
+    return precioContado.valor().subtract(Objects.requireNonNull(costo).valor());
   }
 }

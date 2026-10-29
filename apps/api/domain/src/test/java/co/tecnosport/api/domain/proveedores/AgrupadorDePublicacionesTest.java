@@ -139,6 +139,70 @@ class AgrupadorDePublicacionesTest {
     assertEquals(List.of(foto3.id(), foto4.id()), resultado.publicaciones().get(1).medios());
   }
 
+  /**
+   * Imperio Wicho, 26 de octubre de 2026: el Onitsuka con su álbum delante, y catorce minutos
+   * después otro álbum que cierra «Colección Caballero», sin precio. Ese álbum es de otro tenis.
+   */
+  @Test
+  void conLasFotosPrimeroElAlbumQueCierraUnTextoSinPrecioNoEsDelPrecioAnterior() {
+    MensajeProveedor foto1 = foto(0, null);
+    MensajeProveedor foto2 = foto(0, null);
+    MensajeProveedor onitsuka = texto(10, "*IMPORTADO CABALLERO EVA* *$65,000*");
+    MensajeProveedor otra1 = fotoOmitida(14 * 60);
+    MensajeProveedor otra2 = fotoOmitida(14 * 60);
+    MensajeProveedor cierre = texto(14 * 60, "Colección Caballero 👨🏻🔥");
+
+    AgrupadorDePublicaciones.Resultado resultado =
+        new AgrupadorDePublicaciones(QUINCE_MINUTOS)
+            .agrupar(List.of(foto1, foto2, onitsuka, otra1, otra2, cierre), FOTOS_PRIMERO);
+
+    PublicacionProveedor publicacion = resultado.publicaciones().get(0);
+    assertEquals(List.of(foto1.id(), foto2.id()), publicacion.medios());
+    assertEquals(List.of(), publicacion.textosAdicionales());
+    assertEquals(3, resultado.sueltos());
+  }
+
+  /**
+   * Imperio Wicho, 27 de octubre de 2026: el segundo texto igual del mismo minuto llega como un
+   * separador que no es de nadie (OTRO). El álbum que cierra no salta al tenis de seis minutos
+   * después: se queda con la sandalia de al lado.
+   */
+  @Test
+  void elSeparadorDelTextoRepetidoNoDejaSaltarElAlbumAlSiguiente() {
+    MensajeProveedor sandalia1 = foto(0, null);
+    MensajeProveedor sandalia = texto(0, "Sandalia Correa Deportiva niña Detal 💰*$20,000*");
+    MensajeProveedor sandalia2 = foto(0, null);
+    MensajeProveedor separador = audio(0);
+    MensajeProveedor delTenis = foto(6 * 60, null);
+    MensajeProveedor tenis = texto(6 * 60, "Importado AAA Dama y Cab 💰*$115,000*");
+
+    AgrupadorDePublicaciones.Resultado resultado =
+        new AgrupadorDePublicaciones(QUINCE_MINUTOS)
+            .agrupar(
+                List.of(sandalia1, sandalia, sandalia2, separador, delTenis, tenis), FOTOS_PRIMERO);
+
+    assertEquals(
+        List.of(sandalia1.id(), sandalia2.id()), resultado.publicaciones().get(0).medios());
+    assertEquals(List.of(delTenis.id()), resultado.publicaciones().get(1).medios());
+  }
+
+  /** Un precio sin álbum delante sí se queda con las fotos y la nota que le siguen. */
+  @Test
+  void sinAlbumDelanteLasFotosYLaNotaQueSiguenSonDelPrecio() {
+    MensajeProveedor bolso = texto(0, "Bolso 💰 53.000");
+    MensajeProveedor foto1 = foto(20, null);
+    MensajeProveedor nota = texto(40, "Este viene con la tira en cuero");
+
+    PublicacionProveedor publicacion =
+        new AgrupadorDePublicaciones(QUINCE_MINUTOS)
+            .agrupar(List.of(bolso, foto1, nota), FOTOS_PRIMERO)
+            .publicaciones()
+            .get(0);
+
+    assertEquals(List.of(foto1.id()), publicacion.medios());
+    assertEquals(List.of(nota.id()), publicacion.textosAdicionales());
+  }
+
   /** Entre dos precios cercanos, la foto es del más cercano. */
   @Test
   void entreDosPreciosLaFotoEsDelMasCercano() {

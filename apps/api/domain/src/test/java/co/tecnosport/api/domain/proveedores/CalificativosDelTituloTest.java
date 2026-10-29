@@ -134,13 +134,16 @@ class CalificativosDelTituloTest {
         CalificativosDelTitulo.sinLosQueElTextoNoEscribe("Camiseta oversize", "OVERSIZED $55.000"));
   }
 
-  /** El título que ya nombra la marca sin «estilo» no la repite. */
+  /**
+   * El título que ya nombra la marca sin «estilo» no la repite, y desde el 29 de octubre de 2026 le
+   * pone el «estilo» delante (ADR-0101).
+   */
   @Test
   void unaMarcaQueElTituloYaNombraNoSeRepite() {
     ProductoExtraido contrastado =
         jean("Jean Levi's para caballero importado", List.of("Levi's")).contrastadoCon(JEANS_LEVIS);
 
-    assertEquals("Jean Levi's para caballero importado", contrastado.titulo());
+    assertEquals("Jean estilo Levi's para caballero importado", contrastado.titulo());
   }
 
   /** Una marca corta se busca como palabra entera: «DG» no está en «adgj». */

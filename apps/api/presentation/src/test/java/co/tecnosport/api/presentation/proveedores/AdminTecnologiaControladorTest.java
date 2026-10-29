@@ -696,7 +696,8 @@ class AdminTecnologiaControladorTest {
             new BorradorTecnologia.Eleccion("a17-1-sim", List.of("Negro"), Dinero.deCop(849_900))));
     borrador.aprobar(
         UUID.randomUUID(),
-        co.tecnosport.api.domain.proveedores.MargenMinimo.deTecnologia(Dinero.deCop(400_000)));
+        co.tecnosport.api.domain.proveedores.MargenMinimo.deTecnologia(
+            Dinero.deCop(50_000), Dinero.deCop(400_000)));
 
     mockMvc
         .perform(delete("/api/v1/admin/borradores-tecnologia/{id}", id))
@@ -1066,7 +1067,8 @@ class AdminTecnologiaControladorTest {
           listas,
           reloj,
           2,
-          co.tecnosport.api.domain.proveedores.MargenMinimo.deTecnologia(Dinero.deCop(400_000)));
+          co.tecnosport.api.domain.proveedores.MargenMinimo.deTecnologia(
+              Dinero.deCop(50_000), Dinero.deCop(400_000)));
     }
 
     @Bean
@@ -1099,7 +1101,8 @@ class AdminTecnologiaControladorTest {
             }
           },
           2,
-          co.tecnosport.api.domain.proveedores.MargenMinimo.deTecnologia(Dinero.deCop(400_000)));
+          co.tecnosport.api.domain.proveedores.MargenMinimo.deTecnologia(
+              Dinero.deCop(50_000), Dinero.deCop(400_000)));
     }
 
     @Bean

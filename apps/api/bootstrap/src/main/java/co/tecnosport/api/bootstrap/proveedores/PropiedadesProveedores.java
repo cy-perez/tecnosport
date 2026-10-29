@@ -2,6 +2,7 @@ package co.tecnosport.api.bootstrap.proveedores;
 
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.compartido.Dinero;
+import co.tecnosport.api.domain.proveedores.MargenMinimo;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.domain.proveedores.SugerenciaDePrecioTecnologia;
 import co.tecnosport.api.domain.proveedores.TopesDeGanancia;
@@ -44,10 +45,17 @@ public record PropiedadesProveedores(
    *     oculta. Distinta de la de los mensajes porque las listas llegan cada varios días
    * @param gananciaMaxima lo más que el precio de contado sugerido le gana al costo, en pesos
    *     enteros: 400.000 (decisión del negocio del 26 de octubre de 2026, ADR-0095 decisión 8). Por
-   *     lo menos mil, porque la sugerencia con tope se baja a la unidad de mil
+   *     lo menos mil, porque la sugerencia con tope se baja a la unidad de mil. Es también el techo
+   *     de la ganancia al aprobar (ADR-0101)
+   * @param gananciaMinima lo menos que el contado le gana al costo para aprobar y seguir vendiendo:
+   *     50.000 (decisión del negocio del 29 de octubre de 2026, ADR-0101). Entre 1 y mil menos que
+   *     la máxima
    */
   public record Tecnologia(
-      int existenciaPorVariante, Duration ventanaDisponibilidad, long gananciaMaxima) {
+      int existenciaPorVariante,
+      Duration ventanaDisponibilidad,
+      long gananciaMaxima,
+      long gananciaMinima) {
     public Tecnologia {
       if (existenciaPorVariante < 1) {
         throw new IllegalStateException(
@@ -67,10 +75,23 @@ public record PropiedadesProveedores(
                 + " es de por lo menos 1000 pesos: "
                 + gananciaMaxima);
       }
+      // Mil por debajo de la máxima, por lo menos: la sugerencia con tope se baja a la unidad de
+      // mil, y con una mínima más cerca la aprobación rechazaría el precio que el sitio sugiere.
+      if (gananciaMinima < 1 || gananciaMinima > gananciaMaxima - 1000) {
+        throw new IllegalStateException(
+            "tecnosport.proveedores.tecnologia.ganancia-minima (PROVEEDORES_TECNOLOGIA_GANANCIA_MINIMA)"
+                + " va de 1 peso a mil menos que la ganancia máxima: "
+                + gananciaMinima);
+      }
     }
 
     public SugerenciaDePrecioTecnologia aSugerencia() {
       return new SugerenciaDePrecioTecnologia(Dinero.deCop(gananciaMaxima));
+    }
+
+    /** La ganancia entre la mínima y la máxima que se exige a tecnología (ADR-0101). */
+    public MargenMinimo aMargen() {
+      return MargenMinimo.deTecnologia(Dinero.deCop(gananciaMinima), Dinero.deCop(gananciaMaxima));
     }
   }
 

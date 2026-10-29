@@ -30,7 +30,6 @@ import co.tecnosport.api.application.proveedores.tecnologia.RepositorioListasDeT
 import co.tecnosport.api.application.proveedores.tecnologia.RepositorioVariantesDeProveedor;
 import co.tecnosport.api.application.proveedores.tecnologia.SolicitarSubidaDeFotoDeBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.VerBorradorTecnologia;
-import co.tecnosport.api.domain.proveedores.MargenMinimo;
 import co.tecnosport.api.domain.proveedores.SugerenciaDePrecioTecnologia;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -56,8 +55,7 @@ public class ConfiguracionListasDeTecnologia {
       RepositorioInventario inventario,
       RepositorioListasDeTecnologia listas,
       Reloj reloj,
-      PropiedadesProveedores propiedades,
-      SugerenciaDePrecioTecnologia sugerencia) {
+      PropiedadesProveedores propiedades) {
     return new ImportarListaDeTecnologia(
         proveedores,
         productosDeProveedor,
@@ -68,7 +66,7 @@ public class ConfiguracionListasDeTecnologia {
         listas,
         reloj,
         propiedades.tecnologia().existenciaPorVariante(),
-        margenDeTecnologia(sugerencia));
+        propiedades.tecnologia().aMargen());
   }
 
   @Bean
@@ -85,8 +83,7 @@ public class ConfiguracionListasDeTecnologia {
       AlmacenDeArchivosDeProveedor almacenPrivado,
       AlmacenDeImagenes almacenDeImagenes,
       EnTransaccionPropia enTransaccionPropia,
-      PropiedadesProveedores propiedades,
-      SugerenciaDePrecioTecnologia sugerencia) {
+      PropiedadesProveedores propiedades) {
     return new AprobarBorradorTecnologia(
         borradores,
         variantes,
@@ -101,16 +98,7 @@ public class ConfiguracionListasDeTecnologia {
         almacenDeImagenes,
         enTransaccionPropia,
         propiedades.tecnologia().existenciaPorVariante(),
-        margenDeTecnologia(sugerencia));
-  }
-
-  /**
-   * El 10 % de la regla 18 con el tope de la ganancia máxima ({@code
-   * PROVEEDORES_TECNOLOGIA_GANANCIA_MAXIMA}): el mínimo nunca pide más de lo que la sugerencia
-   * propone.
-   */
-  private static MargenMinimo margenDeTecnologia(SugerenciaDePrecioTecnologia sugerencia) {
-    return MargenMinimo.deTecnologia(sugerencia.gananciaMaxima());
+        propiedades.tecnologia().aMargen());
   }
 
   @Bean

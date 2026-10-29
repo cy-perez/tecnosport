@@ -5,6 +5,7 @@ import co.tecnosport.api.application.proveedores.MensajeCrudo;
 import co.tecnosport.api.domain.compartido.ZonaDelNegocio;
 import co.tecnosport.api.domain.proveedores.FalloDeLote;
 import co.tecnosport.api.domain.proveedores.MotivoDeFalloDeLote;
+import co.tecnosport.api.domain.proveedores.TipoMensaje;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -64,12 +65,30 @@ public final class AnalizadorDeExportacionWhatsApp {
       Pattern.compile(
           "^<(?:adjunto|attached): (\\S+?\\.([A-Za-z0-9]{2,5}))>$", Pattern.CASE_INSENSITIVE);
 
+  /**
+   * Lo omitido que puede ser una foto: «Multimedia omitido» no dice qué era, y se cuenta como foto
+   * porque marca dónde empieza y termina un álbum.
+   */
   private static final Pattern OMITIDO =
       Pattern.compile(
           "^<?(?:Multimedia omitido|Media omitted|imagen omitida|image omitted|video omitido"
-              + "|video omitted|audio omitido|audio omitted|sticker omitido|sticker omitted"
-              + "|documento omitido|document omitted|GIF omitido|GIF omitted)>?$",
+              + "|video omitted|audio omitido|audio omitted|documento omitido|document omitted"
+              + "|GIF omitido|GIF omitted)>?$",
           Pattern.CASE_INSENSITIVE);
+
+  /**
+   * El sticker omitido no es una foto del producto. Cuenta como omitido para el número dentro del
+   * minuto —su id no cambia—, pero no es medio de nadie.
+   */
+  private static final Pattern STICKER_OMITIDO =
+      Pattern.compile("^<?(?:sticker omitido|sticker omitted)>?$", Pattern.CASE_INSENSITIVE);
+
+  /**
+   * El sticker se exporta como {@code STK-…webp}, con extensión de imagen, y no es una foto del
+   * producto: Imperio Wicho manda uno detrás de cada saludo (27 de octubre de 2026).
+   */
+  private static final Pattern STICKER =
+      Pattern.compile("^(?:STK-.*|.*-STICKER-.*)", Pattern.CASE_INSENSITIVE);
 
   private static final Map<String, String> TIPOS_DE_IMAGEN =
       Map.of(
@@ -208,6 +227,9 @@ public final class AnalizadorDeExportacionWhatsApp {
     if (adjunto.matches()) {
       return conAdjunto(bloque, adjunto.group(1), adjunto.group(2), resto);
     }
+    if (STICKER_OMITIDO.matcher(primera).matches()) {
+      return MensajeCrudo.otro(bloque.enviadoEn(), bloque.remitente(), vacioEsNulo(resto), true);
+    }
     if (OMITIDO.matcher(primera).matches()) {
       return MensajeCrudo.imagenOmitida(bloque.enviadoEn(), bloque.remitente(), vacioEsNulo(resto));
     }
@@ -217,6 +239,18 @@ public final class AnalizadorDeExportacionWhatsApp {
 
   private MensajeCrudo conAdjunto(Bloque bloque, String nombre, String extension, String pie) {
     String contentType = TIPOS_DE_IMAGEN.get(extension.toLowerCase(Locale.ROOT));
+    if (contentType != null && STICKER.matcher(nombre).matches()) {
+      // Con su nombre de archivo, como antes, para que su id no cambie al volver a subir el chat.
+      return new MensajeCrudo(
+          bloque.enviadoEn(),
+          bloque.remitente(),
+          TipoMensaje.OTRO,
+          null,
+          vacioEsNulo(pie),
+          new MensajeCrudo.Adjunto(nombre, contentType, new byte[0]),
+          false,
+          null);
+    }
     if (contentType == null) {
       // Un audio, un documento, un video: se registra que hubo algo y no se guarda.
       return MensajeCrudo.otro(bloque.enviadoEn(), bloque.remitente(), vacioEsNulo(pie), true);

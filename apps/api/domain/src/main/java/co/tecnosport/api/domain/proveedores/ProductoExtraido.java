@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -301,6 +302,9 @@ public record ProductoExtraido(
           replica
               ? PatronDeReplica.tituloDeReplica(conEstiloDeSusMarcas(sinAjenos, texto))
               : sinAjenos;
+    }
+    if (tipoContrastado != TipoProductoProveedor.TENIS) {
+      tituloContrastado = conEstiloAntesDeLaMarca(tituloContrastado, marcas);
     }
     return new ProductoExtraido(
         esProducto,
@@ -735,6 +739,83 @@ public record ProductoExtraido(
     return sinImportado + " " + estilo;
   }
 
+  /**
+   * Todo lo que llega de un proveedor es de marca Genérica, réplica o no: la marca que el título
+   * nombra va detrás de «estilo» (ADR-0101, 29 de octubre de 2026). «Polo bordado Tommy» es «Polo
+   * bordado estilo Tommy», y «Bermuda Boss», «Bermuda estilo Boss». Se busca la marca entera y, si
+   * no está, cualquiera de sus palabras —«Boss» de «Hugo Boss», «alo» de «Alo Yoga»—, nunca en la
+   * primera palabra del título, que es la prenda: «Polo» de «Polo Ralph Lauren» no es la marca en
+   * «Polo bordado».
+   */
+  static String conEstiloAntesDeLaMarca(String titulo, List<String> marcas) {
+    if (titulo == null || marcas == null || marcas.isEmpty()) {
+      return titulo;
+    }
+    List<String> piezas = new ArrayList<>(Arrays.asList(titulo.strip().split("\\s+")));
+    for (String marca : marcas) {
+      List<String> suyas = palabras(marca);
+      // Las palabras del título, y en qué pieza está cada una: «Dolce&Gabbana» es una pieza con
+      // dos palabras, y el « - » de «Puma - BMW» no tiene ninguna.
+      List<String> normalizadas = new ArrayList<>();
+      List<Integer> enPieza = new ArrayList<>();
+      for (int k = 0; k < piezas.size(); k++) {
+        for (String palabra : palabras(piezas.get(k))) {
+          normalizadas.add(palabra);
+          enPieza.add(k);
+        }
+      }
+      int donde = desdeLaSegunda(normalizadas, suyas);
+      for (int k = 0; donde < 0 && k < suyas.size(); k++) {
+        String suya = suyas.get(k);
+        if (suya.length() >= 3 && !PALABRAS_QUE_NO_SON_MARCA.contains(suya)) {
+          donde = desdeLaSegunda(normalizadas, List.of(suya));
+        }
+      }
+      if (donde <= 0 || normalizadas.subList(0, donde).contains("estilo")) {
+        continue;
+      }
+      piezas.add(enPieza.get(donde), "estilo");
+    }
+    return String.join(" ", piezas);
+  }
+
+  /**
+   * Las palabras de una marca que también nombran una prenda o un tipo de tienda: «Polo» de «Polo
+   * Ralph Lauren» o de «U.S. Polo Assn.», «Jeans» de «Pepe Jeans». Solas no son la marca.
+   */
+  private static final Set<String> PALABRAS_QUE_NO_SON_MARCA =
+      Set.of(
+          "polo",
+          "jean",
+          "jeans",
+          "sport",
+          "sports",
+          "club",
+          "assn",
+          "camiseta",
+          "camisa",
+          "short",
+          "shorts",
+          "denim",
+          "collection",
+          "home",
+          "store",
+          "original",
+          "originals");
+
+  /** Dónde empieza esa secuencia de palabras en el título, sin contar la primera; -1 si no está. */
+  private static int desdeLaSegunda(List<String> titulo, List<String> buscada) {
+    if (buscada.isEmpty()) {
+      return -1;
+    }
+    for (int i = 1; i + buscada.size() <= titulo.size(); i++) {
+      if (titulo.subList(i, i + buscada.size()).equals(buscada)) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
   private static String tituloConMarca(String titulo, String marca) {
     if (titulo == null) {
       return null;
@@ -830,6 +911,20 @@ public record ProductoExtraido(
 
   public Optional<TextosDelSet> setOpcional() {
     return Optional.ofNullable(set);
+  }
+
+  /**
+   * Si el anuncio lo ofrece con una blusa o una gorra, a su precio o en un combo: «Gorra $35.000».
+   * Lo que arma un set ({@link ArmadorDeSets}); otra prenda no.
+   */
+  public boolean ofreceAcompanante() {
+    return preciosAdicionales.stream()
+        .anyMatch(
+            p ->
+                (p.clase() == ClaseDePrecioAdicional.ACOMPANANTE
+                        || p.clase() == ClaseDePrecioAdicional.COMBO)
+                    && (p.prenda() == PrendaAcompanante.BLUSA
+                        || p.prenda() == PrendaAcompanante.GORRA));
   }
 
   public Optional<String> tituloOpcional() {

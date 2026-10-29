@@ -87,7 +87,9 @@ Aprobada por el negocio el 26 de octubre de 2026:
    la unidad de mil para no pasarse de él. El precio publicado sugerido
    sale de ese con la fórmula de la decisión 1. Tecnología no tiene ganancia mínima: el piso lo
    pone la regla 18 de `listas-de-proveedor`, que ya excluye lo que queda por debajo del costo o
-   con menos de un 5 % de margen. Una configuración sin precio de mercado sigue sin sugerencia,
+   con menos de un 5 % de margen. **Corregido por `adr/0101`**: desde el 29 de octubre de 2026 la
+   aprobación exige una ganancia entre 50.000 y 400.000 sobre el contado, y la regla 18 descarta
+   lo que no le gana 50.000 al costo. Una configuración sin precio de mercado sigue sin sugerencia,
    y quien revisa fija el precio de contado. Como la ropa, la sugerencia no obliga.
 
 9. **El publicado se sube siempre a la unidad de mil, también en lo barato** (27/10/2026). En

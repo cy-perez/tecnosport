@@ -4,9 +4,11 @@ import co.tecnosport.api.domain.compartido.Dinero;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -39,9 +41,37 @@ import java.util.regex.Pattern;
  */
 public final class ArmadorDeSets {
 
-  /** Lo que una gorra convierte en set: la camiseta y el polo, que conservan su tipo. */
+  /**
+   * Lo que una gorra convierte en set, y conserva su tipo: la camiseta y el polo, y desde el 29 de
+   * octubre de 2026 la pantaloneta y la bermuda —«Pantaloneta $39.990 / Gorra 35.000 / Dúo $69.900»
+   * quedaba como la pantaloneta sola (ADR-0101)—.
+   */
   private static final Set<TipoProductoProveedor> CON_GORRA_SON_SET =
-      EnumSet.of(TipoProductoProveedor.CAMISETA, TipoProductoProveedor.POLO);
+      EnumSet.of(
+          TipoProductoProveedor.CAMISETA,
+          TipoProductoProveedor.POLO,
+          TipoProductoProveedor.SHORT,
+          TipoProductoProveedor.BERMUDA);
+
+  /** Los conjuntos que el anuncio ya vende como uno: no esperan acompañante. */
+  private static final Set<TipoProductoProveedor> CONJUNTOS =
+      EnumSet.of(
+          TipoProductoProveedor.CONJUNTO_FALDA,
+          TipoProductoProveedor.CONJUNTO_PANTALON,
+          TipoProductoProveedor.CONJUNTO_SHORT);
+
+  /** La palabra con que el proveedor nombra el combo: «Dúo $69.900», «Set falda + básica». */
+  private static final Pattern PALABRA_DEL_COMBO =
+      Pattern.compile(
+          "^\\s*(sets?|conjuntos?|d[uú]os?|combos?)(?!\\p{L})",
+          Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+
+  /** El combo que nombra primero el acompañante: «Set básica + falda», «Dúo gorra y camiseta». */
+  private static final Pattern ACOMPANANTE_DELANTE =
+      Pattern.compile(
+          "^\\s*(?:sets?|conjuntos?|d[uú]os?|combos?)?[^\\p{L}]*"
+              + "(?:b[aá]sicas?|blusas?|gorras?|cachuchas?)(?!\\p{L})",
+          Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
 
   /** Lo que una blusa convierte en conjunto: la prenda de abajo. */
   private static final Set<TipoProductoProveedor> CON_BLUSA_SON_CONJUNTO =
@@ -109,7 +139,8 @@ public final class ArmadorDeSets {
    * inventar.
    */
   public static boolean anunciaAcompanante(String texto, TipoProductoProveedor tipo) {
-    if (texto == null) {
+    // «Set Blusa y falda» a un solo precio es el producto, no una prenda con acompañante.
+    if (texto == null || CONJUNTOS.contains(tipo)) {
       return false;
     }
     if (ANUNCIA_ACOMPANANTE.matcher(texto).find()) {
@@ -255,7 +286,11 @@ public final class ArmadorDeSets {
         new ProductoExtraido(
             producto.esProducto(),
             producto.estaAgotado(),
-            TituloDeSet.componer(producto.titulo(), prenda.get()),
+            TituloDeSet.componer(
+                producto.titulo(),
+                prenda.get(),
+                combo.flatMap(c -> palabraDelCombo(c.concepto())).orElse(null),
+                combo.map(c -> ACOMPANANTE_DELANTE.matcher(c.concepto()).find()).orElse(false)),
             producto.linea(),
             tipo.get(),
             costo,
@@ -278,6 +313,25 @@ public final class ArmadorDeSets {
     return Optional.of(
         new SetArmado(
             comoSet, costo, new ArmadoDeSet(prenda.get(), origen), leidos, descripcion != null));
+  }
+
+  /** «Dúo», «Set», «Conjunto» o «Combo», como el proveedor nombra su combo; vacío si no. */
+  static Optional<String> palabraDelCombo(String concepto) {
+    if (concepto == null) {
+      return Optional.empty();
+    }
+    Matcher m = PALABRA_DEL_COMBO.matcher(concepto);
+    if (!m.find()) {
+      return Optional.empty();
+    }
+    String palabra = m.group(1).toLowerCase(Locale.ROOT);
+    if (palabra.startsWith("d")) {
+      return Optional.of("Dúo");
+    }
+    if (palabra.startsWith("conjunto")) {
+      return Optional.of("Conjunto");
+    }
+    return Optional.of(palabra.startsWith("combo") ? "Combo" : "Set");
   }
 
   private static boolean armaSet(PrecioAdicional precio) {

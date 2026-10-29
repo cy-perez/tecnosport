@@ -89,7 +89,9 @@ public final class InterpreteDeLecturaDeFotosJson implements InterpreteDeLectura
               lista(foto.path("marcas")),
               // Ausente en las lecturas guardadas antes del 13 de octubre de 2026: vacía.
               lista(foto.path("tallas")),
-              calzado(foto.path("calzado"))));
+              calzado(foto.path("calzado")),
+              // Ausente en las lecturas guardadas antes del 29 de octubre de 2026: sí muestra.
+              foto.path("muestra_producto").asBoolean(true)));
     }
     return new LecturaDeFotos(
         raiz.path("album_de_disenos").asBoolean(false),
