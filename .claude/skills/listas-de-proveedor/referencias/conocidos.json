@@ -90,7 +90,22 @@
         }
       ],
       "garantia": null,
-      "fotos": [],
+      "fotos": [
+        {
+          "nombre": "apple-airpods-pro-3_1",
+          "original": "apple-airpods-pro-3_1.jpg",
+          "procesada": "apple-airpods-pro-3_1.jpg",
+          "huella": "2e5e78776c149172d9cca4bfb5131f547162e37ad4debea83e816c85d0cd7208",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "apple-airpods-pro-3_2",
+          "original": "apple-airpods-pro-3_2.jpg",
+          "procesada": "apple-airpods-pro-3_2.jpg",
+          "huella": "2e22a83d569bc75470e355c66db613b5e8b7275d1808747e7f7c2698363a7a0e",
+          "estado": "LISTA"
+        }
+      ],
       "fecha_alta": "2026-10-15"
     },
     "apple-ipad-11-a16": {
@@ -118,7 +133,36 @@
         }
       ],
       "garantia": null,
-      "fotos": [],
+      "fotos": [
+        {
+          "nombre": "apple-ipad-11-a16_1",
+          "original": "apple-ipad-11-a16_1.jpg",
+          "procesada": "apple-ipad-11-a16_1.jpg",
+          "huella": "658e1fe93ef22947f4972dee3b4109d58b5922537c398ec66f073790f6f7635b",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "apple-ipad-11-a16_2",
+          "original": "apple-ipad-11-a16_2.jpg",
+          "procesada": "apple-ipad-11-a16_2.jpg",
+          "huella": "4468ea3013ee53ffa6b886726e569cfb6e32f3c1abb44babf21d33c4ce6bbbb2",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "apple-ipad-11-a16_3",
+          "original": "apple-ipad-11-a16_3.jpg",
+          "procesada": "apple-ipad-11-a16_3.jpg",
+          "huella": "62623d8be97950cf421c2bf381c1dfa7b0f23d7336cc36287b9fc4d39590cacb",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "apple-ipad-11-a16_4",
+          "original": "apple-ipad-11-a16_4.jpg",
+          "procesada": "apple-ipad-11-a16_4.jpg",
+          "huella": "aa71678c4a853177b9669965d0234961415303d99919f94a5968981d572718b3",
+          "estado": "LISTA"
+        }
+      ],
       "fecha_alta": "2026-10-02"
     },
     "apple-iphone-15": {
@@ -744,7 +788,50 @@
         "fuente": "https://www.ktronix.com/cel4g-honor-x6e-256gb-ng/p/6942785105294",
         "fecha": "2026-10-28"
       },
-      "fotos": [],
+      "fotos": [
+        {
+          "nombre": "honor-x6e-4g_1",
+          "original": "honor-x6e-4g_1.avif",
+          "procesada": "honor-x6e-4g_1.jpg",
+          "huella": "e28e1cc617eb20934221c24b6bc096ab9143da12480007b29c2baff7afb65267",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "honor-x6e-4g_2",
+          "original": "honor-x6e-4g_2.avif",
+          "procesada": "honor-x6e-4g_2.jpg",
+          "huella": "e67df31917b2f235f018a966d3ec554565ca457efd272f94377a56a08a0e1cd6",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "honor-x6e-4g_3",
+          "original": "honor-x6e-4g_3.avif",
+          "procesada": "honor-x6e-4g_3.jpg",
+          "huella": "95d77da05f4c6d2974e3310cca723a247262210457143d6861a1dd22d0826094",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "honor-x6e-4g_4",
+          "original": "honor-x6e-4g_4.avif",
+          "procesada": "honor-x6e-4g_4.jpg",
+          "huella": "f9c7605bf853a58ac2623e7518bf02a89031837dec8df8aa21abd6aa32f74e39",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "honor-x6e-4g_5",
+          "original": "honor-x6e-4g_5.avif",
+          "procesada": "honor-x6e-4g_5.jpg",
+          "huella": "f7aec0d01824687d681b4a2c8f7226d4d406e94f011327c151e5e2cde5111aab",
+          "estado": "REVISAR"
+        },
+        {
+          "nombre": "honor-x6e-4g_6",
+          "original": "honor-x6e-4g_6.avif",
+          "procesada": "honor-x6e-4g_6.jpg",
+          "huella": "afaea32159adc8bb303df8df8beb19a0aca2c23fd01c0a5c27327b88e83309f3",
+          "estado": "LISTA"
+        }
+      ],
       "fecha_alta": "2026-10-27"
     },
     "honor-x7d-4g": {
@@ -2423,9 +2510,51 @@
       "fotos": [
         {
           "nombre": "samsung-galaxy-a17-5g_1",
-          "original": "samsung-galaxy-a17-5g_1.jpg",
+          "original": "samsung-galaxy-a17-5g_1.avif",
           "procesada": "samsung-galaxy-a17-5g_1.jpg",
-          "huella": "d2f90ce95d612265ed72f08d6743a986b103d48c7592e24643f865151c201114",
+          "huella": "8327b11e5878d5994403637a12878b35b08301329cc7c612c28f3721c72d9a20",
+          "estado": "REVISAR"
+        },
+        {
+          "nombre": "samsung-galaxy-a17-5g_2",
+          "original": "samsung-galaxy-a17-5g_2.jfif",
+          "procesada": "samsung-galaxy-a17-5g_2.jpg",
+          "huella": "eee1026cbb0c76ea24bf3874ac7d8bbc57347642998447aa7dc414710f33c167",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "samsung-galaxy-a17-5g_3",
+          "original": "samsung-galaxy-a17-5g_3.jfif",
+          "procesada": "samsung-galaxy-a17-5g_3.jpg",
+          "huella": "74ec571b4c93ba540c66f66cb4d11aca1ca1c3b47b4a3a6155a9e17a580a7383",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "samsung-galaxy-a17-5g_4",
+          "original": "samsung-galaxy-a17-5g_4.avif",
+          "procesada": "samsung-galaxy-a17-5g_4.jpg",
+          "huella": "9195523d0a076d7f4c63eac7b8bc0113b58e8760aab05019d154d4905e18f3d1",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "samsung-galaxy-a17-5g_5",
+          "original": "samsung-galaxy-a17-5g_5.avif",
+          "procesada": "samsung-galaxy-a17-5g_5.jpg",
+          "huella": "92b9e714f60da625dab4b2c57595cf3febd2fed3a91b45ed4b0547f38c9d6785",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "samsung-galaxy-a17-5g_6",
+          "original": "samsung-galaxy-a17-5g_6.avif",
+          "procesada": "samsung-galaxy-a17-5g_6.jpg",
+          "huella": "ff7c42caa4aecc6e8bdca3d7b403afb6c85141175a039629ebce02b36e5cfc6b",
+          "estado": "REVISAR"
+        },
+        {
+          "nombre": "samsung-galaxy-a17-5g_7",
+          "original": "samsung-galaxy-a17-5g_7.avif",
+          "procesada": "samsung-galaxy-a17-5g_7.jpg",
+          "huella": "43a2e86d5f965fcc2eff161c401f81ec5973f159f81951afdb4e82b68cb7fe37",
           "estado": "REVISAR"
         }
       ],
@@ -3132,7 +3261,43 @@
         }
       ],
       "garantia": null,
-      "fotos": [],
+      "fotos": [
+        {
+          "nombre": "xiaomi-poco-f8-pro-5g_1",
+          "original": "xiaomi-poco-f8-pro-5g_1.webp",
+          "procesada": "xiaomi-poco-f8-pro-5g_1.jpg",
+          "huella": "6ae5981ea7ffd8fdbde4bcee612e5845971b56eac13859a8ccd2005ab44548be",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "xiaomi-poco-f8-pro-5g_2",
+          "original": "xiaomi-poco-f8-pro-5g_2.webp",
+          "procesada": "xiaomi-poco-f8-pro-5g_2.jpg",
+          "huella": "d0386b2dd3e5e36204b64ea8518456ead0453d0c9de66c12d188b5d6502560fd",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "xiaomi-poco-f8-pro-5g_3",
+          "original": "xiaomi-poco-f8-pro-5g_3.webp",
+          "procesada": "xiaomi-poco-f8-pro-5g_3.jpg",
+          "huella": "f9aaee177d1f6bd2f6a042969e750af19aed44443bd08d5437a85e64df53403d",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "xiaomi-poco-f8-pro-5g_4",
+          "original": "xiaomi-poco-f8-pro-5g_4.webp",
+          "procesada": "xiaomi-poco-f8-pro-5g_4.jpg",
+          "huella": "5b9d23fcbd482598d966d0da5e85fe1a15c1f08b48fd143a22f7c3bbfdbc1d62",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "xiaomi-poco-f8-pro-5g_5",
+          "original": "xiaomi-poco-f8-pro-5g_5.webp",
+          "procesada": "xiaomi-poco-f8-pro-5g_5.jpg",
+          "huella": "99e1447f59243d5a5a4523044a77305f8b2a8761bb1cf8af93e42b44cf091d7a",
+          "estado": "LISTA"
+        }
+      ],
       "fecha_alta": "2026-10-02"
     },
     "xiaomi-poco-f8-ultra-5g": {
@@ -3251,7 +3416,43 @@
         }
       ],
       "garantia": null,
-      "fotos": [],
+      "fotos": [
+        {
+          "nombre": "xiaomi-poco-x8-pro-5g_1",
+          "original": "xiaomi-poco-x8-pro-5g_1.webp",
+          "procesada": "xiaomi-poco-x8-pro-5g_1.jpg",
+          "huella": "be8b54142a483d3f23d2bdfe18bc8936aae17e3d24463410ef8dd14fd95fd330",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "xiaomi-poco-x8-pro-5g_2",
+          "original": "xiaomi-poco-x8-pro-5g_2.webp",
+          "procesada": "xiaomi-poco-x8-pro-5g_2.jpg",
+          "huella": "48ba3f77b4f8b80f59b1573d39330af4d2281fe0b667c13374d1c06302df56b0",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "xiaomi-poco-x8-pro-5g_3",
+          "original": "xiaomi-poco-x8-pro-5g_3.webp",
+          "procesada": "xiaomi-poco-x8-pro-5g_3.jpg",
+          "huella": "56cdbe3c4d9747ce97d6f5cbcfcc8b91a24ca0b606bc33c64c7fabb3ac9ec352",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "xiaomi-poco-x8-pro-5g_4",
+          "original": "xiaomi-poco-x8-pro-5g_4.webp",
+          "procesada": "xiaomi-poco-x8-pro-5g_4.jpg",
+          "huella": "b875ce92e849d2f0f76188ddeeedcb83fa618c9c1083d58b74b5f9b53c211dbb",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "xiaomi-poco-x8-pro-5g_5",
+          "original": "xiaomi-poco-x8-pro-5g_5.webp",
+          "procesada": "xiaomi-poco-x8-pro-5g_5.jpg",
+          "huella": "855eadd82a18635c6ec87b8e9953693fdaac63fc49f4b9826709b949dc78aea0",
+          "estado": "REVISAR"
+        }
+      ],
       "fecha_alta": "2026-10-02"
     },
     "xiaomi-poco-x8-pro-max-5g": {
@@ -3795,7 +3996,43 @@
         "fuente": "https://www.ktronix.com/audifonos-diadema-redmi-inalambricos-bluetooth-on-ear-neo/p/6932554487461",
         "fecha": "2026-10-28"
       },
-      "fotos": [],
+      "fotos": [
+        {
+          "nombre": "xiaomi-redmi-headphones-neo_1",
+          "original": "xiaomi-redmi-headphones-neo_1.webp",
+          "procesada": "xiaomi-redmi-headphones-neo_1.jpg",
+          "huella": "8660bfc596fbfa01435c09526027906dc28d504e6e11b4391b78fe4364575194",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "xiaomi-redmi-headphones-neo_2",
+          "original": "xiaomi-redmi-headphones-neo_2.webp",
+          "procesada": "xiaomi-redmi-headphones-neo_2.jpg",
+          "huella": "99e0c2c954daee1f929a0aade6895a251cd2b38645a1e71baf34d7a754f0a862",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "xiaomi-redmi-headphones-neo_3",
+          "original": "xiaomi-redmi-headphones-neo_3.webp",
+          "procesada": "xiaomi-redmi-headphones-neo_3.jpg",
+          "huella": "f88d736bbfcf841ff884154fe24cee5224c95042ac8e0d2411f5fb33debec5bb",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "xiaomi-redmi-headphones-neo_4",
+          "original": "xiaomi-redmi-headphones-neo_4.webp",
+          "procesada": "xiaomi-redmi-headphones-neo_4.jpg",
+          "huella": "cb6baa83a424df6d45ee11bcc01b9f4a94b500857d0b0caa1bff2249e7ac20f4",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "xiaomi-redmi-headphones-neo_5",
+          "original": "xiaomi-redmi-headphones-neo_5.webp",
+          "procesada": "xiaomi-redmi-headphones-neo_5.jpg",
+          "huella": "64f7ab840067e490c94695387ab9329d5ad91049fecdefe76f93e95c62fd7a44",
+          "estado": "LISTA"
+        }
+      ],
       "fecha_alta": "2026-10-27"
     },
     "xiaomi-redmi-note-15-4g": {
@@ -4030,7 +4267,43 @@
         "fuente": "https://www.ktronix.com/celular-redmi-note-17-pro-256-5g-morado-power-bank-165w/p/6939093005705",
         "fecha": "2026-10-28"
       },
-      "fotos": [],
+      "fotos": [
+        {
+          "nombre": "xiaomi-redmi-note-17-pro-5g_1",
+          "original": "xiaomi-redmi-note-17-pro-5g_1.webp",
+          "procesada": "xiaomi-redmi-note-17-pro-5g_1.jpg",
+          "huella": "e7aef896e6dbfd293f185ae6c1cbe26f778268c3b58c05544cefe8331ea9fba8",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "xiaomi-redmi-note-17-pro-5g_2",
+          "original": "xiaomi-redmi-note-17-pro-5g_2.webp",
+          "procesada": "xiaomi-redmi-note-17-pro-5g_2.jpg",
+          "huella": "db5e195a6ebcae072c8826d45c89b437d066a43c725214ccd5cf87d412b8d71d",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "xiaomi-redmi-note-17-pro-5g_3",
+          "original": "xiaomi-redmi-note-17-pro-5g_3.webp",
+          "procesada": "xiaomi-redmi-note-17-pro-5g_3.jpg",
+          "huella": "d49e85d6b7e2fa5677289a7511285327ecfa264f264b00177609b97f44f8e7ab",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "xiaomi-redmi-note-17-pro-5g_4",
+          "original": "xiaomi-redmi-note-17-pro-5g_4.webp",
+          "procesada": "xiaomi-redmi-note-17-pro-5g_4.jpg",
+          "huella": "8d7dcab7fca9e18b6ca91f80e6c36251fdc7ae1cfbdbb8f498e24fc8fe9a7041",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "xiaomi-redmi-note-17-pro-5g_6",
+          "original": "xiaomi-redmi-note-17-pro-5g_6.webp",
+          "procesada": "xiaomi-redmi-note-17-pro-5g_6.jpg",
+          "huella": "142d0074683c89d915775426ba2e84e5092f4a88ee6628e27ecc1fb0b576acb4",
+          "estado": "REVISAR"
+        }
+      ],
       "fecha_alta": "2026-10-27"
     },
     "xiaomi-redmi-note-17-pro-max-5g": {
@@ -4141,7 +4414,7 @@
           "original": "xiaomi-redmi-pad-2-11-4g_3.webp",
           "procesada": "xiaomi-redmi-pad-2-11-4g_3.jpg",
           "huella": "cab0c3f837fbe649c066c976ceb3ed4f7ed7bb007ebb5d9686f45a6025c7ebb0",
-          "estado": "REVISAR"
+          "estado": "LISTA"
         },
         {
           "nombre": "xiaomi-redmi-pad-2-11-4g_4",
@@ -4155,13 +4428,6 @@
           "original": "xiaomi-redmi-pad-2-11-4g_5.webp",
           "procesada": "xiaomi-redmi-pad-2-11-4g_5.jpg",
           "huella": "880d2e23b4ad77d8815aa7fbfdae336069af3d77659f47b84abad0d5c8e593eb",
-          "estado": "LISTA"
-        },
-        {
-          "nombre": "xiaomi-redmi-pad-2-11-4g_6",
-          "original": "xiaomi-redmi-pad-2-11-4g_6.webp",
-          "procesada": "xiaomi-redmi-pad-2-11-4g_6.jpg",
-          "huella": "6054ac426e89d1c0552a8772dc7fd156ec0415c69293b94166c1e377f537cac5",
           "estado": "LISTA"
         }
       ],
@@ -4214,7 +4480,7 @@
           "original": "xiaomi-redmi-pad-2-11-bundle_3.webp",
           "procesada": "xiaomi-redmi-pad-2-11-bundle_3.jpg",
           "huella": "cab0c3f837fbe649c066c976ceb3ed4f7ed7bb007ebb5d9686f45a6025c7ebb0",
-          "estado": "REVISAR"
+          "estado": "LISTA"
         },
         {
           "nombre": "xiaomi-redmi-pad-2-11-bundle_4",
@@ -4228,13 +4494,6 @@
           "original": "xiaomi-redmi-pad-2-11-bundle_5.webp",
           "procesada": "xiaomi-redmi-pad-2-11-bundle_5.jpg",
           "huella": "880d2e23b4ad77d8815aa7fbfdae336069af3d77659f47b84abad0d5c8e593eb",
-          "estado": "LISTA"
-        },
-        {
-          "nombre": "xiaomi-redmi-pad-2-11-bundle_6",
-          "original": "xiaomi-redmi-pad-2-11-bundle_6.webp",
-          "procesada": "xiaomi-redmi-pad-2-11-bundle_6.jpg",
-          "huella": "6054ac426e89d1c0552a8772dc7fd156ec0415c69293b94166c1e377f537cac5",
           "estado": "LISTA"
         }
       ],
