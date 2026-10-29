@@ -104,8 +104,8 @@ public final class AprobarBorradorTecnologia {
   private final MargenMinimo margenMinimo;
 
   /**
-   * @param margenMinimo el de tecnología: el 10 % del costo con el tope de ganancia de la
-   *     sugerencia
+   * @param margenMinimo el de tecnología: una ganancia entre la mínima y la máxima, en pesos
+   *     (ADR-0101)
    */
   public AprobarBorradorTecnologia(
       RepositorioBorradoresTecnologia repositorioBorradores,

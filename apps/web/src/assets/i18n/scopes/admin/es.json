@@ -33,6 +33,7 @@
     "proveedor_sin_listas": "Este proveedor no es de tecnología: su catálogo entra por la exportación del chat, no por una lista de precios.",
     "lista_de_tecnologia_desactualizada": "Esa lista es más vieja que la última que entró: impórtala solo si es de esa fecha o posterior.",
     "precio_sin_margen_minimo": "El precio de contado no deja la ganancia mínima sobre el costo del proveedor: súbelo antes de aprobar.",
+    "precio_sobre_ganancia_maxima": "El precio de contado le gana al costo del proveedor más de la ganancia máxima: bájalo antes de aprobar.",
     "lista_de_tecnologia_ya_importada": "Esa lista ya entró con este mismo contenido: repetirla volvería a reponer lo vendido.",
     "proveedor_con_productos": "El proveedor tiene productos en el catálogo. Desactívalo en vez de eliminarlo.",
     "proveedor_con_ingesta_en_curso": "El proveedor tiene una exportación en proceso. Espera a que termine e inténtalo de nuevo.",

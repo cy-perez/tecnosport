@@ -33,6 +33,7 @@
     "proveedor_sin_listas": "This supplier is not a technology supplier: its catalog comes in through the chat export, not through a price list.",
     "lista_de_tecnologia_desactualizada": "That list is older than the last one imported: only import a list from that date or later.",
     "precio_sin_margen_minimo": "The cash price doesn't leave the minimum profit over the supplier cost: raise it before approving.",
+    "precio_sobre_ganancia_maxima": "The cash price leaves more than the maximum profit over the supplier cost: lower it before approving.",
     "lista_de_tecnologia_ya_importada": "That list was already imported with this same content: repeating it would restock what was sold.",
     "proveedor_con_productos": "The supplier has products in the catalogue. Deactivate it instead of deleting it.",
     "proveedor_con_ingesta_en_curso": "The supplier has an export being processed. Wait for it to finish and try again.",

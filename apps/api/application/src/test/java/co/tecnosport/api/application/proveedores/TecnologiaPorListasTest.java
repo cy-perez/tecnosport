@@ -86,7 +86,8 @@ class TecnologiaPorListasTest {
   private static final LocalDate LUNES = LocalDate.parse("2026-10-05");
   private static final LocalDate JUEVES = LocalDate.parse("2026-10-08");
   private static final int EXISTENCIA = 2;
-  private static final MargenMinimo MARGEN = MargenMinimo.deTecnologia(Dinero.deCop(400_000));
+  private static final MargenMinimo MARGEN =
+      MargenMinimo.deTecnologia(Dinero.deCop(50_000), Dinero.deCop(400_000));
 
   private final RepositorioProveedoresEnMemoria proveedores = new RepositorioProveedoresEnMemoria();
   private final RepositorioProductosEnMemoria productos = new RepositorioProductosEnMemoria();
@@ -982,19 +983,19 @@ class TecnologiaPorListasTest {
   }
 
   /**
-   * Revisión adversarial del 27 de octubre de 2026: un costo que deja menos del margen mínimo —aquí
-   * manda el 10 %, lejos del tope— sobre el contado reponía la existencia y solo dejaba una nota.
-   * Ahora la variante queda agotada por el proveedor, sin existencia libre y en el aviso del panel,
-   * y vuelve con la lista que le devuelve el margen.
+   * Revisión adversarial del 27 de octubre de 2026: un costo que deja menos del margen mínimo
+   * —desde el 29, 50.000 de ganancia— sobre el contado reponía la existencia y solo dejaba una
+   * nota. Ahora la variante queda agotada por el proveedor, sin existencia libre y en el aviso del
+   * panel, y vuelve con la lista que le devuelve el margen.
    */
   @Test
   void unCostoQueQuitaElMargenMinimoAgotaLaVarianteHastaQueVuelva() {
     Producto producto = unA17QueYaSeVende();
     List<UUID> variantes = producto.variantes().stream().map(Variante::id).toList();
 
-    // Contado 849.900 sobre 780.000: un 9 %.
+    // Contado 849.900 sobre 810.000: 39.900 de ganancia.
     ImportarListaDeTecnologia.Resultado sinMargen =
-        importar(lista(JUEVES, List.of(config(UNA_SIM, 780_000, "1 SIM")), List.of(), List.of()));
+        importar(lista(JUEVES, List.of(config(UNA_SIM, 810_000, "1 SIM")), List.of(), List.of()));
 
     assertEquals(2, sinMargen.sinMargen().size());
     for (UUID id : variantes) {
@@ -1015,18 +1016,16 @@ class TecnologiaPorListasTest {
   }
 
   /**
-   * El mínimo de tecnología lleva el tope de ganancia (27 de octubre de 2026): con un tope de
-   * 50.000, los 69.900 que 849.900 le ganan a 780.000 alcanzan aunque no lleguen al 10 %.
+   * Desde el 29 de octubre de 2026 el mínimo de tecnología son 50.000 en pesos: los 69.900 que
+   * 849.900 le ganan a 780.000 alcanzan aunque no lleguen al 10 %.
    */
   @Test
-  void conElTopeDeGananciaElCostoQueNoLlegaAlDiezPorCientoSigueALaVenta() {
+  void unaGananciaDeCincuentaMilSigueALaVentaAunqueNoLlegueAlDiezPorCiento() {
     Producto producto = unA17QueYaSeVende();
     List<UUID> variantes = producto.variantes().stream().map(Variante::id).toList();
 
     ImportarListaDeTecnologia.Resultado resultado =
-        importar(
-            lista(JUEVES, List.of(config(UNA_SIM, 780_000, "1 SIM")), List.of(), List.of()),
-            MargenMinimo.deTecnologia(Dinero.deCop(50_000)));
+        importar(lista(JUEVES, List.of(config(UNA_SIM, 780_000, "1 SIM")), List.of(), List.of()));
 
     assertTrue(resultado.sinMargen().isEmpty());
     for (UUID id : variantes) {
