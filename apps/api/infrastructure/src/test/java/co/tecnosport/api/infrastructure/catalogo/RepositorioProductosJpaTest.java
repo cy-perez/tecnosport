@@ -288,6 +288,44 @@ class RepositorioProductosJpaTest {
         .containsExactly("morral-t5-barato", "morral-t5-medio", "morral-t5-caro");
   }
 
+  /**
+   * El orden por omisión del catálogo pagina por {@code creado_en}, y la clave del cursor llega a
+   * la consulta como fecha. El driver de PostgreSQL no sabe enviar un {@code Instant}: la segunda
+   * página respondía 500 y la rejilla mostraba «No se pudo cargar el catálogo» al pedir más.
+   */
+  @Test
+  void buscarPaginaConCursorPorFechaDeCreacion() {
+    MarcaJpaEntity marca = marca("TecnoSport");
+    CategoriaJpaEntity categoria = categoria("Morrales", "bolsos-dama-morrales-t5b", "BOLSOS");
+    for (int i = 0; i < 3; i++) {
+      ProductoJpaEntity p =
+          producto("Morral fecha " + i, "morral-t5b-" + i, "PUBLICADO", marca, categoria);
+      variante(p, "SKU-T5B-" + i, "100000");
+      imagenPrincipal(p);
+    }
+    entityManager.flush();
+
+    for (OrdenProductos orden : List.of(OrdenProductos.MAS_RECIENTES, OrdenProductos.RELEVANCIA)) {
+      ResultadoPaginado<Producto> primeraPagina =
+          repositorio.buscar(FiltroProductos.vacio(), orden, null, 2);
+      assertThat(primeraPagina.cursorSiguiente()).as(orden.name()).isNotNull();
+
+      ResultadoPaginado<Producto> segundaPagina =
+          repositorio.buscar(FiltroProductos.vacio(), orden, primeraPagina.cursorSiguiente(), 2);
+
+      List<String> slugsVistos =
+          java.util.stream.Stream.concat(
+                  primeraPagina.items().stream(), segundaPagina.items().stream())
+              .map(Producto::slug)
+              .map(Slug::valor)
+              .toList();
+      assertThat(slugsVistos)
+          .as(orden.name())
+          .containsExactlyInAnyOrder("morral-t5b-0", "morral-t5b-1", "morral-t5b-2");
+      assertThat(segundaPagina.cursorSiguiente()).as(orden.name()).isNull();
+    }
+  }
+
   @Test
   void buscarConTextoEncuentraPorSimilitudAunqueNoSeaSubstringExacto() {
     MarcaJpaEntity marca = marca("TecnoSport");
