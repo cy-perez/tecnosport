@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -59,6 +60,12 @@ public final class RepartoDeFotos {
    */
   public static List<ProductoRepartido> repartir(
       List<ProductoExtraido> productos, List<UUID> fotos, LecturaDeFotos lectura) {
+    return sinLasQueNoMuestranProducto(
+        repartirTodas(productos, fotos, lectura), fotos, lectura, false);
+  }
+
+  private static List<ProductoRepartido> repartirTodas(
+      List<ProductoExtraido> productos, List<UUID> fotos, LecturaDeFotos lectura) {
     Objects.requireNonNull(productos, "Los productos no pueden ser nulos.");
     Objects.requireNonNull(fotos, "Las fotos no pueden ser nulas.");
     if (lectura == null || fotos.isEmpty() || productos.isEmpty()) {
@@ -102,6 +109,12 @@ public final class RepartoDeFotos {
    * @param calzado si el proveedor es de calzado: entonces solo pasan los tenis, juntos por tenis
    */
   public static List<ProductoRepartido> unaPorFoto(
+      ProductoExtraido producto, List<UUID> fotos, LecturaDeFotos lectura, boolean calzado) {
+    return sinLasQueNoMuestranProducto(
+        unaPorFotoTodas(producto, fotos, lectura, calzado), fotos, lectura, true);
+  }
+
+  private static List<ProductoRepartido> unaPorFotoTodas(
       ProductoExtraido producto, List<UUID> fotos, LecturaDeFotos lectura, boolean calzado) {
     Objects.requireNonNull(producto, "El producto del texto no puede ser nulo.");
     Objects.requireNonNull(fotos, "Las fotos no pueden ser nulas.");
@@ -524,6 +537,71 @@ public final class RepartoDeFotos {
 
   private static Optional<String> etiquetaDe(LecturaDeFoto leida) {
     return Optional.ofNullable(leida.diseno()).map(d -> d.toLowerCase(Locale.ROOT));
+  }
+
+  /**
+   * Las fotos que no muestran nada que se venda —el banner de crédito, el meme, el saludo— salen
+   * del producto y el borrador nace con ellas descartadas (ADR-0101, 29 de octubre de 2026). Si el
+   * lector dice eso de todas las fotos de un producto, no se le cree: un borrador sin fotos no se
+   * aprueba, y quien revisa las descarta a mano si de verdad sobran. Salvo cuando cada foto es un
+   * producto ({@link #unaPorFoto}): ahí el banner es su propio producto, y no deja nada.
+   *
+   * @param sinFotosNoQueda si el producto que se queda sin fotos desaparece
+   */
+  static List<ProductoRepartido> sinLasQueNoMuestranProducto(
+      List<ProductoRepartido> repartidos,
+      List<UUID> fotos,
+      LecturaDeFotos lectura,
+      boolean sinFotosNoQueda) {
+    if (lectura == null) {
+      return repartidos;
+    }
+    Set<UUID> fuera = new LinkedHashSet<>();
+    for (int i = 0; i < fotos.size(); i++) {
+      if (lectura.deLaFoto(i).map(f -> !f.muestraProducto()).orElse(false)) {
+        fuera.add(fotos.get(i));
+      }
+    }
+    if (fuera.isEmpty()) {
+      return repartidos;
+    }
+    List<ProductoRepartido> limpios = new ArrayList<>(repartidos.size());
+    for (ProductoRepartido r : repartidos) {
+      List<UUID> propias = r.fotos().stream().filter(f -> !fuera.contains(f)).toList();
+      if (propias.isEmpty()) {
+        if (!sinFotosNoQueda) {
+          limpios.add(r);
+        }
+        continue;
+      }
+      Set<UUID> ajenas = new LinkedHashSet<>(r.reparto().ajenas());
+      ajenas.addAll(fuera);
+      Map<UUID, String> tonos = new LinkedHashMap<>(r.reparto().tonosSugeridos());
+      tonos.keySet().removeAll(fuera);
+      FotosDelProducto reparto =
+          new FotosDelProducto(
+              ajenas,
+              tonos,
+              r.reparto().lecturaCruda(),
+              r.reparto().diseno(),
+              r.reparto().referenciasDelAlbum());
+      UUID exclusiva =
+          r.exclusiva() != null && fuera.contains(r.exclusiva())
+              ? propias.getFirst()
+              : r.exclusiva();
+      limpios.add(
+          new ProductoRepartido(
+              r.producto(),
+              propias,
+              reparto,
+              r.respaldo(),
+              exclusiva,
+              r.disenoDeAlbum(),
+              r.conSuCodigo().stream().filter(f -> !fuera.contains(f)).toList(),
+              r.compartidas(),
+              r.calzado()));
+    }
+    return limpios;
   }
 
   private static Set<UUID> ajenas(List<UUID> fotos, List<UUID> propias) {

@@ -47,6 +47,7 @@
         "additionalProperties": false,
         "required": [
           "foto",
+          "muestra_producto",
           "codigos",
           "pie",
           "colores",
@@ -57,6 +58,7 @@
         ],
         "properties": {
           "foto": { "type": "integer" },
+          "muestra_producto": { "type": "boolean" },
           "codigos": { "type": "array", "items": { "type": "string" } },
           "pie": {
             "type": "array",

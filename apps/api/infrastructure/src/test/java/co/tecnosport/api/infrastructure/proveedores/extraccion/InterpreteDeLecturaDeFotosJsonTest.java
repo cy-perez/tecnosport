@@ -65,6 +65,21 @@ class InterpreteDeLecturaDeFotosJsonTest {
     assertEquals(Optional.empty(), vieja.prendaOpcional());
   }
 
+  /** La foto que no muestra un producto (ADR-0101); la lectura vieja no lo dice, y sí muestra. */
+  @Test
+  void laFotoQueNoMuestraProductoSeLeeYLaViejaSiMuestra() {
+    LecturaDeFotos lectura =
+        interprete
+            .interpretar(
+                "{\"fotos\":[{\"foto\":1,\"muestra_producto\":false},{\"foto\":2,"
+                    + "\"muestra_producto\":true},{\"foto\":3}]}")
+            .orElseThrow();
+
+    assertFalse(lectura.fotos().get(0).muestraProducto());
+    assertTrue(lectura.fotos().get(1).muestraProducto());
+    assertTrue(lectura.fotos().get(2).muestraProducto());
+  }
+
   /** El rótulo de tallas de la esquina (13 de octubre de 2026); las lecturas viejas no lo traen. */
   @Test
   void lasTallasImpresasSeLeenYLasViejasNoLasTraen() {
