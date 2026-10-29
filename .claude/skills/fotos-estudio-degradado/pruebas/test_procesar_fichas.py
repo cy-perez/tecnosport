@@ -517,6 +517,42 @@ class Tanda(unittest.TestCase):
             estados, _ = tanda(raiz, procesar=procesar)
             self.assertEqual(pf.EN_ESPERA, estados[MODELO]["estado"])
 
+    def test_con_minimo_por_excepcion_pasa_con_dos_lista_y_queda_anotado(self):
+        # Decisión del 28/10/2026: los AirPods Pro 3 no tienen más de dos tomas oficiales.
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            carpeta = armar(raiz, CUATRO[:2])
+            procesar = listas(raiz, NOMBRES[:2])
+            estados, procesos = tanda(raiz, procesar=procesar)
+            self.assertEqual(0, procesos, "sin la excepción, dos originales no se procesan")
+            self.assertEqual(pf.EN_ESPERA, estados[MODELO]["estado"])
+            with self.assertRaises(ValueError):
+                pf.declarar_minimo(raiz, MODELO, 2, " ")
+            for fuera_de_rango in (0, pf.MINIMO_LISTA, None):
+                with self.assertRaises(ValueError):
+                    pf.declarar_minimo(raiz, MODELO, fuera_de_rango, "no hay más fotos oficiales")
+            pf.declarar_minimo(raiz, MODELO, 2, "no hay más fotos oficiales")
+            estados, procesos = tanda(raiz, procesar=procesar)
+            self.assertEqual(1, procesos)
+            self.assertEqual(pf.APTO, estados[MODELO]["estado"])
+            guardado = json.loads((carpeta / pf.ESTADO).read_text(encoding="utf-8"))
+            self.assertEqual(2, guardado["minimo_por_excepcion"]["minimo"])
+            self.assertIn("no hay más fotos oficiales", guardado["minimo_por_excepcion"]["motivo"])
+            pf.declarar_minimo(raiz, MODELO, None, "", quitar=True)
+            estados, _ = tanda(raiz, procesar=procesar)
+            self.assertEqual(pf.EN_ESPERA, estados[MODELO]["estado"])
+            self.assertNotIn("minimo_por_excepcion", estados[MODELO])
+
+    def test_con_minimo_por_excepcion_una_revisar_sigue_sin_contar(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            armar(raiz, CUATRO[:2])
+            pf.declarar_minimo(raiz, MODELO, 2, "no hay más fotos oficiales")
+            estados, _ = tanda(raiz, procesar=lambda: salida_de_procesar(
+                raiz, [(NOMBRES[0], "LISTA"), (NOMBRES[1], "REVISAR")]))
+            self.assertEqual(pf.EN_ESPERA, estados[MODELO]["estado"])
+            self.assertEqual(1, estados[MODELO]["faltan"])
+
     def test_en_un_kit_otro_reparo_o_una_marca_a_ojo_siguen_sin_contar(self):
         with tempfile.TemporaryDirectory() as tmp:
             raiz = Path(tmp)

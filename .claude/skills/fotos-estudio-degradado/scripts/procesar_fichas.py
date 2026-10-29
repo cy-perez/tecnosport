@@ -74,6 +74,11 @@ Para no gastar retoques en vano, y para que el veredicto sea cierto:
   mouse— una foto cuyo único reparo es `varias_piezas` cuenta como LISTA. En los demás
   modelos sigue sin contar: tres piezas o más pueden ser dos productos distintos o la
   gama de colores, y eso no lo decide el script.
+- **Un modelo puede pasar con menos de cuatro fotos, y lo decide la persona** (`--minimo-fotos`,
+  decisión del 28/10/2026): cuando el fabricante no publica más tomas oficiales —los AirPods
+  Pro 3, dos en los sitios consultados—, el modelo no puede reunir cuatro por mucho que espere.
+  La excepción es por modelo, con su motivo, y vale para todas las tandas; lo demás de la
+  compuerta no cambia: cada foto que cuenta sigue siendo LISTA en un lienzo de 1200 o más.
 - **En audífonos, el par con su estuche no es una anomalía** (22/10/2026): hasta
   `PIEZAS_DE_UN_PAR` piezas cuentan como LISTA si `varias_piezas` es su único reparo, porque
   dos auriculares y el estuche disparaban el motivo en casi toda foto buena de unos TWS. Con
@@ -108,6 +113,7 @@ ESTADO = "estado-fotos.json"
 SACADOS = "sacados.json"          # en _estudio/: los modelos sacados que no tienen carpeta
 KITS = "kits.json"                # en _estudio/: los modelos que se venden con piezas sueltas
 SIN_HUECOS = "sin-huecos.json"    # en _estudio/: los modelos que la persona declaró sin huecos pasantes
+MINIMOS = "minimos.json"          # en _estudio/: los modelos que pasan con menos de MINIMO_LISTA fotos
 # El único motivo REVISAR que un kit perdona: las piezas sueltas son el producto.
 MOTIVO_DE_KIT = "varias_piezas"
 EXT_FOTO = {".jpg", ".jpeg", ".jfif", ".png", ".webp", ".heic", ".heif", ".avif"}  # = EXTENSIONES de procesar.py
@@ -528,6 +534,35 @@ def declarar_kit(raiz: Path, mid: str, motivo: str, quitar: bool = False) -> dic
     return kits
 
 
+def leer_minimos(raiz: Path) -> dict:
+    ruta = Path(raiz) / TRABAJO / MINIMOS
+    return json.loads(ruta.read_text(encoding="utf-8")) if ruta.is_file() else {}
+
+
+def minimo_de(mid: str, minimos=None) -> int:
+    """Las fotos LISTA que necesita ese modelo: MINIMO_LISTA, salvo una excepción declarada."""
+    return int((minimos or {}).get(mid, {}).get("minimo", MINIMO_LISTA))
+
+
+def declarar_minimo(raiz: Path, mid: str, cuantas, motivo: str, quitar: bool = False) -> dict:
+    """Anota (o quita) en `_estudio/minimos.json` que ese modelo pasa con menos fotos LISTA. Es una
+    excepción a la decisión del negocio del 10/10/2026, así que pide el motivo y no sube el mínimo:
+    para exigir más fotos se cambia MINIMO_LISTA, no un modelo."""
+    minimos = leer_minimos(raiz)
+    if quitar:
+        minimos.pop(mid, None)
+    else:
+        if not motivo or not motivo.strip():
+            raise ValueError("Bajar el mínimo de fotos de un modelo pide el motivo: por qué no hay más.")
+        if cuantas is None or not 1 <= int(cuantas) < MINIMO_LISTA:
+            raise ValueError(f"El mínimo por excepción va de 1 a {MINIMO_LISTA - 1} fotos LISTA.")
+        minimos[mid] = {"minimo": int(cuantas), "motivo": motivo.strip(), "fecha": ahora()}
+    ruta = Path(raiz) / TRABAJO / MINIMOS
+    ruta.parent.mkdir(parents=True, exist_ok=True)
+    ruta.write_text(json.dumps(minimos, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="")
+    return minimos
+
+
 def solo_piezas_sueltas(foto: dict) -> bool:
     """Si la foto salió REVISAR únicamente por `varias_piezas`, sin marcas a ojo ni otro motivo."""
     if foto.get("estado") != "REVISAR" or foto.get("marcas"):
@@ -639,7 +674,7 @@ def _evaluado_de_verdad(previo: dict) -> bool:
 
 
 def decidir(mid: str, carpeta, cfg: dict, reporte=None, medidor=medir, fecha_tanda=None,
-            sacados=None, kits=None, registros=None) -> tuple:
+            sacados=None, kits=None, registros=None, minimos=None) -> tuple:
     """(estado del modelo, ¿hay que procesarlo?). Sin `reporte` solo decide lo que se sabe antes de procesar.
 
     Con `reporte` siempre recalcula el veredicto —salvo el de un modelo sacado—: lo que se marcó
@@ -660,31 +695,34 @@ def decidir(mid: str, carpeta, cfg: dict, reporte=None, medidor=medir, fecha_tan
         return previo, False
 
     base = {"modelo": mid, "huella": huella, "fechaLista": fecha_tanda, "fecha": ahora(), "sin_cambios": False}
+    minimo = minimo_de(mid, minimos)
+    if minimo != MINIMO_LISTA:
+        base["minimo_por_excepcion"] = dict(minimos[mid])
     antes = revisar_antes(carpeta, cfg, medidor)
-    if len(antes["viables"]) < MINIMO_LISTA:
-        faltan = MINIMO_LISTA - len(antes["viables"])
+    if len(antes["viables"]) < minimo:
+        faltan = minimo - len(antes["viables"])
         return dict(base, estado=EN_ESPERA, listas=[], faltan=faltan, fallidas=antes["fallidas"],
                     sin_cambios=mismo and previo.get("estado") == EN_ESPERA,
                     motivo=f"tiene {len(antes['viables'])} originales que pueden salir LISTA y necesita "
-                           f"{MINIMO_LISTA}: no se procesó"), False
+                           f"{minimo}: no se procesó"), False
 
     if reporte is None:
         if (mismo and previo.get("estado") in (APTO, EN_ESPERA) and _evaluado_de_verdad(previo)
                 and not faltan_en_el_reporte(mid, carpeta, registros)):
             return dict(previo, sin_cambios=previo.get("estado") == EN_ESPERA), False
-        return dict(base, estado=EN_ESPERA, listas=[], faltan=MINIMO_LISTA, fallidas=antes["fallidas"],
+        return dict(base, estado=EN_ESPERA, listas=[], faltan=minimo, fallidas=antes["fallidas"],
                     motivo="por procesar"), True
 
     ev = evaluar(mid, carpeta, reporte, cfg, kit=mid in (kits or {}),
                  par=categoria_de(carpeta) in CATEGORIAS_DE_PARES)
     vistas = {x["foto"] for x in antes["fallidas"]}
     fallidas = antes["fallidas"] + [f for f in ev["fallidas"] if f["foto"] not in vistas]
-    if len(ev["listas"]) >= MINIMO_LISTA:
+    if len(ev["listas"]) >= minimo:
         return dict(base, estado=APTO, listas=ev["listas"], faltan=0, fallidas=fallidas, motivo=None,
                     aprobadas_a_ojo=ev["aprobadas_a_ojo"]), False
-    faltan = MINIMO_LISTA - len(ev["listas"])
+    faltan = minimo - len(ev["listas"])
     return dict(base, estado=EN_ESPERA, listas=ev["listas"], faltan=faltan, fallidas=fallidas,
-                motivo=f"salieron {len(ev['listas'])} fotos LISTA y necesita {MINIMO_LISTA}",
+                motivo=f"salieron {len(ev['listas'])} fotos LISTA y necesita {minimo}",
                 aprobadas_a_ojo=ev["aprobadas_a_ojo"]), False
 
 
@@ -837,11 +875,12 @@ def correr_tanda(raiz: Path, ids: list, cfg: dict, procesar_fn, solo_devolver=Fa
     por_id = modelos(raiz, set(ids))
     sacados = leer_sacados(raiz)
     kits = leer_kits(raiz)
+    minimos = leer_minimos(raiz)
     decisiones = {}
     if not solo_devolver:
         registros = leer_reporte(raiz).get("fotos", [])
         decisiones = {mid: decidir(mid, por_id.get(mid), cfg, None, medidor, fecha_tanda, sacados,
-                                   registros=registros)
+                                   registros=registros, minimos=minimos)
                       for mid in ids}
         a_procesar = [mid for mid, (_, p) in decisiones.items() if p]
         for mid, razon in pistas_de_kit(raiz, a_procesar, kits):
@@ -863,7 +902,8 @@ def correr_tanda(raiz: Path, ids: list, cfg: dict, procesar_fn, solo_devolver=Fa
     reporte = leer_reporte(raiz)
     estados = []
     for mid in ids:
-        estado, _ = decidir(mid, por_id.get(mid), cfg, reporte, medidor, fecha_tanda, sacados, kits)
+        estado, _ = decidir(mid, por_id.get(mid), cfg, reporte, medidor, fecha_tanda, sacados, kits,
+                            minimos=minimos)
         if mid in decisiones and decisiones[mid][0].get("sin_cambios"):
             # Se dice aunque se reevalúe: quien confirmó fotos nuevas tiene que saber que no llegaron.
             estado = dict(estado, sin_cambios=True)
@@ -1131,7 +1171,11 @@ def main() -> int:
     ap.add_argument("--sin-huecos", metavar="ID", help="ese modelo no tiene huecos pasantes aunque su categoría "
                                                        "los admita: lo que el recorte encierre vuelve al producto")
     ap.add_argument("--quitar-sin-huecos", metavar="ID", help="deshace un --sin-huecos")
-    ap.add_argument("--motivo", help="con --sacar, --kit o --sin-huecos: por qué, queda escrito")
+    ap.add_argument("--minimo-fotos", metavar="ID", help="con --tanda y --cuantas: ese modelo pasa con menos "
+                                                         "fotos LISTA, porque no hay más tomas oficiales")
+    ap.add_argument("--cuantas", type=int, help="con --minimo-fotos: las fotos LISTA que le bastan")
+    ap.add_argument("--quitar-minimo", metavar="ID", help="con --tanda: deshace un --minimo-fotos")
+    ap.add_argument("--motivo", help="con --sacar, --kit, --sin-huecos o --minimo-fotos: por qué, queda escrito")
     ap.add_argument("--validar", action="store_true",
                     help="no retoca nada: informa nombres, formatos, duplicados y LISTA estimadas por modelo")
     ap.add_argument("--renombrar", action="store_true",
@@ -1206,6 +1250,16 @@ def main() -> int:
             declarar_kit(raiz, mid, a.motivo or "", quitar=bool(a.quitar_kit))
             print(f"{mid}: {'ya no es un kit' if a.quitar_kit else 'kit, sus piezas sueltas cuentan'}. "
                   "Vuelve a correr la tanda para recalcular su veredicto.")
+            return 0
+        if a.minimo_fotos or a.quitar_minimo:
+            mid = a.minimo_fotos or a.quitar_minimo
+            if mid not in ids:
+                print(f"{mid} no está en la tanda.")
+                return 1
+            declarar_minimo(raiz, mid, a.cuantas, a.motivo or "", quitar=bool(a.quitar_minimo))
+            print(f"{mid}: " + (f"vuelve a necesitar {MINIMO_LISTA} fotos LISTA" if a.quitar_minimo
+                                else f"le bastan {a.cuantas} fotos LISTA") +
+                  ". Vuelve a correr la tanda para recalcular su veredicto.")
             return 0
         if a.devolver and retoque_en_curso(raiz):
             print("El retoque sigue en segundo plano: espera a que termine y vuelve a correr --devolver.")
