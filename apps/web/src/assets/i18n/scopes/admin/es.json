@@ -1535,7 +1535,7 @@
       "TALLAS_CORRIDAS": "El anuncio nombra las tallas corridas (horma reducida, «aumentar» o tallas EUR) y se corrieron a las que se venden. Confirma en el anuncio cuántas, en «Cómo nombra las tallas el proveedor».",
       "TALLAS_SIN_CORRER": "El anuncio nombra las tallas corridas, pero alguna no se pudo correr: se quedaron las del anuncio. Escribe las que se venden antes de aprobar.",
       "MODELO_POR_CONFIRMAR": "El título lleva el modelo que el lector de fotos cree ver, pero no está seguro: pueden ser dos parecidos, como un Shox R4 y un Shox TL. Confírmalo en las fotos o corrígelo en el título antes de aprobar.",
-      "TIPO_CORREGIDO_POR_FOTO": "El anuncio nombra otra prenda que la que se ve en las fotos —una «camiseta» con cuello y botones de arriba abajo es una camisa—, y el borrador se quedó con la de las fotos, que decide la categoría. Confírmalo, y corrige el título si la nombra."
+      "TIPO_CORREGIDO_POR_FOTO": "El anuncio nombra otra prenda que la que se ve en las fotos (una «camiseta» con cuello y botones de arriba abajo es una camisa), y el borrador se quedó con la de las fotos, que decide la categoría. Confírmalo, y corrige el título si la nombra."
     },
     "detalle": {
       "miga": "Revisión",

@@ -1535,7 +1535,7 @@
       "TALLAS_CORRIDAS": "The post names the sizes shifted (small fit, “go up” or EU sizes) and they were moved to the ones sold. Check in the post how many, under “How the supplier names the sizes”.",
       "TALLAS_SIN_CORRER": "The post names the sizes shifted, but one could not be moved: the post sizes were kept. Write the ones sold before approving.",
       "MODELO_POR_CONFIRMAR": "The title carries the model the photo reader thinks it sees, but it is not sure: it could be one of two look-alikes, like a Shox R4 and a Shox TL. Confirm it in the photos or fix the title before approving.",
-      "TIPO_CORREGIDO_POR_FOTO": "The post names a different garment than the one in the photos —a \"T-shirt\" with a collar and buttons all the way down is a shirt—, and the draft kept the one in the photos, which decides the category. Confirm it, and fix the title if it names the garment."
+      "TIPO_CORREGIDO_POR_FOTO": "The post names a different garment than the one in the photos (a \"T-shirt\" with a collar and buttons all the way down is a shirt), and the draft kept the one in the photos, which decides the category. Confirm it, and fix the title if it names the garment."
     },
     "detalle": {
       "miga": "Review",
