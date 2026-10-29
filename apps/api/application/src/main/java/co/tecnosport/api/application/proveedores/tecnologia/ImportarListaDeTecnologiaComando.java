@@ -1,7 +1,6 @@
 package co.tecnosport.api.application.proveedores.tecnologia;
 
 import co.tecnosport.api.domain.proveedores.ConfiguracionTecnologia;
-import co.tecnosport.api.domain.proveedores.ConfirmacionDeColor;
 import co.tecnosport.api.domain.proveedores.ExcepcionDeFotos;
 import co.tecnosport.api.domain.proveedores.ModeloDeLista;
 import java.nio.charset.StandardCharsets;
@@ -25,6 +24,9 @@ import java.util.UUID;
  *     borradores de lo que todavía no
  * @param modelosDesaparecidos ids de modelo de los que no vino ninguna configuración, con el mismo
  *     criterio
+ * @param coloresMarcados los colores que la lista marca de cada configuración con sus emojis. Desde
+ *     el 29 de octubre de 2026 no deciden nada —toda variante de tecnología se confirma por
+ *     WhatsApp (enmienda a ADR-0086)—; siguen en el contrato porque la skill los exporta
  * @param excepcionesDeFotos por id de modelo, los que la skill de fotos dejó pasar con menos de
  *     cuatro fotos (28/10/2026). Solo los usan los borradores
  */
@@ -146,21 +148,6 @@ public record ImportarListaDeTecnologiaComando(
     } catch (NoSuchAlgorithmException e) {
       throw new IllegalStateException("La JVM no ofrece SHA-256.", e);
     }
-  }
-
-  /**
-   * Los colores que la lista marca de esta configuración con sus emojis (ADR-0086): solo esos se
-   * venden sin confirmar con el proveedor. Si la exportación no los mandó aparte, se deducen de los
-   * sugeridos.
-   *
-   * <p>No entran en la {@link #huella()}, por lo mismo que el modo: cambiarían la de las listas ya
-   * registradas. Lo que marcan los emojis ya está en los sugeridos, que sí entran.
-   */
-  public List<String> marcadosDe(ConfiguracionTecnologia configuracion, List<String> paleta) {
-    List<String> marcados = coloresMarcados.get(configuracion.sku());
-    return marcados != null
-        ? marcados
-        : ConfirmacionDeColor.marcadosSegunLosSugeridos(paleta, configuracion.coloresSugeridos());
   }
 
   /**

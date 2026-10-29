@@ -36,7 +36,6 @@ import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.domain.compartido.ZonaDelNegocio;
 import co.tecnosport.api.domain.proveedores.BorradorTecnologia;
 import co.tecnosport.api.domain.proveedores.ConfiguracionTecnologia;
-import co.tecnosport.api.domain.proveedores.ConfirmacionDeColor;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
 import co.tecnosport.api.domain.proveedores.FotoDeBorradorTecnologia;
 import co.tecnosport.api.domain.proveedores.MargenMinimo;
@@ -206,14 +205,11 @@ public final class AprobarBorradorTecnologia {
             : crearProducto(borrador, marcaId, categoriaId);
 
     // La paleta del borrador pasa al producto si el producto no tiene una: la ficha la enseña al
-    // pie
-    // de las fotos, y es con ella que se sabe si el modelo tiene un único color (ADR-0086).
+    // pie de las fotos (ADR-0086).
     List<String> paleta =
         producto.paleta().isEmpty() ? borrador.modelo().paleta() : producto.paleta();
     Map<UUID, Boolean> disponibilidadPorConfirmar = new HashMap<>();
     for (ConfiguracionTecnologia c : borrador.configuracionesQueSeVenden()) {
-      List<String> marcados =
-          ConfirmacionDeColor.marcadosSegunLosSugeridos(paleta, c.coloresSugeridos());
       for (String color : c.coloresElegidos()) {
         VarianteCreada creada =
             agregarVariante.ejecutar(
@@ -238,8 +234,10 @@ public final class AprobarBorradorTecnologia {
                 color,
                 c.costoProveedor(),
                 borrador.vistoEn()));
-        disponibilidadPorConfirmar.put(
-            creada.variante().id(), ConfirmacionDeColor.requiere(paleta, marcados, color));
+        // Toda variante de tecnología se confirma con el proveedor por WhatsApp antes de venderse,
+        // también la que la lista marcó y la de un modelo de un solo color (29 de octubre de 2026,
+        // enmienda a ADR-0086).
+        disponibilidadPorConfirmar.put(creada.variante().id(), true);
       }
     }
     productosDeProveedor.marcarDisponibilidadesPorConfirmar(disponibilidadPorConfirmar);

@@ -21,12 +21,24 @@ import java.util.regex.Pattern;
  * @param albumDeDisenos la publicación es un catálogo: un texto y un diseño distinto en cada foto o
  *     grupo de fotos, no un producto con varias vistas o colores
  * @param jsonCrudo lo que devolvió el lector, tal cual; el borrador lo guarda para poder comparar
+ * @param prenda qué prenda es y para quién, según las fotos; nula si no es ropa o si la lectura es
+ *     de antes del 29 de octubre de 2026
  */
-public record LecturaDeFotos(boolean albumDeDisenos, List<LecturaDeFoto> fotos, String jsonCrudo) {
+public record LecturaDeFotos(
+    boolean albumDeDisenos, List<LecturaDeFoto> fotos, String jsonCrudo, LecturaDePrenda prenda) {
 
   public LecturaDeFotos {
     fotos = fotos == null ? List.of() : List.copyOf(fotos);
     Objects.requireNonNull(jsonCrudo, "La lectura guarda lo que devolvió el lector.");
+  }
+
+  /** Sin lectura de la prenda: la forma de antes del 29 de octubre de 2026. */
+  public LecturaDeFotos(boolean albumDeDisenos, List<LecturaDeFoto> fotos, String jsonCrudo) {
+    this(albumDeDisenos, fotos, jsonCrudo, null);
+  }
+
+  public Optional<LecturaDePrenda> prendaOpcional() {
+    return Optional.ofNullable(prenda);
   }
 
   public Optional<LecturaDeFoto> deLaFoto(int posicion) {

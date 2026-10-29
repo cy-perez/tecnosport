@@ -1,9 +1,45 @@
 {
   "type": "object",
   "additionalProperties": false,
-  "required": ["album_de_disenos", "fotos"],
+  "required": ["album_de_disenos", "prenda", "fotos"],
   "properties": {
     "album_de_disenos": { "type": "boolean" },
+    "prenda": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tipo", "genero"],
+      "properties": {
+        "tipo": {
+          "type": "string",
+          "enum": [
+            "no_es_ropa",
+            "conjunto_pantalon",
+            "conjunto_short",
+            "conjunto_falda",
+            "enterizo",
+            "vestido",
+            "polo",
+            "camiseta",
+            "camisa",
+            "blusa",
+            "bodi",
+            "buso",
+            "chaqueta",
+            "blazer",
+            "chaleco",
+            "pantalon",
+            "sudadera",
+            "short",
+            "bermuda",
+            "falda",
+            "falda_short",
+            "gorra",
+            "otra_prenda"
+          ]
+        },
+        "genero": { "type": "string", "enum": ["dama", "caballero", "unisex", "no_se_sabe"] }
+      }
+    },
     "fotos": {
       "type": "array",
       "items": {

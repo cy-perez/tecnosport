@@ -2308,6 +2308,24 @@ class ResolverBorradorTest {
     assertTrue(borrador.descripcion().orElseThrow().contains(" para dama. "));
   }
 
+  /**
+   * La prenda de ropa llega con el género que dijo el anuncio o vio la foto (29 de octubre de
+   * 2026): con él el panel propone Ropa › Dama o Ropa › Caballero.
+   */
+  @Test
+  void laPrendaGuardaElGeneroDeLaExtraccion() {
+    PublicacionProveedor publicacion = publicacion("Buzo navideño 💰 45.000", "foto-buzo");
+
+    resolver(
+        publicacion,
+        evaluada("Buzo navideño", 45000, true, false, Set.of())
+            .conGeneroDePrenda(GeneroDeCalzado.DAMA));
+
+    assertEquals(
+        Optional.of(GeneroDeCalzado.DAMA),
+        borradores.enEstado(EstadoBorrador.EN_REVISION).getFirst().generoDeCalzado());
+  }
+
   /** Sin género en el texto, el que se ve en las fotos. */
   @Test
   void sinGeneroEnElTextoValeElDeLaFoto() {

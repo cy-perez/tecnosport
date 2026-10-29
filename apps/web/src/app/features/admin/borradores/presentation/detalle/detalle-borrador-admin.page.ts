@@ -62,12 +62,13 @@ import {
   EstadoBorrador,
   fotoAdmitida,
   HermanoBorrador,
-  MARCA_DE_REPLICAS,
+  MARCA_GENERICA,
   MAXIMO_FOTOS_POR_PRODUCTO,
   TallaPedida,
   Tallas,
   TipoDeTalla,
   TipoProductoProveedor,
+  sinArchivo,
   TIPOS_PRODUCTO_PROVEEDOR,
 } from '../../domain/borrador.model';
 import {
@@ -194,7 +195,18 @@ export class DetalleBorradorAdminPage {
   protected readonly borrador = computed<Borrador | null>(
     () => this.consulta.data()?.borrador ?? null,
   );
-  protected readonly fotos = computed(() => this.consulta.data()?.fotos ?? []);
+  /**
+   * Las fotos que se pueden ver. Las que el chat nombra como «imagen omitida» —WhatsApp exporta sin
+   * el archivo la que el teléfono no había descargado— llegan sin URL: pintarlas era un `<img
+   * src="">` roto por cada una (Meraki, 28 de octubre de 2026). No se eligen ni se aprueban; se
+   * cuentan aparte y el panel avisa cuántas faltan.
+   */
+  protected readonly fotos = computed(() =>
+    (this.consulta.data()?.fotos ?? []).filter((foto) => !sinArchivo(foto)),
+  );
+  protected readonly fotosNoExportadas = computed(
+    () => (this.consulta.data()?.fotos ?? []).filter(sinArchivo).length,
+  );
   protected readonly textos = computed(() => this.consulta.data()?.textos ?? []);
   protected readonly editable = computed(() => {
     const borrador = this.borrador();
@@ -533,7 +545,7 @@ export class DetalleBorradorAdminPage {
   private cargado: string | null = null;
   private sugeridaAplicada: string | null = null;
   private tonosSugeridosAplicados: string | null = null;
-  private marcaDeReplicaAplicada: string | null = null;
+  private marcaGenericaAplicada: string | null = null;
 
   constructor() {
     effect(() => {
@@ -601,8 +613,9 @@ export class DetalleBorradorAdminPage {
         return;
       }
       this.sugeridaAplicada = borrador.id;
-      const slug = categoriaSugerida(borrador);
-      const sugerida = slug ? categorias.find((categoria) => categoria.slug === slug) : undefined;
+      const sugerida = categoriaSugerida(borrador)
+        .map((slug) => categorias.find((categoria) => categoria.slug === slug))
+        .find((categoria) => categoria !== undefined);
       const control = this.formAprobar.controls.categoriaId;
       if (sugerida && borradorEditable(borrador) && control.value === '') {
         control.setValue(sugerida.id);
@@ -659,23 +672,19 @@ export class DetalleBorradorAdminPage {
       }
     });
 
-    // Una réplica se publica con la marca Genérica: se propone en cuanto llegan las marcas, una
-    // vez por borrador y solo si nadie eligió otra.
+    // Lo de un proveedor se publica con la marca Genérica, sea réplica o no (29 de octubre de
+    // 2026): se propone en cuanto llegan las marcas, una vez por borrador y solo si nadie eligió
+    // otra.
     effect(() => {
       const borrador = this.borrador();
       const marcas = this.opciones.marcas.data();
-      if (!borrador || !marcas || this.marcaDeReplicaAplicada === borrador.id) {
+      if (!borrador || !marcas || this.marcaGenericaAplicada === borrador.id) {
         return;
       }
-      this.marcaDeReplicaAplicada = borrador.id;
-      const generica = marcas.find((marca) => sinTildes(marca.nombre) === MARCA_DE_REPLICAS);
+      this.marcaGenericaAplicada = borrador.id;
+      const generica = marcas.find((marca) => sinTildes(marca.nombre) === MARCA_GENERICA);
       const control = this.formAprobar.controls.marcaId;
-      if (
-        generica &&
-        borrador.alertas.includes('REPLICA') &&
-        borradorEditable(borrador) &&
-        control.value === ''
-      ) {
+      if (generica && borradorEditable(borrador) && control.value === '') {
         control.setValue(generica.id);
       }
     });

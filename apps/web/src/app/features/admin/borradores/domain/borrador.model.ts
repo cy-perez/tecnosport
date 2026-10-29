@@ -34,6 +34,9 @@ export type TipoProductoProveedor =
   | 'SUDADERA'
   | 'BLAZER'
   | 'CHALECO'
+  | 'CAMISA'
+  | 'GORRA'
+  | 'BERMUDA'
   | 'OTRO';
 
 export const TIPOS_PRODUCTO_PROVEEDOR: readonly TipoProductoProveedor[] = [
@@ -59,6 +62,9 @@ export const TIPOS_PRODUCTO_PROVEEDOR: readonly TipoProductoProveedor[] = [
   'SUDADERA',
   'BLAZER',
   'CHALECO',
+  'CAMISA',
+  'GORRA',
+  'BERMUDA',
   'OTRO',
 ];
 
@@ -84,6 +90,36 @@ export const CATEGORIA_SUGERIDA_POR_TIPO: Readonly<Partial<Record<TipoProductoPr
   };
 
 /**
+ * La hoja de cada prenda dentro de su rama, Ropa › Dama o Ropa › Caballero, por el final del slug.
+ * Con el género que leyó la ingesta (29 de octubre de 2026) la categoría ya no depende de quien
+ * aprueba. Varias cuando el árbol no es parejo: el buzo es «buzos» en la nube y «busos» en la
+ * migración, y el short de caballero es una pantaloneta. Se propone la primera que exista.
+ */
+const HOJAS_POR_TIPO: Readonly<Partial<Record<TipoProductoProveedor, readonly string[]>>> = {
+  CONJUNTO_PANTALON: ['conjuntos'],
+  CONJUNTO_SHORT: ['conjuntos'],
+  CONJUNTO_FALDA: ['conjuntos'],
+  ENTERIZO: ['enterizos'],
+  VESTIDO: ['vestidos'],
+  POLO: ['polos'],
+  CAMISETA: ['camisetas'],
+  CAMISA: ['camisas'],
+  BLUSA: ['blusas'],
+  BODI: ['bodis'],
+  BUSO: ['buzos', 'busos'],
+  CHAQUETA: ['chaquetas'],
+  BLAZER: ['blazers'],
+  CHALECO: ['chalecos'],
+  PANTALON: ['pantalones'],
+  SUDADERA: ['sudaderas'],
+  SHORT: ['shorts', 'pantalonetas'],
+  BERMUDA: ['bermudas', 'shorts', 'pantalonetas'],
+  FALDA: ['faldas'],
+  FALDA_SHORT: ['falda-short', 'faldas-shorts'],
+  GORRA: ['gorras'],
+};
+
+/**
  * Los tipos que arma la ingesta y no lee el extractor: excluir uno no descartaría nada, porque lo
  * que se compara con las exclusiones del proveedor es lo que el anuncio dice, antes de armar el set.
  */
@@ -107,14 +143,16 @@ export type AlertaBorrador =
   | 'SET_SIN_DESCRIPCION'
   | 'TALLAS_CORRIDAS'
   | 'TALLAS_SIN_CORRER'
-  | 'MODELO_POR_CONFIRMAR';
+  | 'MODELO_POR_CONFIRMAR'
+  | 'TIPO_CORREGIDO_POR_FOTO';
 
 /**
- * Cómo se llama la marca con que se publica una réplica («1.1» o «AAA»): la original solo va en el título,
- * como «Camiseta estilo Puma - BMW» (decidido por el negocio el 3 de octubre de 2026). Se busca por
- * nombre, sin tildes ni mayúsculas, porque el id cambia de un ambiente a otro.
+ * La marca con que se publica todo lo que llega de un proveedor —ropa, calzado y bolsos—: la
+ * original, si la hay, solo va en el título, como «Camiseta estilo Puma - BMW». Empezó con las
+ * réplicas («1.1» o «AAA», 3 de octubre de 2026) y desde el 29 de octubre de 2026 es la de todo
+ * borrador. Se busca por nombre, sin tildes ni mayúsculas, porque el id cambia de un ambiente a otro.
  */
-export const MARCA_DE_REPLICAS = 'generica';
+export const MARCA_GENERICA = 'generica';
 
 export type TipoDeTalla = 'UNICA' | 'LISTA' | 'DESCONOCIDA';
 
@@ -210,8 +248,8 @@ export interface Borrador {
   /** Cómo se le pide al proveedor cada talla, con lo guardado; vacía sin ajuste. */
   readonly tallasPedidas: readonly TallaPedida[];
   /**
-   * Para quién es el tenis, según la foto o el anuncio (ADR-0089); `null` si no es calzado o no se
-   * sabe. Decide la rama del calzado que se propone al aprobar.
+   * Para quién es el tenis o la prenda, según el anuncio o las fotos (ADR-0089; la prenda desde el
+   * 29 de octubre de 2026); `null` si no se sabe. Decide la rama que se propone al aprobar.
    */
   readonly generoDeCalzado: GeneroDeCalzado | null;
 }
@@ -219,16 +257,27 @@ export interface Borrador {
 export type GeneroDeCalzado = 'DAMA' | 'CABALLERO' | 'UNISEX';
 
 /**
- * La categoría que se propone al aprobar: la del tipo, y en un tenis la rama de su género
- * —«calzado-dama», «calzado-caballero», «calzado-unisex»—. `undefined` si no hay una sola.
+ * Las categorías que se pueden proponer al aprobar, por slug y en orden de preferencia: se propone
+ * la primera que exista en el árbol. En un tenis, la rama de su género —«calzado-dama»,
+ * «calzado-caballero», «calzado-unisex»—. En una prenda de dama o de caballero, su hoja en esa
+ * rama —un buzo de dama es «ropa-dama-buzos»—, y después la fija de su tipo. Vacía si no hay
+ * ninguna: la ropa no tiene rama unisex, y una prenda unisex la elige quien aprueba.
  */
-export function categoriaSugerida(borrador: Pick<Borrador, 'tipo' | 'generoDeCalzado'>) {
+export function categoriaSugerida(
+  borrador: Pick<Borrador, 'tipo' | 'generoDeCalzado'>,
+): readonly string[] {
+  const genero = borrador.generoDeCalzado;
   if (borrador.tipo === 'TENIS') {
-    return borrador.generoDeCalzado
-      ? 'calzado-' + borrador.generoDeCalzado.toLowerCase()
-      : undefined;
+    return genero ? ['calzado-' + genero.toLowerCase()] : [];
   }
-  return CATEGORIA_SUGERIDA_POR_TIPO[borrador.tipo];
+  const fija = CATEGORIA_SUGERIDA_POR_TIPO[borrador.tipo];
+  const deSuRama =
+    genero === 'DAMA' || genero === 'CABALLERO'
+      ? (HOJAS_POR_TIPO[borrador.tipo] ?? []).map(
+          (hoja) => 'ropa-' + genero.toLowerCase() + '-' + hoja,
+        )
+      : [];
+  return fija && !deSuRama.includes(fija) ? [...deSuRama, fija] : deSuRama;
 }
 
 /** La talla que se vende y la que se le pide al proveedor; esta, nula si no se puede contar. */
@@ -242,6 +291,11 @@ export const AJUSTE_DE_TALLA_MAXIMO = 4;
 
 /** De dónde salió la foto: del mensaje del proveedor, o de quien revisa, desde el panel. */
 export type OrigenFoto = 'PROVEEDOR' | 'PANEL';
+
+/** La foto existió en el chat y la exportación no trajo su archivo: no hay nada que mostrar. */
+export function sinArchivo(foto: FotoBorrador): boolean {
+  return foto.url === '';
+}
 
 export interface FotoBorrador {
   /**

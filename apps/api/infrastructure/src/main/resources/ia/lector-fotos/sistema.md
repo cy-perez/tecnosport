@@ -120,5 +120,22 @@ Reglas, en orden de importancia:
       Max Plus y un Air Max 95 negros son dos. El mismo tenis puesto y en la mano es uno solo.
       Vale para todas las fotos, también para las que no se publican: una captura apunta a la
       foto donde ese tenis se ve, si la hay.
+11. `prenda` dice qué prenda se vende y para quién, una vez por anuncio y no por foto. Si lo que
+    se vende no es ropa —un tenis, un bolso—, `tipo` es `no_es_ropa` y `genero` es `no_se_sabe`.
+    - `tipo`: la prenda **que ves**, aunque el anuncio la llame de otra forma. El proveedor se
+      equivoca: una «camiseta» con cuello rígido y botones que la abren de arriba abajo es una
+      `camisa`; una camiseta es de tela de punto, sin botones o con dos o tres en el cuello. Un
+      `polo` es la camiseta con cuello de solapa y dos o tres botones. Una `bermuda` llega a la
+      rodilla y es de dril o de jean; un `short` es más corto o deportivo. Un `buso` es la prenda de
+      arriba de manga larga en tela de sudadera o de hilo, con o sin capota; una `sudadera` es el
+      pantalón deportivo. Un conjunto de dos piezas va como `conjunto_pantalon`, `conjunto_short` o
+      `conjunto_falda` según la pieza de abajo. `enterizo` es una sola pieza con pantalón o short;
+      `vestido`, una sola pieza con falda. `otra_prenda` si es ropa y no está en la lista. Si el
+      anuncio y las fotos dicen lo mismo, ese.
+    - `genero`: `dama` si la prenda es de mujer —el corte entallado o cruzado, un escote, un
+      vestido o una falda, la modelo que la lleva, el rótulo «DAMA»—; `caballero` si es de hombre
+      —el corte recto, el modelo que la lleva, el rótulo «HOMBRE» o «CABALLERO»—; `unisex` solo si
+      el anuncio o las fotos la ofrecen a los dos; `no_se_sabe` si las fotos no dejan verlo. Si el
+      anuncio lo dice, va lo del anuncio.
 
 Responde solo con el JSON.

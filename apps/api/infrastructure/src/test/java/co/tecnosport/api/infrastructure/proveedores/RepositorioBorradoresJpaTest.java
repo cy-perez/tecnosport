@@ -988,7 +988,8 @@ class RepositorioBorradoresJpaTest {
     UUID marca = UUID.randomUUID();
     UUID categoria = UUID.randomUUID();
     UUID producto = UUID.randomUUID();
-    em.createNativeQuery("insert into marca (id, nombre, creado_en) values (?1, 'Genérica', now())")
+    em.createNativeQuery(
+            "insert into marca (id, nombre, creado_en) values (?1, 'Marca de prueba', now())")
         .setParameter(1, marca)
         .executeUpdate();
     em.createNativeQuery(

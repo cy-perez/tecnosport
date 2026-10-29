@@ -55,5 +55,12 @@ public enum AlertaBorrador {
    * podría ser un Shox TL— (ADR-0090). Quien aprueba lo confirma o lo corrige: un modelo mal
    * nombrado es información falsa para quien compra.
    */
-  MODELO_POR_CONFIRMAR
+  MODELO_POR_CONFIRMAR,
+  /**
+   * El anuncio dice una prenda y las fotos muestran otra —la «camiseta» con cuello rígido y botones
+   * de arriba abajo es una camisa— y el borrador se quedó con la de las fotos, que es la que decide
+   * la categoría (29 de octubre de 2026). Quien aprueba lo confirma, y corrige el título si lo
+   * nombra.
+   */
+  TIPO_CORREGIDO_POR_FOTO
 }

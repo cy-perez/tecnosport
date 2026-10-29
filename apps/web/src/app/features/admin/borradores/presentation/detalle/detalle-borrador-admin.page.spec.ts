@@ -382,6 +382,30 @@ describe('DetalleBorradorAdminPage', () => {
    * octubre de 2026): por omisión entran las diez primeras, y quien aprueba cambia cuáles. La
    * primera elegida es la principal.
    */
+  /**
+   * Meraki, 28 de octubre de 2026: el chat decía «imagen omitida» y el panel pintaba un `<img
+   * src="">` roto por cada una. La que no vino no se pinta, no se aprueba, y se dice cuántas faltan.
+   */
+  it('una foto que la exportación no trajo no se pinta ni se aprueba, y se avisa', async () => {
+    const omitida = { ...fotoDePrueba('f-2'), url: '' };
+    const { repositorio } = await renderPagina(borradorDePrueba(), [
+      fotoDePrueba('f-1'),
+      omitida,
+      fotoDePrueba('f-3'),
+    ]);
+    await llenarAprobacion();
+
+    expect(await screen.findByText(/WhatsApp no incluyó 1 foto\(s\)/)).toBeTruthy();
+    expect(screen.getAllByRole('img').map((img) => img.getAttribute('src'))).not.toContain('');
+    fireEvent.click(screen.getByRole('button', { name: a.accion }));
+
+    await screen.findByRole('link', { name: a.verProducto });
+    expect(repositorio.aprobaciones[0].aprobacion.fotos.map((f) => f.mensajeId)).toEqual([
+      'f-1',
+      'f-3',
+    ]);
+  });
+
   it('con más fotos de las que caben entran las diez primeras y se puede cambiar cuáles', async () => {
     const fotos = Array.from({ length: 12 }, (_, i) => fotoDePrueba('f-' + (i + 1)));
     const { repositorio } = await renderPagina(borradorDePrueba(), fotos);
@@ -850,6 +874,28 @@ describe('DetalleBorradorAdminPage', () => {
    * Los polos de La Riverah caen en Caballero › Polos, y los blazers y chalecos de Violeta en sus
    * hojas de Dama: antes los tres llegaban sin categoría, como camiseta o como OTRO.
    */
+  /**
+   * Con el género que leyó la foto (29 de octubre de 2026) se propone su hoja en esa rama; si el
+   * árbol no la tiene, la siguiente que exista.
+   */
+  it('un conjunto de dama llega en los conjuntos de dama', async () => {
+    await renderPagina(borradorDePrueba({ tipo: 'CONJUNTO_PANTALON', generoDeCalzado: 'DAMA' }));
+    await screen.findByRole('option', { name: /Conjuntos/ });
+
+    await vi.waitFor(() =>
+      expect((screen.getByLabelText(a.categoria) as HTMLSelectElement).value).toBe('c10'),
+    );
+  });
+
+  it('un polo de dama sin hoja de dama cae en la fija de su tipo', async () => {
+    await renderPagina(borradorDePrueba({ tipo: 'POLO', generoDeCalzado: 'DAMA' }));
+    await screen.findByRole('option', { name: /Polos/ });
+
+    await vi.waitFor(() =>
+      expect((screen.getByLabelText(a.categoria) as HTMLSelectElement).value).toBe('c6'),
+    );
+  });
+
   it.each([
     ['POLO', 'c6', /Polos/],
     ['BLAZER', 'c7', /Blazers/],
@@ -1084,11 +1130,26 @@ describe('DetalleBorradorAdminPage', () => {
     expect(screen.getByText(esAdmin.borradores.alertas.REPLICA)).toBeTruthy();
   });
 
-  it('sin la alerta de réplica no elige marca', async () => {
+  /** Desde el 29 de octubre de 2026 todo lo de un proveedor sale con Genérica, réplica o no. */
+  it('sin la alerta de réplica también propone Genérica', async () => {
     await renderPagina();
     await screen.findByRole('option', { name: 'Genérica' });
 
-    expect((screen.getByLabelText(a.marca) as HTMLSelectElement).value).toBe('');
+    await vi.waitFor(() =>
+      expect((screen.getByLabelText(a.marca) as HTMLSelectElement).value).toBe('m1'),
+    );
+  });
+
+  it('la marca que alguien eligió no la pisa la propuesta', async () => {
+    await renderPagina();
+    await screen.findByRole('option', { name: 'Genérica' });
+    const marca = screen.getByLabelText(a.marca) as HTMLSelectElement;
+    await vi.waitFor(() => expect(marca.value).toBe('m1'));
+
+    fireEvent.change(marca, { target: { value: '' } });
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(marca.value).toBe('');
   });
 
   it('eliminar una foto pregunta antes, la saca de la revisión y lo anuncia', async () => {

@@ -142,7 +142,7 @@ class RepositorioProductosJpaTest {
   /** El «sirve hasta» de una talla única va y vuelve, y se puede quitar. */
   @Test
   void elSirveHastaDeUnaTallaUnicaVaYVuelve() {
-    MarcaJpaEntity marca = marca("Genérica");
+    MarcaJpaEntity marca = marca("Marca de prueba");
     CategoriaJpaEntity categoria = categoria("Bodis", "ropa-dama-bodis-t2", "ROPA");
     producto("Bodi herraje", "bodi-herraje-t2", "BORRADOR", marca, categoria);
     Producto bodi = repositorio.buscarPorSlug(new Slug("bodi-herraje-t2")).orElseThrow();
@@ -163,7 +163,7 @@ class RepositorioProductosJpaTest {
   /** La gorra de un set (12 de octubre de 2026): el peso adicional va y vuelve, y nace en cero. */
   @Test
   void elPesoAdicionalDeUnSetVaYVuelve() {
-    MarcaJpaEntity marca = marca("Genérica");
+    MarcaJpaEntity marca = marca("Marca de prueba");
     CategoriaJpaEntity categoria = categoria("Polos", "ropa-caballero-polos-t2", "ROPA");
     producto("Set polo importado y gorra", "set-polo-t2", "BORRADOR", marca, categoria);
     Producto set = repositorio.buscarPorSlug(new Slug("set-polo-t2")).orElseThrow();
@@ -951,7 +951,7 @@ class RepositorioProductosJpaTest {
   /** El color de una foto de la galería va y vuelve, y se puede soltar. */
   @Test
   void elColorDeUnaFotoDeLaGaleriaVaYVuelve() {
-    MarcaJpaEntity marca = marca("Genérica");
+    MarcaJpaEntity marca = marca("Marca de prueba");
     CategoriaJpaEntity categoria = categoria("Bodis", "ropa-dama-bodis-t22", "ROPA");
     ProductoJpaEntity productoJpa = producto("Bodi t22", "bodi-t22", "BORRADOR", marca, categoria);
     VarianteJpaEntity vino = variante(productoJpa, "PRV-T22-VINO", "60000");
@@ -985,7 +985,7 @@ class RepositorioProductosJpaTest {
    */
   @Test
   void loQueMuestraCadaFotoVaYVuelve() {
-    MarcaJpaEntity marca = marca("Genérica");
+    MarcaJpaEntity marca = marca("Marca de prueba");
     CategoriaJpaEntity categoria = categoria("Bodis", "ropa-dama-bodis-t23", "ROPA");
     ProductoJpaEntity productoJpa =
         producto("Camiseta t23", "camiseta-t23", "BORRADOR", marca, categoria);

@@ -14,7 +14,6 @@ import co.tecnosport.api.domain.compartido.ZonaDelNegocio;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.proveedores.BorradorTecnologia;
 import co.tecnosport.api.domain.proveedores.ConfiguracionTecnologia;
-import co.tecnosport.api.domain.proveedores.ConfirmacionDeColor;
 import co.tecnosport.api.domain.proveedores.ExcepcionDeFotos;
 import co.tecnosport.api.domain.proveedores.HuellaProveedor;
 import co.tecnosport.api.domain.proveedores.MargenMinimo;
@@ -213,12 +212,11 @@ public final class ImportarListaDeTecnologia {
           if (!inventario) {
             continue;
           }
-          List<String> marcados = comando.marcadosDe(c, entrada.modelo().paleta());
           for (VarianteDeProveedor v : variantes) {
             variantesDeProveedor.guardar(v.conCosto(c.costoProveedor(), visto));
-            disponibilidadPorConfirmar.put(
-                v.varianteId(),
-                ConfirmacionDeColor.requiere(existente.paleta(), marcados, v.color()));
+            // Ni el color que la lista marca se vende sin confirmar (enmienda a ADR-0086, 29 de
+            // octubre de 2026); reescribirlo cura la variante que una lista anterior dejó libre.
+            disponibilidadPorConfirmar.put(v.varianteId(), true);
             // Un costo que deja menos del margen mínimo sobre el contado no se repone: la variante
             // queda agotada por el proveedor hasta que una lista le devuelva el margen (27 de
             // octubre de 2026). La lista no mueve el precio; subirlo es del panel.

@@ -592,6 +592,35 @@ public record ProductoExtraido(
         set);
   }
 
+  /**
+   * Este mismo producto con la prenda que se ve en sus fotos, cuando el anuncio nombra otra: la
+   * «camiseta» que es una camisa (29 de octubre de 2026). El título no se toca: lo corrige quien
+   * aprueba, avisado por la alerta.
+   */
+  public ProductoExtraido conTipo(TipoProductoProveedor otro) {
+    return new ProductoExtraido(
+        esProducto,
+        estaAgotado,
+        titulo,
+        linea,
+        otro,
+        precioProveedor,
+        tallas,
+        cantidadTonos,
+        tonosNombrados,
+        material,
+        descripcion,
+        altEn,
+        esReplica,
+        confianza,
+        notas,
+        codigoReferencia,
+        tallasPorTono,
+        preciosAdicionales,
+        marcas,
+        set);
+  }
+
   /** Este mismo producto con otras tallas: las que un proveedor de calzado maneja siempre. */
   public ProductoExtraido conTallas(Tallas otras) {
     return new ProductoExtraido(

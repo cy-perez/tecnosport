@@ -6,12 +6,15 @@ import co.tecnosport.api.domain.proveedores.GeneroDeCalzado;
 import co.tecnosport.api.domain.proveedores.LecturaDeCalzado;
 import co.tecnosport.api.domain.proveedores.LecturaDeFotos;
 import co.tecnosport.api.domain.proveedores.LecturaDeFotos.LecturaDeFoto;
+import co.tecnosport.api.domain.proveedores.LecturaDePrenda;
 import co.tecnosport.api.domain.proveedores.TipoDeCalzado;
+import co.tecnosport.api.domain.proveedores.TipoProductoProveedor;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.IntPredicate;
@@ -88,7 +91,44 @@ public final class InterpreteDeLecturaDeFotosJson implements InterpreteDeLectura
               lista(foto.path("tallas")),
               calzado(foto.path("calzado"))));
     }
-    return new LecturaDeFotos(raiz.path("album_de_disenos").asBoolean(false), lecturas, jsonCrudo);
+    return new LecturaDeFotos(
+        raiz.path("album_de_disenos").asBoolean(false),
+        lecturas,
+        jsonCrudo,
+        prenda(raiz.path("prenda")));
+  }
+
+  /**
+   * Qué prenda se ve y para quién (29 de octubre de 2026). Nula si no es ropa, si no se sabe nada,
+   * o en las lecturas guardadas antes, que no traen el campo.
+   */
+  private static LecturaDePrenda prenda(JsonNode nodo) {
+    if (nodo == null || !nodo.isObject()) {
+      return null;
+    }
+    String tipo = Objects.requireNonNullElse(texto(nodo.path("tipo")), "");
+    TipoProductoProveedor deLaFoto =
+        switch (tipo) {
+          case "", "no_es_ropa", "otra_prenda" -> null;
+          default -> {
+            try {
+              yield TipoProductoProveedor.valueOf(tipo.toUpperCase(Locale.ROOT));
+            } catch (IllegalArgumentException e) {
+              yield null;
+            }
+          }
+        };
+    GeneroDeCalzado genero =
+        switch (Objects.requireNonNullElse(texto(nodo.path("genero")), "")) {
+          case "dama" -> GeneroDeCalzado.DAMA;
+          case "caballero" -> GeneroDeCalzado.CABALLERO;
+          case "unisex" -> GeneroDeCalzado.UNISEX;
+          default -> null;
+        };
+    if (tipo.equals("no_es_ropa") || (deLaFoto == null && genero == null)) {
+      return null;
+    }
+    return new LecturaDePrenda(deLaFoto, genero);
   }
 
   /**

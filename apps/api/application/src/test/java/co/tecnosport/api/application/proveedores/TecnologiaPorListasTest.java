@@ -1138,7 +1138,7 @@ class TecnologiaPorListasTest {
   }
 
   @Test
-  void aprobarDejaLaPaletaEnElProductoYLoQueLaListaNoMarcoPorConfirmar() {
+  void aprobarDejaLaPaletaEnElProductoYCadaColorPorConfirmar() {
     Producto producto = unA17QueYaSeVende();
 
     assertEquals(List.of("Negro", "Gris", "Azul"), producto.paleta());
@@ -1146,49 +1146,28 @@ class TecnologiaPorListasTest {
     assertTrue(porConfirmar(variante(producto, "Gris")));
   }
 
+  /**
+   * El iPad 11" A16 azul se agregaba al carrito sin preguntarle a nadie: la lista lo marcaba. Desde
+   * el 29 de octubre de 2026 toda variante de tecnología se consulta por WhatsApp (enmienda a
+   * ADR-0086), la marcada también, y la lista cura la que una anterior dejó libre.
+   */
   @Test
-  void elColorQueLaListaMarcaSeVendeSinConfirmarYElQueNoSeConfirma() {
+  void niElColorQueLaListaMarcaSeVendeSinConfirmar() {
     Producto producto = unA17QueYaSeVende();
-
-    importar(
-        lista(
-            JUEVES, List.of(conColores(UNA_SIM, 660_000, "1 SIM", "Negro")), List.of(), List.of()));
-
-    assertEquals(false, porConfirmar(variante(producto, "Negro")));
-    assertTrue(porConfirmar(variante(producto, "Gris")));
-  }
-
-  @Test
-  void unosSugeridosQueCubrenLaPaletaNoConfirmanNada() {
-    Producto producto = unA17QueYaSeVende();
-
-    importar(
-        lista(
-            JUEVES,
-            List.of(conColores(UNA_SIM, 660_000, "1 SIM", "Negro", "Gris", "Azul")),
-            List.of(),
-            List.of()));
-
-    assertTrue(porConfirmar(variante(producto, "Negro")));
-    assertTrue(porConfirmar(variante(producto, "Gris")));
-  }
-
-  @Test
-  void losColoresMarcadosQueLaExportacionMandaAparteMandanSobreLosSugeridos() {
-    Producto producto = unA17QueYaSeVende();
+    productosDeProveedor.disponibilidadPorConfirmar.put(variante(producto, "Gris").id(), false);
 
     importar(
         new ImportarListaDeTecnologiaComando(
             proveedor.id(),
             JUEVES,
             Modo.INVENTARIO,
-            delA17(List.of(conColores(UNA_SIM, 660_000, "1 SIM", "Negro", "Gris", "Azul"))),
+            delA17(List.of(conColores(UNA_SIM, 660_000, "1 SIM", "Negro", "Gris"))),
             List.of(),
             List.of(),
             Map.of(UNA_SIM, List.of("Gris"))));
 
     assertTrue(porConfirmar(variante(producto, "Negro")));
-    assertEquals(false, porConfirmar(variante(producto, "Gris")));
+    assertTrue(porConfirmar(variante(producto, "Gris")));
   }
 
   @Test
