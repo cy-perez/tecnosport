@@ -29,6 +29,8 @@ import co.tecnosport.api.infrastructure.catalogo.entidad.VarianteJpaEntity;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -650,12 +652,21 @@ public class RepositorioProductosJpa implements RepositorioProductos {
     };
   }
 
+  /**
+   * La fecha va como {@link OffsetDateTime} y no como {@link Instant}: el driver de PostgreSQL no
+   * sabe qué tipo SQL darle a un {@code Instant} y la consulta falla. Era la segunda página del
+   * orden por omisión.
+   */
   private Object parsearClave(OrdenProductos orden, boolean conTexto, String claveTexto) {
     return switch (orden) {
       case PRECIO_ASC, PRECIO_DESC -> new BigDecimal(claveTexto);
-      case MAS_RECIENTES -> Instant.parse(claveTexto);
-      case RELEVANCIA -> conTexto ? Double.parseDouble(claveTexto) : Instant.parse(claveTexto);
+      case MAS_RECIENTES -> fechaDeCursor(claveTexto);
+      case RELEVANCIA -> conTexto ? Double.parseDouble(claveTexto) : fechaDeCursor(claveTexto);
     };
+  }
+
+  private static OffsetDateTime fechaDeCursor(String claveTexto) {
+    return Instant.parse(claveTexto).atOffset(ZoneOffset.UTC);
   }
 
   private String formatearClave(Object valor) {
