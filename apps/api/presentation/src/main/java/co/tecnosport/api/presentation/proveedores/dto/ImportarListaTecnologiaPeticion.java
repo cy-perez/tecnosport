@@ -2,7 +2,9 @@ package co.tecnosport.api.presentation.proveedores.dto;
 
 import co.tecnosport.api.application.proveedores.tecnologia.ImportarListaDeTecnologiaComando;
 import co.tecnosport.api.domain.compartido.Dinero;
+import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.proveedores.ConfiguracionTecnologia;
+import co.tecnosport.api.domain.proveedores.ExcepcionDeFotos;
 import co.tecnosport.api.domain.proveedores.ModeloDeLista;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDate;
@@ -42,7 +44,24 @@ public record ImportarListaTecnologiaPeticion(
         modelos.stream().map(ModeloPeticion::aDominio).toList(),
         configuracionesDesaparecidas,
         modelosDesaparecidos,
-        coloresMarcados());
+        coloresMarcados(),
+        excepcionesDeFotos());
+  }
+
+  /** Por id de modelo, los que la skill de fotos dejó pasar con menos fotos (28/10/2026). */
+  private Map<String, ExcepcionDeFotos> excepcionesDeFotos() {
+    Map<String, ExcepcionDeFotos> excepciones = new HashMap<>();
+    for (ModeloPeticion modelo : modelos) {
+      if (modelo.excepcionDeFotos() != null) {
+        try {
+          excepciones.put(modelo.idModelo().strip(), modelo.excepcionDeFotos().aDominio());
+        } catch (ExcepcionDeDominio e) {
+          // Una excepción mala rechaza la importación entera: que diga de qué modelo es.
+          throw new ExcepcionDeDominio(modelo.idModelo().strip() + ": " + e.getMessage());
+        }
+      }
+    }
+    return excepciones;
   }
 
   /**
@@ -70,7 +89,12 @@ public record ImportarListaTecnologiaPeticion(
       String metaDescripcion,
       List<String> paleta,
       @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
-          List<ConfiguracionPeticion> configuraciones) {
+          List<ConfiguracionPeticion> configuraciones,
+      @Schema(
+              description =
+                  "Solo con los borradores: el modelo se aprueba con menos de cuatro fotos porque"
+                      + " no hay más tomas oficiales. Nulo si pide las cuatro.")
+          ExcepcionDeFotosPeticion excepcionDeFotos) {
 
     public ModeloPeticion {
       Objects.requireNonNull(idModelo, "El modelo tiene su id.");
@@ -84,6 +108,21 @@ public record ImportarListaTecnologiaPeticion(
           new ModeloDeLista(
               idModelo, titulo, marca, categoria, descripcion, metaDescripcion, paleta),
           configuraciones.stream().map(ConfiguracionPeticion::aDominio).toList());
+    }
+  }
+
+  /** La que declaró la persona en la skill de fotos ({@code --minimo-fotos}). */
+  public record ExcepcionDeFotosPeticion(
+      @Schema(requiredMode = Schema.RequiredMode.REQUIRED) Integer minimo,
+      @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String motivo) {
+
+    public ExcepcionDeFotosPeticion {
+      Objects.requireNonNull(minimo, "La excepción de fotos dice cuántas bastan.");
+      Objects.requireNonNull(motivo, "La excepción de fotos dice por qué.");
+    }
+
+    ExcepcionDeFotos aDominio() {
+      return new ExcepcionDeFotos(minimo, motivo);
     }
   }
 

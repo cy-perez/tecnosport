@@ -166,7 +166,11 @@ configuraciones que se dejen sin colores al aprobar, tampoco.
 ## Cosas que se rompen si no se cuidan
 
 **Llevar un modelo sin pasar por la tanda.** La herramienta lo deja fuera, y el
-servidor no aprueba un modelo nuevo con menos de 4 fotos. Desde el 23/10/2026 el
+servidor no aprueba un modelo nuevo con menos de 4 fotos. La única salida es la
+excepción que la persona declara en la tanda (`--minimo-fotos`, 28/10/2026, para un
+modelo sin más tomas oficiales): `--borradores` la lee del `estado-fotos.json` y la
+manda con el borrador, que entonces pide esas y no 4. Sin ella, la API no lo aprueba
+aunque el panel le suba fotos de menos. Desde el 23/10/2026 el
 panel deja subir fotos al borrador a mano, y esas se saltan la compuerta de
 calidad —solo LISTA— que el servidor no puede ver: es para corregir una o dos
 tomas, no para llenar un modelo que no pasó por la tanda. Las de la tanda salen

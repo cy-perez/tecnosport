@@ -24,6 +24,7 @@ import java.util.UUID;
  * @param descripcionDeLaSkill la que preparó la skill, aunque se haya editado
  * @param fichaEditada si {@code descripcion} es una edición a mano
  * @param fichaNuevaDeLaSkill si una lista trajo otra ficha de la skill después de la edición
+ * @param excepcionDeFotos si el modelo se aprueba con menos de cuatro fotos, cuántas y por qué
  */
 public record BorradorTecnologiaRespuesta(
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED) UUID id,
@@ -47,7 +48,13 @@ public record BorradorTecnologiaRespuesta(
         List<FotoDeBorradorTecnologiaRespuesta> fotos,
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String descripcionDeLaSkill,
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED) boolean fichaEditada,
-    @Schema(requiredMode = Schema.RequiredMode.REQUIRED) boolean fichaNuevaDeLaSkill) {
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED) boolean fichaNuevaDeLaSkill,
+    ExcepcionDeFotosRespuesta excepcionDeFotos) {
+
+  /** Un modelo sin más tomas oficiales que se aprueba con menos fotos (28/10/2026). */
+  public record ExcepcionDeFotosRespuesta(
+      @Schema(requiredMode = Schema.RequiredMode.REQUIRED) int minimo,
+      @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String motivo) {}
 
   /**
    * Cómo se calculan los dos precios sugeridos de cada configuración (ADR-0095): el de contado con
@@ -84,7 +91,10 @@ public record BorradorTecnologiaRespuesta(
         fotos.stream().map(FotoDeBorradorTecnologiaRespuesta::de).toList(),
         b.modelo().descripcion(),
         b.descripcionEditada().isPresent(),
-        b.fichaNuevaDeLaSkill());
+        b.fichaNuevaDeLaSkill(),
+        b.excepcionDeFotos()
+            .map(e -> new ExcepcionDeFotosRespuesta(e.minimo(), e.motivo()))
+            .orElse(null));
   }
 
   /** Una foto del borrador; la primera es la principal. */

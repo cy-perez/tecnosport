@@ -53,6 +53,7 @@ import co.tecnosport.api.domain.proveedores.BorradorTecnologia;
 import co.tecnosport.api.domain.proveedores.BorradorTecnologia.Eleccion;
 import co.tecnosport.api.domain.proveedores.ConfiguracionTecnologia;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
+import co.tecnosport.api.domain.proveedores.ExcepcionDeFotos;
 import co.tecnosport.api.domain.proveedores.FotoDeBorradorTecnologia;
 import co.tecnosport.api.domain.proveedores.MargenMinimo;
 import co.tecnosport.api.domain.proveedores.ModeloDeLista;
@@ -489,6 +490,49 @@ class TecnologiaPorListasTest {
     } catch (java.security.NoSuchAlgorithmException e) {
       throw new IllegalStateException(e);
     }
+  }
+
+  /** Los borradores de la misma lista, con la excepción de fotos que dejó la skill para el A17. */
+  private ImportarListaDeTecnologiaComando deBorradoresConExcepcion(
+      LocalDate fecha, List<ConfiguracionTecnologia> configuraciones, ExcepcionDeFotos excepcion) {
+    return new ImportarListaDeTecnologiaComando(
+        proveedor.id(),
+        fecha,
+        Modo.BORRADORES,
+        delA17(configuraciones),
+        List.of(),
+        List.of(),
+        Map.of(),
+        Map.of(A17.idModelo(), excepcion));
+  }
+
+  @Test
+  void losBorradoresTraenLaExcepcionDeFotosYElInventarioNoLaPierde() {
+    // 28/10/2026: los AirPods Pro 3 no tienen más de dos tomas oficiales.
+    List<ConfiguracionTecnologia> lunes = List.of(config(UNA_SIM, 675_000, "1 SIM"));
+    importar(lista(LUNES, lunes, List.of(), List.of()));
+    ExcepcionDeFotos dos = new ExcepcionDeFotos(2, "no hay más fotos oficiales");
+
+    importar(deBorradoresConExcepcion(LUNES, lunes, dos));
+    assertEquals(Optional.of(dos), enRevision().excepcionDeFotos());
+    assertEquals(2, enRevision().minimoDeFotos());
+
+    importar(lista(JUEVES, List.of(config(UNA_SIM, 660_000, "1 SIM")), List.of(), List.of()));
+    assertEquals(
+        Optional.of(dos), enRevision().excepcionDeFotos(), "el inventario no sabe de fotos");
+
+    importar(deBorradores(JUEVES, List.of(config(UNA_SIM, 660_000, "1 SIM"))));
+    assertTrue(
+        enRevision().excepcionDeFotos().isEmpty(),
+        "la skill la deshizo: los borradores mandan lo que dice la tanda de hoy");
+  }
+
+  @Test
+  void laExcepcionDeFotosNoCambiaLaHuella() {
+    List<ConfiguracionTecnologia> lunes = List.of(config(UNA_SIM, 675_000, "1 SIM"));
+    assertEquals(
+        deBorradores(LUNES, lunes).huella(),
+        deBorradoresConExcepcion(LUNES, lunes, new ExcepcionDeFotos(2, "no hay más")).huella());
   }
 
   @Test

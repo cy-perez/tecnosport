@@ -240,7 +240,7 @@ export function seleccionParaBorradores(lista, porProponer, estados) {
     if (nuevos.has(modelo.idModelo)) {
       const estado = estados[modelo.idModelo];
       if (estado?.estado === "apto" && (modelo.paleta ?? []).length > 0) {
-        modelos.push(modelo);
+        modelos.push(conExcepcionDeFotos(modelo, estado));
       } else if (estado?.estado === "apto") {
         omitidos.push({
           titulo: modelo.titulo,
@@ -265,6 +265,21 @@ export function seleccionParaBorradores(lista, porProponer, estados) {
     if (nuevas.length) modelos.push({ ...modelo, configuraciones: nuevas });
   }
   return { lista: { ...lista, modelos }, omitidos };
+}
+
+/**
+ * El modelo con la excepción de fotos que la persona declaró en la skill de fotos
+ * (`--minimo-fotos`, 28/10/2026): sin ella la API pide 4 para aprobar, y un modelo que no tiene más
+ * tomas oficiales —los AirPods Pro 3, con dos— no se podría aprobar nunca. Sin excepción, el modelo
+ * va tal cual, y la API quita la que tuviera de una corrida anterior.
+ */
+export function conExcepcionDeFotos(modelo, estado) {
+  const excepcion = estado?.minimo_por_excepcion;
+  if (!excepcion) return modelo;
+  return {
+    ...modelo,
+    excepcionDeFotos: { minimo: excepcion.minimo, motivo: excepcion.motivo },
+  };
 }
 
 /**

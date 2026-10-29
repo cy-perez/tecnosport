@@ -6,6 +6,7 @@ import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.proveedores.BorradorTecnologia;
 import co.tecnosport.api.domain.proveedores.ConfiguracionTecnologia;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
+import co.tecnosport.api.domain.proveedores.ExcepcionDeFotos;
 import co.tecnosport.api.domain.proveedores.FotoDeBorradorTecnologia;
 import co.tecnosport.api.domain.proveedores.ModeloDeLista;
 import co.tecnosport.api.infrastructure.proveedores.entidad.BorradorTecnologiaJpaEntity;
@@ -155,7 +156,9 @@ public class RepositorioBorradoresTecnologiaJpa implements RepositorioBorradores
                         f.subidaEn()))
             .toList(),
         b.descripcionEditada().orElse(null),
-        b.fichaNuevaDeLaSkill());
+        b.fichaNuevaDeLaSkill(),
+        b.excepcionDeFotos().map(ExcepcionDeFotos::minimo).orElse(null),
+        b.excepcionDeFotos().map(ExcepcionDeFotos::motivo).orElse(null));
   }
 
   private static BorradorTecnologia aDominio(BorradorTecnologiaJpaEntity f) {
@@ -192,7 +195,10 @@ public class RepositorioBorradoresTecnologiaJpa implements RepositorioBorradores
         f.getCreadoEn(),
         f.getFotos().stream().map(RepositorioBorradoresTecnologiaJpa::foto).toList(),
         f.getDescripcionEditada(),
-        f.isFichaNuevaDeLaSkill());
+        f.isFichaNuevaDeLaSkill(),
+        f.getMinimoDeFotos() == null
+            ? null
+            : new ExcepcionDeFotos(f.getMinimoDeFotos(), f.getMotivoMinimoDeFotos()));
   }
 
   private static FotoDeBorradorTecnologia foto(FotoTecnologiaJpaEmbeddable f) {

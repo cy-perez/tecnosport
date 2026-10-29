@@ -196,6 +196,25 @@ test("los borradores llevan los modelos aptos y las configuraciones nuevas, y di
   assert.match(omitidos[1].motivo, /fuera de la tanda/);
 });
 
+test("un modelo apto con excepción de fotos la lleva a la API, y los demás no traen ninguna", () => {
+  // 28/10/2026: los AirPods Pro 3 no tienen más de dos tomas oficiales.
+  const { lista } = seleccionParaBorradores(LISTA, POR_PROPONER, {
+    "poco-f9-ultra": { estado: "apto", listas: ["a.jpg", "b.jpg", "c.jpg", "d.jpg"] },
+    "airpods-pro-3": {
+      estado: "apto",
+      listas: ["a.jpg", "b.jpg"],
+      minimo_por_excepcion: { minimo: 2, motivo: "no hay más fotos oficiales", fecha: "x" },
+    },
+  });
+  const porId = Object.fromEntries(lista.modelos.map((m) => [m.idModelo, m]));
+  assert.deepEqual(porId["airpods-pro-3"].excepcionDeFotos, {
+    minimo: 2,
+    motivo: "no hay más fotos oficiales",
+  });
+  assert.equal(porId["poco-f9-ultra"].excepcionDeFotos, undefined);
+  assert.equal(porId["galaxy-a17"].excepcionDeFotos, undefined);
+});
+
 test("un modelo nuevo que no pasó por la tanda no entra", () => {
   const { lista, omitidos } = seleccionParaBorradores(LISTA, POR_PROPONER, {});
   assert.deepEqual(

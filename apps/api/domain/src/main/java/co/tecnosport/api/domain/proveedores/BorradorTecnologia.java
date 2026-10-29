@@ -62,7 +62,8 @@ public final class BorradorTecnologia {
   /**
    * Las que necesita un modelo nuevo para aprobarse (decisión del negocio del 10/10/2026,
    * ADR-0079). La skill de fotos ya no deja pasar un modelo con menos; esto es para que la
-   * compuerta no dependa solo de ella.
+   * compuerta no dependa solo de ella. Un modelo sin más tomas oficiales puede traer una {@link
+   * ExcepcionDeFotos} que lo baja (28/10/2026).
    */
   public static final int MINIMO_DE_FOTOS = 4;
 
@@ -79,6 +80,7 @@ public final class BorradorTecnologia {
   private final Instant creadoEn;
   private String descripcionEditada;
   private boolean fichaNuevaDeLaSkill;
+  private ExcepcionDeFotos excepcionDeFotos;
 
   public BorradorTecnologia(
       UUID id,
@@ -92,7 +94,8 @@ public final class BorradorTecnologia {
       Instant creadoEn,
       List<FotoDeBorradorTecnologia> fotos,
       String descripcionEditada,
-      boolean fichaNuevaDeLaSkill) {
+      boolean fichaNuevaDeLaSkill,
+      ExcepcionDeFotos excepcionDeFotos) {
     this.id = Objects.requireNonNull(id, "El id del borrador no puede ser nulo.");
     this.proveedorId = Objects.requireNonNull(proveedorId, "Un borrador es de un proveedor.");
     this.modelo = Objects.requireNonNull(modelo, "Un borrador de tecnología es de un modelo.");
@@ -112,6 +115,7 @@ public final class BorradorTecnologia {
     this.fotos = new ArrayList<>(fotos == null ? List.of() : fotos);
     this.descripcionEditada = enBlancoEsNulo(descripcionEditada);
     this.fichaNuevaDeLaSkill = this.descripcionEditada != null && fichaNuevaDeLaSkill;
+    this.excepcionDeFotos = excepcionDeFotos;
   }
 
   /**
@@ -137,7 +141,8 @@ public final class BorradorTecnologia {
         ahora,
         List.of(),
         null,
-        false);
+        false,
+        null);
   }
 
   /**
@@ -191,6 +196,16 @@ public final class BorradorTecnologia {
       throw new ExcepcionDeDominio("Esa foto ya está en el borrador.");
     }
     fotos.add(foto);
+  }
+
+  /**
+   * Fija la excepción de fotos que declaró la skill para este modelo, o la quita con nulo. La manda
+   * la importación de borradores en cada corrida, así que la de hoy reemplaza a la anterior: si la
+   * persona la deshizo en la skill, el borrador vuelve a pedir {@link #MINIMO_DE_FOTOS}.
+   */
+  public void declararExcepcionDeFotos(ExcepcionDeFotos excepcion) {
+    exigirEnRevision("cambiar la excepción de fotos de");
+    this.excepcionDeFotos = excepcion;
   }
 
   /** Quita la foto y la devuelve, para que quien llama borre sus archivos. */
@@ -309,7 +324,7 @@ public final class BorradorTecnologia {
     if (fotosQueFaltan() > 0) {
       throw new ExcepcionDeDominio(
           "Un modelo nuevo necesita "
-              + MINIMO_DE_FOTOS
+              + minimoDeFotos()
               + " fotos para aprobarse; "
               + modelo.titulo()
               + " tiene "
@@ -443,7 +458,16 @@ public final class BorradorTecnologia {
    * producto ya tiene las suyas. Lo dice el dominio para que el panel no tenga que saber el mínimo.
    */
   public int fotosQueFaltan() {
-    return productoId != null ? 0 : Math.max(0, MINIMO_DE_FOTOS - fotos.size());
+    return productoId != null ? 0 : Math.max(0, minimoDeFotos() - fotos.size());
+  }
+
+  /** Las fotos que pide este modelo: {@link #MINIMO_DE_FOTOS}, o las de su excepción. */
+  public int minimoDeFotos() {
+    return excepcionDeFotos != null ? excepcionDeFotos.minimo() : MINIMO_DE_FOTOS;
+  }
+
+  public Optional<ExcepcionDeFotos> excepcionDeFotos() {
+    return Optional.ofNullable(excepcionDeFotos);
   }
 
   /** En el orden en que se publican: la primera es la principal. */
