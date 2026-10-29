@@ -22,6 +22,17 @@ Reglas, en orden de importancia:
    la falda o la camiseta, y lo de la prenda con su acompañante va aparte, en `set` (regla 20).
    Un producto aparte el mensaje lo describe aparte, con su propio nombre y sus tallas o su
    código, como la chaqueta y el jean de arriba.
+   **El set que se vende entero, a un solo precio, es el producto**, no una prenda con
+   acompañante: «Set Blusa y falda(VY3155) 💲94», «Set blusa tipo chaleco y pantalón (VY2658)
+   💲128» y «*Conjunto DRI FIT para caballero* ✅Pantaloneta + Camiseta 🤑$45.000» no traen precio
+   de una pieza sola. Su título nombra las piezas **con la palabra que usa el proveedor** —«Set»,
+   «Conjunto», «Dúo»— **y en el orden en que las nombra**: «Set blusa y falda», «Set blusa tipo
+   chaleco y pantalón», «Conjunto pantaloneta y camiseta para caballero». Su `tipo` es el del
+   conjunto según la pieza de abajo: `conjunto_falda`, `conjunto_pantalon` o `conjunto_short`. Ahí
+   no hay `precios_adicionales` de acompañante ni `set`. **Esto es solo cuando ninguna pieza trae
+   precio propio**: «Camiseta 🎽55.000 … Nota: Las gorras tiene un valor de 35mil» sigue siendo la
+   camiseta, con la gorra como acompañante (regla 18), igual que «Pantaloneta $39.990 / Gorra
+   35.000 / Dúo $69.900» es la pantaloneta con su gorra y su dúo.
 4. `esta_agotado` es `true` solo si el texto dice agotado, se acabó, sin stock, no hay o un
    equivalente claro. «Nuevamente disponible» es lo contrario.
 5. El `titulo` es el nombre del producto, no un adorno: «Nueva colección», «Nuevamente
@@ -32,8 +43,13 @@ Reglas, en orden de importancia:
    abreviatura de caballero, no una marca: «Nueva Colección Cab» en unos tenis no nombra marca.
    Una prenda se nombra como su categoría, nunca con un diminutivo: «Busito Manga larga» es
    «Buzo manga larga», «Camisetica slim» es «Camiseta slim», «Blusita» es «Blusa»,
-   «Pantaloncito» es «Pantalón». El buzo se escribe con zeta, aunque el proveedor escriba
+   «Pantaloncito» es «Pantalón». La pantaloneta es «Pantaloneta», nunca «Pantalón» ni «Pantalón
+   short»: «*PANTALONETA con licra Para Caballero*» es «Pantaloneta con licra para caballero». El buzo se escribe con zeta, aunque el proveedor escriba
    «buso». Vale igual para la `descripcion`.
+   **Toda marca o modelo que el título nombre va detrás de la palabra «estilo»**, sea réplica o
+   no: todo lo que la tienda compra a un proveedor es de marca genérica. «*POLO* ⊷ Bordado Tommy»
+   es «Polo bordado estilo Tommy», «*BLUSA alo*» es «Blusa estilo alo», «*NUEVA BERMUDA BOSS🔥*» es
+   «Bermuda estilo Boss» y «*NUEVO BOSS🔥*» con tallas 30 a 38 es «Pantalón estilo Boss».
    Cuando el mensaje anuncia una réplica —la marca «1.1» o «AAA»—, el título es el artículo, la
    palabra «estilo» y la marca o el modelo que nombra, sin el «1.1», el «AAA», «Importado» ni
    adornos: «*NUEVA COLECCIÓN 1.1* *SUPERDRY*» en una camiseta es «Camiseta estilo Superdry»;
@@ -59,7 +75,7 @@ Reglas, en orden de importancia:
    `ropa` para conjuntos, enterizos, chalecos, blusones, polos y prendas; `calzado` para tenis,
    zapatillas y zapatos; `otra` si no es ninguna. `tipo` es el artículo concreto: `bolso`, `morral`, `canguro` (también
    «manos libres»), `conjunto_pantalon`, `conjunto_short`, `enterizo`, `polo`, `camiseta`,
-   `buso`, `chaqueta`, `pantalon`, `short`, `vestido`, `blusa`, `bodi` (también «body»), `tenis`
+   `conjunto_falda`, `buso`, `chaqueta`, `pantalon`, `short` (también la pantaloneta), `vestido`, `blusa`, `bodi` (también «body»), `tenis`
    (también zapatillas deportivas), `falda`, `falda_short`, `sudadera`, `blazer`, `chaleco`,
    `camisa`, `gorra`, `bermuda`;
    `otro` solo si no encaja en ninguno.
@@ -117,7 +133,7 @@ Reglas, en orden de importancia:
 13. `es_replica` es `true` cuando el mensaje anuncia el producto como réplica: la marca «1.1» o
     «1:1», o dice réplica o «AAA». «Pilas AAA» no: es el tamaño de una pila. «Importado» tampoco:
     un producto importado no es una réplica, y sin «1.1», «AAA» ni la palabra réplica,
-    `es_replica` es `false` y el título no lleva «estilo».
+    `es_replica` es `false`, y el título lleva «estilo» solo delante de la marca que nombre (regla 5).
 14. `confianza` va de 0 a 1 y dice cuánto confías en que el elemento refleja el mensaje. Un
     mensaje ambiguo o incompleto baja la confianza; no la subas para compensar.
 15. `notas` es para lo que no cabe en ningún campo y una persona debería saber al revisar.

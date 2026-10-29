@@ -13,6 +13,7 @@ import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.proveedores.ArmadorDeSets.SetArmado;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
@@ -92,7 +93,7 @@ class SetsDeProveedorTest {
     assertEquals(OrigenDelCostoDeSet.ANUNCIADO, set.armado().origenDelCosto());
     assertEquals(PrendaAcompanante.BLUSA, set.armado().acompanante());
     assertEquals(TipoProductoProveedor.CONJUNTO_FALDA, set.producto().tipo());
-    assertEquals("Conjunto falda y blusa", set.producto().titulo());
+    assertEquals("Set falda y blusa", set.producto().titulo());
     assertEquals("Falda con la blusa que aparece en las fotos.", set.producto().descripcion());
     assertEquals("Skirt and blouse set", set.producto().altEn());
     assertEquals(0, set.armado().gramosAdicionales(), "la blusa no suma: Conjuntos pesa 700 g");
@@ -116,7 +117,7 @@ class SetsDeProveedorTest {
   }
 
   @Test
-  void faldaShortConSetEsUnConjuntoQueLoDiceEnElTitulo() {
+  void faldaShortConSetEsUnConjuntoQueLoDiceEnElTituloEnElOrdenDelProveedor() {
     // «Falda de dama ( tiene short ) … Falda 🤑$59.900 / Set básica + falda $99.000»
     SetArmado set =
         armar(
@@ -129,7 +130,7 @@ class SetsDeProveedorTest {
 
     assertEquals(Dinero.deCop(99000), set.costo());
     assertEquals(TipoProductoProveedor.CONJUNTO_FALDA, set.producto().tipo());
-    assertEquals("Conjunto falda short y blusa", set.producto().titulo());
+    assertEquals("Set blusa y falda short", set.producto().titulo());
   }
 
   // --- Las camisetas y los polos ---
@@ -194,7 +195,7 @@ class SetsDeProveedorTest {
                 null));
 
     assertEquals(Dinero.deCop(95000), set.costo());
-    assertEquals("Set camiseta talla plus y gorra", set.producto().titulo());
+    assertEquals("Dúo camiseta talla plus y gorra", set.producto().titulo());
   }
 
   @Test
@@ -348,19 +349,54 @@ class SetsDeProveedorTest {
     assertEquals(PrendaAcompanante.BLUSA, set.armado().acompanante());
   }
 
-  /** La gorra arma set con una camiseta o un polo, no con un short ni con una falda. */
+  /**
+   * La gorra arma set con la pantaloneta y la bermuda desde el 29 de octubre de 2026 (ADR-0101):
+   * «Pantaloneta $39.990 / Gorra 35.000 / Dúo $69.900», con la palabra del proveedor. Con una
+   * falda, no.
+   */
   @Test
-  void unaGorraConUnaPrendaDeAbajoNoArmaSet() {
+  void laPantalonetaConGorraEsUnDuoYLaFaldaConGorraNoArmaSet() {
+    SetArmado duo =
+        armar(
+            extraido(
+                "Pantaloneta con licra para caballero importado",
+                TipoProductoProveedor.SHORT,
+                39990,
+                List.of(
+                    acompanante("Gorra", 35000, PrendaAcompanante.GORRA),
+                    combo("Dúo", 69900, PrendaAcompanante.GORRA)),
+                null));
+
+    assertEquals(Dinero.deCop(69900), duo.costo());
+    assertEquals(TipoProductoProveedor.SHORT, duo.producto().tipo());
+    assertEquals("Dúo pantaloneta con licra importado y gorra", duo.producto().titulo());
     assertTrue(
         ArmadorDeSets.armar(
                 extraido(
-                    "Short",
-                    TipoProductoProveedor.SHORT,
+                    "Falda",
+                    TipoProductoProveedor.FALDA,
                     40000,
                     List.of(acompanante("Gorra", 35000, PrendaAcompanante.GORRA)),
                     null),
                 Dinero.deCop(40000))
             .isEmpty());
+  }
+
+  /** «Set Blusa y falda» a un solo precio ya es el conjunto: no espera acompañante. */
+  @Test
+  void elConjuntoQueElAnuncioVendeEnteroNoEsperaAcompanante() {
+    assertFalse(
+        ArmadorDeSets.anunciaAcompanante(
+            "Set Blusa y falda(VY3155) Talla S M L 💲94", TipoProductoProveedor.CONJUNTO_FALDA));
+  }
+
+  @Test
+  void laPalabraDelComboEsLaDelProveedor() {
+    assertEquals(Optional.of("Dúo"), ArmadorDeSets.palabraDelCombo("Dúo"));
+    assertEquals(Optional.of("Dúo"), ArmadorDeSets.palabraDelCombo("duo 🧢👕"));
+    assertEquals(Optional.of("Set"), ArmadorDeSets.palabraDelCombo("Set falda + básica"));
+    assertEquals(Optional.of("Conjunto"), ArmadorDeSets.palabraDelCombo("Conjunto"));
+    assertEquals(Optional.empty(), ArmadorDeSets.palabraDelCombo("Polo + gorra"));
   }
 
   /** Si el modelo repite la gorra, o hay dos gorras, se suma una: la del set es una. */

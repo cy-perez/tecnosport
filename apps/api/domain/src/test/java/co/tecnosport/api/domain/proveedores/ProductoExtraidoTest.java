@@ -339,4 +339,49 @@ class ProductoExtraidoTest {
     assertTrue(tenis("Tenis estilo Jordan", true).contrastadoCon("Réplica Jordan").esReplica());
     assertFalse(tenis("Tenis", false).contrastadoCon("Réplica Jordan").esReplica());
   }
+
+  /** Meraki, 28 de octubre de 2026: toda marca del título va detrás de «estilo» (ADR-0101). */
+  @Test
+  void laMarcaDelTituloVaDetrasDeEstiloSeaReplicaONo() {
+    assertEquals(
+        "Polo bordado estilo Tommy",
+        ProductoExtraido.conEstiloAntesDeLaMarca("Polo bordado Tommy", List.of("Tommy Hilfiger")));
+    assertEquals(
+        "Blusa estilo alo", ProductoExtraido.conEstiloAntesDeLaMarca("Blusa alo", List.of("Alo")));
+    assertEquals(
+        "Bermuda estilo Boss",
+        ProductoExtraido.conEstiloAntesDeLaMarca("Bermuda Boss", List.of("Hugo Boss")));
+    assertEquals(
+        "Pantalón estilo Boss",
+        ProductoExtraido.conEstiloAntesDeLaMarca("Pantalón Boss", List.of("Boss")));
+  }
+
+  @Test
+  void laQueYaVaDetrasDeEstiloNoSeRepiteYLaPrendaNoEsMarca() {
+    assertEquals(
+        "Camiseta estilo Puma - BMW",
+        ProductoExtraido.conEstiloAntesDeLaMarca(
+            "Camiseta estilo Puma - BMW", List.of("Puma - BMW")));
+    assertEquals(
+        "Camiseta estilo Diesel - Amiri",
+        ProductoExtraido.conEstiloAntesDeLaMarca(
+            "Camiseta estilo Diesel - Amiri", List.of("Diesel", "Amiri")));
+    assertEquals(
+        "Polo bordado",
+        ProductoExtraido.conEstiloAntesDeLaMarca("Polo bordado", List.of("Polo Ralph Lauren")));
+    assertEquals(
+        "Blusa manga larga",
+        ProductoExtraido.conEstiloAntesDeLaMarca("Blusa manga larga", List.of()));
+    assertEquals(
+        "Conjunto polo y short estilo Ralph Lauren",
+        ProductoExtraido.conEstiloAntesDeLaMarca(
+            "Conjunto polo y short Ralph Lauren", List.of("Polo Ralph Lauren")));
+    assertEquals(
+        "Chaqueta jeans",
+        ProductoExtraido.conEstiloAntesDeLaMarca("Chaqueta jeans", List.of("Pepe Jeans")));
+    assertEquals(
+        "Camiseta estilo Dolce&Gabbana",
+        ProductoExtraido.conEstiloAntesDeLaMarca(
+            "Camiseta Dolce&Gabbana", List.of("Dolce & Gabbana")));
+  }
 }

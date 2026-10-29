@@ -12,8 +12,9 @@ public enum TipoProductoProveedor {
   CONJUNTO_PANTALON,
   CONJUNTO_SHORT,
   // La falda que se vende con la blusa de la foto, como un solo producto: lo arma {@link
-  // ArmadorDeSets} a los proveedores que venden sets, nunca el extractor (12 de octubre de 2026).
-  // No se puede excluir: lo que se compara con las exclusiones es lo que dice el anuncio.
+  // ArmadorDeSets} a los proveedores que venden sets (12 de octubre de 2026). Desde el 29 de
+  // octubre de 2026 también lo dice el extractor, cuando el anuncio es el set mismo a un solo
+  // precio: «Set Blusa y falda (VY3155) 💲94» (ADR-0101). No se puede excluir.
   CONJUNTO_FALDA,
   ENTERIZO,
   // Las prendas sueltas: el proveedor de ropa real vende polos y camisetas por unidad, y con solo

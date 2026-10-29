@@ -492,6 +492,21 @@ class ExtraerProductoDePublicacionTest {
     assertFalse(evaluada.alertas().contains(AlertaBorrador.TIPO_CORREGIDO_POR_FOTO));
   }
 
+  /**
+   * El conjunto no lo decide la foto (ADR-0101): la blusa puesta con el pantalón no vuelve conjunto
+   * la prenda que el anuncio vende sola.
+   */
+  @Test
+  void laFotoNoVuelveConjuntoLaPrendaQueSeVendeSola() {
+    ExtraccionEvaluada evaluada =
+        camisetaDeMeraki(
+            "*CAMISETA MANGA LARGA* $45.000",
+            queVe(TipoProductoProveedor.CONJUNTO_PANTALON, GeneroDeCalzado.DAMA));
+
+    assertEquals(TipoProductoProveedor.CAMISETA, evaluada.producto().tipo());
+    assertFalse(evaluada.alertas().contains(AlertaBorrador.TIPO_CORREGIDO_POR_FOTO));
+  }
+
   /** «Buzo navideño» no dice para quién es; la foto sí. */
   @Test
   void sinGeneroEnElAnuncioValeElDeLasFotos() {

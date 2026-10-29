@@ -1600,14 +1600,11 @@ class ResolverBorradorTest {
     proveedor.definirArmaSets(true);
     Producto conjunto =
         productoExistente(
-            "Conjunto falda y blusa",
+            "Set falda y blusa",
             88000,
             HuellaProveedor.deSet(
                 HuellaProveedor.deAnuncio(
-                    proveedor.id(),
-                    "Conjunto falda y blusa",
-                    Dinero.deCop(88000),
-                    FECHA_DEL_MENSAJE),
+                    proveedor.id(), "Set falda y blusa", Dinero.deCop(88000), FECHA_DEL_MENSAJE),
                 PrendaAcompanante.BLUSA),
             EstadoDisponibilidad.DISPONIBLE);
     Resolucion primera =
