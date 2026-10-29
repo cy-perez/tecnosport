@@ -52,6 +52,17 @@ class Aplicar(unittest.TestCase):
         self.assertIn("decisión de la persona (22/10/2026): la lista no trae precio; se incluye con el costo de la "
                       "lista del 15/10/2026", p["supuestos"])
 
+    def test_falta_informacion_saca_el_producto_a_descartados(self):
+        datos = lista()
+        datos["productos"] = [dict(IPHONE, precio_proveedor_cop=4_300_000, motivo=None)]
+        datos["descartados"] = []
+        decision = {"id_lista": IPHONE["id"], "falta_informacion": "la memoria: el aviso y la lista no coinciden",
+                    "motivo": "la persona se queda con la de la lista", "fecha": "2026-10-28"}
+        self.assertEqual([], decisiones.aplicar(datos, [decision]))
+        self.assertEqual([], datos["productos"])
+        [x] = datos["descartados"]
+        self.assertEqual("falta información del proveedor: la memoria: el aviso y la lista no coinciden", x["motivo"])
+
     def test_una_decision_sin_producto_se_avisa(self):
         [aviso] = decisiones.aplicar(lista(), [dict(DECISION, id_lista="apple-iphone-99-256gb")])
         self.assertIn("no está en la lista de hoy", aviso)

@@ -31,6 +31,10 @@ Formato:
 - `titulo`: el título definitivo, si cambia (el id y el modelo se recalculan de él).
 - `atributos`: los que se suman, como la SIM que la línea no dice.
 - `motivo` y `fecha`, obligatorios: quedan en `supuestos`, como cualquier decisión.
+- `falta_informacion`: el dato que la lista no da y que la persona decidió no suponer (regla 10).
+  El producto va a descartados con ese motivo, y el resto de la decisión no se aplica. El
+  27/10/2026 el aviso de llegada trajo el Redmi Note 17 Pro 5G en 8+512 al mismo precio que el
+  8+256 de la lista, y la persona se quedó con el de la lista.
 
 Un descartado que vuelve queda como cualquier producto del parser: el filtro de precio corre
 antes que las equivalencias, así que el descartado «sin precio» no tiene título definitivo ni
@@ -77,6 +81,16 @@ def aplicar(datos: dict, decisiones: list, equivalencias: dict | None = None) ->
         en_descartados = [x for x in datos.get("descartados") or [] if clave in (x.get("id_lista"), x.get("id"))]
         if not en_productos and not en_descartados:
             avisos.append(f"{clave}: no está en la lista de hoy; la decisión no se aplicó")
+            continue
+        if d.get("falta_informacion"):
+            # Regla 10 con el dato que solo la persona vio: sale de la lista con lo que faltó,
+            # igual que lo que detecta el parser, y queda en la hoja de descartados.
+            for p in en_productos:
+                datos["productos"].remove(p)
+                datos.setdefault("descartados", []).append(
+                    {**p, "motivo": f"falta información del proveedor: {d['falta_informacion']}",
+                     "falta_informacion": d["falta_informacion"],
+                     "resolver": "quitar esta decisión de 1-lista/decisiones.json"})
             continue
         for x in en_descartados:
             if d.get("costo_cop") is None:
