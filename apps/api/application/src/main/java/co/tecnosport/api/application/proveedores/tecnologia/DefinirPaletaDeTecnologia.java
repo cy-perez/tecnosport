@@ -13,7 +13,6 @@ import co.tecnosport.api.domain.catalogo.ValorAtributo;
 import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.proveedores.ConfiguracionTecnologia;
-import co.tecnosport.api.domain.proveedores.ConfirmacionDeColor;
 import co.tecnosport.api.domain.proveedores.VarianteDeProveedor;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -114,9 +113,7 @@ public final class DefinirPaletaDeTecnologia {
                 color,
                 costoDeHoy.costo(),
                 costoDeHoy.actualizadoEn()));
-        disponibilidadPorConfirmar.put(
-            creada.variante().id(),
-            ConfirmacionDeColor.requiere(producto.paleta(), List.of(), color));
+        disponibilidadPorConfirmar.put(creada.variante().id(), true);
         nacidas++;
       }
     }

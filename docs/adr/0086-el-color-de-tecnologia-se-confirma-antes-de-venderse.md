@@ -1,7 +1,7 @@
 # ADR-0086 — El color de tecnología se confirma antes de venderse
 
 **Fecha:** 2026-10-25
-**Estado:** aceptado. Reemplaza el punto 6 de ADR-0075 («los colores arrancan con
+**Estado:** aceptado, con el punto 3 enmendado el 2026-10-29 (al final). Reemplaza el punto 6 de ADR-0075 («los colores arrancan con
 lo que sugiere la lista») y la regla 13 de la skill `listas-de-proveedor` en lo que
 toca a vender: la paleta se sigue publicando completa, pero como información.
 
@@ -79,3 +79,27 @@ color que la lista marcó y el modelo de un solo color.
   (`importar-lista-tecnologia.mjs --borradores`) lo deja fuera con el motivo, y la
   skill la completa con `scripts/paletas.py`. Un modelo de un solo acabado lleva
   ese color como paleta: vacía, cada compra se preguntaría por WhatsApp.
+
+## Enmienda del 29 de octubre de 2026: toda variante se confirma
+
+El iPad 11" A16 azul se podía agregar al carrito sin que nadie le hubiera preguntado
+al proveedor: la lista lo marcaba, y por el punto 3 el color marcado quedaba libre.
+El negocio decidió que **toda variante de tecnología se consulta por WhatsApp antes
+de venderse**: también la que la lista marca con su emoji y la de un modelo de un
+solo color.
+
+- `ConfirmacionDeColor` desapareció. Aprobar un borrador, importar la lista y
+  definir la paleta escriben `disponibilidad_por_confirmar = true` siempre, y la
+  importación de cada lista vuelve a escribirlo en las variantes que trae: cura la
+  que una lista anterior dejó libre.
+- `coloresMarcados` sigue en el contrato de la importación porque la skill lo
+  exporta, pero ya no decide nada.
+- `V151` pone por confirmar todas las variantes que tienen vínculo con el proveedor
+  o cuyo producto está en una categoría de la línea `TECNOLOGIA`, incluidas las que
+  se crearon desde el panel.
+- **Lo que queda abierto:** una variante que se agregue a mano desde el panel a un
+  producto de tecnología nace libre, porque `AgregarVariante` no conoce la línea y
+  el repositorio no persiste la bandera al crearla. Hoy esa variante es inventario
+  propio del negocio, no del proveedor; si deja de serlo, hay que cerrarlo.
+- El costo para quien compra: ningún equipo se compra directo, y cada venta pasa por
+  el enlace de 24 horas.
