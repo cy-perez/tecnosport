@@ -469,6 +469,15 @@ module "api" {
     # la que es. Lo que la infraestructura no describe, el siguiente apply lo deshace.
     ADMIN_CORREO   = var.correo_admin
     WOMPI_AMBIENTE = "sandbox"
+    # La tarifa de Wompi con la que el precio publicado lleva la comisión dentro (ADR-0095). Son
+    # los mismos valores por omisión de `application.yml`, leídos en el portal el 26 de octubre de
+    # 2026 (2,65 % + $700 + IVA), y están aquí para que la tarifa sea una decisión escrita del
+    # ambiente y no un valor heredado sin que nadie lo mire. Producción tiene que confirmar el
+    # plan de su propia cuenta antes de copiarlos. Cambiarlos no mueve ningún precio: el panel
+    # enseña el recálculo y una persona lo aplica.
+    WOMPI_COMISION_VARIABLE = "0.0265"
+    WOMPI_COMISION_FIJA     = "700"
+    WOMPI_COMISION_IVA      = "0.19"
     # **Difusion en redes, y aqui no hay sandbox que valga.** `SISTECREDITO_SANDBOX_ACTIVO` al
     # menos separa una prueba de un credito real; la Graph API no tiene nada equivalente: la unica
     # cuenta que existe es @tecnosport_co y este booleano es lo unico que separa una prueba de un
