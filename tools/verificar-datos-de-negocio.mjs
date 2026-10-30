@@ -137,7 +137,14 @@ const KIT = [
   join(RAIZ, "packages/marca/generador/_plantilla_kit.html"),
 ].filter((ruta) => existsSync(ruta));
 
-for (const ruta of [...jsons(TEXTOS), ...CORREOS, ...KIT]) {
+// Y el pie de las publicaciones en redes (adr/0102), que lleva el WhatsApp en cada post. Es la
+// copia que más gente ve y la única que no se puede corregir una vez publicada.
+const DIFUSION = [
+  join(RAIZ, "apps/api/infrastructure/src/main/resources/difusion_es.properties"),
+  join(RAIZ, "apps/api/infrastructure/src/main/resources/difusion_en.properties"),
+];
+
+for (const ruta of [...jsons(TEXTOS), ...CORREOS, ...KIT, ...DIFUSION]) {
   const contenido = readFileSync(ruta, "utf8");
   contenido.split("\n").forEach((linea, indice) => {
     // Dos limpiezas antes de comparar, las dos por el kit, que es HTML y no JSON:

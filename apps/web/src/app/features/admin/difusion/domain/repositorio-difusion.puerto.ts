@@ -1,5 +1,5 @@
 import { InjectionToken } from '@angular/core';
-import { OrdenDeDifusion, PublicacionEnRed, RedSocial } from './difusion.model';
+import { OrdenDeDifusion, PortadaPropuesta, PublicacionEnRed, RedSocial } from './difusion.model';
 
 /**
  * Los rechazos de una difusión son **respuestas**, no fallos, por lo mismo que en el árbol de
@@ -22,6 +22,8 @@ export interface RepositorioDifusion {
    * servidor (regla dura #7). Armarlo aquí sería el cliente eligiendo qué se anuncia.
    */
   proponerPie(productoId: string, red: RedSocial): Promise<string>;
+  /** `null` cuando no se pudo dibujar: el producto se difunde igual, sin portada. */
+  proponerPortada(productoId: string): Promise<PortadaPropuesta | null>;
 }
 
 export const REPOSITORIO_DIFUSION = new InjectionToken<RepositorioDifusion>('RepositorioDifusion');

@@ -11,6 +11,7 @@ import co.tecnosport.api.domain.catalogo.EstadoProducto;
 import co.tecnosport.api.domain.catalogo.EstadoVariante;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Marca;
+import co.tecnosport.api.domain.catalogo.Paquete;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.TipoAtributo;
 import co.tecnosport.api.domain.catalogo.ValorAtributo;
@@ -21,30 +22,48 @@ import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.domain.difusion.ProductoNoDifundibleException;
 import co.tecnosport.api.domain.difusion.RedSocial;
+import co.tecnosport.api.domain.pedido.CriteriosContraentrega;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 class ArmadorDePieDeFotoTest {
 
   private static final ArmadorDePieDeFoto ARMADOR =
-      new ArmadorDePieDeFoto(
+      ApoyoDeDifusion.armador(
           "https://www.tecnosport.co", List.of(new Hashtag("TecnoSport"), new Hashtag("Medellín")));
 
+  /**
+   * La plantilla entera, bloque por bloque. Con el doble de textos cada pieza sale por su llave: lo
+   * que esta prueba fija es el orden y los datos; la redacción la fija {@code
+   * TextosDeDifusionMessageSourceTest}.
+   */
   @Test
-  void elPieLlevaNombrePrecioPrimerParrafoEnlaceYEtiquetas() {
-    Producto producto = jblGrip(List.of(variante("JBL-GRIP", 299900)));
+  void elPieSigueLaPlantillaEnSuOrden() {
+    Producto producto =
+        producto(
+            "El JBL Grip es un parlante portátil.\n\n• Certificación IP68.\n• Bluetooth 5.4.",
+            List.of(variante("JBL-GRIP", 299900)),
+            List.of(new Hashtag("Parlantes")));
 
     String pie = ARMADOR.armar(producto, RedSocial.FACEBOOK);
 
     assertEquals(
         """
-        JBL Grip - $299.900
+        [entrada|JBL Grip|[precio.unico|299900]]
 
-        El JBL Grip es un parlante portátil de 385 gramos con certificación IP68.
+        El JBL Grip es un parlante portátil.
 
-        https://www.tecnosport.co/es/productos/jbl-grip
+        [vineta|Certificación IP68.]
+        [vineta|Bluetooth 5.4.]
+
+        [confianza.envio]
+        [confianza.pago_con_contraentrega]
+        [confianza.whatsapp]
+
+        [llamado.facebook|https://www.tecnosport.co/es/productos/jbl-grip]
 
         #Parlantes #JBL #TecnoSport #Medellín""",
         pie);
@@ -59,7 +78,7 @@ class ArmadorDePieDeFotoTest {
 
     String pie = ARMADOR.armar(producto, RedSocial.INSTAGRAM);
 
-    assertTrue(pie.contains("Enlace en la bio"), pie);
+    assertTrue(pie.contains("[llamado.instagram]"), pie);
     assertFalse(pie.contains("https://"), pie);
   }
 
@@ -67,7 +86,7 @@ class ArmadorDePieDeFotoTest {
   void unaSolaVarianteLlevaElPrecioFijo() {
     String pie = ARMADOR.armar(jblGrip(List.of(variante("A", 299900))), RedSocial.FACEBOOK);
 
-    assertTrue(pie.startsWith("JBL Grip - $299.900"), pie);
+    assertTrue(pie.startsWith("[entrada|JBL Grip|[precio.unico|299900]]"), pie);
   }
 
   /**
@@ -79,8 +98,7 @@ class ArmadorDePieDeFotoTest {
 
     String pie = ARMADOR.armar(producto, RedSocial.FACEBOOK);
 
-    assertTrue(pie.startsWith("JBL Grip - $89.900"), pie);
-    assertFalse(pie.contains("desde"), pie);
+    assertTrue(pie.startsWith("[entrada|JBL Grip|[precio.unico|89900]]"), pie);
   }
 
   @Test
@@ -89,7 +107,7 @@ class ArmadorDePieDeFotoTest {
 
     String pie = ARMADOR.armar(producto, RedSocial.FACEBOOK);
 
-    assertTrue(pie.startsWith("JBL Grip - desde $79.900"), pie);
+    assertTrue(pie.startsWith("[entrada|JBL Grip|[precio.desde|79900]]"), pie);
   }
 
   /**
@@ -102,7 +120,7 @@ class ArmadorDePieDeFotoTest {
 
     String pie = ARMADOR.armar(producto, RedSocial.FACEBOOK);
 
-    assertTrue(pie.startsWith("JBL Grip - $129.900"), pie);
+    assertTrue(pie.startsWith("[entrada|JBL Grip|[precio.unico|129900]]"), pie);
   }
 
   @Test
@@ -113,24 +131,9 @@ class ArmadorDePieDeFotoTest {
         ProductoNoDifundibleException.class, () -> ARMADOR.armar(producto, RedSocial.FACEBOOK));
   }
 
-  /** Las viñetas caben en los 2.200 caracteres, pero empujan los hashtags fuera de lo visible. */
+  /** El párrafo va como texto corrido y las viñetas, aparte y con la marca de la plantilla. */
   @Test
-  void deLaDescripcionSoloEntraElPrimerParrafo() {
-    Producto producto =
-        producto(
-            "El JBL Grip es un parlante portátil.\n\n• Certificación IP68.\n• Bluetooth 5.4.",
-            List.of(variante("A", 299900)),
-            List.of(new Hashtag("Parlantes")));
-
-    String pie = ARMADOR.armar(producto, RedSocial.FACEBOOK);
-
-    assertTrue(pie.contains("El JBL Grip es un parlante portátil."), pie);
-    assertFalse(pie.contains("IP68"), pie);
-  }
-
-  /** Sin línea en blanco de por medio, el primer renglón con viñeta marca igual el final. */
-  @Test
-  void tambienCortaCuandoLasVinetasVienenPegadas() {
+  void lasVinetasDeLaDescripcionNoSeMezclanConElParrafo() {
     Producto producto =
         producto(
             "Un parlante portátil.\n• Certificación IP68.",
@@ -139,13 +142,60 @@ class ArmadorDePieDeFotoTest {
 
     String pie = ARMADOR.armar(producto, RedSocial.FACEBOOK);
 
-    assertTrue(pie.contains("Un parlante portátil."), pie);
-    assertFalse(pie.contains("IP68"), pie);
+    assertTrue(pie.contains("\n\nUn parlante portátil.\n\n"), pie);
+    assertTrue(pie.contains("[vineta|Certificación IP68.]"), pie);
+    assertFalse(pie.contains("• "), pie);
+  }
+
+  /** Más de cuatro empujan el llamado y los hashtags al fondo de un texto que nadie termina. */
+  @Test
+  void noPasaDeCuatroVinetas() {
+    Producto producto =
+        producto(
+            "Un celular.\n\n• Uno.\n• Dos.\n- Tres.\n* Cuatro.\n• Cinco.",
+            List.of(variante("A", 299900)),
+            List.of());
+
+    String pie = ARMADOR.armar(producto, RedSocial.FACEBOOK);
+
+    assertTrue(pie.contains("[vineta|Cuatro.]"), pie);
+    assertFalse(pie.contains("Cinco"), pie);
+  }
+
+  /** Una descripción que es solo viñetas no inventa un párrafo con la primera. */
+  @Test
+  void unaDescripcionSinParrafoSoloDejaLasVinetas() {
+    Producto producto =
+        producto("• Certificación IP68.\n• Bluetooth 5.4.", List.of(variante("A", 1)), List.of());
+
+    String pie = ARMADOR.armar(producto, RedSocial.FACEBOOK);
+
+    assertEquals(1, pie.split("Certificación").length - 1, pie);
+  }
+
+  /**
+   * Instagram no crea el contenedor si el pie pasa de 2.200 caracteres. Lo primero que se sacrifica
+   * son las viñetas: el precio, la confianza y el llamado se quedan.
+   */
+  @Test
+  void unPieDemasiadoLargoPierdeVinetasHastaCaber() {
+    String larga = "x".repeat(600);
+    Producto producto =
+        producto(
+            "Un celular.\n\n• " + larga + "\n• " + larga + "\n• " + larga + "\n• " + larga,
+            List.of(variante("A", 299900)),
+            List.of());
+
+    String pie = ARMADOR.armar(producto, RedSocial.INSTAGRAM);
+
+    assertTrue(pie.length() <= ArmadorDePieDeFoto.TOPE_DEL_PIE, "Mide " + pie.length());
+    assertTrue(pie.contains("[vineta|"), "Las que caben se quedan: " + pie.length());
+    assertTrue(pie.contains("[llamado.instagram]"), pie);
   }
 
   /**
    * El modelo no tiene tallas: tiene atributos con nombre libre. La línea se escribe con el nombre
-   * que les pusieron, sea "Talla", "Color" o "Capacidad".
+   * que les pusieron, y el color lleva su propia marca.
    */
   @Test
   void losAtributosSeEnsenanConSuNombreReal() {
@@ -169,21 +219,113 @@ class ArmadorDePieDeFotoTest {
 
     String pie = ARMADOR.armar(producto, RedSocial.FACEBOOK);
 
-    assertTrue(pie.contains("Talla: S, M"), pie);
-    assertTrue(pie.contains("Color: Negro"), pie);
+    assertTrue(pie.contains("[atributo.otro|Talla|S, M]"), pie);
+    assertTrue(pie.contains("[atributo.color|Color|Negro]"), pie);
   }
 
-  /**
-   * Todo lo publicado hoy es de tecnología y no tiene un solo atributo: el bloque no debe aparecer.
-   *
-   * <p>Se cuentan los bloques en vez de buscar dos puntos en el texto, porque el enlace lleva los
-   * suyos en {@code https:} — la primera versión de esta prueba caía por eso y no por el código.
-   */
   @Test
   void sinAtributosNoSePintaElBloque() {
     String pie = ARMADOR.armar(jblGrip(List.of(variante("A", 299900))), RedSocial.FACEBOOK);
 
-    assertEquals(4, pie.split("\n\n").length, pie);
+    assertFalse(pie.contains("[atributo."), pie);
+  }
+
+  // --- la contraentrega solo se anuncia donde el checkout la ofrece ---
+
+  @Test
+  void conContraentregaApagadaSoloSeAnunciaElPagoEnLinea() {
+    ArmadorDePieDeFoto armador =
+        ApoyoDeDifusion.armador(
+            "https://www.tecnosport.co",
+            List.of(),
+            new CriteriosContraentrega(
+                false, Dinero.deCop(20_000), Dinero.deCop(5_000_000), Set.of()));
+
+    String pie = armador.armar(jblGrip(List.of(variante("A", 299900))), RedSocial.FACEBOOK);
+
+    assertTrue(pie.contains("[confianza.pago_en_linea]"), pie);
+    assertFalse(pie.contains("contraentrega"), pie);
+  }
+
+  @Test
+  void unaLineaExcluidaNoAnunciaContraentrega() {
+    ArmadorDePieDeFoto armador =
+        ApoyoDeDifusion.armador(
+            "https://www.tecnosport.co",
+            List.of(),
+            new CriteriosContraentrega(
+                true,
+                Dinero.deCop(20_000),
+                Dinero.deCop(5_000_000),
+                Set.of(LineaCatalogo.TECNOLOGIA)));
+
+    String pie = armador.armar(jblGrip(List.of(variante("A", 299900))), RedSocial.FACEBOOK);
+
+    assertTrue(pie.contains("[confianza.pago_en_linea]"), pie);
+  }
+
+  /**
+   * Se mira la variante más cara y no la más barata: si una pasa del tope, «paga contra entrega»
+   * sería falso justo para esa.
+   */
+  @Test
+  void siAlgunaVariantePasaDelTopeNoSeAnunciaContraentrega() {
+    ArmadorDePieDeFoto armador =
+        ApoyoDeDifusion.armador(
+            "https://www.tecnosport.co",
+            List.of(),
+            new CriteriosContraentrega(
+                true, Dinero.deCop(20_000), Dinero.deCop(1_000_000), Set.of()));
+
+    String pie =
+        armador.armar(
+            jblGrip(List.of(variante("A", 899_900), variante("B", 1_299_900))), RedSocial.FACEBOOK);
+
+    assertTrue(pie.contains("[confianza.pago_en_linea]"), pie);
+  }
+
+  /** Sin medidas no hay cotización y el checkout no ofrece envío a domicilio: no se promete. */
+  @Test
+  void unaVarianteSinMedirQuitaElEnvioDelPie() {
+    String pie =
+        ARMADOR.armar(
+            jblGrip(List.of(variante("A", 299900), sinMedir("B", 299900))), RedSocial.FACEBOOK);
+
+    assertFalse(pie.contains("[confianza.envio]"), pie);
+    assertTrue(pie.contains("[confianza.whatsapp]"), pie);
+  }
+
+  /**
+   * Agotada por el proveedor no se vende ({@code seVende}): ni baja el «desde» ni cuenta para el
+   * tope de la contraentrega.
+   */
+  @Test
+  void unaVarianteAgotadaPorElProveedorNoCuenta() {
+    Producto producto =
+        jblGrip(List.of(variante("A", 129900), agotadaPorProveedor(variante("B", 49900))));
+
+    String pie = ARMADOR.armar(producto, RedSocial.FACEBOOK);
+
+    assertTrue(pie.startsWith("[entrada|JBL Grip|[precio.unico|129900]]"), pie);
+  }
+
+  /**
+   * Si con las viñetas fuera sigue sin caber, se va el párrafo y después las etiquetas. El precio,
+   * la confianza y el llamado no se tocan nunca.
+   */
+  @Test
+  void unParrafoEnormeTambienSeSacrificaAntesQueElLlamado() {
+    Producto producto =
+        producto(
+            "x".repeat(3_000), List.of(variante("A", 299900)), List.of(new Hashtag("Parlantes")));
+
+    String pie = ARMADOR.armar(producto, RedSocial.INSTAGRAM);
+
+    assertTrue(pie.length() <= ArmadorDePieDeFoto.TOPE_DEL_PIE, "Mide " + pie.length());
+    assertTrue(pie.startsWith("[entrada|"), pie);
+    assertTrue(pie.contains("[confianza.whatsapp]"), pie);
+    assertTrue(pie.contains("[llamado.instagram]"), pie);
+    assertTrue(pie.contains("#Parlantes"), "Las etiquetas caben sin el párrafo: " + pie);
   }
 
   @Test
@@ -202,7 +344,7 @@ class ArmadorDePieDeFotoTest {
 
   @Test
   void laBarraFinalDeLaUrlBaseNoDuplicaLaDelEnlace() {
-    ArmadorDePieDeFoto conBarra = new ArmadorDePieDeFoto("https://www.tecnosport.co/", List.of());
+    ArmadorDePieDeFoto conBarra = ApoyoDeDifusion.armador("https://www.tecnosport.co/", List.of());
 
     assertEquals(
         "https://www.tecnosport.co/es/productos/jbl-grip",
@@ -241,7 +383,18 @@ class ArmadorDePieDeFotoTest {
         variantes);
   }
 
+  /** Medida: es lo normal en lo publicado, y sin medidas el pie no anuncia envío. */
   private static Variante variante(String sku, long precio) {
+    return Variante.crear(
+        new Sku(sku),
+        new Dinero(BigDecimal.valueOf(precio)),
+        BigDecimal.ZERO,
+        null,
+        new Paquete(500, 20, 10, 10),
+        List.of());
+  }
+
+  private static Variante sinMedir(String sku, long precio) {
     return Variante.crear(
         new Sku(sku),
         new Dinero(BigDecimal.valueOf(precio)),
@@ -249,6 +402,19 @@ class ArmadorDePieDeFotoTest {
         null,
         null,
         List.of());
+  }
+
+  private static Variante agotadaPorProveedor(Variante variante) {
+    return new Variante(
+        variante.id(),
+        variante.sku(),
+        variante.precio(),
+        variante.tasaIva(),
+        variante.codigoBarras().orElse(null),
+        variante.paquete().orElse(null),
+        EstadoVariante.ACTIVA,
+        variante.atributos(),
+        true);
   }
 
   private static Variante inactiva(Variante variante) {

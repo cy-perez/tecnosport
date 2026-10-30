@@ -4,8 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import co.tecnosport.api.application.catalogo.AlmacenDeImagenes;
-import co.tecnosport.api.application.catalogo.UrlFirmada;
 import co.tecnosport.api.application.difusion.ImagenAPublicar;
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -14,10 +12,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 import javax.imageio.ImageIO;
 import org.junit.jupiter.api.Test;
@@ -180,54 +174,6 @@ class AjustadorDeImagenesJava2DTest {
       return salida.toByteArray();
     } catch (IOException e) {
       throw new UncheckedIOException(e);
-    }
-  }
-
-  /** Doble escrito a mano: un mapa de key a bytes y la URL pública delante. */
-  private static final class AlmacenEnMemoria implements AlmacenDeImagenes {
-    private static final String BASE = "https://publico.local/";
-    private final Map<String, byte[]> objetos = new HashMap<>();
-
-    @Override
-    public void subir(String objectKey, String contentType, byte[] bytes) {
-      objetos.put(objectKey, bytes);
-    }
-
-    @Override
-    public Optional<byte[]> leer(String objectKey) {
-      return Optional.ofNullable(objetos.get(objectKey));
-    }
-
-    @Override
-    public String urlPublica(String objectKey) {
-      return BASE + objectKey;
-    }
-
-    @Override
-    public Optional<String> objectKeyDe(String urlPublica) {
-      return urlPublica.startsWith(BASE)
-          ? Optional.of(urlPublica.substring(BASE.length()))
-          : Optional.empty();
-    }
-
-    @Override
-    public UrlFirmada generarUrlDeSubida(String objectKey, String contentType) {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Optional<Long> tamanoBytes(String objectKey) {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean eliminar(String objectKey) {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public int eliminarPorPrefijo(String prefijo, Set<String> conservar) {
-      throw new UnsupportedOperationException();
     }
   }
 }

@@ -132,4 +132,53 @@ class PoliticaContraentregaTest {
 
     assertTrue(error.getMessage().contains("no puede superar al máximo"), error.getMessage());
   }
+
+  // --- podriaAdmitirse: lo que se puede anunciar antes de saber a dónde va ---
+
+  @Test
+  void unProductoDentroDelTechoYDeUnaLineaAdmitidaPodriaPagarseContraEntrega() {
+    CriteriosContraentrega criterios =
+        new CriteriosContraentrega(true, Dinero.deCop(20_000), Dinero.deCop(1_000_000), Set.of());
+
+    assertTrue(
+        PoliticaContraentrega.podriaAdmitirse(
+            criterios, Dinero.deCop(1_000_000), LineaCatalogo.TECNOLOGIA));
+  }
+
+  @Test
+  void porEncimaDelTechoNoSeAnuncia() {
+    CriteriosContraentrega criterios =
+        new CriteriosContraentrega(true, Dinero.deCop(20_000), Dinero.deCop(1_000_000), Set.of());
+
+    assertFalse(
+        PoliticaContraentrega.podriaAdmitirse(
+            criterios, Dinero.deCop(1_000_001), LineaCatalogo.TECNOLOGIA));
+  }
+
+  @Test
+  void unaLineaExcluidaOLaContraentregaApagadaNoSeAnuncian() {
+    CriteriosContraentrega excluida =
+        new CriteriosContraentrega(
+            true, Dinero.deCop(20_000), Dinero.deCop(1_000_000), Set.of(LineaCatalogo.TECNOLOGIA));
+    CriteriosContraentrega apagada =
+        new CriteriosContraentrega(false, Dinero.deCop(20_000), Dinero.deCop(1_000_000), Set.of());
+
+    assertFalse(
+        PoliticaContraentrega.podriaAdmitirse(
+            excluida, Dinero.deCop(100_000), LineaCatalogo.TECNOLOGIA));
+    assertFalse(
+        PoliticaContraentrega.podriaAdmitirse(
+            apagada, Dinero.deCop(100_000), LineaCatalogo.TECNOLOGIA));
+  }
+
+  /** El flete suma: un producto por debajo del piso todavía puede llegar a él con el envío. */
+  @Test
+  void elPisoNoImpideAnunciarla() {
+    CriteriosContraentrega criterios =
+        new CriteriosContraentrega(true, Dinero.deCop(50_000), Dinero.deCop(1_000_000), Set.of());
+
+    assertTrue(
+        PoliticaContraentrega.podriaAdmitirse(
+            criterios, Dinero.deCop(30_000), LineaCatalogo.TECNOLOGIA));
+  }
 }

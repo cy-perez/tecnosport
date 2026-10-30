@@ -6,6 +6,7 @@ import { desempaquetar } from '../../../../core/http/respuesta-http';
 import {
   EstadoPublicacion,
   OrdenDeDifusion,
+  PortadaPropuesta,
   PublicacionEnRed,
   RedSocial,
 } from '../domain/difusion.model';
@@ -33,6 +34,7 @@ export class DifusionHttpRepositorio implements RepositorioDifusion {
         // Ausente significa "arma el propuesto"; presente se usa tal cual. Mandar la cadena vacía
         // sería lo mismo que no mandarlo, pero decirlo explícito ahorra el viaje mental.
         pieDeFoto: orden.pieDeFoto === '' ? undefined : orden.pieDeFoto,
+        conPortada: orden.conPortada,
       },
     });
 
@@ -68,6 +70,14 @@ export class DifusionHttpRepositorio implements RepositorioDifusion {
       params: { path: { id: productoId }, query: { red } },
     });
     return desempaquetar(respuesta, 'no se pudo armar el pie de foto').pieDeFoto ?? '';
+  }
+
+  async proponerPortada(productoId: string): Promise<PortadaPropuesta | null> {
+    const respuesta = await this.cliente.GET('/api/v1/admin/productos/{id}/difusion/portada', {
+      params: { path: { id: productoId } },
+    });
+    const datos = desempaquetar(respuesta, 'no se pudo dibujar la portada');
+    return datos.url ? { url: datos.url, ancho: datos.ancho ?? 0, alto: datos.alto ?? 0 } : null;
   }
 }
 

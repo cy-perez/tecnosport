@@ -7,6 +7,7 @@ import co.tecnosport.api.domain.difusion.PublicacionEnRed;
 import co.tecnosport.api.domain.difusion.RedSocial;
 import co.tecnosport.api.presentation.difusion.dto.DifundirProductoPeticion;
 import co.tecnosport.api.presentation.difusion.dto.PropuestaDePieRespuesta;
+import co.tecnosport.api.presentation.difusion.dto.PropuestaDePortadaRespuesta;
 import co.tecnosport.api.presentation.difusion.dto.PublicacionEnRedRespuesta;
 import java.util.List;
 import java.util.Objects;
@@ -55,7 +56,11 @@ public class AdminDifusionControlador {
       @PathVariable("id") UUID id, @RequestBody DifundirProductoPeticion cuerpo) {
     List<PublicacionEnRed> publicaciones =
         difundirProducto.ejecutar(
-            new DifundirProductoComando(id, redes(cuerpo.redes()), cuerpo.pieDeFoto()));
+            new DifundirProductoComando(
+                id,
+                redes(cuerpo.redes()),
+                cuerpo.pieDeFoto(),
+                Boolean.TRUE.equals(cuerpo.conPortada())));
 
     log.info(
         "Producto {} difundido en {}: {}",
@@ -85,6 +90,18 @@ public class AdminDifusionControlador {
   public PropuestaDePieRespuesta propuesta(
       @PathVariable("id") UUID id, @RequestParam(name = "red") String red) {
     return new PropuestaDePieRespuesta(difundirProducto.proponerPie(id, RedSocial.valueOf(red)));
+  }
+
+  /**
+   * La portada que abriría el carrusel. Dibujarla la deja en el bucket —con una llave que sale del
+   * contenido, así que pedirla otra vez no sube nada nuevo— y es la misma que saldrá al difundir.
+   */
+  @GetMapping("/portada")
+  public PropuestaDePortadaRespuesta portada(@PathVariable("id") UUID id) {
+    return difundirProducto
+        .proponerPortada(id)
+        .map(p -> new PropuestaDePortadaRespuesta(p.url(), p.ancho(), p.alto()))
+        .orElseGet(() -> new PropuestaDePortadaRespuesta(null, null, null));
   }
 
   private static List<RedSocial> redes(List<String> nombres) {

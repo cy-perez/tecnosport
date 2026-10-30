@@ -1,6 +1,11 @@
 import { inject } from '@angular/core';
 import { injectMutation, injectQuery, QueryClient } from '@tanstack/angular-query-experimental';
-import { OrdenDeDifusion, PublicacionEnRed, RedSocial } from '../domain/difusion.model';
+import {
+  OrdenDeDifusion,
+  PortadaPropuesta,
+  PublicacionEnRed,
+  RedSocial,
+} from '../domain/difusion.model';
 import { REPOSITORIO_DIFUSION, ResultadoDifusion } from '../domain/repositorio-difusion.puerto';
 
 /** Una llave por producto: el historial de uno no invalida el de otro. */
@@ -43,6 +48,21 @@ export function usarPropuestaDePie(productoId: () => string, red: () => RedSocia
     // tiene que reflejarlo antes de publicarse.
     staleTime: 10_000,
     enabled: productoId() !== '',
+  }));
+}
+
+/**
+ * La portada de marca que abriría el carrusel. Solo se pide cuando la casilla está marcada, y se
+ * guarda cinco minutos: dibujarla es trabajo del servidor, que la sube una vez y la reutiliza.
+ */
+export function usarPropuestaDePortada(productoId: () => string, activa: () => boolean) {
+  const repositorio = inject(REPOSITORIO_DIFUSION);
+
+  return injectQuery(() => ({
+    queryKey: ['admin', 'difusion', productoId(), 'portada'] as const,
+    queryFn: (): Promise<PortadaPropuesta | null> => repositorio.proponerPortada(productoId()),
+    staleTime: 5 * 60_000,
+    enabled: productoId() !== '' && activa(),
   }));
 }
 

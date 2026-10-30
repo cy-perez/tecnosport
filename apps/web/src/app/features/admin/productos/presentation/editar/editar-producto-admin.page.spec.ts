@@ -455,6 +455,7 @@ async function renderPagina(repositorioProductos: RepositorioProductosAdmin, id 
           difundir: async () => ({ tipo: 'OK', publicaciones: [] }),
           historial: async () => [],
           proponerPie: async () => '',
+          proponerPortada: async () => null,
         },
       },
     ],

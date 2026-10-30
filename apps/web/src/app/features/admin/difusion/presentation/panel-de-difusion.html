@@ -34,6 +34,43 @@
     }
   </fieldset>
 
+  <div class="flex flex-col gap-8">
+    <ts-checkbox
+      idCasilla="difusion-portada"
+      [etiqueta]="'admin.difusion.portada' | transloco"
+      [marcado]="conPortada()"
+      (marcadoCambio)="conPortada.set($event)"
+    />
+    <p class="m-0 text-sm text-ts-texto-suave">{{ 'admin.difusion.portadaAyuda' | transloco }}</p>
+    <!-- Región viva siempre montada y con el contenido cambiando, como la de abajo: que el
+         carrusel vaya a salir sin portada tiene que oírse al marcar la casilla. -->
+    <p
+      class="m-0 text-sm"
+      [class.text-ts-texto-suave]="!sinPortada()"
+      [class.text-ts-aviso]="sinPortada()"
+      role="status"
+    >
+      @if (conPortada() && portada.isPending()) {
+        {{ 'admin.difusion.armandoPortada' | transloco }}
+      } @else if (sinPortada()) {
+        {{ 'admin.difusion.sinPortada' | transloco }}
+      }
+    </p>
+    @if (conPortada() && !portada.isPending()) {
+      @if (portada.data(); as vista) {
+        <!-- `<img>` a secas: es un JPEG del bucket que nadie más usa, y NgOptimizedImage pediría
+             variantes que no existen. El ancho lo pone el token; el alto, la proporción. -->
+        <img
+          class="h-auto w-[var(--ancho-min-vista-previa)] rounded-sm border border-ts-borde"
+          [src]="vista.url"
+          [width]="vista.ancho"
+          [height]="vista.alto"
+          [alt]="'admin.difusion.portadaAlt' | transloco"
+        />
+      }
+    }
+  </div>
+
   @if (propuesta.isPending()) {
     <p class="m-0 text-ts-texto-suave">{{ 'admin.difusion.armandoPie' | transloco }}</p>
   } @else if (propuesta.isError()) {

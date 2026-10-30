@@ -15,5 +15,14 @@ import java.util.UUID;
  * Instagram remite a la biografía— pero si la persona lo edita, lo edita una vez. Partirlo en dos
  * campos habría significado dos cajas de texto en el panel para un caso que todavía no se ha
  * pedido.
+ *
+ * <p>{@code conPortada} abre el carrusel con la portada de marca ({@code ADR-0102}). El constructor
+ * de tres argumentos la deja fuera: es la publicación tal como era antes de la portada.
  */
-public record DifundirProductoComando(UUID productoId, List<RedSocial> redes, String pieDeFoto) {}
+public record DifundirProductoComando(
+    UUID productoId, List<RedSocial> redes, String pieDeFoto, boolean conPortada) {
+
+  public DifundirProductoComando(UUID productoId, List<RedSocial> redes, String pieDeFoto) {
+    this(productoId, redes, pieDeFoto, false);
+  }
+}
