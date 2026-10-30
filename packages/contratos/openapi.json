@@ -1464,6 +1464,9 @@
       },
       "DifundirProductoPeticion" : {
         "properties" : {
+          "conPortada" : {
+            "type" : "boolean"
+          },
           "pieDeFoto" : {
             "type" : "string"
           },
@@ -4083,6 +4086,22 @@
       "PropuestaDePieRespuesta" : {
         "properties" : {
           "pieDeFoto" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "PropuestaDePortadaRespuesta" : {
+        "properties" : {
+          "alto" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "ancho" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "url" : {
             "type" : "string"
           }
         },
@@ -8798,6 +8817,37 @@
                     "$ref" : "#/components/schemas/PublicacionEnRedRespuesta"
                   },
                   "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-difusion-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/productos/{id}/difusion/portada" : {
+      "get" : {
+        "operationId" : "portada",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PropuestaDePortadaRespuesta"
                 }
               }
             },

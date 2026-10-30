@@ -139,7 +139,7 @@ public final class AjustadorDeImagenesJava2D implements AjustadorDeImagenes {
    * cuarenta puntos por lado es la misma que la de mil, y esto corre por cada foto de cada
    * carrusel.
    */
-  private static Color colorDelBorde(BufferedImage imagen) {
+  static Color colorDelBorde(BufferedImage imagen) {
     int ancho = imagen.getWidth();
     int alto = imagen.getHeight();
     long rojo = 0;

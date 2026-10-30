@@ -23,15 +23,51 @@ import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Hashtag;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
+import co.tecnosport.api.domain.pedido.CriteriosContraentrega;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 /** Escenarios compartidos por las pruebas de difusión. */
 final class ApoyoDeDifusion {
 
   private ApoyoDeDifusion() {}
+
+  /** Contraentrega encendida, sin líneas excluidas y con un tope que nada de estas pruebas pasa. */
+  static final CriteriosContraentrega CONTRAENTREGA_ABIERTA =
+      new CriteriosContraentrega(true, Dinero.deCop(20_000), Dinero.deCop(5_000_000), Set.of());
+
+  static ArmadorDePieDeFoto armador(String urlBase, List<Hashtag> hashtags) {
+    return armador(urlBase, hashtags, CONTRAENTREGA_ABIERTA);
+  }
+
+  static ArmadorDePieDeFoto armador(
+      String urlBase, List<Hashtag> hashtags, CriteriosContraentrega contraentrega) {
+    return new ArmadorDePieDeFoto(urlBase, hashtags, new TextosDeDifusionFalso(), contraentrega);
+  }
+
+  /**
+   * Pinta la llave y sus argumentos —{@code [entrada|JBL Grip|[precio.unico|299900]]}— en vez de la
+   * prosa. Así estas pruebas afirman qué pieza va y con qué datos, y la redacción se prueba donde
+   * vive, en {@code TextosDeDifusionMessageSourceTest}, con el pie entero en castellano.
+   */
+  static final class TextosDeDifusionFalso implements TextosDeDifusion {
+    @Override
+    public String texto(TextoDeDifusion texto, Object... argumentos) {
+      StringBuilder pintado = new StringBuilder("[").append(texto.clave());
+      for (Object argumento : argumentos) {
+        pintado.append('|').append(argumento);
+      }
+      return pintado.append(']').toString();
+    }
+
+    @Override
+    public String dinero(Dinero valor) {
+      return valor.valor().toPlainString();
+    }
+  }
 
   static Producto jblGrip(EstadoProducto estado, String urlVistaPrevia) {
     return jblGrip(estado, urlVistaPrevia, true);

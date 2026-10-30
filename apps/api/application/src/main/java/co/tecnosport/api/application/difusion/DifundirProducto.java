@@ -44,6 +44,13 @@ import java.util.UUID;
  * <p>Quien publica ve el texto propuesto en el panel y lo puede cambiar antes de enviar. Si viene
  * en el comando se usa tal cual; si no, lo arma {@link ArmadorDePieDeFoto}. Lo que se guarda es
  * siempre el que se mandó, no la plantilla que lo generó.
+ *
+ * <h2>La portada de marca va delante, si se pide</h2>
+ *
+ * <p>Con {@code conPortada}, el carrusel abre con la portada que dibuja {@link CompositorDePortada}
+ * —la principal con la banda de marca— y detrás siguen las fotos de siempre, la principal incluida
+ * ({@code ADR-0102}). Se compone una vez y sirve para las dos redes. Si no se puede componer, se
+ * publica sin ella: perder la portada no es motivo para perder la publicación.
  */
 public final class DifundirProducto {
 
@@ -62,6 +69,7 @@ public final class DifundirProducto {
   private final PublicadorEnRedSocial publicador;
   private final AjustadorDeImagenes ajustador;
   private final ArmadorDePieDeFoto armador;
+  private final CompositorDePortada compositor;
   private final EnTransaccionPropia enTransaccionPropia;
   private final Reloj reloj;
 
@@ -71,6 +79,7 @@ public final class DifundirProducto {
       PublicadorEnRedSocial publicador,
       AjustadorDeImagenes ajustador,
       ArmadorDePieDeFoto armador,
+      CompositorDePortada compositor,
       EnTransaccionPropia enTransaccionPropia,
       Reloj reloj) {
     this.repositorioProductos =
@@ -81,6 +90,8 @@ public final class DifundirProducto {
     this.publicador = Objects.requireNonNull(publicador, "El publicador es obligatorio.");
     this.ajustador = Objects.requireNonNull(ajustador, "El ajustador de imágenes es obligatorio.");
     this.armador = Objects.requireNonNull(armador, "El armador del pie es obligatorio.");
+    this.compositor =
+        Objects.requireNonNull(compositor, "El compositor de portada es obligatorio.");
     this.enTransaccionPropia =
         Objects.requireNonNull(enTransaccionPropia, "La transacción propia es obligatoria.");
     this.reloj = Objects.requireNonNull(reloj, "El reloj es obligatorio.");
@@ -96,9 +107,18 @@ public final class DifundirProducto {
 
     List<ImagenAPublicar> imagenes = exigirImagenesPublicables(producto);
     exigirPublicadoEnLaTienda(producto);
+    Set<RedSocial> redes = sinRepetir(comando.redes());
+    // El doble clic se rechaza antes de dibujar nada: la portada sube un objeto al bucket, y
+    // subirlo para después rechazar la publicación es trabajo tirado.
+    for (RedSocial red : redes) {
+      exigirQueNoSeaUnDobleClic(producto, red);
+    }
+    if (comando.conPortada()) {
+      imagenes = conPortadaDelante(producto, imagenes);
+    }
 
     List<PublicacionEnRed> resultados = new ArrayList<>();
-    for (RedSocial red : sinRepetir(comando.redes())) {
+    for (RedSocial red : redes) {
       resultados.add(difundirEn(producto, red, imagenes, comando.pieDeFoto()));
     }
     return resultados;
@@ -125,12 +145,37 @@ public final class DifundirProducto {
     return armador.armar(producto, red);
   }
 
+  /**
+   * La portada que abriría el carrusel, para enseñarla en el panel antes de publicar. Vacía si no
+   * se pudo componer, que es lo mismo que pasaría al difundir: se publicaría sin ella.
+   */
+  public Optional<ImagenAPublicar> proponerPortada(UUID productoId) {
+    Producto producto =
+        repositorioProductos
+            .buscarPorId(productoId)
+            .orElseThrow(() -> new ProductoNoEncontradoPorIdException(productoId));
+    List<ImagenAPublicar> imagenes = exigirImagenesPublicables(producto);
+    exigirPublicadoEnLaTienda(producto);
+    return compositor.componer(producto, imagenes.get(0));
+  }
+
+  private List<ImagenAPublicar> conPortadaDelante(
+      Producto producto, List<ImagenAPublicar> imagenes) {
+    return compositor
+        .componer(producto, imagenes.get(0))
+        .map(
+            portada -> {
+              List<ImagenAPublicar> conPortada = new ArrayList<>();
+              conPortada.add(portada);
+              conPortada.addAll(imagenes);
+              return List.copyOf(conPortada);
+            })
+        .orElse(imagenes);
+  }
+
   private PublicacionEnRed difundirEn(
       Producto producto, RedSocial red, List<ImagenAPublicar> candidatas, String pieEscritoAMano) {
-    if (repositorioPublicaciones.hayUnaReciente(
-        producto.id(), red, reloj.ahora().minus(VENTANA_ANTI_DOBLE_CLIC))) {
-      throw new DifusionRepetidaException(producto.id(), red);
-    }
+    exigirQueNoSeaUnDobleClic(producto, red);
 
     // Primero se encajan a la proporción que pida la red, y después se pregunta cuáles admite.
     // En ese orden: encajando antes, lo que el filtro descarta es solo lo que no se pudo encajar,
@@ -180,6 +225,13 @@ public final class DifundirProducto {
     }
     repositorioPublicaciones.guardar(publicacion);
     return publicacion;
+  }
+
+  private void exigirQueNoSeaUnDobleClic(Producto producto, RedSocial red) {
+    if (repositorioPublicaciones.hayUnaReciente(
+        producto.id(), red, reloj.ahora().minus(VENTANA_ANTI_DOBLE_CLIC))) {
+      throw new DifusionRepetidaException(producto.id(), red);
+    }
   }
 
   /**

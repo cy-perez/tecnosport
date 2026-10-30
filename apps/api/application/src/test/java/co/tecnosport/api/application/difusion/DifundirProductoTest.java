@@ -29,6 +29,7 @@ class DifundirProductoTest {
   private final RepositorioPublicacionesFalso publicaciones = new RepositorioPublicacionesFalso();
   private final PublicadorFalso publicador = new PublicadorFalso();
   private final AjustadorFalso ajustador = new AjustadorFalso();
+  private final CompositorFalso compositor = new CompositorFalso();
 
   @Test
   void publicaEnLaRedPedidaYDejaLaConstanciaEnPublicada() {
@@ -107,7 +108,9 @@ class DifundirProductoTest {
 
     caso.ejecutar(new DifundirProductoComando(producto.id(), List.of(RedSocial.FACEBOOK), "   "));
 
-    assertTrue(publicador.ultimoPie.startsWith("JBL Grip - $299.900"), publicador.ultimoPie);
+    assertTrue(
+        publicador.ultimoPie.startsWith("[entrada|JBL Grip|[precio.unico|299900]]"),
+        publicador.ultimoPie);
   }
 
   @Test
@@ -217,7 +220,7 @@ class DifundirProductoTest {
     assertTrue(
         casoDeUso(deProveedor)
             .proponerPie(deProveedor.id(), RedSocial.INSTAGRAM)
-            .startsWith("JBL Grip"));
+            .startsWith("[entrada|JBL Grip"));
   }
 
   /** El post es el carrusel de la ficha: la principal primero y detrás la galería, en su orden. */
@@ -366,6 +369,117 @@ class DifundirProductoTest {
         () -> caso.ejecutar(new DifundirProductoComando(producto.id(), List.of(), null)));
   }
 
+  // --- portada de marca (ADR-0102) ---
+
+  @Test
+  void conPortadaElCarruselAbreConEllaYDetrasSiguenTodasLasFotos() {
+    Producto conGaleria =
+        ApoyoDeDifusion.jblGripConGaleria(
+            List.of(ApoyoDeDifusion.deGaleria(0, "https://b/uno.jpg", 1000, 1000)));
+    DifundirProducto caso = casoDeUso(conGaleria);
+
+    caso.ejecutar(
+        new DifundirProductoComando(conGaleria.id(), List.of(RedSocial.FACEBOOK), null, true));
+
+    assertEquals(
+        List.of(CompositorFalso.URL, ApoyoDeDifusion.PRINCIPAL_JPEG, "https://b/uno.jpg"),
+        publicador.ultimasUrls);
+    // Se compone a partir de la principal, que es la foto que la portada enmarca.
+    assertEquals(List.of(ApoyoDeDifusion.PRINCIPAL_JPEG), compositor.principalesRecibidas);
+  }
+
+  /** Dos redes en el mismo comando son una sola portada: dibujarla dos veces sería subirla dos. */
+  @Test
+  void laPortadaSeComponeUnaVezAunqueSeanDosRedes() {
+    Producto producto = ApoyoDeDifusion.jblGripConPrincipalJpeg();
+    DifundirProducto caso = casoDeUso(producto);
+
+    caso.ejecutar(
+        new DifundirProductoComando(
+            producto.id(), List.of(RedSocial.FACEBOOK, RedSocial.INSTAGRAM), null, true));
+
+    assertEquals(1, compositor.principalesRecibidas.size());
+  }
+
+  @Test
+  void unaPortadaQueNoSePuedeComponerNoTumbaLaPublicacion() {
+    Producto producto = ApoyoDeDifusion.jblGripConPrincipalJpeg();
+    compositor.noPuede = true;
+    DifundirProducto caso = casoDeUso(producto);
+
+    List<PublicacionEnRed> resultado =
+        caso.ejecutar(
+            new DifundirProductoComando(producto.id(), List.of(RedSocial.FACEBOOK), null, true));
+
+    assertEquals(EstadoPublicacion.PUBLICADA, resultado.get(0).estado());
+    assertEquals(List.of(ApoyoDeDifusion.PRINCIPAL_JPEG), publicador.ultimasUrls);
+  }
+
+  @Test
+  void sinPortadaNiSiquieraSeIntentaComponer() {
+    Producto producto = ApoyoDeDifusion.jblGripConPrincipalJpeg();
+    DifundirProducto caso = casoDeUso(producto);
+
+    caso.ejecutar(
+        new DifundirProductoComando(producto.id(), List.of(RedSocial.FACEBOOK), null, false));
+
+    assertTrue(compositor.principalesRecibidas.isEmpty());
+    assertEquals(List.of(ApoyoDeDifusion.PRINCIPAL_JPEG), publicador.ultimasUrls);
+  }
+
+  /**
+   * En Instagram la portada es la primera, así que su proporción —4:5— es la que se le pide al
+   * resto del carrusel, y la constancia la guarda como una foto más: es lo que salió.
+   */
+  @Test
+  void enInstagramElRestoDelCarruselSeEncajaALaProporcionDeLaPortada() {
+    Producto producto = ApoyoDeDifusion.jblGripConPrincipalJpeg();
+    publicador.proporcionPedida = OptionalDouble.of(0.8);
+    DifundirProducto caso = casoDeUso(producto);
+
+    List<PublicacionEnRed> resultado =
+        caso.ejecutar(
+            new DifundirProductoComando(producto.id(), List.of(RedSocial.INSTAGRAM), null, true));
+
+    assertEquals(2, resultado.get(0).urlsImagen().size());
+    assertTrue(resultado.get(0).urlsImagen().get(0).startsWith(CompositorFalso.URL));
+  }
+
+  /** Un doble clic se rechaza antes de dibujar: la portada sube un objeto al bucket. */
+  @Test
+  void unDobleClicNoLlegaADibujarLaPortada() {
+    Producto producto = ApoyoDeDifusion.jblGripConPrincipalJpeg();
+    publicaciones.hayReciente = true;
+    DifundirProducto caso = casoDeUso(producto);
+
+    assertThrows(
+        DifusionRepetidaException.class,
+        () ->
+            caso.ejecutar(
+                new DifundirProductoComando(
+                    producto.id(), List.of(RedSocial.FACEBOOK), null, true)));
+    assertTrue(compositor.principalesRecibidas.isEmpty());
+  }
+
+  @Test
+  void laPortadaSePuedeVerAntesDePublicar() {
+    Producto producto = ApoyoDeDifusion.jblGripConPrincipalJpeg();
+
+    Optional<ImagenAPublicar> portada = casoDeUso(producto).proponerPortada(producto.id());
+
+    assertEquals(Optional.of(CompositorFalso.URL), portada.map(ImagenAPublicar::url));
+    assertTrue(publicaciones.guardadas.isEmpty(), "Ver la portada no publica nada.");
+  }
+
+  @Test
+  void unBorradorNoTienePortadaQueVer() {
+    Producto borrador = ApoyoDeDifusion.jblGrip(EstadoProducto.BORRADOR, VISTA_PREVIA);
+
+    assertThrows(
+        ProductoNoDifundibleException.class,
+        () -> casoDeUso(borrador).proponerPortada(borrador.id()));
+  }
+
   // --- armado ---
 
   private static Producto publicado() {
@@ -378,7 +492,8 @@ class DifundirProductoTest {
         publicaciones,
         publicador,
         ajustador,
-        new ArmadorDePieDeFoto("https://www.tecnosport.co", List.of()),
+        ApoyoDeDifusion.armador("https://www.tecnosport.co", List.of()),
+        compositor,
         // La transacción propia, en una prueba, es simplemente ejecutar: lo que se comprueba aquí
         // es el orden de las escrituras, no que Postgres confirme.
         new EnTransaccionPropia() {
@@ -445,6 +560,19 @@ class DifundirProductoTest {
       int alto = 1000;
       int ancho = (int) Math.round(alto * proporcionObjetivo);
       return Optional.of(new ImagenAPublicar(imagen.url() + "?encajada", ancho, alto));
+    }
+  }
+
+  /** Devuelve una URL fija con las medidas de la portada de verdad, 1080 por 1350. */
+  private static final class CompositorFalso implements CompositorDePortada {
+    static final String URL = "https://b/productos/redes/portada.jpg";
+    private boolean noPuede;
+    private final List<String> principalesRecibidas = new ArrayList<>();
+
+    @Override
+    public Optional<ImagenAPublicar> componer(Producto producto, ImagenAPublicar principal) {
+      principalesRecibidas.add(principal.url());
+      return noPuede ? Optional.empty() : Optional.of(new ImagenAPublicar(URL, 1080, 1350));
     }
   }
 

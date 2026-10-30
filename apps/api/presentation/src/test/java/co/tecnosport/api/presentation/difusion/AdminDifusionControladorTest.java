@@ -20,6 +20,8 @@ import co.tecnosport.api.application.difusion.ImagenAPublicar;
 import co.tecnosport.api.application.difusion.PublicadorEnRedSocial;
 import co.tecnosport.api.application.difusion.RepositorioPublicaciones;
 import co.tecnosport.api.application.difusion.ResultadoPublicacion;
+import co.tecnosport.api.application.difusion.TextoDeDifusion;
+import co.tecnosport.api.application.difusion.TextosDeDifusion;
 import co.tecnosport.api.domain.catalogo.Categoria;
 import co.tecnosport.api.domain.catalogo.EstadoProducto;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
@@ -38,6 +40,7 @@ import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.domain.difusion.PublicacionEnRed;
 import co.tecnosport.api.domain.difusion.RedSocial;
+import co.tecnosport.api.domain.pedido.CriteriosContraentrega;
 import co.tecnosport.api.presentation.ManejadorDeErrores;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -68,6 +71,8 @@ import org.springframework.test.web.servlet.MockMvc;
 @WebMvcTest(AdminDifusionControlador.class)
 @Import({AdminDifusionControladorTest.Configuracion.class, ManejadorDeErrores.class})
 class AdminDifusionControladorTest {
+
+  private static final String PORTADA = "https://storage.googleapis.com/b/redes/portada.jpg";
 
   private static final Instant AHORA = Instant.parse("2026-09-29T15:00:00Z");
 
@@ -191,10 +196,54 @@ class AdminDifusionControladorTest {
             get("/api/v1/admin/productos/{id}/difusion/propuesta", productos.producto.id())
                 .param("red", "INSTAGRAM"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.pieDeFoto").value(org.hamcrest.Matchers.containsString("$299.900")))
+        .andExpect(jsonPath("$.pieDeFoto").value(org.hamcrest.Matchers.containsString("299.900")))
         .andExpect(
             jsonPath("$.pieDeFoto")
-                .value(org.hamcrest.Matchers.containsString("Enlace en la bio")));
+                .value(org.hamcrest.Matchers.containsString("llamado.instagram")));
+  }
+
+  @Test
+  void conPortadaElCarruselLaLlevaDelante() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/admin/productos/{id}/difusion", productos.producto.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"redes\":[\"FACEBOOK\"],\"conPortada\":true}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].urlesImagen[0]").value(PORTADA));
+  }
+
+  /** Sin decir nada, sale como salía antes de la portada: el cliente viejo no cambia de forma. */
+  @Test
+  void sinDecirNadaNoLlevaPortada() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/admin/productos/{id}/difusion", productos.producto.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"redes\":[\"FACEBOOK\"]}"))
+        .andExpect(status().isOk())
+        .andExpect(
+            jsonPath("$[0].urlesImagen")
+                .value(org.hamcrest.Matchers.not(org.hamcrest.Matchers.hasItem(PORTADA))));
+  }
+
+  @Test
+  void laPortadaSePuedeVerAntesDePublicar() throws Exception {
+    mockMvc
+        .perform(get("/api/v1/admin/productos/{id}/difusion/portada", productos.producto.id()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.url").value(PORTADA))
+        .andExpect(jsonPath("$.ancho").value(1080))
+        .andExpect(jsonPath("$.alto").value(1350));
+  }
+
+  @Test
+  void laPortadaDeUnBorradorResponde409() throws Exception {
+    productos.producto = jblGrip(EstadoProducto.BORRADOR, true);
+
+    mockMvc
+        .perform(get("/api/v1/admin/productos/{id}/difusion/portada", productos.producto.id()))
+        .andExpect(status().isConflict());
   }
 
   // --- escenarios ---
@@ -426,7 +475,25 @@ class AdminDifusionControladorTest {
           new PublicadorDoble(),
           // Nunca se le pide nada: el doble de publicador no exige ninguna proporción.
           (producto, imagen, proporcion) -> Optional.of(imagen),
-          new ArmadorDePieDeFoto("https://www.tecnosport.co", List.of()),
+          new ArmadorDePieDeFoto(
+              "https://www.tecnosport.co",
+              List.of(),
+              // Pinta la llave y sus datos: la redacción se prueba donde vive, en infrastructure.
+              new TextosDeDifusion() {
+                @Override
+                public String texto(TextoDeDifusion texto, Object... argumentos) {
+                  return texto.clave() + " " + java.util.Arrays.toString(argumentos);
+                }
+
+                @Override
+                public String dinero(Dinero valor) {
+                  return java.text.NumberFormat.getIntegerInstance(java.util.Locale.of("es", "CO"))
+                      .format(valor.valor());
+                }
+              },
+              new CriteriosContraentrega(
+                  true, Dinero.deCop(20_000), Dinero.deCop(5_000_000), java.util.Set.of())),
+          (producto, principal) -> Optional.of(new ImagenAPublicar(PORTADA, 1080, 1350)),
           new EnTransaccionPropia() {
             @Override
             public <T> T ejecutar(Supplier<T> trabajo) {

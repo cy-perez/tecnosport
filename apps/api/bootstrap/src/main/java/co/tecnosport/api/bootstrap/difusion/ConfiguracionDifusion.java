@@ -6,12 +6,17 @@ import co.tecnosport.api.application.compartido.EnTransaccionPropia;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.difusion.AjustadorDeImagenes;
 import co.tecnosport.api.application.difusion.ArmadorDePieDeFoto;
+import co.tecnosport.api.application.difusion.CompositorDePortada;
 import co.tecnosport.api.application.difusion.DifundirProducto;
 import co.tecnosport.api.application.difusion.PublicadorEnRedSocial;
 import co.tecnosport.api.application.difusion.RepositorioPublicaciones;
+import co.tecnosport.api.application.difusion.TextosDeDifusion;
 import co.tecnosport.api.domain.compartido.Hashtag;
+import co.tecnosport.api.domain.pedido.CriteriosContraentrega;
 import co.tecnosport.api.infrastructure.difusion.AjustadorDeImagenesJava2D;
 import co.tecnosport.api.infrastructure.difusion.MetaGraphClient;
+import co.tecnosport.api.infrastructure.difusion.PortadaJava2D;
+import co.tecnosport.api.infrastructure.difusion.TextosDeDifusionMessageSource;
 import co.tecnosport.api.infrastructure.difusion.siembra.PublicadorSembrado;
 import java.net.URI;
 import java.time.Duration;
@@ -61,19 +66,32 @@ public class ConfiguracionDifusion {
   }
 
   /**
+   * Los textos del pie, de {@code difusion_*.properties}. Al construirse los resuelve todos en los
+   * dos idiomas: si falta uno, la aplicación no arranca.
+   */
+  @Bean
+  public TextosDeDifusion textosDeDifusion() {
+    return new TextosDeDifusionMessageSource();
+  }
+
+  /**
    * Las etiquetas que van en todo lo que se publique llegan como una cadena separada por espacios
    * —{@code META_HASHTAGS_DE_MARCA="#TecnoSport #Medellín"}— y no como una lista de YAML, para que
    * se puedan cambiar desde una variable de entorno sin tocar un archivo. Las de cada categoría no
    * están aquí: esas viven en la categoría y las edita el panel.
    */
   @Bean
-  public ArmadorDePieDeFoto armadorDePieDeFoto(PropiedadesMeta propiedades) {
+  public ArmadorDePieDeFoto armadorDePieDeFoto(
+      PropiedadesMeta propiedades,
+      TextosDeDifusion textosDeDifusion,
+      CriteriosContraentrega criteriosContraentrega) {
     List<Hashtag> deMarca =
         Arrays.stream(propiedades.hashtagsDeMarca().split("[\\s,]+"))
             .filter(t -> !t.isBlank())
             .map(Hashtag::new)
             .toList();
-    return new ArmadorDePieDeFoto(propiedades.urlBaseDelSitio(), deMarca);
+    return new ArmadorDePieDeFoto(
+        propiedades.urlBaseDelSitio(), deMarca, textosDeDifusion, criteriosContraentrega);
   }
 
   /**
@@ -86,6 +104,16 @@ public class ConfiguracionDifusion {
     return new AjustadorDeImagenesJava2D(almacenDeImagenes);
   }
 
+  /**
+   * La portada de marca del carrusel (ADR-0102). Carga las tipografías y el logo al construirse: si
+   * faltan en el jar, la aplicación no arranca.
+   */
+  @Bean
+  public CompositorDePortada compositorDePortada(
+      AlmacenDeImagenes almacenDeImagenes, PropiedadesMeta propiedades) {
+    return new PortadaJava2D(almacenDeImagenes, propiedades.urlBaseDelSitio());
+  }
+
   @Bean
   public DifundirProducto difundirProducto(
       RepositorioProductos repositorioProductos,
@@ -93,6 +121,7 @@ public class ConfiguracionDifusion {
       PublicadorEnRedSocial publicador,
       AjustadorDeImagenes ajustador,
       ArmadorDePieDeFoto armador,
+      CompositorDePortada compositor,
       EnTransaccionPropia enTransaccionPropia,
       Reloj reloj) {
     return new DifundirProducto(
@@ -101,6 +130,7 @@ public class ConfiguracionDifusion {
         publicador,
         ajustador,
         armador,
+        compositor,
         enTransaccionPropia,
         reloj);
   }

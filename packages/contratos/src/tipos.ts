@@ -1220,6 +1220,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/productos/{id}/difusion/portada": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["portada"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/productos/{id}/difusion/propuesta": {
         parameters: {
             query?: never;
@@ -2918,6 +2934,7 @@ export interface components {
             guias?: components["schemas"]["GuiaDespachadaRequest"][];
         };
         DifundirProductoPeticion: {
+            conPortada?: boolean;
             pieDeFoto?: string;
             redes: string[];
         };
@@ -3800,6 +3817,13 @@ export interface components {
         };
         PropuestaDePieRespuesta: {
             pieDeFoto?: string;
+        };
+        PropuestaDePortadaRespuesta: {
+            /** Format: int32 */
+            alto?: number;
+            /** Format: int32 */
+            ancho?: number;
+            url?: string;
         };
         ProrrogaRespuesta: {
             /** Format: date-time */
@@ -6590,6 +6614,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PublicacionEnRedRespuesta"][];
+                };
+            };
+        };
+    };
+    portada: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PropuestaDePortadaRespuesta"];
                 };
             };
         };

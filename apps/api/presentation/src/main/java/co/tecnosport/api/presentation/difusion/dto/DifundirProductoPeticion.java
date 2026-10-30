@@ -14,9 +14,15 @@ import java.util.Objects;
  * de verdad exige, y con él el cliente TypeScript generado.
  *
  * <p>{@code pieDeFoto} ausente significa "arma el que toque", que es el camino normal.
+ *
+ * <p>{@code conPortada} abre el carrusel con la portada de marca (ADR-0102). Es un {@code Boolean}
+ * y no un {@code boolean} porque Jackson 3 revienta con un primitivo que falte; ausente vale {@code
+ * false}, que es como se publicaba antes de que existiera.
  */
 public record DifundirProductoPeticion(
-    @Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<String> redes, String pieDeFoto) {
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<String> redes,
+    String pieDeFoto,
+    Boolean conPortada) {
 
   public DifundirProductoPeticion {
     Objects.requireNonNull(redes, "Hay que decir en qué redes se difunde.");
