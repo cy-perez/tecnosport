@@ -144,9 +144,10 @@ function seguimientoDePrueba(overrides: Parameters<typeof pedidoDePrueba>[0] = {
 
 class RepositorioPedidosFalso implements RepositorioPedidos {
   llamadasReintentar = 0;
+  consultasDeSeguimiento = 0;
 
   constructor(
-    private seguimiento: Seguimiento | null = null,
+    public seguimiento: Seguimiento | null = null,
     private pedidoReintentado: Pedido = pedidoDePrueba({
       estado: 'PAGO_PENDIENTE',
       metodoPago: 'CONTRAENTREGA',
@@ -172,6 +173,7 @@ class RepositorioPedidosFalso implements RepositorioPedidos {
   }
 
   async consultarSeguimiento(): Promise<Seguimiento | null> {
+    this.consultasDeSeguimiento++;
     return this.seguimiento;
   }
 
@@ -383,6 +385,61 @@ describe('EstadoPage', () => {
 
       await vi.waitFor(() => expect(carrito.carritoId()).toBe('carrito-1'));
       expect(carritosPorPagar.carritoDe('pedido-1')).toBe('carrito-1');
+    });
+
+    describe('al volver antes de que el pago entre', () => {
+      // Wompi devuelve al comprador antes de que su evento llegue a la API: la pantalla ve el pedido
+      // pendiente y el pago entra segundos después (ESPERA_DEL_PAGO).
+      beforeEach(() => vi.useFakeTimers({ shouldAdvanceTime: true }));
+      afterEach(() => vi.useRealTimers());
+
+      async function volverPendiente() {
+        const pedidos = new RepositorioPedidosFalso(
+          seguimientoDePrueba({ estado: 'PAGO_PENDIENTE', metodoPago: 'WOMPI' }),
+        );
+        const { fixture } = await renderConProviders(pedidos, new RepositorioPagosFalso(), {
+          pedidoId: 'pedido-1',
+          correo: 'cliente@tecnosport.co',
+        });
+        await screen.findByText('Pedido TS-2026-000001');
+        fixture.detectChanges();
+        await fixture.whenStable();
+        return { pedidos, carrito: fixture.debugElement.injector.get(CarritoStore) };
+      }
+
+      it('vuelve a preguntar y vacía el carrito cuando el pago entra', async () => {
+        sembrarCarritoId('carrito-1');
+        carritosPorPagar.anotar('pedido-1', 'carrito-1');
+        const { pedidos, carrito } = await volverPendiente();
+        expect(carrito.carritoId()).toBe('carrito-1');
+
+        pedidos.seguimiento = seguimientoDePrueba({ estado: 'PAGADO', metodoPago: 'WOMPI' });
+        await vi.advanceTimersByTimeAsync(3_000);
+
+        await vi.waitFor(() => expect(carrito.carritoId()).toBeNull());
+        expect(carritosPorPagar.carritoDe('pedido-1')).toBeNull();
+      });
+
+      it('sin la marca de esta pestaña consulta una sola vez', async () => {
+        const { pedidos } = await volverPendiente();
+
+        await vi.advanceTimersByTimeAsync(30_000);
+
+        expect(pedidos.consultasDeSeguimiento).toBe(1);
+      });
+
+      it('pasados los 2 minutos deja de preguntar', async () => {
+        sembrarCarritoId('carrito-1');
+        carritosPorPagar.anotar('pedido-1', 'carrito-1');
+        const { pedidos } = await volverPendiente();
+
+        await vi.advanceTimersByTimeAsync(125_000);
+        const alTope = pedidos.consultasDeSeguimiento;
+        await vi.advanceTimersByTimeAsync(30_000);
+
+        expect(alTope).toBeGreaterThan(30);
+        expect(pedidos.consultasDeSeguimiento).toBe(alTope);
+      });
     });
 
     it('no toca otro carrito: el del navegador ya es una compra distinta', async () => {

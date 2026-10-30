@@ -267,7 +267,14 @@ export class EstadoPage {
     this.solicitud.mutate({ numeroPedido: numeroPedido.trim(), correo: correo.trim() });
   }
 
-  protected readonly consulta = usarSeguimientoPedido(() => this.criteriosSeguimiento());
+  private readonly carritosPorPagar = inject(ALMACEN_CARRITO_POR_PAGAR);
+
+  // La marca de `AlmacenCarritoPorPagar` dice que esta pestaña salió a la pasarela con este pedido:
+  // es la que pide volver a preguntar mientras el pago no entra (`ESPERA_DEL_PAGO`).
+  protected readonly consulta = usarSeguimientoPedido(
+    () => this.criteriosSeguimiento(),
+    (pedidoId) => this.carritosPorPagar.carritoDe(pedidoId) !== null,
+  );
 
   protected readonly pedido = computed<Pedido | null>(
     () => this.checkout.pedido() ?? this.consulta.data() ?? null,
@@ -276,7 +283,6 @@ export class EstadoPage {
   private readonly idioma = usarIdiomaActivo();
 
   private readonly carrito = inject(CarritoStore);
-  private readonly carritosPorPagar = inject(ALMACEN_CARRITO_POR_PAGAR);
 
   constructor() {
     // Lo que llevó el pedido que salió a pagarse en la pasarela sale del carrito aquí, al volver
