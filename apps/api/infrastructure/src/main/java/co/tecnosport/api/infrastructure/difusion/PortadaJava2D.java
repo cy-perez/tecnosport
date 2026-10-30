@@ -27,6 +27,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.regex.Pattern;
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageWriteParam;
@@ -89,6 +90,18 @@ public final class PortadaJava2D implements CompositorDePortada {
   private static final float TAMANO_SITIO = 24f;
   private static final int MAXIMO_LINEAS_NOMBRE = 2;
   private static final String ELIPSIS = "…";
+
+  private static final String ESPACIO_DURO = "\u00A0";
+
+  /**
+   * Una cifra seguida de su unidad. Son las que escriben los nombres del catálogo: memoria,
+   * batería, frecuencia, potencia, cámara y medidas. Sin distinguir mayúsculas, porque los
+   * proveedores escriben «gb» y «GB» por igual.
+   */
+  private static final Pattern NUMERO_Y_UNIDAD =
+      Pattern.compile(
+          "(\\d)\\s+(GB|TB|MB|mAh|Wh|Hz|kHz|MHz|GHz|W|V|MP|mm|cm|m|g|kg|ml|L)(?=\\s|$|[,.;)])",
+          Pattern.CASE_INSENSITIVE);
 
   /**
    * Calidad del JPEG: el texto se nota borroso por debajo de 0,9, y la portada es casi todo texto.
@@ -261,11 +274,16 @@ public final class PortadaJava2D implements CompositorDePortada {
   /**
    * El texto partido en palabras hasta {@code maximo} renglones; si sobra, el último acaba en
    * elipsis. Una palabra sola más ancha que el renglón se recorta también, en vez de salirse.
+   *
+   * <p>Un número y su unidad no se separan: «512 GB» con «512» al final de un renglón y «GB» al
+   * principio del siguiente se lee como dos datos. Se unen con un espacio duro antes de partir, y
+   * el {@code \s} de Java no lo toma por separador.
    */
   static List<String> renglones(String texto, FontMetrics metrica, int ancho, int maximo) {
     List<String> renglones = new ArrayList<>();
     String actual = "";
-    String[] palabras = texto.strip().split("\\s+");
+    String[] palabras =
+        NUMERO_Y_UNIDAD.matcher(texto.strip()).replaceAll("$1" + ESPACIO_DURO + "$2").split("\\s+");
     int i = 0;
     while (i < palabras.length && renglones.size() < maximo) {
       String candidato = actual.isEmpty() ? palabras[i] : actual + " " + palabras[i];
