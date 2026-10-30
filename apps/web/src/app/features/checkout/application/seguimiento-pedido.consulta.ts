@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { injectQuery } from '@tanstack/angular-query-experimental';
-import { Seguimiento } from '../domain/pedido.model';
+import { EstadoPedido, Seguimiento } from '../domain/pedido.model';
 import { REPOSITORIO_PEDIDOS } from '../domain/repositorio-pedidos.puerto';
 
 /**
@@ -19,14 +19,45 @@ export interface CriteriosSeguimiento {
 }
 
 /**
+ * Cuánto se insiste al volver de la pasarela con el pago todavía sin entrar. Wompi devuelve al
+ * comprador antes de que su evento llegue a la API —medido en dev el 29 de octubre de 2026: la
+ * pantalla consultó 1,4 s antes del webhook—, así que una sola consulta deja «Esperando el pago»
+ * en pantalla y el carrito lleno aunque el pago ya entró.
+ */
+export const ESPERA_DEL_PAGO = { intervaloMs: 3_000, topeMs: 120_000 } as const;
+
+/**
+ * Cada cuánto volver a preguntar, o `false` para no hacerlo. Solo mientras el pedido siga en
+ * `PAGO_PENDIENTE`, **esta pestaña lo haya mandado a pagar** —quien llega por el enlace de un correo
+ * consulta una vez, que es por lo que se apagaron los reenganches de abajo— y no haya pasado el
+ * tope. Pasado el tope la pantalla se queda como está: recargar sigue funcionando.
+ */
+export function intervaloDeEsperaDelPago(
+  estado: EstadoPedido,
+  salioAPagarDesdeAqui: boolean,
+  transcurridoMs: number,
+): number | false {
+  if (estado !== 'PAGO_PENDIENTE' || !salioAPagarDesdeAqui) {
+    return false;
+  }
+  return transcurridoMs < ESPERA_DEL_PAGO.topeMs ? ESPERA_DEL_PAGO.intervaloMs : false;
+}
+
+/**
  * Solo se usa cuando `CheckoutStore.pedido` no está poblado — un pedido
  * confirmado sin salir del sitio (contraentrega, transferencia) no necesita
  * esta consulta, lo tiene ya en memoria (`estado.page.ts`). `criterios()` en
  * `null` deshabilita la consulta, que es lo que mantiene la pantalla quieta
  * mientras el formulario está sin enviar.
  */
-export function usarSeguimientoPedido(criterios: () => CriteriosSeguimiento | null) {
+export function usarSeguimientoPedido(
+  criterios: () => CriteriosSeguimiento | null,
+  salioAPagarDesdeAqui: (pedidoId: string) => boolean = () => false,
+) {
   const repositorio = inject(REPOSITORIO_PEDIDOS);
+  // Desde la primera respuesta que encontró el pago pendiente, no desde que se montó la pantalla:
+  // el formulario puede pasar un buen rato sin enviarse.
+  let esperandoDesde: number | null = null;
 
   return injectQuery(() => {
     const valor = criterios();
@@ -48,6 +79,18 @@ export function usarSeguimientoPedido(criterios: () => CriteriosSeguimiento | nu
       // esta consulta también entraba por número y ese camino tenía límite de intentos.
       refetchOnWindowFocus: false,
       refetchOnReconnect: false,
+      refetchInterval: (query) => {
+        const seguimiento = query.state.data;
+        if (!seguimiento) {
+          return false;
+        }
+        esperandoDesde ??= Date.now();
+        return intervaloDeEsperaDelPago(
+          seguimiento.estado,
+          salioAPagarDesdeAqui(seguimiento.id),
+          Date.now() - esperandoDesde,
+        );
+      },
     };
   });
 }
