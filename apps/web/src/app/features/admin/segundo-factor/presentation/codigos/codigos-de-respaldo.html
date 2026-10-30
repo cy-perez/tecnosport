@@ -7,10 +7,12 @@
     {{ 'admin.segundoFactor.codigos.explicacion' | transloco }}
   </p>
 
-  <ol class="m-0 grid list-none grid-cols-2 gap-8 p-0">
+  <!-- Una columna hasta 640 px: a 390 cada código mide 167 px en IBM Plex Mono y la columna de dos
+       quedaba en 166,7, así que se partía en el último guion (medido el 29 de octubre de 2026). -->
+  <ol class="m-0 grid list-none grid-cols-1 gap-8 p-0 desde-movil:grid-cols-2">
     @for (codigo of codigos(); track codigo) {
       <li>
-        <code class="font-mono">{{ codigo }}</code>
+        <code class="font-mono whitespace-nowrap">{{ codigo }}</code>
       </li>
     }
   </ol>
