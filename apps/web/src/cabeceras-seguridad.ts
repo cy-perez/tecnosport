@@ -40,9 +40,12 @@ export const POLITICA_DE_PERMISOS = [
  * (`ngCspNonce` en el elemento raíz, o el token `CSP_NONCE`), pero falta todo lo de alrededor:
  * generar un nonce por respuesta en este servidor, escribirlo en el HTML que devuelve
  * `AngularNodeAppEngine` y en la cabecera a la vez, y comprobar en el navegador que el CSS crítico
- * que se inyecta en línea y el script del tema de `index.html` lo llevan. Hasta entonces esta
- * política **va a informar** el script en línea del tema, y es lo esperado: es el inventario de lo
- * que el nonce tiene que cubrir.
+ * que se inyecta en línea y los scripts en línea lo llevan. Hasta entonces esta política **va a
+ * informar** esos scripts, y es lo esperado: es el inventario de lo que el nonce tiene que cubrir.
+ * Son **tres**, no uno (contados en dev el 29 de octubre de 2026): el del tema de `index.html`, y
+ * los dos que Angular escribe para reproducir los clics que llegan antes de hidratar —el contrato
+ * de eventos y la llamada a `__jsaction_bootstrap`—. Un nonce que cubra solo el del tema deja la
+ * página sin esos dos el día que la política bloquee, y la hidratación pierde esos clics.
  *
  * Los orígenes son los que el sitio usa hoy, uno por uno:
  * - **Google** (`accounts.google.com`): el botón de "Entrar con Google" carga su script, su hoja,
