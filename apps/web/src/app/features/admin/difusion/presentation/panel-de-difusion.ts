@@ -11,12 +11,14 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
 import { TsCampo } from '../../../../shared/ui/campo/ts-campo';
+import { TsCheckbox } from '../../../../shared/ui/checkbox/ts-checkbox';
 import {
   usarDifundirProducto,
   usarHistorialDeDifusion,
   usarPropuestaDePie,
+  usarPropuestaDePortada,
 } from '../application/difundir-producto.mutacion';
-import { REDES, RedSocial } from '../domain/difusion.model';
+import { REDES, RedSocial, TOPE_DEL_PIE_INSTAGRAM } from '../domain/difusion.model';
 import { fechaConHora } from '../../../../core/i18n/fecha-colombia';
 
 /**
@@ -35,11 +37,16 @@ import { fechaConHora } from '../../../../core/i18n/fecha-colombia';
  * **no es el mismo** en las dos —en Facebook lleva el enlace y en Instagram remite a la
  * biografía— y una sola caja de texto para dos destinos obligaría a elegir cuál de los dos textos
  * se edita. Publicar en las dos son dos pulsaciones, y entre ellas se puede ajustar el texto.
+ *
+ * <h2>La portada de marca</h2>
+ *
+ * Marcada por omisión: el carrusel abre con la principal dentro de la banda de Tecno Sport
+ * (ADR-0102), y aquí se ve antes de publicar. Se puede quitar para una publicación concreta.
  */
 @Component({
   selector: 'app-panel-de-difusion',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, TranslocoPipe, TsBoton, TsCampo],
+  imports: [ReactiveFormsModule, TranslocoPipe, TsBoton, TsCampo, TsCheckbox],
   templateUrl: './panel-de-difusion.html',
 })
 export class PanelDeDifusion {
@@ -66,7 +73,19 @@ export class PanelDeDifusion {
     () => this.productoId(),
     () => this.red(),
   );
+  protected readonly conPortada = signal(true);
+  protected readonly portada = usarPropuestaDePortada(
+    () => this.productoId(),
+    () => this.conPortada(),
+  );
   protected readonly difusion = usarDifundirProducto();
+
+  /** La portada se pidió y no llegó —no se pudo dibujar o falló la petición—: se publicaría sin ella. */
+  protected readonly sinPortada = computed(
+    () =>
+      this.conPortada() &&
+      (this.portada.isError() || (this.portada.isSuccess() && this.portada.data() === null)),
+  );
 
   protected readonly aviso = signal<string | null>(null);
   protected readonly error = signal<string | null>(null);
@@ -127,12 +146,26 @@ export class PanelDeDifusion {
       this.error.set(this.transloco.translate('admin.difusion.faltaPie'));
       return;
     }
+    if (this.red() === 'INSTAGRAM' && this.pie.value.length > TOPE_DEL_PIE_INSTAGRAM) {
+      this.error.set(
+        this.transloco.translate('admin.difusion.pieDemasiadoLargo', {
+          tope: TOPE_DEL_PIE_INSTAGRAM,
+          total: this.pie.value.length,
+        }),
+      );
+      return;
+    }
 
     this.error.set(null);
     this.aviso.set(null);
 
     this.difusion.mutate(
-      { productoId: this.productoId(), redes: [this.red()], pieDeFoto: this.pie.value },
+      {
+        productoId: this.productoId(),
+        redes: [this.red()],
+        pieDeFoto: this.pie.value,
+        conPortada: this.conPortada(),
+      },
       {
         onSuccess: (resultado) => {
           if (resultado.tipo === 'YA_EN_MARCHA') {

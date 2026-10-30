@@ -4,7 +4,12 @@ import { TranslocoTestingModule } from '@jsverse/transloco';
 import { fireEvent, render, screen } from '@testing-library/angular';
 import { describe, expect, it, vi } from 'vitest';
 import esAdmin from '../../../../../assets/i18n/scopes/admin/es.json';
-import { OrdenDeDifusion, PublicacionEnRed, RedSocial } from '../domain/difusion.model';
+import {
+  OrdenDeDifusion,
+  PortadaPropuesta,
+  PublicacionEnRed,
+  RedSocial,
+} from '../domain/difusion.model';
 import {
   REPOSITORIO_DIFUSION,
   RepositorioDifusion,
@@ -35,6 +40,18 @@ class RepositorioDoble implements RepositorioDifusion {
 
   async proponerPie(_productoId: string, red: RedSocial): Promise<string> {
     return this.pies[red];
+  }
+
+  portada: PortadaPropuesta | null = {
+    url: 'https://storage.googleapis.com/b/productos/redes/portada.jpg',
+    ancho: 1080,
+    alto: 1350,
+  };
+  portadasPedidas = 0;
+
+  async proponerPortada(): Promise<PortadaPropuesta | null> {
+    this.portadasPedidas++;
+    return this.portada;
   }
 }
 
@@ -186,5 +203,63 @@ describe('PanelDeDifusion', () => {
     expect(boton.textContent).toMatch(/29\/09\/2026/);
     expect(boton.textContent).toMatch(/10:00/);
     expect(boton.textContent).not.toMatch(/PM|AM/);
+  });
+
+  // --- portada de marca (ADR-0102) ---
+
+  it('por omisión publica con portada y la enseña antes', async () => {
+    const repositorio = new RepositorioDoble();
+    await montar(repositorio);
+
+    const vista = (await screen.findByAltText(/vista previa de la portada/i)) as HTMLImageElement;
+    expect(vista.src).toBe(repositorio.portada?.url);
+
+    const caja = (await screen.findByLabelText(/texto de la publicación/i)) as HTMLTextAreaElement;
+    await vi.waitFor(() => expect(caja.value).not.toBe(''));
+    fireEvent.click(screen.getByRole('button', { name: /publicar en instagram/i }));
+
+    await vi.waitFor(() => expect(repositorio.ordenes[0]?.conPortada).toBe(true));
+  });
+
+  it('sin la casilla publica sin portada y ni siquiera la pide', async () => {
+    const repositorio = new RepositorioDoble();
+    await montar(repositorio);
+    await screen.findByAltText(/vista previa de la portada/i);
+
+    fireEvent.click(screen.getByLabelText(/abrir con la portada de marca/i));
+
+    await vi.waitFor(() => expect(screen.queryByAltText(/vista previa de la portada/i)).toBeNull());
+    const caja = (await screen.findByLabelText(/texto de la publicación/i)) as HTMLTextAreaElement;
+    await vi.waitFor(() => expect(caja.value).not.toBe(''));
+    fireEvent.click(screen.getByRole('button', { name: /publicar en instagram/i }));
+
+    await vi.waitFor(() => expect(repositorio.ordenes[0]?.conPortada).toBe(false));
+    expect(repositorio.portadasPedidas).toBe(1);
+  });
+
+  /** Que no se pueda dibujar no bloquea nada: se dice, y la publicación sale sin ella. */
+  it('avisa cuando la portada no se pudo dibujar', async () => {
+    const repositorio = new RepositorioDoble();
+    repositorio.portada = null;
+
+    await montar(repositorio);
+
+    const aviso = await screen.findByText(/no pudimos dibujar la portada/i);
+    // Dentro de la región viva que ya estaba montada: si no, el lector de pantalla no lo dice.
+    expect(aviso.closest('[role="status"]')).not.toBeNull();
+  });
+
+  /** Instagram no crea el contenedor por encima de 2.200: se dice antes de mandarlo. */
+  it('no manda a Instagram un pie que Instagram rechazaría', async () => {
+    const repositorio = new RepositorioDoble();
+    await montar(repositorio);
+    const caja = (await screen.findByLabelText(/texto de la publicación/i)) as HTMLTextAreaElement;
+    await vi.waitFor(() => expect(caja.value).not.toBe(''));
+
+    fireEvent.input(caja, { target: { value: 'x'.repeat(2_201) } });
+    fireEvent.click(screen.getByRole('button', { name: /publicar en instagram/i }));
+
+    expect(await screen.findByText(/2201 caracteres/i)).toBeTruthy();
+    expect(repositorio.ordenes).toHaveLength(0);
   });
 });
