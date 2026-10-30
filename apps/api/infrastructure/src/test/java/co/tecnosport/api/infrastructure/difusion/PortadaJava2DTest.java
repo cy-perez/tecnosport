@@ -181,8 +181,34 @@ class PortadaJava2DTest {
     assertTrue(renglones.get(1).endsWith("…"), renglones.toString());
     renglones.forEach(r -> assertTrue(metrica.stringWidth(r) <= 936, r));
     // La elipsis va detrás de una palabra entera, no en la mitad de una.
-    String sinElipsis = renglones.get(1).substring(0, renglones.get(1).length() - 1);
+    String sinElipsis =
+        renglones.get(1).substring(0, renglones.get(1).length() - 1).replace(' ', ' ');
     assertTrue(largo.contains(sinElipsis + " "), renglones.toString());
+  }
+
+  /**
+   * Con el ancho justo para «Celular 512», la unidad no se queda sola en el renglón siguiente: la
+   * cifra baja con ella. Era el caso de la portada del Honor Magic 8 Lite.
+   */
+  @Test
+  void unaCifraNoSeSeparaDeSuUnidad() {
+    FontMetrics metrica = metrica(56f);
+    int ancho = metrica.stringWidth("Celular 512") + 1;
+
+    List<String> renglones = PortadaJava2D.renglones("Celular 512 GB", metrica, ancho, 2);
+
+    assertEquals(List.of("Celular", "512\u00A0GB"), renglones);
+  }
+
+  /** Solo se pega una unidad entera: «8 Lite» no es una medida y se parte como siempre. */
+  @Test
+  void soloSePeganLasUnidadesEnteras() {
+    FontMetrics metrica = metrica(56f);
+    int ancho = metrica.stringWidth("Magic 8") + 1;
+
+    List<String> renglones = PortadaJava2D.renglones("Magic 8 Lite", metrica, ancho, 2);
+
+    assertEquals(List.of("Magic 8", "Lite"), renglones);
   }
 
   @Test
