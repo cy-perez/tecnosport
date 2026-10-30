@@ -16,6 +16,26 @@ public final class PoliticaContraentrega {
 
   private PoliticaContraentrega() {}
 
+  /**
+   * Si un producto <b>podría</b> pagarse contra entrega, antes de saber a dónde va: lo que se
+   * pregunta al anunciarlo, cuando no hay ciudad, comprador ni flete.
+   *
+   * <p>Es la parte de {@link #disponible} que depende del producto —que esté habilitada, que la
+   * línea no esté excluida y que la variante más cara no pase del techo— y vive aquí para que no
+   * haya dos reglas que deriven. Lo que no puede saber lo deja para quien lo anuncia: la cobertura
+   * de la ciudad, y que el flete puede empujar el total por encima del techo. El piso no se mira:
+   * el flete suma, así que un producto barato puede llegar a él.
+   */
+  public static boolean podriaAdmitirse(
+      CriteriosContraentrega criterios, Dinero precioMasAlto, LineaCatalogo linea) {
+    Objects.requireNonNull(criterios, "Los criterios de contraentrega no pueden ser nulos.");
+    Objects.requireNonNull(precioMasAlto, "El precio no puede ser nulo.");
+    Objects.requireNonNull(linea, "La línea de catálogo no puede ser nula.");
+    return criterios.habilitada()
+        && !criterios.categoriasExcluidas().contains(linea)
+        && precioMasAlto.valor().compareTo(criterios.montoMaximo().valor()) <= 0;
+  }
+
   public static boolean disponible(
       CriteriosContraentrega criterios,
       Dinero total,
