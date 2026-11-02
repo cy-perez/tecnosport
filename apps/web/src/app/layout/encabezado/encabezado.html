@@ -24,17 +24,25 @@
 
          Solo cuando el panel está **encima** (`superpuesto`). Fijado no hace falta: ahí el hueco lo
          reserva `app-root` y el encabezado entero ya se corrió. -->
-    <a
-      class="anillo-foco inline-flex min-h-tactil min-w-tactil shrink-0 items-center justify-center transition-transform ease-[var(--curva-suave)]"
-      [class.desde-movil:translate-x-menu-asoma]="menu.superpuesto()"
-      [style.transitionDuration]="menu.sinMovimiento() ? '0ms' : 'var(--mov-panel)'"
-      [routerLink]="['/', idiomaActual()]"
-      [attr.aria-label]="'encabezado.ir_a_portada' | transloco"
-    >
-      <!-- Cuatro archivos y no uno, por dos ejes independientes.
-         Eje 1, el tamaño: en móvil va el isotipo y desde el primer punto de
-         quiebre el logo horizontal, porque por debajo de 160 px de ancho el
-         horizontal no se usa (docs/04-ui-marca.md, "tamaño mínimo").
+    <!-- El logo y el buscador van juntos a la izquierda, y el grupo se queda con el espacio libre:
+         lo que sobra lo toma el buscador, hasta su ancho máximo. -->
+    <div class="flex min-w-0 flex-1 items-center gap-16">
+      <a
+        class="anillo-foco inline-flex min-h-tactil min-w-tactil shrink-0 items-center justify-center transition-transform ease-[var(--curva-suave)]"
+        [class.desde-movil:translate-x-menu-asoma]="menu.superpuesto()"
+        [style.transitionDuration]="menu.sinMovimiento() ? '0ms' : 'var(--mov-panel)'"
+        [routerLink]="['/', idiomaActual()]"
+        [attr.aria-label]="'encabezado.ir_a_portada' | transloco"
+      >
+        <!-- Cuatro archivos y no uno, por dos ejes independientes.
+         Eje 1, el tamaño: el isotipo hasta tableta y el logo horizontal desde
+         ahí, porque por debajo de 160 px de ancho el horizontal no se usa
+         (docs/04-ui-marca.md, "tamaño mínimo").
+         **El horizontal entraba desde el primer punto de quiebre hasta el 2 de
+         noviembre de 2026**, cuando llegó el buscador: entre 640 y 1023 px el
+         logo de 200 más los controles de sesión dejaban al buscador en 62 px
+         —medido— y desbordaban la página. Con el isotipo hasta tableta el
+         buscador conserva un ancho útil.
          Eje 2, el tema: el logo es monocromo y tiene versión positiva y
          negativa. Antes eran dos reglas con `:host-context([data-tema])` en el
          SCSS; ahora es el variant `oscuro:`, que se cuelga del mismo atributo.
@@ -48,39 +56,85 @@
          la caja: con 160 el logo se dibujaba a 160 × 22,4 dentro de un hueco de
          34 de alto, o sea con aire arriba y abajo; con 200 pasa a 200 × 28 y
          llena mejor la barra. El máximo antes de tocar el borde serían 243. -->
-      <span class="block desde-movil:hidden">
-        <img
-          class="block oscuro:hidden"
-          src="assets/marca/logo/isotipo.svg"
-          width="30"
-          height="30"
-          alt=""
-        />
-        <img
-          class="hidden oscuro:block"
-          src="assets/marca/logo/isotipo-negativo.svg"
-          width="30"
-          height="30"
-          alt=""
-        />
-      </span>
-      <span class="hidden desde-movil:block">
-        <img
-          class="block oscuro:hidden"
-          src="assets/marca/logo/logo-horizontal.svg"
-          width="200"
-          height="34"
-          alt=""
-        />
-        <img
-          class="hidden oscuro:block"
-          src="assets/marca/logo/logo-mono-negativo.svg"
-          width="200"
-          height="34"
-          alt=""
-        />
-      </span>
-    </a>
+        <span class="block desde-tableta:hidden">
+          <img
+            class="block oscuro:hidden"
+            src="assets/marca/logo/isotipo.svg"
+            width="30"
+            height="30"
+            alt=""
+          />
+          <img
+            class="hidden oscuro:block"
+            src="assets/marca/logo/isotipo-negativo.svg"
+            width="30"
+            height="30"
+            alt=""
+          />
+        </span>
+        <span class="hidden desde-tableta:block">
+          <img
+            class="block oscuro:hidden"
+            src="assets/marca/logo/logo-horizontal.svg"
+            width="200"
+            height="34"
+            alt=""
+          />
+          <img
+            class="hidden oscuro:block"
+            src="assets/marca/logo/logo-mono-negativo.svg"
+            width="200"
+            height="34"
+            alt=""
+          />
+        </span>
+      </a>
+
+      <!-- El buscador no tiene lógica propia: lleva a la rejilla con `?texto=`, que ya filtra, y el
+         campo de los filtros de allá se llena solo desde la URL. La URL se arma con
+         `queryParamsDesdeFiltro`, la misma función de la rejilla, para que las dos no se separen.
+
+         Va en la barra también en móvil y no en el panel desplegable: en una tienda, buscar es tan
+         principal como el carrito. `role="search"` le da el landmark, y su nombre es la misma
+         etiqueta que el campo lleva oculta. Sin botón: Enter envía, como en cualquier buscador.
+
+         **Se esconde mientras el menú lateral está encima**, porque el logo se corre 216 px y caería
+         sobre él. Correr el grupo entero no cabe: a 1024 px el buscador terminaría 200 px debajo
+         de los controles de la derecha. Mientras el panel está desplegado por el gesto, quien lo
+         usa está en el menú, no buscando.
+
+         **Un `<input>` nativo y no `ts-campo`**, aunque se vean igual —las clases son las mismas,
+         `CLASES_CONTROL`—: `ts-campo` es un `ControlValueAccessor` y pide `@angular/forms`, y el
+         encabezado va en el bundle inicial de todas las páginas. Con él, el inicial subía 49 kB por
+         un campo que solo necesita leerse al pulsar Enter. Medido con `ng build`. -->
+      <form
+        class="min-w-0 flex-1 desde-tableta:max-w-formulario"
+        [class.desde-movil:invisible]="menu.superpuesto()"
+        role="search"
+        [attr.aria-label]="'encabezado.buscar' | transloco"
+        (submit)="buscar($event, campo.value)"
+      >
+        <label class="sr-only" for="buscador-encabezado">{{
+          'encabezado.buscar' | transloco
+        }}</label>
+        <!-- `relative` para colgar la lupa, como en `ts-campo`. `pointer-events-none` o la lupa se
+             come el clic justo donde la gente pincha para empezar a escribir. -->
+        <div class="relative">
+          <ts-icono
+            class="pointer-events-none absolute start-16 top-1/2 -translate-y-1/2 text-ts-texto-suave"
+            [icono]="iconoBuscar"
+            clase="size-16"
+          />
+          <input
+            #campo
+            id="buscador-encabezado"
+            type="search"
+            [class]="clasesCampo"
+            [attr.placeholder]="'encabezado.buscar_placeholder' | transloco"
+          />
+        </div>
+      </form>
+    </div>
 
     <!-- Aquí había una `<nav>` de escritorio con "Catálogo" y "Panel". Se fue el 24 de septiembre
          de 2026 al menú lateral, que es donde ahora cuelga el árbol entero del catálogo: tener el

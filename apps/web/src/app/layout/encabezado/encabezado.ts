@@ -4,7 +4,10 @@ import { Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { SesionStore } from '../../core/autenticacion/sesion.store';
 import { CarritoStore } from '../../features/carrito/application/carrito.store';
-import { iconoCarrito, iconoCerrar, iconoMenu } from '../../shared/ui/icono/iconos';
+import { queryParamsDesdeFiltro } from '../../features/catalogo/domain/query-params-filtro';
+import { iconoBuscar, iconoCarrito, iconoCerrar, iconoMenu } from '../../shared/ui/icono/iconos';
+import { CLASES_CONTROL } from '../../shared/ui/clases-control';
+import { cn } from '../../shared/ui/cn';
 import { TsIcono } from '../../shared/ui/icono/ts-icono';
 import { TsAlternadorIdioma } from '../../shared/ts-alternador-idioma/ts-alternador-idioma';
 import { TsAlternadorTema } from '../../shared/ts-alternador-tema/ts-alternador-tema';
@@ -89,6 +92,10 @@ export class Encabezado {
   protected readonly iconoCarrito = iconoCarrito;
   protected readonly iconoMenu = iconoMenu;
   protected readonly iconoCerrar = iconoCerrar;
+  protected readonly iconoBuscar = iconoBuscar;
+
+  /** Las mismas clases que `ts-campo`, con el relleno para la lupa. Ver la plantilla. */
+  protected readonly clasesCampo = cn(CLASES_CONTROL, 'ps-48');
 
   protected readonly menuAbierto = signal(false);
 
@@ -98,6 +105,23 @@ export class Encabezado {
    * el 25 de septiembre de 2026.
    */
   private readonly movimiento = inject(PreferenciaDeMovimiento);
+
+  /**
+   * Lleva a la rejilla filtrada por el texto. Un texto vacío —o solo espacios— no navega: buscar
+   * nada no es una búsqueda, y llevar a la rejilla sin filtro sería sorprender a quien pulsó Enter
+   * sin querer. Los demás filtros no se arrastran: una búsqueda desde el encabezado empieza de cero.
+   */
+  protected buscar(evento: Event, escrito: string): void {
+    evento.preventDefault();
+    const texto = escrito.trim();
+    if (texto === '') {
+      return;
+    }
+    this.cerrarMenu();
+    void this.router.navigate(['/', this.idiomaActual(), 'productos'], {
+      queryParams: queryParamsDesdeFiltro({ texto }),
+    });
+  }
 
   protected alternarMenu(): void {
     this.menuAbierto.update((abierto) => !abierto);
