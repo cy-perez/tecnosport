@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { fireEvent, render, screen } from '@testing-library/angular';
@@ -215,5 +215,66 @@ describe('Encabezado', () => {
     } finally {
       vi.unstubAllGlobals();
     }
+  });
+
+  describe('buscador', () => {
+    it('se esconde mientras el menú está encima, porque el logo se corre sobre él', async () => {
+      const { fixture } = await renderEncabezado();
+      const store = fixture.debugElement.injector.get(MenuLateralStore);
+      const buscador = screen.getByRole('search');
+
+      expect(buscador.className).not.toContain('invisible');
+
+      store.abrirPorElGesto();
+      await fixture.whenStable();
+      expect(buscador.className).toContain('desde-movil:invisible');
+
+      store.alternarFijado();
+      await fixture.whenStable();
+      expect(buscador.className).not.toContain('invisible');
+    });
+
+    it('es un landmark de búsqueda con nombre', async () => {
+      await renderEncabezado();
+
+      expect(screen.getByRole('search', { name: 'Buscar productos' })).toBeTruthy();
+      expect(screen.getByRole('searchbox', { name: 'Buscar productos' })).toBeTruthy();
+    });
+
+    it('lleva a la rejilla filtrada por el texto, sin los espacios de los bordes', async () => {
+      const { fixture } = await renderEncabezado();
+      const router = fixture.debugElement.injector.get(Router);
+      const navegar = vi.spyOn(router, 'navigate');
+
+      fireEvent.input(screen.getByRole('searchbox'), { target: { value: '  audífonos jbl ' } });
+      fireEvent.submit(screen.getByRole('search'));
+
+      expect(navegar).toHaveBeenCalledWith(['/', 'es', 'productos'], {
+        queryParams: { texto: 'audífonos jbl' },
+      });
+    });
+
+    it('un texto vacío o solo de espacios no navega', async () => {
+      const { fixture } = await renderEncabezado();
+      const router = fixture.debugElement.injector.get(Router);
+      const navegar = vi.spyOn(router, 'navigate');
+
+      fireEvent.submit(screen.getByRole('search'));
+      fireEvent.input(screen.getByRole('searchbox'), { target: { value: '   ' } });
+      fireEvent.submit(screen.getByRole('search'));
+
+      expect(navegar).not.toHaveBeenCalled();
+    });
+
+    it('buscar desde el panel móvil lo cierra', async () => {
+      await renderEncabezado();
+      fireEvent.click(botonMenu());
+      expect(document.getElementById('menu-movil')).toBeTruthy();
+
+      fireEvent.input(screen.getByRole('searchbox'), { target: { value: 'tenis' } });
+      fireEvent.submit(screen.getByRole('search'));
+
+      expect(botonMenu().getAttribute('aria-expanded')).toBe('false');
+    });
   });
 });

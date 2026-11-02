@@ -13,6 +13,8 @@
   },
   "encabezado": {
     "carrito_cantidad": "Carrito, {{cantidad}} artículos",
+    "buscar": "Buscar productos",
+    "buscar_placeholder": "Buscar",
     "ir_a_portada": "Ir a la portada",
     "navegacion": "Navegación principal",
     "catalogo": "Catálogo",
