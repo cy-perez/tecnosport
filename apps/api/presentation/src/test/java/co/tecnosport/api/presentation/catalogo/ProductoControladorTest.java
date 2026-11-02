@@ -2,11 +2,13 @@ package co.tecnosport.api.presentation.catalogo;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import co.tecnosport.api.application.catalogo.BuscarProductos;
+import co.tecnosport.api.application.catalogo.FiltroDeTalla;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.catalogo.VerFichaDeProducto;
 import co.tecnosport.api.application.compartido.ResultadoPaginado;
@@ -21,6 +23,7 @@ import co.tecnosport.api.domain.catalogo.TipoImagen;
 import co.tecnosport.api.domain.catalogo.VarianteDeImagen;
 import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Slug;
+import co.tecnosport.api.presentation.ManejadorDeErrores;
 import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -32,7 +35,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(ProductoControlador.class)
-@Import(ProductoControladorTest.Configuracion.class)
+@Import({ProductoControladorTest.Configuracion.class, ManejadorDeErrores.class})
 class ProductoControladorTest {
 
   @Autowired private MockMvc mockMvc;
@@ -68,6 +71,32 @@ class ProductoControladorTest {
         .andExpect(status().isOk());
 
     assertEquals(LineaCatalogo.TECNOLOGIA, repositorio.ultimoFiltro().linea());
+  }
+
+  /** La talla llega normalizada y amarrada a su línea: un 38 de ropa no es un 38 de calzado. */
+  @Test
+  void laTallaDeRopaYLaDeCalzadoFiltranCadaUnaEnSuLinea() throws Exception {
+    repositorio.devolverEnBusqueda(new ResultadoPaginado<Producto>(List.of(), null));
+
+    mockMvc.perform(get("/api/v1/productos").param("tallaRopa", "2xl")).andExpect(status().isOk());
+    assertEquals(new FiltroDeTalla(LineaCatalogo.ROPA, "XXL"), repositorio.ultimoFiltro().talla());
+
+    mockMvc
+        .perform(get("/api/v1/productos").param("tallaCalzado", "38"))
+        .andExpect(status().isOk());
+    assertEquals(
+        new FiltroDeTalla(LineaCatalogo.CALZADO, "38"), repositorio.ultimoFiltro().talla());
+
+    mockMvc.perform(get("/api/v1/productos")).andExpect(status().isOk());
+    assertNull(repositorio.ultimoFiltro().talla());
+  }
+
+  /** Juntas no tienen un solo resultado posible: se rechaza en vez de dar una rejilla vacía. */
+  @Test
+  void unaTallaDeRopaYUnaDeCalzadoALaVezSeRechazan() throws Exception {
+    mockMvc
+        .perform(get("/api/v1/productos").param("tallaRopa", "M").param("tallaCalzado", "38"))
+        .andExpect(status().isUnprocessableContent());
   }
 
   /** Sin {@code rotacion}: el visor 360 se retiró (ADR-0097) y el campo salió del contrato. */

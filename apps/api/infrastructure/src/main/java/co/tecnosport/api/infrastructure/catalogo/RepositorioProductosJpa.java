@@ -63,6 +63,7 @@ public class RepositorioProductosJpa implements RepositorioProductos {
   private final VarianteImagenJpaRepository varianteImagenJpaRepository;
   private final MapeadorCatalogo mapeadorCatalogo;
   private final NamedParameterJdbcTemplate jdbc;
+  private final TallasDelCatalogoJdbc tallas;
 
   public RepositorioProductosJpa(
       ProductoJpaRepository productoJpaRepository,
@@ -71,7 +72,8 @@ public class RepositorioProductosJpa implements RepositorioProductos {
       ImagenProductoJpaRepository imagenProductoJpaRepository,
       VarianteImagenJpaRepository varianteImagenJpaRepository,
       MapeadorCatalogo mapeadorCatalogo,
-      NamedParameterJdbcTemplate jdbc) {
+      NamedParameterJdbcTemplate jdbc,
+      TallasDelCatalogoJdbc tallas) {
     this.productoJpaRepository = productoJpaRepository;
     this.varianteJpaRepository = varianteJpaRepository;
     this.varianteAtributoValorJpaRepository = varianteAtributoValorJpaRepository;
@@ -79,6 +81,7 @@ public class RepositorioProductosJpa implements RepositorioProductos {
     this.varianteImagenJpaRepository = varianteImagenJpaRepository;
     this.mapeadorCatalogo = mapeadorCatalogo;
     this.jdbc = jdbc;
+    this.tallas = tallas;
   }
 
   /**
@@ -596,6 +599,25 @@ public class RepositorioProductosJpa implements RepositorioProductos {
     if (filtro.precioMaximo() != null) {
       sql.append("and v.precio_desde <= :precioMaximo ");
       parametros.addValue("precioMaximo", filtro.precioMaximo());
+    }
+    if (filtro.talla() != null) {
+      TallasDelCatalogoJdbc.ValoresDeTalla valores = tallas.valoresDe(filtro.talla());
+      if (valores.vacios()) {
+        // Nadie tiene escrita esa talla: `in ()` no es SQL válido, y la respuesta ya se sabe.
+        return new PaginaDeIds(List.of(), null);
+      }
+      // La línea va con la talla: un jean 38 no es un tenis 38 (FiltroDeTalla).
+      sql.append("and c.linea = :lineaDeTalla and exists (select 1 from variante vt ")
+          .append("join variante_atributo_valor vav on vav.variante_id = vt.id ")
+          .append("join inventario i on i.variante_id = vt.id ")
+          .append("where vt.producto_id = p.id and vav.atributo_id in (:ejesDeTalla) ")
+          .append("and vav.valor in (:valoresDeTalla) and ")
+          .append(TallasDelCatalogoJdbc.VARIANTE_QUE_SE_VENDE)
+          .append(") ");
+      parametros.addValue("lineaDeTalla", filtro.talla().linea().name());
+      parametros.addValue("ejesDeTalla", valores.ejes());
+      parametros.addValue("valoresDeTalla", valores.valores());
+      parametros.addValue("ahora", tallas.ahora());
     }
     if (conTexto) {
       sql.append("and similarity(" + NOMBRE_BUSCABLE + ", lower(:texto)) > :umbralSimilitud ");
