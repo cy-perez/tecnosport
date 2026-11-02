@@ -81,8 +81,8 @@ class FiltroPorTallaJpaTest {
   @BeforeEach
   void sembrarElCatalogo() {
     marca = marcas.save(new MarcaJpaEntity(UUID.randomUUID(), "Marca talla", Instant.now()));
-    ropa = categoria("Camisetas", "ropa-filtro-talla", "ROPA");
-    calzado = categoria("Deportivo", "calzado-filtro-talla", "CALZADO");
+    ropa = categoria("Camisetas", "ropa-caballero-camisetas-talla", "ROPA");
+    calzado = categoria("Unisex", "calzado-unisex-talla", "CALZADO");
     // Nombres propios y no «Talla»: la V72 ya siembra uno con ese nombre. Los dos empiezan por
     // «Talla», que es lo que los vuelve eje de talla (`Atributo.esTalla`).
     talla = atributo("Talla filtro", "TEXTO");
