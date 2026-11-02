@@ -15,6 +15,13 @@ export interface FiltroProductos {
   readonly marca?: string;
   readonly linea?: string;
   readonly texto?: string;
+  /**
+   * Una talla de ropa o una de calzado con existencia, normalizada (`tallaNormalizada`). Nunca
+   * las dos: cada una deja solo productos de su línea, así que juntas no darían un solo resultado,
+   * y el servidor las rechaza.
+   */
+  readonly tallaRopa?: string;
+  readonly tallaCalzado?: string;
   readonly orden?: OrdenProductos;
   readonly tamano?: number;
 }
@@ -75,6 +82,8 @@ export function hayFiltrosActivos(filtro: FiltroProductos): boolean {
     filtro.categoria !== undefined ||
     filtro.marca !== undefined ||
     filtro.linea !== undefined ||
-    filtro.texto !== undefined
+    filtro.texto !== undefined ||
+    filtro.tallaRopa !== undefined ||
+    filtro.tallaCalzado !== undefined
   );
 }

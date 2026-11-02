@@ -23,6 +23,8 @@ export class ProductosHttpRepositorio implements RepositorioProductos {
           marca: filtro.marca,
           linea: filtro.linea,
           texto: filtro.texto,
+          tallaRopa: filtro.tallaRopa,
+          tallaCalzado: filtro.tallaCalzado,
           orden: filtro.orden,
           cursor: cursor ?? undefined,
           tamano: filtro.tamano,

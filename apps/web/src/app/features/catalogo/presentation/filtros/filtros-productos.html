@@ -53,18 +53,23 @@
   />
 
   <div class="flex flex-col gap-12 desde-tableta:flex-row desde-tableta:items-center">
-    <!-- Rejilla y no `flex-wrap`: los cuatro desplegables tienen etiquetas de
+    <!-- Rejilla y no `flex-wrap`: los desplegables tienen etiquetas de
          largos muy distintos —"Relevancia" contra "Todas las categorías"— y en
          `flex` cada uno se quedaba con el ancho de su texto, así que la fila se
-         leía como cuatro controles desparejos. `grid-cols-4` reparte la banda en
-         cuatro columnas iguales (`minmax(0, 1fr)`, que además es lo que impide
+         leía como controles desparejos. `grid-cols-3` reparte la banda en
+         columnas iguales (`minmax(0, 1fr)`, que además es lo que impide
          que un `<select>` ensanche su columna hasta su opción más larga).
          `min-w-0` por lo mismo un nivel más arriba: desde tableta esta rejilla es un item de
          `flex`, y el `min-width: auto` de un item no lo deja encoger por debajo de su
          contenido. Es el mismo defecto que tenía `<main>` en `app.html`, donde se llevó por
          delante el ancho de la página entera. -->
+    <!-- Seis desplegables desde que están las dos tallas (2 de noviembre de 2026), de a tres por
+         fila desde tableta, también en escritorio: el ancho del contenido no da para seis, y en
+         una sola fila cada desplegable cortaba su etiqueta —"Todas las línea", "Relevanci"—. Las
+         tallas no se esconden con la línea que no es suya, se apagan, así que las dos filas
+         quedan siempre completas. -->
     <div
-      class="grid min-w-0 grid-cols-1 gap-12 desde-movil:grid-cols-2 desde-tableta:flex-1 desde-tableta:grid-cols-4"
+      class="grid min-w-0 grid-cols-1 gap-12 desde-movil:grid-cols-2 desde-tableta:flex-1 desde-tableta:grid-cols-3"
     >
       <ts-select
         idCampo="filtro-linea"
@@ -93,7 +98,27 @@
         formControlName="marca"
       />
 
-      <!-- El único de los cuatro que no nombra un atributo del producto, y por eso el único con
+      <!-- El placeholder nombra la línea y no dice "todas": con dos desplegables de talla uno al
+           lado del otro, "Todas las tallas" no diría cuál de los dos es. -->
+      <ts-select
+        idCampo="filtro-talla-ropa"
+        [label]="'catalogo.filtros.talla_ropa' | transloco"
+        [placeholder]="'catalogo.filtros.talla_ropa' | transloco"
+        [opciones]="opcionesTallaRopa()"
+        [etiquetaOculta]="true"
+        formControlName="tallaRopa"
+      />
+
+      <ts-select
+        idCampo="filtro-talla-calzado"
+        [label]="'catalogo.filtros.talla_calzado' | transloco"
+        [placeholder]="'catalogo.filtros.talla_calzado' | transloco"
+        [opciones]="opcionesTallaCalzado()"
+        [etiquetaOculta]="true"
+        formControlName="tallaCalzado"
+      />
+
+      <!-- El único de los seis que no nombra un atributo del producto, y por eso el único con
            ancla: sin ella, "Relevancia" al lado de "Todas las marcas" se lee como una marca. -->
       <ts-select
         idCampo="filtro-orden"

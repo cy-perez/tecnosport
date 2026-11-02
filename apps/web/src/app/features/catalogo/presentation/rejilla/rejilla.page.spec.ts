@@ -21,6 +21,8 @@ import {
   RepositorioProductos,
 } from '../../domain/repositorio-productos.puerto';
 import { ResultadoPaginado } from '../../domain/resultado-paginado.model';
+import { REPOSITORIO_TALLAS, RepositorioTallas } from '../../domain/repositorio-tallas.puerto';
+import { TallasDisponibles } from '../../domain/tallas.model';
 import { RejillaPage } from './rejilla.page';
 import { esperarSinViolaciones } from '../../../../../testing/axe';
 
@@ -68,6 +70,12 @@ function productoDePrueba(slug: string): Producto {
       },
     ],
   };
+}
+
+class RepositorioTallasFalso implements RepositorioTallas {
+  async listarDisponibles(): Promise<TallasDisponibles> {
+    return { ropa: [], calzado: [] };
+  }
 }
 
 class RepositorioVacioFalso implements RepositorioProductos {
@@ -118,6 +126,7 @@ function renderRejilla(repositorio: RepositorioProductos, queryParams: Params = 
       { provide: REPOSITORIO_PRODUCTOS, useValue: repositorio },
       { provide: REPOSITORIO_CATEGORIAS, useClass: RepositorioCategoriasFalso },
       { provide: REPOSITORIO_MARCAS_DE_VITRINA, useClass: RepositorioMarcasFalso },
+      { provide: REPOSITORIO_TALLAS, useClass: RepositorioTallasFalso },
     ],
   });
 }

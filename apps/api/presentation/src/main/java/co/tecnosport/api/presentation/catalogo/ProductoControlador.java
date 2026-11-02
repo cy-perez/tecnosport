@@ -2,6 +2,7 @@ package co.tecnosport.api.presentation.catalogo;
 
 import co.tecnosport.api.application.catalogo.BuscarProductos;
 import co.tecnosport.api.application.catalogo.BuscarProductosComando;
+import co.tecnosport.api.application.catalogo.FiltroDeTalla;
 import co.tecnosport.api.application.catalogo.FiltroProductos;
 import co.tecnosport.api.application.catalogo.OrdenProductos;
 import co.tecnosport.api.application.catalogo.VerFichaDeProducto;
@@ -46,6 +47,8 @@ public class ProductoControlador {
       @RequestParam(required = false) Long precioMin,
       @RequestParam(required = false) Long precioMax,
       @RequestParam(required = false) String texto,
+      @RequestParam(required = false) String tallaRopa,
+      @RequestParam(required = false) String tallaCalzado,
       @RequestParam(defaultValue = "RELEVANCIA") String orden,
       @RequestParam(required = false) String cursor,
       @RequestParam(defaultValue = "" + TAMANO_PAGINA_PREDETERMINADO) int tamano) {
@@ -57,7 +60,8 @@ public class ProductoControlador {
             aLinea(linea),
             precioMin,
             precioMax,
-            texto);
+            texto,
+            aTalla(tallaRopa, tallaCalzado));
     BuscarProductosComando comando =
         new BuscarProductosComando(
             filtro, OrdenProductos.valueOf(orden.toUpperCase(Locale.ROOT)), cursor, tamano);
@@ -84,6 +88,24 @@ public class ProductoControlador {
     }
     String nombre = linea.trim().toUpperCase(Locale.ROOT);
     return LineaCatalogo.valueOf("CELULARES".equals(nombre) ? "TECNOLOGIA" : nombre);
+  }
+
+  /**
+   * Una talla de ropa o una de calzado, nunca las dos: cada una deja solo productos de su línea,
+   * así que juntas no tendrían un solo resultado. La vitrina no las manda juntas —elegir una vacía
+   * la otra—, y quien las arme a mano recibe un 422 en vez de una rejilla vacía sin explicación.
+   */
+  private static FiltroDeTalla aTalla(String tallaRopa, String tallaCalzado) {
+    boolean conRopa = tallaRopa != null && !tallaRopa.isBlank();
+    boolean conCalzado = tallaCalzado != null && !tallaCalzado.isBlank();
+    if (conRopa && conCalzado) {
+      throw new IllegalArgumentException(
+          "Se filtra por una talla de ropa o por una de calzado, no por las dos.");
+    }
+    if (conRopa) {
+      return new FiltroDeTalla(LineaCatalogo.ROPA, tallaRopa);
+    }
+    return conCalzado ? new FiltroDeTalla(LineaCatalogo.CALZADO, tallaCalzado) : null;
   }
 
   @GetMapping("/{slug}")

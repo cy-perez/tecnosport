@@ -29,6 +29,19 @@ describe('filtroDesdeQueryParams', () => {
     });
   });
 
+  it('lee la talla de ropa y la de calzado', () => {
+    expect(filtroDesdeQueryParams({ tallaRopa: 'M' }).tallaRopa).toBe('M');
+    expect(filtroDesdeQueryParams({ tallaCalzado: '38' }).tallaCalzado).toBe('38');
+  });
+
+  /** Juntas no tienen resultado y el servidor las rechaza: la URL a mano no rompe la página. */
+  it('con las dos tallas en la URL se queda con la de ropa', () => {
+    const filtro = filtroDesdeQueryParams({ tallaRopa: 'M', tallaCalzado: '38' });
+
+    expect(filtro.tallaRopa).toBe('M');
+    expect(filtro.tallaCalzado).toBeUndefined();
+  });
+
   it('ignora un orden desconocido', () => {
     expect(filtroDesdeQueryParams({ orden: 'INVENTADO' }).orden).toBeUndefined();
   });
@@ -76,9 +89,14 @@ describe('queryParamsDesdeFiltro', () => {
       marca: '01a0-abc',
       linea: 'BOLSOS',
       texto: 'morral',
+      tallaRopa: 'M',
       orden: 'PRECIO_ASC' as const,
     };
 
     expect(filtroDesdeQueryParams(queryParamsDesdeFiltro(original))).toEqual(original);
+  });
+
+  it('lleva la talla de calzado a la URL', () => {
+    expect(queryParamsDesdeFiltro({ tallaCalzado: '38' })).toEqual({ tallaCalzado: '38' });
   });
 });

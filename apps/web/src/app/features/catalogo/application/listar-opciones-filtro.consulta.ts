@@ -9,6 +9,7 @@ import {
   REPOSITORIO_MARCAS_DE_VITRINA,
   RepositorioMarcasDeVitrina,
 } from '../domain/repositorio-marcas.puerto';
+import { REPOSITORIO_TALLAS, RepositorioTallas } from '../domain/repositorio-tallas.puerto';
 import { PRECARGA_NO_BLOQUEANTE, sinBloquearLaNavegacion } from '../../../core/consultas/precarga';
 
 /**
@@ -33,15 +34,33 @@ function opcionesMarcas(repositorio: RepositorioMarcasDeVitrina) {
   };
 }
 
-/** Las del filtro de la vitrina: solo las marcas publicadas, con las líneas en las que venden. */
+/**
+ * Las tallas con existencia. El mismo `staleTime` que las marcas aunque cambien más —cada venta
+ * puede agotar una—: una talla que se agotó hace un minuto lleva a una rejilla vacía, no a una
+ * compra fallida, porque la ficha y el checkout vuelven a mirar el inventario.
+ */
+function opcionesTallas(repositorio: RepositorioTallas) {
+  return {
+    queryKey: ['catalogo', 'tallas'] as const,
+    queryFn: () => repositorio.listarDisponibles(),
+    staleTime: STALE_TIME_OPCIONES,
+  };
+}
+
+/**
+ * Las del filtro de la vitrina: solo las marcas publicadas, con las líneas en las que venden, y
+ * solo las tallas que tienen algo que comprar.
+ */
 export function usarOpcionesFiltro() {
   const repositorioCategorias = inject(REPOSITORIO_CATEGORIAS);
   const repositorioMarcas = inject(REPOSITORIO_MARCAS_DE_VITRINA);
+  const repositorioTallas = inject(REPOSITORIO_TALLAS);
 
   const categorias = injectQuery(() => opcionesCategorias(repositorioCategorias));
   const marcas = injectQuery(() => opcionesMarcas(repositorioMarcas));
+  const tallas = injectQuery(() => opcionesTallas(repositorioTallas));
 
-  return { categorias, marcas };
+  return { categorias, marcas, tallas };
 }
 
 /**
@@ -100,6 +119,7 @@ export function precargarCategorias(): Promise<void> {
 export function precargarOpcionesFiltro(): Promise<void> {
   const repositorioCategorias = inject(REPOSITORIO_CATEGORIAS);
   const repositorioMarcas = inject(REPOSITORIO_MARCAS_DE_VITRINA);
+  const repositorioTallas = inject(REPOSITORIO_TALLAS);
   const queryClient = inject(QueryClient);
 
   return sinBloquearLaNavegacion(
@@ -110,6 +130,10 @@ export function precargarOpcionesFiltro(): Promise<void> {
       }),
       queryClient.prefetchQuery({
         ...opcionesMarcas(repositorioMarcas),
+        ...PRECARGA_NO_BLOQUEANTE,
+      }),
+      queryClient.prefetchQuery({
+        ...opcionesTallas(repositorioTallas),
         ...PRECARGA_NO_BLOQUEANTE,
       }),
     ]),

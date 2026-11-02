@@ -10,6 +10,7 @@ import co.tecnosport.api.application.catalogo.BuscarProductos;
 import co.tecnosport.api.application.catalogo.CambiarPrecios;
 import co.tecnosport.api.application.catalogo.CambiarTalla;
 import co.tecnosport.api.application.catalogo.ConfirmarImagenPrincipal;
+import co.tecnosport.api.application.catalogo.ConsultaDeTallasEnExistencia;
 import co.tecnosport.api.application.catalogo.CrearCategoria;
 import co.tecnosport.api.application.catalogo.CrearMarca;
 import co.tecnosport.api.application.catalogo.CrearProducto;
@@ -28,6 +29,7 @@ import co.tecnosport.api.application.catalogo.ListarMarcasAdmin;
 import co.tecnosport.api.application.catalogo.ListarMedidasDeVariantes;
 import co.tecnosport.api.application.catalogo.ListarPaletaDeColores;
 import co.tecnosport.api.application.catalogo.ListarProductosAdmin;
+import co.tecnosport.api.application.catalogo.ListarTallasDisponibles;
 import co.tecnosport.api.application.catalogo.ListarVariantesSinMedir;
 import co.tecnosport.api.application.catalogo.MedirVariante;
 import co.tecnosport.api.application.catalogo.PreciosDelCatalogo;
@@ -190,6 +192,11 @@ public class ConfiguracionCatalogo {
   @Bean
   public ListarPaletaDeColores listarPaletaDeColores(RepositorioPaletaDeColores repositorio) {
     return new ListarPaletaDeColores(repositorio);
+  }
+
+  @Bean
+  public ListarTallasDisponibles listarTallasDisponibles(ConsultaDeTallasEnExistencia consulta) {
+    return new ListarTallasDisponibles(consulta);
   }
 
   @Bean

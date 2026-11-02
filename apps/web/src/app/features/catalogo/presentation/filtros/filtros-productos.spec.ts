@@ -24,6 +24,8 @@ import {
   REPOSITORIO_MARCAS_DE_VITRINA,
   RepositorioMarcasDeVitrina,
 } from '../../domain/repositorio-marcas.puerto';
+import { REPOSITORIO_TALLAS, RepositorioTallas } from '../../domain/repositorio-tallas.puerto';
+import { TallasDisponibles } from '../../domain/tallas.model';
 import { FiltrosProductos } from './filtros-productos';
 
 /**
@@ -49,7 +51,7 @@ class RepositorioCategoriasFalso implements RepositorioCategorias {
         linea: 'ROPA',
         padreId: null,
         hashtags: [],
-        escalaTallas: [],
+        escalaTallas: ['XS', 'S', 'M', 'L', 'XL'],
       },
       {
         id: 'd1',
@@ -115,6 +117,27 @@ class RepositorioMarcasFalso implements RepositorioMarcasDeVitrina {
   }
 }
 
+/**
+ * En el orden alfabético en que las devuelve el servidor, que no es el de la escala: «L» antes que
+ * «M» y «XS» al final. Con la única escrita como la escribe el catálogo.
+ */
+class RepositorioTallasFalso implements RepositorioTallas {
+  async listarDisponibles(): Promise<TallasDisponibles> {
+    return {
+      ropa: [
+        { valor: 'L', etiqueta: 'L' },
+        { valor: 'M', etiqueta: 'M' },
+        { valor: 'UNICA', etiqueta: 'Única' },
+        { valor: 'XS', etiqueta: 'XS' },
+      ],
+      calzado: [
+        { valor: '38', etiqueta: '38' },
+        { valor: '40', etiqueta: '40' },
+      ],
+    };
+  }
+}
+
 function esperar(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -133,6 +156,7 @@ async function renderFiltros(categorias: Type<RepositorioCategorias> = Repositor
       provideTanStackQuery(new QueryClient()),
       { provide: REPOSITORIO_CATEGORIAS, useClass: categorias },
       { provide: REPOSITORIO_MARCAS_DE_VITRINA, useClass: RepositorioMarcasFalso },
+      { provide: REPOSITORIO_TALLAS, useClass: RepositorioTallasFalso },
     ],
   });
 }
@@ -169,6 +193,7 @@ function proveedoresConScopePerezoso() {
     provideTanStackQuery(new QueryClient()),
     { provide: REPOSITORIO_CATEGORIAS, useClass: RepositorioCategoriasFalso },
     { provide: REPOSITORIO_MARCAS_DE_VITRINA, useClass: RepositorioMarcasFalso },
+    { provide: REPOSITORIO_TALLAS, useClass: RepositorioTallasFalso },
   ];
 }
 
@@ -280,6 +305,7 @@ describe('FiltrosProductos', () => {
         provideTanStackQuery(new QueryClient()),
         { provide: REPOSITORIO_CATEGORIAS, useClass: RepositorioCategoriasFalso },
         { provide: REPOSITORIO_MARCAS_DE_VITRINA, useClass: RepositorioMarcasFalso },
+        { provide: REPOSITORIO_TALLAS, useClass: RepositorioTallasFalso },
       ],
     });
     await TestBed.inject(Router).navigateByUrl('/?linea=CALZADO');
@@ -321,6 +347,7 @@ describe('FiltrosProductos', () => {
         provideTanStackQuery(new QueryClient()),
         { provide: REPOSITORIO_CATEGORIAS, useClass: RepositorioCategoriasFalso },
         { provide: REPOSITORIO_MARCAS_DE_VITRINA, useClass: RepositorioMarcasFalso },
+        { provide: REPOSITORIO_TALLAS, useClass: RepositorioTallasFalso },
       ],
     });
     await TestBed.inject(Router).navigateByUrl('/?linea=TECNOLOGIA&categoria=celulares&marca=m1');
@@ -380,6 +407,7 @@ describe('FiltrosProductos', () => {
         provideTanStackQuery(new QueryClient()),
         { provide: REPOSITORIO_CATEGORIAS, useClass: RepositorioCategoriasFalso },
         { provide: REPOSITORIO_MARCAS_DE_VITRINA, useClass: RepositorioMarcasFalso },
+        { provide: REPOSITORIO_TALLAS, useClass: RepositorioTallasFalso },
       ],
     });
     await TestBed.inject(Router).navigateByUrl('/?linea=BOLSOS');
@@ -513,11 +541,152 @@ describe('FiltrosProductos', () => {
   it('los controles conservan su etiqueta aunque no se vea, y la búsqueda su placeholder', async () => {
     await renderFiltros();
 
-    for (const etiqueta of ['Línea', 'Categoría', 'Marca', 'Ordenar por']) {
+    for (const etiqueta of [
+      'Línea',
+      'Categoría',
+      'Marca',
+      'Talla de ropa',
+      'Talla de calzado',
+      'Ordenar por',
+    ]) {
       expect(await screen.findByLabelText(etiqueta)).toBeTruthy();
     }
 
     const busqueda = await screen.findByLabelText('Buscar');
     expect(busqueda.getAttribute('placeholder')).toBe('Buscar productos…');
+  });
+
+  describe('las tallas', () => {
+    /** Monta el filtro llegando por una URL, como entra quien abre un enlace compartido. */
+    async function montarEn(url: string) {
+      TestBed.configureTestingModule({
+        imports: [
+          TranslocoTestingModule.forRoot({
+            langs: { es, en, 'catalogo/es': esCatalogo } as never,
+            translocoConfig: { availableLangs: ['es', 'en'], defaultLang: 'es' },
+            preloadLangs: true,
+          }),
+        ],
+        providers: [
+          provideRouter([]),
+          provideTanStackQuery(new QueryClient()),
+          { provide: REPOSITORIO_CATEGORIAS, useClass: RepositorioCategoriasFalso },
+          { provide: REPOSITORIO_MARCAS_DE_VITRINA, useClass: RepositorioMarcasFalso },
+          { provide: REPOSITORIO_TALLAS, useClass: RepositorioTallasFalso },
+        ],
+      });
+      const router = TestBed.inject(Router);
+      await router.navigateByUrl(url);
+      const fixture = TestBed.createComponent(FiltrosProductos);
+      fixture.detectChanges();
+      const navegar = vi.spyOn(router, 'navigate');
+      const select = (id: string) =>
+        fixture.nativeElement.querySelector(`#${id}`) as HTMLSelectElement;
+      // Se espera a las tallas y a las categorías. Las marcas no: con una línea elegida el
+      // desplegable puede quedar solo con su placeholder, y las pruebas que dependen de la marca
+      // esperan por el desplegable que se apaga.
+      await vi.waitFor(() => {
+        fixture.detectChanges();
+        expect(etiquetasDe(select('filtro-talla-ropa')).length).toBeGreaterThan(1);
+        expect(etiquetasDe(select('filtro-categoria')).length).toBeGreaterThan(1);
+      });
+      return { fixture, navegar, select };
+    }
+
+    it('salen en el orden de la escala, con la talla única al final y traducida', async () => {
+      const { select } = await montarEn('/');
+
+      expect(etiquetasDe(select('filtro-talla-ropa'))).toEqual([
+        'Talla de ropa',
+        'XS',
+        'M',
+        'L',
+        'Talla única',
+      ]);
+      expect(etiquetasDe(select('filtro-talla-calzado'))).toEqual(['Talla de calzado', '38', '40']);
+    });
+
+    it('elegir una talla de ropa navega con ella y suelta la de calzado', async () => {
+      const { select, navegar } = await montarEn('/?tallaCalzado=38');
+
+      fireEvent.change(select('filtro-talla-ropa'), { target: { value: 'M' } });
+      await esperar(350);
+
+      expect(navegar).toHaveBeenLastCalledWith(
+        [],
+        expect.objectContaining({ queryParams: { tallaRopa: 'M', orden: 'RELEVANCIA' } }),
+      );
+    });
+
+    it('sin nada elegido, los dos desplegables de talla están habilitados', async () => {
+      const { select } = await montarEn('/');
+
+      expect(select('filtro-talla-ropa').disabled).toBe(false);
+      expect(select('filtro-talla-calzado').disabled).toBe(false);
+    });
+
+    it.each([
+      ['la línea', '/?linea=ROPA'],
+      ['la categoría', '/?categoria=ropa-dama-blusas'],
+    ])('%s de ropa apaga la talla de calzado y deja la de ropa', async (_nombre, url) => {
+      const { select } = await montarEn(url);
+
+      await vi.waitFor(() => expect(select('filtro-talla-calzado').disabled).toBe(true));
+      expect(select('filtro-talla-ropa').disabled).toBe(false);
+    });
+
+    it('una marca que solo vende calzado apaga la talla de ropa', async () => {
+      const { select } = await montarEn('/?marca=m2');
+
+      await vi.waitFor(() => expect(select('filtro-talla-ropa').disabled).toBe(true));
+      expect(select('filtro-talla-calzado').disabled).toBe(false);
+    });
+
+    it('con tecnología no cabe ninguna de las dos', async () => {
+      const { select } = await montarEn('/?linea=TECNOLOGIA');
+
+      await vi.waitFor(() => expect(select('filtro-talla-ropa').disabled).toBe(true));
+      expect(select('filtro-talla-calzado').disabled).toBe(true);
+    });
+
+    /**
+     * Si solo se vaciara el control, la rejilla seguiría filtrada por una talla de ropa que ya no
+     * se ve en ningún lado.
+     */
+    it('una URL con una marca de calzado y una talla de ropa se corrige sin la talla', async () => {
+      const { navegar } = await montarEn('/?marca=m2&tallaRopa=M');
+
+      await vi.waitFor(() =>
+        expect(navegar).toHaveBeenCalledWith(
+          [],
+          expect.objectContaining({ queryParams: { marca: 'm2', orden: 'RELEVANCIA' } }),
+        ),
+      );
+    });
+
+    it('elegir una categoría de ropa se lleva la talla de calzado que había', async () => {
+      const { select, navegar } = await montarEn('/?tallaCalzado=38');
+
+      fireEvent.change(select('filtro-categoria'), { target: { value: 'ropa-dama-blusas' } });
+      await esperar(350);
+
+      expect(select('filtro-talla-calzado').disabled).toBe(true);
+      expect(navegar).toHaveBeenLastCalledWith(
+        [],
+        expect.objectContaining({
+          queryParams: { categoria: 'ropa-dama-blusas', orden: 'RELEVANCIA' },
+        }),
+      );
+    });
+
+    it('volver a todas las líneas vuelve a habilitar las dos', async () => {
+      const { fixture, select } = await montarEn('/?linea=TECNOLOGIA');
+
+      fireEvent.change(select('filtro-linea'), { target: { value: '' } });
+      fixture.detectChanges();
+
+      expect(select('filtro-talla-ropa').disabled).toBe(false);
+      expect(select('filtro-talla-calzado').disabled).toBe(false);
+    });
   });
 });

@@ -107,7 +107,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_17"];
+        get: operations["listar_18"];
         put?: never;
         post?: never;
         delete?: never;
@@ -123,7 +123,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_18"];
+        get: operations["listar_19"];
         put?: never;
         post?: never;
         delete?: never;
@@ -571,7 +571,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_16"];
+        get: operations["listar_17"];
         put?: never;
         post?: never;
         delete?: never;
@@ -651,7 +651,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_15"];
+        get: operations["listar_16"];
         put?: never;
         post?: never;
         delete?: never;
@@ -827,7 +827,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_14"];
+        get: operations["listar_15"];
         put?: never;
         post?: never;
         delete?: never;
@@ -859,7 +859,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_13"];
+        get: operations["listar_14"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1739,7 +1739,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_12"];
+        get: operations["listar_13"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2107,7 +2107,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_11"];
+        get: operations["listar_12"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2123,7 +2123,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_10"];
+        get: operations["listar_11"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2219,7 +2219,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_9"];
+        get: operations["listar_10"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2446,6 +2446,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["enviar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tallas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listar_9"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -3518,6 +3534,10 @@ export interface components {
             /** Format: uuid */
             destinoId: string;
         };
+        OpcionDeTallaRespuesta: {
+            etiqueta?: string;
+            valor?: string;
+        };
         OpcionEnvioRespuesta: {
             costoEnvio: components["schemas"]["DineroRespuesta"];
             /** Format: int32 */
@@ -4201,6 +4221,10 @@ export interface components {
             tallas: string[];
             tono: string;
         };
+        TallasDisponiblesRespuesta: {
+            calzado?: components["schemas"]["OpcionDeTallaRespuesta"][];
+            ropa?: components["schemas"]["OpcionDeTallaRespuesta"][];
+        };
         TallasPeticion: {
             sirveHasta?: string;
             tipo?: string;
@@ -4474,7 +4498,7 @@ export interface operations {
             };
         };
     };
-    listar_17: {
+    listar_18: {
         parameters: {
             query?: {
                 estado?: string;
@@ -4499,7 +4523,7 @@ export interface operations {
             };
         };
     };
-    listar_18: {
+    listar_19: {
         parameters: {
             query?: {
                 estado?: string;
@@ -5384,7 +5408,7 @@ export interface operations {
             };
         };
     };
-    listar_16: {
+    listar_17: {
         parameters: {
             query?: {
                 maximo?: number;
@@ -5510,7 +5534,7 @@ export interface operations {
             };
         };
     };
-    listar_15: {
+    listar_16: {
         parameters: {
             query?: {
                 proveedorId?: string;
@@ -5822,7 +5846,7 @@ export interface operations {
             };
         };
     };
-    listar_14: {
+    listar_15: {
         parameters: {
             query?: never;
             header?: never;
@@ -5866,7 +5890,7 @@ export interface operations {
             };
         };
     };
-    listar_13: {
+    listar_14: {
         parameters: {
             query?: {
                 pagina?: number;
@@ -7472,7 +7496,7 @@ export interface operations {
             };
         };
     };
-    listar_12: {
+    listar_13: {
         parameters: {
             query?: never;
             header?: never;
@@ -8032,7 +8056,7 @@ export interface operations {
             };
         };
     };
-    listar_11: {
+    listar_12: {
         parameters: {
             query?: never;
             header?: never;
@@ -8052,7 +8076,7 @@ export interface operations {
             };
         };
     };
-    listar_10: {
+    listar_11: {
         parameters: {
             query?: never;
             header?: never;
@@ -8184,7 +8208,7 @@ export interface operations {
             };
         };
     };
-    listar_9: {
+    listar_10: {
         parameters: {
             query?: never;
             header?: never;
@@ -8457,6 +8481,8 @@ export interface operations {
                 precioMin?: number;
                 precioMax?: number;
                 texto?: string;
+                tallaRopa?: string;
+                tallaCalzado?: string;
                 orden?: string;
                 cursor?: string;
                 tamano?: number;
@@ -8539,6 +8565,26 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    listar_9: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TallasDisponiblesRespuesta"];
+                };
             };
         };
     };
