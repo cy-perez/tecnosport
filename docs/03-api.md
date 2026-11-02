@@ -294,15 +294,24 @@ flete ni la comisión de recaudo: eso es margen (`docs/11-pagos-y-envios.md`).
 |---|---|
 | `categoria` | slug de la categoría |
 | `marca` | id de la marca |
-| `linea` | `ROPA_Y_CALZADO`, `BOLSOS` o `TECNOLOGIA` |
+| `linea` | `TECNOLOGIA`, `ROPA`, `CALZADO` o `BOLSOS` (`CELULARES` se acepta como alias de `TECNOLOGIA`) |
 | `precioMin`, `precioMax` | rango sobre el precio "desde" del producto (el menor precio entre sus variantes activas, el precio vive en la variante). Es el **publicado**, el que se anuncia (`ADR-0095`), y también lo es el de `PRECIO_ASC` y `PRECIO_DESC` |
 | `texto` | búsqueda libre por nombre, por similitud (`pg_trgm`), no exige substring exacto |
+| `tallaRopa`, `tallaCalzado` | solo los productos de esa línea con una variante de esa talla que se pueda comprar: activa, no agotada por el proveedor y con saldo disponible. La talla se compara normalizada (`2xl` encuentra `XXL`). Una de las dos, nunca juntas: juntas responden `422` |
 | `orden` | `RELEVANCIA` (predeterminado; sin `texto` cae a `MAS_RECIENTES`), `PRECIO_ASC`, `PRECIO_DESC`, `MAS_RECIENTES` |
 | `cursor` | opaco — viene de `cursorSiguiente` de la página anterior, nunca se construye a mano |
 | `tamano` | entero entre 1 y 60, 24 por defecto |
 
 La respuesta es `{ "items": [...], "cursorSiguiente": "..." }`.
 `cursorSiguiente` es `null` cuando no hay más páginas.
+
+`GET /api/v1/tallas` devuelve las tallas que hoy tienen existencia, una lista por línea:
+`{ "ropa": [{ "valor": "UNICA", "etiqueta": "Única" }, ...], "calzado": [...] }`. `valor` es la
+talla normalizada, la que se manda en `tallaRopa` o `tallaCalzado`; `etiqueta` es como la escribe
+el catálogo. Viene en orden alfabético de `valor`: el de la escala lo pone la vitrina. Va en
+`/tallas` y no en `/productos/tallas` para no competir con `/productos/{slug}`. El saldo se calcula
+en SQL con la misma regla que `Inventario.saldoDisponible` (`SaldoDisponibleSql`), y
+`FiltroPorTallaJpaTest` verifica que las dos coincidan.
 
 `GET /api/v1/categorias`, `GET /api/v1/marcas` y `GET /api/v1/atributos` no
 tienen parámetros —sin paginar, porque son pocos registros— y devuelven la misma
