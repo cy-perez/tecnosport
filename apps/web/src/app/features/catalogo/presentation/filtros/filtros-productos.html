@@ -63,8 +63,11 @@
          `flex`, y el `min-width: auto` de un item no lo deja encoger por debajo de su
          contenido. Es el mismo defecto que tenía `<main>` en `app.html`, donde se llevó por
          delante el ancho de la página entera. -->
+    <!-- Seis desplegables desde que están las dos tallas (2 de noviembre de 2026): en tableta
+         van de a tres por fila y en escritorio todos en una. Las tallas no se esconden con la
+         línea que no es suya, se apagan, así que la rejilla tiene siempre seis columnas. -->
     <div
-      class="grid min-w-0 grid-cols-1 gap-12 desde-movil:grid-cols-2 desde-tableta:flex-1 desde-tableta:grid-cols-4"
+      class="grid min-w-0 grid-cols-1 gap-12 desde-movil:grid-cols-2 desde-tableta:flex-1 desde-tableta:grid-cols-3 desde-escritorio:grid-cols-6"
     >
       <ts-select
         idCampo="filtro-linea"
@@ -93,7 +96,27 @@
         formControlName="marca"
       />
 
-      <!-- El único de los cuatro que no nombra un atributo del producto, y por eso el único con
+      <!-- El placeholder nombra la línea y no dice "todas": con dos desplegables de talla uno al
+           lado del otro, "Todas las tallas" no diría cuál de los dos es. -->
+      <ts-select
+        idCampo="filtro-talla-ropa"
+        [label]="'catalogo.filtros.talla_ropa' | transloco"
+        [placeholder]="'catalogo.filtros.talla_ropa' | transloco"
+        [opciones]="opcionesTallaRopa()"
+        [etiquetaOculta]="true"
+        formControlName="tallaRopa"
+      />
+
+      <ts-select
+        idCampo="filtro-talla-calzado"
+        [label]="'catalogo.filtros.talla_calzado' | transloco"
+        [placeholder]="'catalogo.filtros.talla_calzado' | transloco"
+        [opciones]="opcionesTallaCalzado()"
+        [etiquetaOculta]="true"
+        formControlName="tallaCalzado"
+      />
+
+      <!-- El único de los seis que no nombra un atributo del producto, y por eso el único con
            ancla: sin ella, "Relevancia" al lado de "Todas las marcas" se lee como una marca. -->
       <ts-select
         idCampo="filtro-orden"

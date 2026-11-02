@@ -5,6 +5,7 @@ import {
   effect,
   inject,
   signal,
+  untracked,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -18,7 +19,7 @@ import { OpcionSelect, TsSelect } from '../../../../shared/ui/select/ts-select';
 import { TsSelectControl } from '../../../../shared/ui/select/ts-select-control';
 import { usarTraductor } from '../../../../core/i18n/traductor';
 import { usarOpcionesFiltro } from '../../application/listar-opciones-filtro.consulta';
-import { hojasConRuta } from '../../domain/arbol-categorias';
+import { escalaDeTallasDe, hojasConRuta } from '../../domain/arbol-categorias';
 import {
   FiltroProductos,
   hayFiltrosActivos,
@@ -28,12 +29,20 @@ import {
   OrdenProductos,
 } from '../../domain/filtro-productos.model';
 import { filtroDesdeQueryParams, queryParamsDesdeFiltro } from '../../domain/query-params-filtro';
+import {
+  lineasDeTallaPosibles,
+  OpcionDeTalla,
+  ordenarTallas,
+  VALOR_TALLA_UNICA,
+} from '../../domain/tallas.model';
 
 interface ValoresFormularioFiltros {
   categoria: string;
   marca: string;
   linea: string;
   texto: string;
+  tallaRopa: string;
+  tallaCalzado: string;
   orden: string;
 }
 
@@ -57,6 +66,8 @@ function datosFormularioDesdeFiltro(filtro: FiltroProductos): ValoresFormularioF
     marca: filtro.marca ?? '',
     linea: filtro.linea ?? '',
     texto: filtro.texto ?? '',
+    tallaRopa: filtro.tallaRopa ?? '',
+    tallaCalzado: filtro.tallaCalzado ?? '',
     // Sin `orden` en la URL el backend ordena por relevancia igual, así que el
     // control lo muestra en vez de quedarse en el vacío: `''` no corresponde a
     // ninguna `<option>`, y este es el único select de los filtros sin
@@ -71,6 +82,8 @@ function filtroDesdeFormulario(valores: ValoresFormularioFiltros): FiltroProduct
     marca: valores.marca || undefined,
     linea: valores.linea || undefined,
     texto: valores.texto || undefined,
+    tallaRopa: valores.tallaRopa || undefined,
+    tallaCalzado: valores.tallaCalzado || undefined,
     orden: (valores.orden || undefined) as OrdenProductos | undefined,
   };
 }
@@ -113,6 +126,8 @@ export class FiltrosProductos {
     marca: new FormControl('', { nonNullable: true }),
     linea: new FormControl('', { nonNullable: true }),
     texto: new FormControl('', { nonNullable: true }),
+    tallaRopa: new FormControl('', { nonNullable: true }),
+    tallaCalzado: new FormControl('', { nonNullable: true }),
     // Arranca en el orden por defecto, no en vacío: así también `limpiar()`
     // (`form.reset()`, que vuelve al valor inicial del control) deja el select
     // mostrando "Relevancia" en vez de reproducir el blanco.
@@ -156,6 +171,35 @@ export class FiltrosProductos {
   private readonly etiquetasOrden = translateObjectSignal('filtros.orden', undefined, {
     scope: 'catalogo',
   });
+
+  private readonly etiquetasTalla = translateObjectSignal('talla', undefined, {
+    scope: 'catalogo',
+  });
+
+  /**
+   * Las tallas con existencia de ropa, en el orden de la escala y no en el alfabético que trae el
+   * servidor. Las de calzado igual, con las suyas.
+   */
+  protected readonly opcionesTallaRopa = computed<OpcionSelect[]>(() =>
+    this.opcionesDeTalla('ROPA', this.opciones.tallas.data()?.ropa ?? [], this.tallaRopaElegida()),
+  );
+
+  protected readonly opcionesTallaCalzado = computed<OpcionSelect[]>(() =>
+    this.opcionesDeTalla(
+      'CALZADO',
+      this.opciones.tallas.data()?.calzado ?? [],
+      this.tallaCalzadoElegida(),
+    ),
+  );
+
+  /** La talla de la URL, para no perderla de vista si ya no está entre las que tienen existencia. */
+  private readonly tallaRopaElegida = signal(
+    filtroDesdeQueryParams(this.route.snapshot.queryParams).tallaRopa ?? '',
+  );
+
+  private readonly tallaCalzadoElegida = signal(
+    filtroDesdeQueryParams(this.route.snapshot.queryParams).tallaCalzado ?? '',
+  );
 
   /**
    * Las cuatro líneas del modelo, siempre.
@@ -227,6 +271,40 @@ export class FiltrosProductos {
       const filtro = filtroDesdeQueryParams(queryParams());
       this.form.patchValue(datosFormularioDesdeFiltro(filtro), { emitEvent: false });
       this.lineaSeleccionada.set(filtro.linea ?? '');
+      this.tallaRopaElegida.set(filtro.tallaRopa ?? '');
+      this.tallaCalzadoElegida.set(filtro.tallaCalzado ?? '');
+      untracked(() => this.ajustarTallasYCorregirLaUrl());
+    });
+
+    // Las categorías y las marcas llegan después del primer render, y hasta entonces no se sabe de
+    // qué línea son las que trae la URL: al llegar, se vuelve a mirar qué talla cabe.
+    effect(() => {
+      this.opciones.categorias.data();
+      this.opciones.marcas.data();
+      untracked(() => this.ajustarTallasYCorregirLaUrl());
+    });
+
+    // Sin `debounceTime`, como la línea: el desplegable de talla se habilita o se apaga en el
+    // momento, y la navegación que ya viene en camino se lleva la talla limpia.
+    this.form.controls.categoria.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => this.ajustarTallas());
+    this.form.controls.marca.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => this.ajustarTallas());
+
+    // Una talla de ropa y una de calzado a la vez no tienen un solo resultado —cada una deja solo
+    // lo de su línea—, así que elegir una suelta la otra. Sin evento, por lo mismo que
+    // `alCambiarDeLinea`: la navegación la dispara el cambio que hizo quien eligió.
+    this.form.controls.tallaRopa.valueChanges.pipe(takeUntilDestroyed()).subscribe((talla) => {
+      if (talla) {
+        this.form.controls.tallaCalzado.setValue('', { emitEvent: false });
+      }
+    });
+    this.form.controls.tallaCalzado.valueChanges.pipe(takeUntilDestroyed()).subscribe((talla) => {
+      if (talla) {
+        this.form.controls.tallaRopa.setValue('', { emitEvent: false });
+      }
     });
 
     // Sin `debounceTime`: esta no navega, solo reacomoda los otros dos desplegables, y hacerlo
@@ -262,6 +340,8 @@ export class FiltrosProductos {
   private alCambiarDeLinea(linea: string): void {
     this.lineaSeleccionada.set(linea);
     if (!linea) {
+      // Volver a todas las líneas no quita nada, pero puede devolver una talla que estaba apagada.
+      this.ajustarTallas();
       return;
     }
 
@@ -278,6 +358,89 @@ export class FiltrosProductos {
     if (marca && !marca.lineas.includes(linea)) {
       this.form.controls.marca.setValue('', { emitEvent: false });
     }
+
+    this.ajustarTallas();
+  }
+
+  /**
+   * Habilita el desplegable de talla que cabe con la línea, la categoría y la marca elegidas, y
+   * apaga y vacía el que no: con una categoría o una marca de ropa, la talla de calzado; con una
+   * de calzado, la de ropa; con tecnología o bolsos, las dos (`lineasDeTallaPosibles`).
+   *
+   * Apagado y no escondido: el control sigue ahí diciendo que existe, y la fila no se reacomoda
+   * cada vez que se elige otra cosa.
+   *
+   * La categoría y la marca solo acotan cuando consta de qué línea son —sus listas ya cargaron—,
+   * por lo mismo que `alCambiarDeLinea`. Devuelve si tuvo que vaciar alguna talla.
+   */
+  private ajustarTallas(): boolean {
+    const { linea, categoria, marca } = this.form.getRawValue();
+    const posibles = lineasDeTallaPosibles({
+      linea: linea || undefined,
+      lineaDeCategoria: (this.opciones.categorias.data() ?? []).find((c) => c.slug === categoria)
+        ?.linea,
+      lineasDeMarca: (this.opciones.marcas.data() ?? []).find((m) => m.id === marca)?.lineas,
+    });
+
+    let vacio = false;
+    for (const [control, lineaDeTalla] of [
+      [this.form.controls.tallaRopa, 'ROPA'],
+      [this.form.controls.tallaCalzado, 'CALZADO'],
+    ] as const) {
+      if (posibles.has(lineaDeTalla)) {
+        control.enable({ emitEvent: false });
+        continue;
+      }
+      if (control.value) {
+        control.setValue('', { emitEvent: false });
+        vacio = true;
+      }
+      control.disable({ emitEvent: false });
+    }
+    return vacio;
+  }
+
+  /**
+   * Lo mismo cuando quien cambió fue la URL y no una persona: si una talla no cabe —una URL
+   * compartida con una marca de ropa y una talla de calzado—, vaciarla solo en el formulario
+   * dejaría la rejilla filtrada por una talla que ya no se ve. Se navega sin ella.
+   */
+  private ajustarTallasYCorregirLaUrl(): void {
+    if (this.ajustarTallas()) {
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: queryParamsDesdeFiltro(filtroDesdeFormulario(this.form.getRawValue())),
+      });
+    }
+  }
+
+  /**
+   * Las opciones de un desplegable de talla.
+   *
+   * La talla única se lee con su nombre traducido —«Talla única», «One size»— y no con la
+   * escritura del catálogo, que es la de la ficha en español. Y la talla que traía la URL se
+   * conserva aunque ya no tenga existencia: si se cayera de la lista, el `<select>` se pintaría en
+   * blanco con el filtro aplicado y nada que quitar — la misma trampa que `alCambiarDeLinea`
+   * describe para la categoría.
+   */
+  private opcionesDeTalla(
+    linea: 'ROPA' | 'CALZADO',
+    tallas: readonly OpcionDeTalla[],
+    elegida: string,
+  ): OpcionSelect[] {
+    const todas = this.opciones.categorias.data() ?? [];
+    const escalas = todas
+      .filter((categoria) => categoria.linea === linea)
+      .map((categoria) => escalaDeTallasDe(categoria, todas));
+    const conLaElegida =
+      elegida && !tallas.some((talla) => talla.valor === elegida)
+        ? [...tallas, { valor: elegida, etiqueta: elegida }]
+        : tallas;
+    const unica = etiquetaDe(this.etiquetasTalla(), 'unica');
+    return ordenarTallas(conLaElegida, escalas).map((talla) => ({
+      valor: talla.valor,
+      etiqueta: talla.valor === VALOR_TALLA_UNICA && unica ? unica : talla.etiqueta,
+    }));
   }
 
   protected alternar(): void {
