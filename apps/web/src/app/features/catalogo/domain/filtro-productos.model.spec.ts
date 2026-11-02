@@ -10,6 +10,8 @@ describe('hayFiltrosActivos', () => {
     ['marca', { marca: 'm1' }],
     ['línea', { linea: 'BOLSOS' }],
     ['texto', { texto: 'morral' }],
+    ['talla de ropa', { tallaRopa: 'M' }],
+    ['talla de calzado', { tallaCalzado: '38' }],
   ])('cualquier filtro por sí solo cuenta: %s', (_nombre, filtro) => {
     expect(hayFiltrosActivos(filtro)).toBe(true);
   });

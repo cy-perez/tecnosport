@@ -14,10 +14,12 @@ import { REPOSITORIO_CATEGORIAS } from './domain/repositorio-categorias.puerto';
 import { REPOSITORIO_ENLACES_DE_COMPRA } from './domain/repositorio-enlaces-de-compra.puerto';
 import { REPOSITORIO_MARCAS_DE_VITRINA } from './domain/repositorio-marcas.puerto';
 import { REPOSITORIO_PRODUCTOS } from './domain/repositorio-productos.puerto';
+import { REPOSITORIO_TALLAS } from './domain/repositorio-tallas.puerto';
 import { CategoriasHttpRepositorio } from './infrastructure/categorias-http.repositorio';
 import { EnlacesDeCompraHttpRepositorio } from './infrastructure/enlaces-de-compra-http.repositorio';
 import { MarcasHttpRepositorio } from './infrastructure/marcas-http.repositorio';
 import { ProductosHttpRepositorio } from './infrastructure/productos-http.repositorio';
+import { TallasHttpRepositorio } from './infrastructure/tallas-http.repositorio';
 
 // El binding puerto -> implementación vive aquí, no en presentation/: "el
 // proveedor de la ruta decide la implementación" (apps/web/CLAUDE.md). Este
@@ -30,6 +32,7 @@ export const catalogoRoutes: Routes = [
       { provide: REPOSITORIO_PRODUCTOS, useClass: ProductosHttpRepositorio },
       { provide: REPOSITORIO_CATEGORIAS, useClass: CategoriasHttpRepositorio },
       { provide: REPOSITORIO_MARCAS_DE_VITRINA, useClass: MarcasHttpRepositorio },
+      { provide: REPOSITORIO_TALLAS, useClass: TallasHttpRepositorio },
       { provide: REPOSITORIO_ENLACES_DE_COMPRA, useClass: EnlacesDeCompraHttpRepositorio },
       provideTranslocoScope('catalogo'),
     ],

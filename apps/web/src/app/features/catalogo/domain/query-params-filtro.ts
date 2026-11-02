@@ -31,11 +31,16 @@ function esOrdenValido(valor: unknown): valor is OrdenProductos {
  * distintas — si difieren, vuelve el bug de skeletons en SSR con filtros.
  */
 export function filtroDesdeQueryParams(params: ParametrosDeConsulta): FiltroProductos {
+  const tallaRopa = textoDe(params['tallaRopa']);
   return {
     categoria: textoDe(params['categoria']),
     marca: textoDe(params['marca']),
     linea: textoDe(params['linea']),
     texto: textoDe(params['texto']),
+    tallaRopa,
+    // Las dos a la vez no tienen resultado y el servidor responde 422: una URL armada a mano con
+    // las dos se queda con la de ropa en vez de romper la página.
+    tallaCalzado: tallaRopa ? undefined : textoDe(params['tallaCalzado']),
     orden: esOrdenValido(params['orden']) ? params['orden'] : undefined,
   };
 }
@@ -54,6 +59,12 @@ export function queryParamsDesdeFiltro(filtro: FiltroProductos): ParametrosDeUrl
   }
   if (filtro.texto) {
     params['texto'] = filtro.texto;
+  }
+  if (filtro.tallaRopa) {
+    params['tallaRopa'] = filtro.tallaRopa;
+  }
+  if (filtro.tallaCalzado) {
+    params['tallaCalzado'] = filtro.tallaCalzado;
   }
   if (filtro.orden) {
     params['orden'] = filtro.orden;
