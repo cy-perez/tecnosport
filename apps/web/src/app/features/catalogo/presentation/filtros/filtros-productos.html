@@ -53,21 +53,23 @@
   />
 
   <div class="flex flex-col gap-12 desde-tableta:flex-row desde-tableta:items-center">
-    <!-- Rejilla y no `flex-wrap`: los cuatro desplegables tienen etiquetas de
+    <!-- Rejilla y no `flex-wrap`: los desplegables tienen etiquetas de
          largos muy distintos —"Relevancia" contra "Todas las categorías"— y en
          `flex` cada uno se quedaba con el ancho de su texto, así que la fila se
-         leía como cuatro controles desparejos. `grid-cols-4` reparte la banda en
-         cuatro columnas iguales (`minmax(0, 1fr)`, que además es lo que impide
+         leía como controles desparejos. `grid-cols-3` reparte la banda en
+         columnas iguales (`minmax(0, 1fr)`, que además es lo que impide
          que un `<select>` ensanche su columna hasta su opción más larga).
          `min-w-0` por lo mismo un nivel más arriba: desde tableta esta rejilla es un item de
          `flex`, y el `min-width: auto` de un item no lo deja encoger por debajo de su
          contenido. Es el mismo defecto que tenía `<main>` en `app.html`, donde se llevó por
          delante el ancho de la página entera. -->
-    <!-- Seis desplegables desde que están las dos tallas (2 de noviembre de 2026): en tableta
-         van de a tres por fila y en escritorio todos en una. Las tallas no se esconden con la
-         línea que no es suya, se apagan, así que la rejilla tiene siempre seis columnas. -->
+    <!-- Seis desplegables desde que están las dos tallas (2 de noviembre de 2026), de a tres por
+         fila desde tableta, también en escritorio: el ancho del contenido no da para seis, y en
+         una sola fila cada desplegable cortaba su etiqueta —"Todas las línea", "Relevanci"—. Las
+         tallas no se esconden con la línea que no es suya, se apagan, así que las dos filas
+         quedan siempre completas. -->
     <div
-      class="grid min-w-0 grid-cols-1 gap-12 desde-movil:grid-cols-2 desde-tableta:flex-1 desde-tableta:grid-cols-3 desde-escritorio:grid-cols-6"
+      class="grid min-w-0 grid-cols-1 gap-12 desde-movil:grid-cols-2 desde-tableta:flex-1 desde-tableta:grid-cols-3"
     >
       <ts-select
         idCampo="filtro-linea"
