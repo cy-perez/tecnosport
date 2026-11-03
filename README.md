@@ -93,8 +93,10 @@ tres días, en `.env.local`:
 ```
 PROVEEDORES_VENTANA_DISPONIBILIDAD=PT1M
 PROVEEDORES_JOB_EXPIRACION_INTERVALO=PT1M
-PROVEEDORES_JOB_EXPIRACION_RETRASO_INICIAL=PT10S
 ```
+
+La primera vez que el tick ve la tarea solo la anota; corre a partir del minuto siguiente
+(ADR-0104).
 
 ## Comandos frecuentes
 

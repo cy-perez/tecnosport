@@ -5,8 +5,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 /**
  * Cada cuánto mira el vigilante si algún pedido pasó de los treinta días para entregarse.
  *
- * <p>El intervalo también lo lee {@code CatalogoDeTareasProgramadas} lo lee de {@code
- * application.yml} con la misma llave y lo pasa al tick (ADR-0104).
+ * <p>El intervalo lo lee también {@code CatalogoDeTareasProgramadas}, de {@code application.yml} y
+ * con la misma llave, y lo pasa al tick (ADR-0104).
  *
  * <p>Doce horas de intervalo, y no quince minutos como Wompi: el plazo que vigila es de treinta
  * días calendario, así que enterarse medio día más tarde no le cuesta nada a nadie. Y desde

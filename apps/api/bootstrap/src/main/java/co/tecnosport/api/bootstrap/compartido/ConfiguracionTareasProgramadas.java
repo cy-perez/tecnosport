@@ -39,6 +39,6 @@ public class ConfiguracionTareasProgramadas {
     }
     return VerificadorDeTareasDeIngestaGoogleJwt.contraLlavesDeGoogle(
             propiedades.urlLlaves(), propiedades.audiencia(), propiedades.cuentaDeServicio())
-        ::esDeLaCola;
+        ::esValido;
   }
 }

@@ -69,6 +69,14 @@ public final class VerificadorDeTareasDeIngestaGoogleJwt implements VerificadorD
 
   @Override
   public boolean esDeLaCola(String token) {
+    return esValido(token);
+  }
+
+  /**
+   * Si el token es de la cuenta y la audiencia con que se armó este verificador. Es lo que usa
+   * también el tick (ADR-0104), con la cuenta de las tareas programadas: allá no es "de la cola".
+   */
+  public boolean esValido(String token) {
     if (token == null || token.isBlank()) {
       return false;
     }

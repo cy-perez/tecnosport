@@ -26,9 +26,9 @@ spring:
   task:
     scheduling:
       pool:
-        # Boot 4.1 trae un solo hilo para todas las tareas @Scheduled (lo dice su metadata, valor
-        # por omisión 1): una que se colgara —un tercero sin responder— detenía a las demás. Con
-        # varios hilos, una tarea lenta deja de bloquear la conciliación de pagos.
+        # Desde ADR-0104 el unico @Scheduled es el disparador interno del tick, en local: las
+        # tareas corren una tras otra dentro de cada vuelta, y este pool ya no las separa. Queda
+        # en 4 por si algo del framework programa lo suyo.
         size: ${PLANIFICADOR_HILOS:4}
   jpa:
     open-in-view: false
@@ -627,8 +627,9 @@ tecnosport:
     cuenta-de-servicio: ${TAREAS_CUENTA_DE_SERVICIO:}
     audiencia: ${TAREAS_AUDIENCIA:}
     url-llaves: ${TAREAS_URL_LLAVES:https://www.googleapis.com/oauth2/v3/certs}
-    # Mas que el tiempo maximo de una peticion de la API (30 minutos en dev): una tarea no dura mas
-    # que la peticion que la corre, y una vecina no la toma mientras todavia corre.
+    # Mas que el tiempo maximo de una peticion de la API (30 minutos en dev), para que una vecina no
+    # tome una tarea que todavia corre. No es una garantia: una peticion que pasa su tiempo maximo
+    # deja el hilo congelado, no muerto. Por eso solo el duenno del arriendo puede soltarlo.
     arriendo: ${TAREAS_ARRIENDO:PT35M}
   idempotencia:
     purga:

@@ -3,8 +3,8 @@ package co.tecnosport.api.bootstrap.correo;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * {@code intervaloMinutos} también lo lee {@code CatalogoDeTareasProgramadas} lo lee de {@code
- * application.yml} con la misma llave y lo pasa al tick (ADR-0104).
+ * {@code intervaloMinutos} lo lee también {@code CatalogoDeTareasProgramadas}, de {@code
+ * application.yml} y con la misma llave, y lo pasa al tick (ADR-0104).
  *
  * <p><b>El tope de intentos y su espaciado no están aquí</b>, y es deliberado: son una constante
  * del mecanismo (ver {@code DrenarBandejaDeSalida}), como las 24 horas de {@code
