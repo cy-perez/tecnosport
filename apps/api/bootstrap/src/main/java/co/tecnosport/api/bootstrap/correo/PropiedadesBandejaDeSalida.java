@@ -3,9 +3,8 @@ package co.tecnosport.api.bootstrap.correo;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * {@code intervaloMinutos} también se lee directamente en {@code TareaBandejaDeSalida.drenar} vía
- * {@code @Scheduled(fixedDelayString = "${...}")} — mismo patrón que {@code
- * PropiedadesPurgaCarritos}.
+ * {@code intervaloMinutos} lo lee también {@code CatalogoDeTareasProgramadas}, de {@code
+ * application.yml} y con la misma llave, y lo pasa al tick (ADR-0104).
  *
  * <p><b>El tope de intentos y su espaciado no están aquí</b>, y es deliberado: son una constante
  * del mecanismo (ver {@code DrenarBandejaDeSalida}), como las 24 horas de {@code
@@ -14,16 +13,12 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  */
 @ConfigurationProperties(prefix = "tecnosport.correo.bandeja")
 public record PropiedadesBandejaDeSalida(
-    int intervaloMinutos, int retrasoInicialMinutos, int diasRetencion, int tamanoDelLote) {
+    int intervaloMinutos, int diasRetencion, int tamanoDelLote) {
 
   public PropiedadesBandejaDeSalida {
     if (intervaloMinutos <= 0) {
       throw new IllegalStateException(
           "tecnosport.correo.bandeja.intervalo-minutos debe ser mayor que cero.");
-    }
-    if (retrasoInicialMinutos < 0) {
-      throw new IllegalStateException(
-          "tecnosport.correo.bandeja.retraso-inicial-minutos no puede ser negativo.");
     }
     if (diasRetencion <= 0) {
       throw new IllegalStateException(

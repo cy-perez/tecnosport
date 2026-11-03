@@ -3,10 +3,9 @@ package co.tecnosport.api.bootstrap.pago;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * {@code intervaloMinutos} también se lee directamente en {@code TareaConciliacionWompi.conciliar}
- * vía {@code @Scheduled(fixedDelayString = "${...}")} — Spring resuelve ese placeholder contra el
- * Environment, no contra este bean; los dos leen la misma llave de {@code application.yml}, con el
- * mismo efecto.
+ * {@code intervaloMinutos} lo lee también {@code CatalogoDeTareasProgramadas}, de {@code
+ * application.yml} y con la misma llave, y lo pasa al tick (ADR-0104). Los dos leen la misma llave,
+ * con el mismo efecto.
  */
 @ConfigurationProperties(prefix = "tecnosport.wompi.conciliacion")
 public record PropiedadesConciliacionWompi(int intervaloMinutos, int antiguedadMinimaMinutos) {

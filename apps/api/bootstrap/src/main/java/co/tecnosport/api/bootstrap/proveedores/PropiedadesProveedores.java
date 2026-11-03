@@ -96,18 +96,14 @@ public record PropiedadesProveedores(
   }
 
   /**
-   * Cada cuánto corre el job que oculta lo vencido, y cuánto espera tras arrancar. El intervalo se
-   * acorta a minutos para probar; {@code habilitado} lo apaga sin desplegar.
+   * Cada cuánto corre el job que oculta lo vencido. El intervalo se acorta a minutos para probar;
+   * {@code habilitado} lo apaga sin desplegar.
    */
-  public record JobExpiracion(boolean habilitado, Duration intervalo, Duration retrasoInicial) {
+  public record JobExpiracion(boolean habilitado, Duration intervalo) {
     public JobExpiracion {
       if (intervalo == null || intervalo.isNegative() || intervalo.isZero()) {
         throw new IllegalStateException(
             "tecnosport.proveedores.job-expiracion.intervalo debe ser una duración positiva.");
-      }
-      if (retrasoInicial == null || retrasoInicial.isNegative()) {
-        throw new IllegalStateException(
-            "tecnosport.proveedores.job-expiracion.retraso-inicial no puede ser negativo.");
       }
     }
   }

@@ -3,10 +3,8 @@ package co.tecnosport.api.bootstrap.usuario;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.usuario.RepositorioDesafiosSegundoFactor;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /**
@@ -28,10 +26,6 @@ public class TareaPurgaDesafiosSegundoFactor {
     this.reloj = Objects.requireNonNull(reloj);
   }
 
-  @Scheduled(
-      fixedDelayString = "${tecnosport.segundo-factor.purga.intervalo-minutos}",
-      initialDelayString = "${tecnosport.segundo-factor.purga.intervalo-minutos}",
-      timeUnit = TimeUnit.MINUTES)
   public void purgar() {
     int borrados = repositorio.purgarVencidos(reloj.ahora());
     if (borrados > 0) {

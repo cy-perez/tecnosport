@@ -23,6 +23,7 @@ resource "google_project_service" "apis" {
     "sts.googleapis.com",
     "cloudresourcemanager.googleapis.com",
     "cloudtasks.googleapis.com",
+    "cloudscheduler.googleapis.com",
   ])
   service            = each.value
   disable_on_destroy = false
@@ -115,6 +116,51 @@ resource "google_service_account_iam_member" "api_actua_como_tareas_de_ingesta" 
   service_account_id = google_service_account.tareas_de_ingesta.name
   role               = "roles/iam.serviceAccountUser"
   member             = "serviceAccount:${google_service_account.api.email}"
+}
+
+# ── El tick de las tareas programadas (ADR-0104) ────────────────────────────────────────────────
+# Un solo trabajo de Cloud Scheduler llama al tick, y la API corre ahí dentro cada tarea a la que le
+# tocaba. Sin él la API, con CPU solo durante la petición, no correría ninguna. Los tres primeros
+# trabajos de una cuenta de facturación no se cobran.
+#
+# La cuenta firma el token del tick y nada más. Aparte de la de la ingesta a propósito: el token de
+# quien encola un tramo no dispara la conciliación de pagos, ni al revés.
+resource "google_service_account" "tareas_programadas" {
+  account_id   = "tecnosport-tareas-programadas"
+  display_name = "Tick de las tareas programadas (Cloud Scheduler)"
+  depends_on   = [google_project_service.apis]
+}
+
+# Sin origen público de la API —el primer apply— no hay a dónde llamar, y la API corre con el
+# disparador interno, igual que antes de este cambio.
+resource "google_cloud_scheduler_job" "tick" {
+  count = var.dominio_publico_api == "" ? 0 : 1
+
+  name      = "tareas-tick"
+  region    = var.region
+  schedule  = var.frecuencia_del_tick
+  time_zone = "America/Bogota"
+
+  # Lo que puede durar un tick: lo mismo que una petición de la API. Si Scheduler cortara antes, la
+  # tarea en curso quedaría con su arriendo puesto hasta que venza.
+  attempt_deadline = "1800s"
+
+  # Sin reintentos: el tick siguiente ya hace lo que haría un reintento, y la tarea que falló está
+  # anotada en la bitácora y vuelve a intentarse cuando pase su intervalo.
+  retry_config {
+    retry_count = 0
+  }
+
+  http_target {
+    http_method = "POST"
+    uri         = "${var.dominio_publico_api}/api/v1/internal/tareas/tick"
+    oidc_token {
+      service_account_email = google_service_account.tareas_programadas.email
+      audience              = var.dominio_publico_api
+    }
+  }
+
+  depends_on = [google_project_service.apis]
 }
 
 resource "google_service_account" "web" {
@@ -551,6 +597,12 @@ module "api" {
     PROVEEDORES_COLA_URL_TRAMOS         = "${var.dominio_publico_api}/api/v1/internal/ingestas"
     PROVEEDORES_COLA_CUENTA_DE_SERVICIO = google_service_account.tareas_de_ingesta.email
     PROVEEDORES_COLA_AUDIENCIA          = var.dominio_publico_api
+    # El tick (ADR-0104): lo llama Cloud Scheduler, así que dentro de la API no se programa nada.
+    # Va en este mismo bloque porque sin origen público tampoco existe el trabajo que lo llama, y
+    # con el disparador externo y nadie llamando no correría ninguna tarea.
+    TAREAS_DISPARADOR         = "externo"
+    TAREAS_CUENTA_DE_SERVICIO = google_service_account.tareas_programadas.email
+    TAREAS_AUDIENCIA          = var.dominio_publico_api
     }, var.wompi_llave_publica == "" ? {} : {
     WOMPI_LLAVE_PUBLICA = var.wompi_llave_publica
     }, var.db_host == "" ? {} : {

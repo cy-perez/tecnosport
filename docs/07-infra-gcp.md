@@ -65,34 +65,32 @@ Terraform, y ese script se niega a tocarlo.
 | Secret Manager | Llaves de Wompi, las tres credenciales de Sistecrédito, credenciales y secreto de webhook de Skydropx, secreto JWT, credenciales SMTP |
 | Cloud Load Balancing | Dominio, TLS y enrutamiento: `/api` a la API, el resto a la web |
 | Cloud Logging y Monitoring | Registros, métricas, alertas de 5xx y de latencia |
-Cloud Run con mínimo de instancias en 1 para la API: el arranque en frío de una
-JVM se siente. CRaC o imagen nativa solo si el costo aprieta, no de entrada.
+| Cloud Scheduler | Un solo trabajo: el tick de las tareas programadas (`ADR-0104`) |
 
-### Las tareas programadas corren dentro de la aplicación, no en Cloud Scheduler
+La API escala a cero también en producción, con CPU solo durante la petición: el sitio arranca con
+poco tráfico y la instancia siempre encendida era la pieza fija más cara (`ADR-0104`). El arranque
+en frío de la JVM lo amortigua el tick de cada minuto; CRaC o imagen nativa si aun así se nota.
 
-**Esta tabla listaba un Cloud Scheduler que nadie usa** —"liberar reservas vencidas, conciliar
-pagos, conciliar seguimiento de envíos, generar sitemap"— y la frase llevaba ahí desde el primer
-commit del documento. Las once tareas —doce desde el 30 de septiembre de 2026, con la que oculta
-los productos de proveedor vencidos (`ADR-0066`)— son `@Scheduled` dentro de la API
-(`grep -rln "@Scheduled" apps/api/bootstrap/src/main/java`). Es la tercera frase de este documento que describía en presente
-algo que no existía, después del freno de seguridad y del `terraform plan` de cada pull request.
+### Las tareas programadas las dispara Cloud Scheduler
 
-Eso tiene una consecuencia que no estaba dicha en ninguna parte y que se midió el 23 de septiembre
-de 2026: el módulo de Cloud Run fija `cpu_idle = true` —CPU solo durante la petición— así que **una
-tarea programada solo avanza mientras alguien está usando el sitio**. En dev, con
-`min_instance_count = 0` además, la conciliación de pagos no corre justo cuando hace falta: cuando
-no hay nadie.
+Hasta el 3 de noviembre de 2026 las tareas eran `@Scheduled` dentro de la API, y por eso producción
+iba a tener `min-instances = 1` y `cpu_idle = false`: con CPU solo durante la petición, **una tarea
+programada solo avanzaba mientras alguien usaba el sitio**, y la conciliación de pagos no corría
+justo cuando hacía falta, cuando no había nadie. Lo midió el 23 de septiembre de 2026 este mismo
+documento, que además contaba 12 tareas: son 17.
 
-**Decidido el 23 de septiembre de 2026, y son dos decisiones distintas:**
+Desde `ADR-0104` un trabajo de Cloud Scheduler llama a `POST /api/v1/internal/tareas/tick` —cada
+minuto en producción, cada 30 en dev— y la API corre ahí dentro cada tarea a la que le tocaba,
+según la tabla `ejecucion_de_tarea`. Lo que eso cambia al operar:
 
-- **Dev se queda como está.** La red de seguridad no existe ahí y eso es aceptable: lo que dev
-  ensaya es producción, no su disponibilidad. Cuando una prueba necesite que una tarea corra
-  —comprobar la conciliación, por ejemplo— se mantiene la instancia despierta con peticiones
-  mientras dure. Lo que se arregla no es el diseño: es esta página.
-- **En producción, `cpu_idle = false` para la API.** Ahí ya está decidido `min-instances = 1`, así
-  que la instancia se paga de todas formas; lo que se añade es CPU asignada también entre
-  peticiones, que es lo único que hace que `@Scheduled` sea de fiar. El módulo lo expone como
-  variable (`cpu_siempre_asignada`), con el valor de dev por omisión.
+- **Una tarea nueva se registra en `CatalogoDeTareasProgramadas`.** Un `@Scheduled` nuevo no
+  corre en ningún ambiente desplegado, porque allá `TAREAS_DISPARADOR=externo` y no se programa
+  nada dentro; `ArquitecturaTest` no lo deja pasar.
+- **Cuándo corrió cada tarea se lee en la base**: `select * from ejecucion_de_tarea`. Si
+  `en_curso_hasta` está en el futuro, alguna instancia la tiene ahora.
+- **En dev una tarea corre como mucho cada 30 minutos.** Para probar una ya, se llama al tick a
+  mano: `gcloud scheduler jobs run tareas-tick --location=us-east1 --project=tecnosport-dev`.
+- **En local nada cambia**: el disparador interno llama al tick cada minuto.
 
 **La ingesta de proveedores no es una tarea programada, y por eso va por Cloud Tasks** (11 de
 octubre de 2026, `ADR-0080`). Es trabajo que alguien pidió: la subida responde y el lote se procesa
@@ -108,10 +106,6 @@ una muerta. Desde entonces el trabajador renueva un latido en el lote cada 30 se
 toca el que lleva tres minutos sin latir —se retoma— (`RecuperarIngestasAbandonadas`, al arrancar
 y cada minuto). Eso vale también para producción, donde un despliegue arranca una revisión nueva
 mientras la anterior todavía procesa.
-
-**Cloud Scheduler queda descartado mientras las tareas vivan dentro de la aplicación.** Usarlo
-pediría un endpoint interno autenticado por tarea y sacar el `@Scheduled`; solo se justifica el día
-que la API de producción escale a cero, que hoy no es el caso.
 
 Las imágenes se suben directo a Cloud Storage con URL firmada desde el panel. No
 pasan por el backend. El bucket de imágenes es
@@ -572,8 +566,7 @@ PROVEEDORES_MARGEN_BOLSOS, PROVEEDORES_MARGEN_ROPA, PROVEEDORES_UMBRAL_HAMMING
 PROVEEDORES_MARGEN_CALZADO             (opcional: sin ella, el de la ropa)
 PROVEEDORES_VENTANA_AGRUPACION
 PROVEEDORES_VENTANA_DISPONIBILIDAD                          (P3D, ADR-0066)
-PROVEEDORES_JOB_EXPIRACION_HABILITADO, PROVEEDORES_JOB_EXPIRACION_INTERVALO,
-PROVEEDORES_JOB_EXPIRACION_RETRASO_INICIAL
+PROVEEDORES_JOB_EXPIRACION_HABILITADO, PROVEEDORES_JOB_EXPIRACION_INTERVALO
 ANTHROPIC_API_KEY, ANTHROPIC_URL_BASE
 PROVEEDORES_EXTRACCION_MODELO, PROVEEDORES_EXTRACCION_MAX_TOKENS,
 PROVEEDORES_EXTRACCION_UMBRAL_CONFIANZA, PROVEEDORES_EXTRACCION_TIMEOUT,
@@ -589,12 +582,9 @@ SKYDROPX_VALOR_DECLARADO_MINIMO, SKYDROPX_VALOR_DECLARADO_MAXIMO
 SKYDROPX_SEGUIMIENTO_INTERVALO_MINUTOS, SKYDROPX_SEGUIMIENTO_ANTIGUEDAD_MINIMA_HORAS
 SKYDROPX_SEGUIMIENTO_MAXIMO_POR_CORRIDA, SKYDROPX_CABECERA_FIRMA
 SKYDROPX_EMISION_INTERVALO_SEGUNDOS, SKYDROPX_EMISION_AUTOMATICA
-ENVIO_REVISION_HORAS_UMBRAL, ENVIO_REVISION_INTERVALO_MINUTOS
-ENVIO_REVISION_RETRASO_INICIAL_MINUTOS, ENVIO_REVISION_DESTINATARIO
-ENVIO_SALDO_UMBRAL_COP, ENVIO_SALDO_INTERVALO_MINUTOS
-ENVIO_SALDO_RETRASO_INICIAL_MINUTOS, ENVIO_SALDO_DESTINATARIO
-ENVIO_SOBRECOSTOS_DIAS_ATRAS, ENVIO_SOBRECOSTOS_INTERVALO_MINUTOS
-ENVIO_SOBRECOSTOS_RETRASO_INICIAL_MINUTOS, ENVIO_SOBRECOSTOS_DESTINATARIO
+ENVIO_REVISION_HORAS_UMBRAL, ENVIO_REVISION_INTERVALO_MINUTOS, ENVIO_REVISION_DESTINATARIO
+ENVIO_SALDO_UMBRAL_COP, ENVIO_SALDO_INTERVALO_MINUTOS, ENVIO_SALDO_DESTINATARIO
+ENVIO_SOBRECOSTOS_DIAS_ATRAS, ENVIO_SOBRECOSTOS_INTERVALO_MINUTOS, ENVIO_SOBRECOSTOS_DESTINATARIO
 ORIGEN_NOMBRE, ORIGEN_TELEFONO, ORIGEN_DIRECCION, ORIGEN_CORREO,
 ORIGEN_DEPARTAMENTO, ORIGEN_CIUDAD, ORIGEN_CIUDAD_DANE, ORIGEN_CODIGO_POSTAL,
 ORIGEN_BARRIO, ORIGEN_REFERENCIA
@@ -605,7 +595,8 @@ CONTRAENTREGA_MONTO_MINIMO, CONTRAENTREGA_MONTO_MAXIMO
 CONTRAENTREGA_CATEGORIAS_EXCLUIDAS
 TRANSFERENCIA_HORAS_VENCIMIENTO
 PLAZO_ENTREGA_VIGILANCIA_INTERVALO_MINUTOS
-PLAZO_ENTREGA_VIGILANCIA_RETRASO_INICIAL_MINUTOS
+TAREAS_DISPARADOR, TAREAS_CUENTA_DE_SERVICIO, TAREAS_AUDIENCIA, TAREAS_URL_LLAVES,
+TAREAS_ARRIENDO                             (ADR-0104; externo en los ambientes desplegados)
 
 MINUTOS_RESERVA_INVENTARIO
 ENLACE_COMPRA_HORAS_VIGENCIA

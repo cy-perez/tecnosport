@@ -355,4 +355,20 @@ class ArquitecturaTest {
         .beAnnotatedWith(Transactional.class)
         .check(clases);
   }
+
+  /**
+   * ADR-0104. En los ambientes desplegados la API tiene CPU solo durante una petición, así que un
+   * {@code @Scheduled} no corre nunca y nada lo avisa: la tarea simplemente deja de existir. Las
+   * tareas se registran en {@code CatalogoDeTareasProgramadas} y las corre el tick; el único
+   * {@code @Scheduled} es el disparador interno de local, que llama a ese mismo tick.
+   */
+  @Test
+  void ningunaTareaSeProgramaSolaFueraDelDisparadorInterno() {
+    methods()
+        .that()
+        .areAnnotatedWith(org.springframework.scheduling.annotation.Scheduled.class)
+        .should()
+        .beDeclaredIn(co.tecnosport.api.bootstrap.compartido.DisparadorInternoDeTareas.class)
+        .check(clases);
+  }
 }

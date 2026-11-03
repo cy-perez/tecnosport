@@ -3,10 +3,8 @@ package co.tecnosport.api.bootstrap.envio;
 import co.tecnosport.api.application.envio.ResolverEmisionesEnCurso;
 import co.tecnosport.api.application.envio.ResultadoResolucionEmisiones;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /**
@@ -40,10 +38,6 @@ public class TareaResolucionEmisiones {
     this.resolverEmisiones = Objects.requireNonNull(resolverEmisiones);
   }
 
-  @Scheduled(
-      fixedDelayString = "${tecnosport.skydropx.emision.intervalo-segundos}",
-      initialDelayString = "${tecnosport.skydropx.emision.intervalo-segundos}",
-      timeUnit = TimeUnit.SECONDS)
   public void resolver() {
     ResultadoResolucionEmisiones resultado = resolverEmisiones.ejecutar();
     if (resultado.revisadas() == 0 && resultado.abandonadas() == 0) {

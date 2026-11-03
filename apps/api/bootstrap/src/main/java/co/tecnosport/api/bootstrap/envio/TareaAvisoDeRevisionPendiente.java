@@ -3,10 +3,8 @@ package co.tecnosport.api.bootstrap.envio;
 import co.tecnosport.api.application.envio.AvisarRevisionPendiente;
 import co.tecnosport.api.application.envio.ResultadoVigilanciaRevision;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /**
@@ -31,10 +29,6 @@ public class TareaAvisoDeRevisionPendiente {
     this.avisarRevisionPendiente = Objects.requireNonNull(avisarRevisionPendiente);
   }
 
-  @Scheduled(
-      fixedDelayString = "${tecnosport.revision-envios.intervalo-minutos}",
-      initialDelayString = "${tecnosport.revision-envios.retraso-inicial-minutos}",
-      timeUnit = TimeUnit.MINUTES)
   public void vigilar() {
     ResultadoVigilanciaRevision resultado = avisarRevisionPendiente.ejecutar();
     if (resultado.avisadas() == 0) {

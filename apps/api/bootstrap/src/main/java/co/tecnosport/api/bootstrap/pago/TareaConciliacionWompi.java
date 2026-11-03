@@ -3,10 +3,8 @@ package co.tecnosport.api.bootstrap.pago;
 import co.tecnosport.api.application.pago.ConciliarPagosPendientes;
 import co.tecnosport.api.application.pago.ResultadoConciliacion;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /**
@@ -27,10 +25,6 @@ public class TareaConciliacionWompi {
     this.conciliarPagosPendientes = Objects.requireNonNull(conciliarPagosPendientes);
   }
 
-  @Scheduled(
-      fixedDelayString = "${tecnosport.wompi.conciliacion.intervalo-minutos}",
-      initialDelayString = "${tecnosport.wompi.conciliacion.intervalo-minutos}",
-      timeUnit = TimeUnit.MINUTES)
   public void conciliar() {
     ResultadoConciliacion resultado = conciliarPagosPendientes.ejecutar();
     log.info(

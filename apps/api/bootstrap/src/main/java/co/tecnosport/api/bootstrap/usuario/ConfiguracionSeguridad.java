@@ -1,6 +1,8 @@
 package co.tecnosport.api.bootstrap.usuario;
 
+import co.tecnosport.api.application.compartido.VerificadorDeTareasProgramadas;
 import co.tecnosport.api.application.proveedores.VerificadorDeTareasDeIngesta;
+import co.tecnosport.api.presentation.compartido.FiltroTareasProgramadas;
 import co.tecnosport.api.presentation.proveedores.FiltroTareasDeIngesta;
 import co.tecnosport.api.presentation.usuario.FiltroAutenticacionJwt;
 import co.tecnosport.api.presentation.usuario.PuntoDeEntradaNoAutenticado;
@@ -28,9 +30,11 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
  * abierto por el {@code anyRequest().permitAll()} de abajo y llegaría sin principal: un olvido que
  * no falla ruidosamente, solo deja la puerta abierta.
  *
- * <p>Y {@code /api/v1/internal/**} es de Cloud Tasks (ADR-0080): exige el rol que pone {@link
- * FiltroTareasDeIngesta} cuando el token es el de la cuenta de las tareas. Va antes del {@code
- * anyRequest().permitAll()} por la misma razón que la clave: la API de dev es pública.
+ * <p>Y {@code /api/v1/internal/**} es de dos servicios de Google, cada uno en su ruta y con su rol:
+ * Cloud Tasks en {@code ingestas/} (ADR-0080, {@link FiltroTareasDeIngesta}) y Cloud Scheduler en
+ * {@code tareas/} (ADR-0104, {@link FiltroTareasProgramadas}). El resto de esa ruta no lo abre
+ * nadie. Va antes del {@code anyRequest().permitAll()} por la misma razón que la clave: la API es
+ * pública.
  */
 @Configuration
 @EnableWebSecurity
@@ -40,7 +44,8 @@ public class ConfiguracionSeguridad {
   public SecurityFilterChain cadenaDeSeguridad(
       HttpSecurity http,
       FiltroAutenticacionJwt filtroAutenticacionJwt,
-      VerificadorDeTareasDeIngesta verificadorDeTareas)
+      VerificadorDeTareasDeIngesta verificadorDeTareas,
+      VerificadorDeTareasProgramadas verificadorDeTareasProgramadas)
       throws Exception {
     http.csrf(csrf -> csrf.disable())
         // Sin esto una peticion sin token recibe 403 -el codigo de "no puedes", para el caso en
@@ -67,11 +72,20 @@ public class ConfiguracionSeguridad {
                     .hasAnyRole("ADMIN", FiltroAutenticacionJwt.ROL_ADMIN_POR_ACTIVAR)
                     .requestMatchers(FiltroTareasDeIngesta.RUTA + "**")
                     .hasRole(FiltroTareasDeIngesta.ROL)
+                    .requestMatchers(FiltroTareasProgramadas.RUTA + "**")
+                    .hasRole(FiltroTareasProgramadas.ROL)
+                    // Lo interno que no es de ninguno de los dos no lo abre nadie. Sin esta
+                    // línea, una ruta interna nueva quedaría en el permitAll de abajo.
+                    .requestMatchers("/api/v1/internal/**")
+                    .denyAll()
                     .anyRequest()
                     .permitAll())
         .addFilterBefore(filtroAutenticacionJwt, UsernamePasswordAuthenticationFilter.class)
         .addFilterBefore(
             new FiltroTareasDeIngesta(verificadorDeTareas),
+            UsernamePasswordAuthenticationFilter.class)
+        .addFilterBefore(
+            new FiltroTareasProgramadas(verificadorDeTareasProgramadas),
             UsernamePasswordAuthenticationFilter.class);
     return http.build();
   }

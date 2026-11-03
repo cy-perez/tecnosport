@@ -21,7 +21,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  */
 @ConfigurationProperties(prefix = "tecnosport.revision-envios")
 public record PropiedadesVigilanciaRevision(
-    int horasUmbral, int intervaloMinutos, int retrasoInicialMinutos, String destinatario) {
+    int horasUmbral, int intervaloMinutos, String destinatario) {
 
   public PropiedadesVigilanciaRevision {
     if (horasUmbral <= 0) {
@@ -31,12 +31,6 @@ public record PropiedadesVigilanciaRevision(
     if (intervaloMinutos <= 0) {
       throw new IllegalStateException(
           "tecnosport.revision-envios.intervalo-minutos debe ser mayor que cero.");
-    }
-    if (retrasoInicialMinutos <= 0 || retrasoInicialMinutos >= intervaloMinutos) {
-      throw new IllegalStateException(
-          "tecnosport.revision-envios.retraso-inicial-minutos debe ser mayor que cero y"
-              + " menor que el intervalo: si lo iguala, cada despliegue reinicia la cuenta y la"
-              + " tarea puede no correr nunca.");
     }
     if (destinatario == null || destinatario.isBlank()) {
       throw new IllegalStateException(

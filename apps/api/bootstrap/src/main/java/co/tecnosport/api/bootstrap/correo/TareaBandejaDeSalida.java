@@ -3,10 +3,8 @@ package co.tecnosport.api.bootstrap.correo;
 import co.tecnosport.api.application.compartido.DrenarBandejaDeSalida;
 import co.tecnosport.api.application.compartido.ResultadoDrenaje;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /**
@@ -43,10 +41,6 @@ public class TareaBandejaDeSalida {
     this.drenarBandejaDeSalida = Objects.requireNonNull(drenarBandejaDeSalida);
   }
 
-  @Scheduled(
-      fixedDelayString = "${tecnosport.correo.bandeja.intervalo-minutos}",
-      initialDelayString = "${tecnosport.correo.bandeja.retraso-inicial-minutos}",
-      timeUnit = TimeUnit.MINUTES)
   public void drenar() {
     ResultadoDrenaje resultado = drenarBandejaDeSalida.ejecutar();
     if (resultado.rendidos() > 0) {

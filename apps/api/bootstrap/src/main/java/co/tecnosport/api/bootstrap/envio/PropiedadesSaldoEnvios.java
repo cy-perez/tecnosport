@@ -26,8 +26,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * correo del negocio, ya publicado en el pie del sitio y en los legales.
  */
 @ConfigurationProperties(prefix = "tecnosport.saldo-envios")
-public record PropiedadesSaldoEnvios(
-    long umbralCop, int intervaloMinutos, int retrasoInicialMinutos, String destinatario) {
+public record PropiedadesSaldoEnvios(long umbralCop, int intervaloMinutos, String destinatario) {
 
   public PropiedadesSaldoEnvios {
     if (umbralCop <= 0) {
@@ -38,12 +37,6 @@ public record PropiedadesSaldoEnvios(
     if (intervaloMinutos <= 0) {
       throw new IllegalStateException(
           "tecnosport.saldo-envios.intervalo-minutos debe ser mayor que cero.");
-    }
-    if (retrasoInicialMinutos <= 0 || retrasoInicialMinutos >= intervaloMinutos) {
-      throw new IllegalStateException(
-          "tecnosport.saldo-envios.retraso-inicial-minutos debe ser mayor que cero y menor que el"
-              + " intervalo: si lo iguala, cada despliegue reinicia la cuenta y la tarea puede no"
-              + " correr nunca.");
     }
     if (destinatario == null || destinatario.isBlank()) {
       throw new IllegalStateException(

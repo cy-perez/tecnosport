@@ -3,10 +3,8 @@ package co.tecnosport.api.bootstrap.envio;
 import co.tecnosport.api.application.envio.ConciliarEnvios;
 import co.tecnosport.api.application.envio.ResultadoConciliacionEnvios;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /**
@@ -34,10 +32,6 @@ public class TareaConciliacionEnvios {
     this.conciliarEnvios = Objects.requireNonNull(conciliarEnvios);
   }
 
-  @Scheduled(
-      fixedDelayString = "${tecnosport.skydropx.seguimiento.intervalo-minutos}",
-      initialDelayString = "${tecnosport.skydropx.seguimiento.intervalo-minutos}",
-      timeUnit = TimeUnit.MINUTES)
   public void conciliar() {
     ResultadoConciliacionEnvios resultado = conciliarEnvios.ejecutar();
     log.info(

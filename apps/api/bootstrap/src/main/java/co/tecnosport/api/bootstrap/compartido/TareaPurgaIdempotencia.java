@@ -3,10 +3,8 @@ package co.tecnosport.api.bootstrap.compartido;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.compartido.RepositorioIdempotencia;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /**
@@ -27,10 +25,6 @@ public class TareaPurgaIdempotencia {
     this.reloj = Objects.requireNonNull(reloj);
   }
 
-  @Scheduled(
-      fixedDelayString = "${tecnosport.idempotencia.purga.intervalo-minutos}",
-      initialDelayString = "${tecnosport.idempotencia.purga.intervalo-minutos}",
-      timeUnit = TimeUnit.MINUTES)
   public void purgar() {
     int borradas = repositorio.purgarVencidas(reloj.ahora());
     if (borradas > 0) {
