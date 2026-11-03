@@ -3,10 +3,13 @@
 #
 # El primer apply va con todas las banderas en false: crea los recipientes de los secretos, la
 # base y los servicios con la imagen de arranque de Google. Después se crea el usuario de la base,
-# se cargan los secretos con gcloud y se encienden por tandas (`docs/07-infra-gcp.md`).
+# se cargan los secretos con gcloud y se encienden por tandas (`docs/07-infra-gcp.md`, "Arranque de
+# producción").
 
-# La cuenta de facturación, para el presupuesto. Vacía no lo crea.
+# La cuenta de facturación, para el presupuesto. Vacía no lo crea. El monto va en la moneda de
+# esa cuenta: unos US$30, o su equivalente en pesos si factura en COP.
 cuenta_de_facturacion = ""
+presupuesto_mensual   = 0
 
 # `pub_prod_...`, del panel de Wompi de producción.
 wompi_llave_publica = ""

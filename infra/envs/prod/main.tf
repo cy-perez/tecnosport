@@ -698,12 +698,18 @@ resource "google_cloud_run_v2_job" "migraciones" {
           name  = "FLYWAY_USER"
           value = var.db_usuario
         }
-        env {
-          name = "FLYWAY_PASSWORD"
-          value_source {
-            secret_key_ref {
-              secret  = google_secret_manager_secret.api["db-clave"].secret_id
-              version = "latest"
+        # Con la misma bandera que los secretos de la API: en el primer apply `db-clave` no tiene
+        # versión todavía, y una referencia a `latest` de un secreto vacío no se sabe si la acepta
+        # la creación del job. El job sin clave no puede migrar, pero tampoco hay qué migrar aún.
+        dynamic "env" {
+          for_each = var.secretos_cargados ? ["db-clave"] : []
+          content {
+            name = "FLYWAY_PASSWORD"
+            value_source {
+              secret_key_ref {
+                secret  = google_secret_manager_secret.api[env.value].secret_id
+                version = "latest"
+              }
             }
           }
         }
@@ -777,10 +783,11 @@ resource "google_billing_budget" "mensual" {
     projects = ["projects/${data.google_project.actual.number}"]
   }
 
+  # Sin `currency_code`: toma la moneda de la cuenta de facturación, que la API exige que coincida.
+  # Una cuenta colombiana factura en pesos, y un "USD" aquí haría fallar el apply.
   amount {
     specified_amount {
-      currency_code = "USD"
-      units         = tostring(var.presupuesto_mensual_usd)
+      units = tostring(var.presupuesto_mensual)
     }
   }
 
@@ -794,9 +801,12 @@ resource "google_billing_budget" "mensual" {
   all_updates_rule {
     monitoring_notification_channels = [google_monitoring_notification_channel.correo.id]
   }
+
+  depends_on = [google_project_service.apis]
 }
 
-# Desde tres regiones cada cinco minutos, contra la portada servida por el dominio. Solo cuando el
+# Cada cinco minutos, desde todas las regiones de comprobación, contra la portada servida por el
+# dominio; el aviso salta cuando falla desde más de una. Solo cuando el
 # DNS ya apunta aquí: antes, fallaría en cada consulta y el aviso dejaría de leerse.
 resource "google_monitoring_uptime_check_config" "portada" {
   count = var.dominio_activo ? 1 : 0

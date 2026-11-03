@@ -49,7 +49,10 @@ const ESWIN = process.platform === 'win32';
 const BINARIO = ESWIN ? 'gcloud.cmd' : 'gcloud';
 const citar = (a) => (ESWIN && /[ ()&^]/.test(a) ? `"${a}"` : a);
 
-function gcloud(args, { tolerarFallo = false } = {}) {
+// El proyecto va en cada llamada y no con `gcloud config set project`: eso dejaría el gcloud de la
+// máquina apuntando a producción, y el siguiente comando sin `--project` iría a parar allá.
+function gcloud(argumentos, { tolerarFallo = false } = {}) {
+  const args = [...argumentos, `--project=${PROYECTO}`];
   console.log(`\n$ gcloud ${args.join(' ')}`);
   try {
     const salida = execFileSync(BINARIO, args.map(citar), {
@@ -74,7 +77,6 @@ const existe = (args) => gcloud(args, { tolerarFallo: true }).ok;
 
 console.log(`Proyecto ${PROYECTO} · estado en gs://${BUCKET} · región ${REGION}`);
 
-gcloud(['config', 'set', 'project', PROYECTO]);
 gcloud(['services', 'enable', 'storage.googleapis.com']);
 
 // 1. El bucket. Acceso uniforme y acceso público bloqueado: aquí dentro está el mapa entero de la

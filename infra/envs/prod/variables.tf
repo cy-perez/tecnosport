@@ -62,10 +62,15 @@ variable "cuenta_de_facturacion" {
   default     = ""
 }
 
-variable "presupuesto_mensual_usd" {
-  description = "El tope del aviso, en dólares. No corta nada: avisa al 50, al 90 y al 100 %."
+variable "presupuesto_mensual" {
+  description = "El tope del aviso, **en la moneda de la cuenta de facturación** (la API no acepta otra). No corta nada: avisa al 50, al 90 y al 100 %. Unos US$30, o su equivalente en pesos si la cuenta factura en COP."
   type        = number
-  default     = 30
+  default     = 0
+
+  validation {
+    condition     = var.cuenta_de_facturacion == "" || var.presupuesto_mensual > 0
+    error_message = "Con cuenta_de_facturacion hace falta presupuesto_mensual, en la moneda de esa cuenta."
+  }
 }
 
 variable "dominio_activo" {
@@ -84,6 +89,15 @@ variable "wompi_llave_publica" {
   description = "Llave pública de Wompi de producción (`pub_prod_...`). No es secreta. Vacía, la API arranca con el relleno que Wompi rechaza y el pago con tarjeta no funciona."
   type        = string
   default     = ""
+
+  # Con los secretos montados la API arranca y el checkout ofrece el pago en línea: si la llave
+  # falta o es la de pruebas, cada intento falla en el widget y aparta existencias media hora.
+  # La aplicación no lo impide —solo rechaza una llave vacía, y vacía no llega: la reemplaza su
+  # relleno—, así que lo impide el plan.
+  validation {
+    condition     = var.wompi_llave_publica == "" ? !var.secretos_cargados : startswith(var.wompi_llave_publica, "pub_prod_")
+    error_message = "Con secretos_cargados = true hace falta la llave pública de producción de Wompi, y empieza por pub_prod_ (pub_test_ es la de pruebas)."
+  }
 }
 
 variable "google_client_id" {
