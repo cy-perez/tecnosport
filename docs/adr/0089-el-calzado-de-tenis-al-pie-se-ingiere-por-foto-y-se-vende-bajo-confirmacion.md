@@ -44,7 +44,8 @@ Decidida por el negocio el 25 de octubre de 2026.
    - días de vigencia propios: cinco para Tenis Al Pie;
    - tallas por género, como las nombra el proveedor, con su ajuste: dama 36–39 y caballero 40–44,
      ajuste 1. Se vende en talla nacional (`ADR-0085`): dama 35–38, caballero 39–43, y unisex de la
-     35 a la 43.
+     35 a la 43. *(Enmendado por `ADR-0103`: un ajuste por género, 1 en dama y 3 en caballero; el
+     caballero se vende de la 37 a la 41, y el unisex se parte en dos borradores.)*
 4. **El lector de fotos lee el calzado** (`LecturaDeCalzado`): el tipo —tenis, chancla, sandalia,
    zueco, bota—, el modelo con su seguridad, el género —dama, caballero, unisex— y si el tenis se ve
    solo. Se ve solo sobre una superficie o en la mano; no, puesto, con pies o piernas, en una

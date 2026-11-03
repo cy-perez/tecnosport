@@ -49,6 +49,7 @@ import co.tecnosport.api.domain.proveedores.IdExternoDeMensaje;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import co.tecnosport.api.domain.proveedores.MargenMinimo;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
+import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
 import co.tecnosport.api.domain.proveedores.OrigenDelCostoDeSet;
 import co.tecnosport.api.domain.proveedores.PHash;
 import co.tecnosport.api.domain.proveedores.PrecioSinMargenMinimoException;
@@ -58,6 +59,7 @@ import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.domain.proveedores.PublicacionProveedor;
 import co.tecnosport.api.domain.proveedores.TallaAlProveedor;
 import co.tecnosport.api.domain.proveedores.Tallas;
+import co.tecnosport.api.domain.proveedores.TallasPorGenero;
 import co.tecnosport.api.domain.proveedores.TallasPorTono;
 import co.tecnosport.api.domain.proveedores.TipoProductoProveedor;
 import java.math.BigDecimal;
@@ -469,6 +471,106 @@ class AprobarBorradorTest {
                 List.of(),
                 false,
                 1));
+  }
+
+  // --- El ajuste del género de la categoría (ADR-0103) ---
+
+  /** Tenis Al Pie: la EUR es la nacional más una en dama y más tres en caballero. */
+  private void conAjustePorGenero() {
+    proveedor.editar(
+        "Tenis Al Pie",
+        LineaCatalogo.CALZADO,
+        "+57 300 0000000",
+        "tenis.alpie",
+        true,
+        false,
+        new BigDecimal("1.20"),
+        OrdenDePublicacion.FOTOS_PRIMERO);
+    proveedor.definirAjustesDeIngesta(
+        new AjustesDeIngesta(
+            true,
+            false,
+            null,
+            new TallasPorGenero(
+                List.of("36", "37", "38", "39"),
+                List.of("40", "41", "42", "43", "44"),
+                new AjusteDeTalla(1),
+                new AjusteDeTalla(3))));
+    proveedores.guardar(proveedor);
+  }
+
+  private Producto aprobarTenisEn(BorradorProducto tenis, Categoria categoria, int ajuste) {
+    return caso()
+        .ejecutar(
+            new AprobarBorradorComando(
+                tenis.id(),
+                null,
+                null,
+                categoria.id(),
+                ApoyoDeCatalogoParaIngesta.MARCA.id(),
+                102000,
+                Tallas.lista(List.of("38", "39")),
+                1,
+                "Tenis",
+                "Sneakers",
+                List.of(new FotoAprobada(foto1.id(), null, null)),
+                List.of(),
+                false,
+                ajuste));
+  }
+
+  /**
+   * Leído de dama y pasado a Calzado caballero con el ajuste de dama: cada talla saldría dos
+   * números corrida. No se aprueba, y no deja nada a medias.
+   */
+  @Test
+  void unTenisEnCaballeroConElAjusteDeDamaNoSeAprueba() {
+    conAjustePorGenero();
+    BorradorProducto tenis = tenisDescrito();
+
+    assertThrows(
+        AjusteDeTallaDeOtroGeneroException.class,
+        () -> aprobarTenisEn(tenis, ApoyoDeCatalogoParaIngesta.CALZADO_CABALLERO, 1));
+
+    assertTrue(productos.porId.isEmpty(), "ni producto a medias");
+    assertEquals(
+        EstadoBorrador.EN_REVISION, borradores.buscarPorId(tenis.id()).orElseThrow().estado());
+  }
+
+  /** Con el de caballero se aprueba, y la 38 se le pide al proveedor en EUR 41. */
+  @Test
+  void unTenisEnCaballeroConSuAjusteSeAprueba() {
+    conAjustePorGenero();
+
+    Producto producto =
+        aprobarTenisEn(tenisDescrito(), ApoyoDeCatalogoParaIngesta.CALZADO_CABALLERO, 3);
+
+    assertEquals(new AjusteDeTalla(3), producto.ajusteDeTalla());
+    assertEquals(
+        Map.of("38", "41", "39", "42"),
+        pedirPorTalla(producto, ApoyoDeCatalogoParaIngesta.CALZADO_CABALLERO.escalaTallas()));
+  }
+
+  /** Un ajuste que no es el de ningún género es una horma corregida a propósito: se respeta. */
+  @Test
+  void unaHormaCorregidaAPropositoSeRespeta() {
+    conAjustePorGenero();
+
+    Producto producto =
+        aprobarTenisEn(tenisDescrito(), ApoyoDeCatalogoParaIngesta.CALZADO_CABALLERO, 4);
+
+    assertEquals(new AjusteDeTalla(4), producto.ajusteDeTalla());
+  }
+
+  /** En la rama unisex el mismo par se llamaría de dos maneras: no se aprueba con ningún ajuste. */
+  @Test
+  void unTenisDeAjustesDistintosNoSeApruebaEnUnisex() {
+    conAjustePorGenero();
+    BorradorProducto tenis = tenisDescrito();
+
+    assertThrows(
+        AjusteDeTallaDeOtroGeneroException.class,
+        () -> aprobarTenisEn(tenis, ApoyoDeCatalogoParaIngesta.CALZADO_UNISEX, 3));
   }
 
   /**

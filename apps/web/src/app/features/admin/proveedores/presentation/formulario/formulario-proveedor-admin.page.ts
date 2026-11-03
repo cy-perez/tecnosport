@@ -146,7 +146,8 @@ export class FormularioProveedorAdminPage {
     diasDeVigencia: new FormControl('', { nonNullable: true }),
     tallasDama: new FormControl('', { nonNullable: true }),
     tallasCaballero: new FormControl('', { nonNullable: true }),
-    ajusteDeTalla: new FormControl('0', { nonNullable: true }),
+    ajusteDama: new FormControl('0', { nonNullable: true }),
+    ajusteCaballero: new FormControl('0', { nonNullable: true }),
   });
 
   /** «Otro» no se ofrece: es lo que el extractor no reconoció, y el servidor no deja excluirlo. */
@@ -202,14 +203,16 @@ export class FormularioProveedorAdminPage {
       diasDeVigencia: proveedor.ajustesDeIngesta.diasDeVigencia?.toString() ?? '',
       tallasDama: proveedor.ajustesDeIngesta.tallasPorGenero?.dama.join(' ') ?? '',
       tallasCaballero: proveedor.ajustesDeIngesta.tallasPorGenero?.caballero.join(' ') ?? '',
-      ajusteDeTalla: String(proveedor.ajustesDeIngesta.tallasPorGenero?.ajuste ?? 0),
+      ajusteDama: String(proveedor.ajustesDeIngesta.tallasPorGenero?.ajusteDama ?? 0),
+      ajusteCaballero: String(proveedor.ajustesDeIngesta.tallasPorGenero?.ajusteCaballero ?? 0),
     };
   }
 
   /**
    * Los ajustes de ingesta del formulario, o `null` si alguno no se entiende: los días van de 1 a
-   * 30, las tallas son números de una o dos cifras separados por espacios o comas, y el ajuste va
-   * de -4 a 4. La tecnología no tiene chat que ingerir, y solo el calzado tiene tallas por género.
+   * 30, las tallas son números de una o dos cifras separados por espacios o comas, y cada ajuste va
+   * de -4 a 4: uno por género, porque la EUR no queda a la misma distancia de la nacional en dama
+   * que en caballero (ADR-0103). La tecnología no tiene chat que ingerir, y solo el calzado tiene tallas por género.
    */
   private ajustesDelFormulario(linea: LineaProveedor): AjustesDeIngesta | null {
     if (linea === 'TECNOLOGIA') {
@@ -228,17 +231,15 @@ export class FormularioProveedorAdminPage {
     if (linea === 'CALZADO') {
       const dama = tallasDe(valores.tallasDama);
       const caballero = tallasDe(valores.tallasCaballero);
-      const ajuste = Number(valores.ajusteDeTalla.trim() || '0');
-      if (
-        dama === null ||
-        caballero === null ||
-        !Number.isInteger(ajuste) ||
-        Math.abs(ajuste) > 4
-      ) {
+      const ajusteDama = ajusteDe(valores.ajusteDama);
+      const ajusteCaballero = ajusteDe(valores.ajusteCaballero);
+      if (dama === null || caballero === null || ajusteDama === null || ajusteCaballero === null) {
         return null;
       }
       tallasPorGenero =
-        dama.length === 0 && caballero.length === 0 ? null : { dama, caballero, ajuste };
+        dama.length === 0 && caballero.length === 0
+          ? null
+          : { dama, caballero, ajusteDama, ajusteCaballero };
     }
     return {
       unaFotoUnProducto: valores.unaFotoUnProducto,
@@ -367,6 +368,12 @@ function remitentesDe(texto: string): string[] {
     .split(',')
     .map((nombre) => nombre.trim())
     .filter((nombre) => nombre !== '');
+}
+
+/** El ajuste escrito, vacío es 0; `null` si no es un entero de -4 a 4. */
+function ajusteDe(texto: string): number | null {
+  const ajuste = Number(texto.trim() || '0');
+  return Number.isInteger(ajuste) && Math.abs(ajuste) <= 4 ? ajuste : null;
 }
 
 function tallasDe(texto: string): string[] | null {

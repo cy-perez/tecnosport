@@ -31,6 +31,7 @@ import co.tecnosport.api.domain.proveedores.AjusteDeTalla;
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
 import co.tecnosport.api.domain.proveedores.FotoSubida;
+import co.tecnosport.api.domain.proveedores.GeneroDeCalzado;
 import co.tecnosport.api.domain.proveedores.HuellaProveedor;
 import co.tecnosport.api.domain.proveedores.MargenMinimo;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
@@ -38,7 +39,9 @@ import co.tecnosport.api.domain.proveedores.PHash;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.domain.proveedores.PublicacionProveedor;
 import co.tecnosport.api.domain.proveedores.Tallas;
+import co.tecnosport.api.domain.proveedores.TallasPorGenero;
 import co.tecnosport.api.domain.proveedores.TipoDeTalla;
+import co.tecnosport.api.domain.proveedores.TipoProductoProveedor;
 import java.math.BigDecimal;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -252,6 +255,7 @@ public final class AprobarBorrador {
             ? borrador.ajusteDeTalla()
             : new AjusteDeTalla(comando.ajusteDeTalla());
     exigirTallasQueSeSabenPedir(ajusteDeTalla, valoresDeTalla(tallasAprobadas), categoria);
+    exigirAjusteDelGeneroDeLaCategoria(proveedor, borrador, ajusteDeTalla, categoria);
 
     String titulo =
         comando.titulo() == null || comando.titulo().isBlank()
@@ -428,6 +432,48 @@ public final class AprobarBorrador {
       if (ajuste.tallaDelProveedor(talla, escala).isEmpty()) {
         throw new TallaDelProveedorDesconocidaException(talla, ajuste);
       }
+    }
+  }
+
+  /**
+   * Un tenis de un proveedor que nombra cada género con su ajuste se publica en la rama de un
+   * género, y con el ajuste de ese género (ADR-0103). Lo que se ataja es el error de quien revisa:
+   * el borrador se leyó de dama y lo pasa a Calzado caballero, y el ajuste —que no sigue a la
+   * categoría— se queda en el de dama. Un ajuste distinto de los dos se respeta: es una horma que
+   * quien revisa corrigió a propósito.
+   *
+   * @throws AjusteDeTallaDeOtroGeneroException si lleva el ajuste del otro género, o si va a la
+   *     rama unisex
+   */
+  private static void exigirAjusteDelGeneroDeLaCategoria(
+      Proveedor proveedor, BorradorProducto borrador, AjusteDeTalla ajuste, Categoria categoria) {
+    if (borrador.tipo() != TipoProductoProveedor.TENIS) {
+      return;
+    }
+    Optional<TallasPorGenero> porGenero = proveedor.ajustesDeIngesta().tallasPorGeneroOpcional();
+    Optional<GeneroDeCalzado> genero = GeneroDeCalzado.deCategoria(categoria.slug().valor());
+    if (porGenero.isEmpty() || !porGenero.get().parteElUnisex() || genero.isEmpty()) {
+      return;
+    }
+    if (genero.get() == GeneroDeCalzado.UNISEX) {
+      throw new AjusteDeTallaDeOtroGeneroException(
+          "Este proveedor nombra distinto las tallas de dama y de caballero: el tenis se publica en"
+              + " Calzado dama o en Calzado caballero, no en unisex.");
+    }
+    GeneroDeCalzado otro =
+        genero.get() == GeneroDeCalzado.DAMA ? GeneroDeCalzado.CABALLERO : GeneroDeCalzado.DAMA;
+    AjusteDeTalla suyo = porGenero.get().ajusteDe(genero.get()).orElseThrow();
+    if (ajuste.equals(porGenero.get().ajusteDe(otro).orElseThrow()) && !ajuste.equals(suyo)) {
+      throw new AjusteDeTallaDeOtroGeneroException(
+          "El tenis va a "
+              + categoria.nombre()
+              + " con el ajuste de talla del otro género ("
+              + ajuste.tallas()
+              + "); el de este proveedor para "
+              + genero.get().name().toLowerCase(Locale.ROOT)
+              + " es "
+              + suyo.tallas()
+              + ". Corrige «Cómo nombra las tallas el proveedor» y las tallas antes de aprobar.");
     }
   }
 

@@ -1,7 +1,7 @@
 # ADR-0085: la tienda vende su talla, y al proveedor se le pide la suya
 
 Fecha: 2026-10-13
-Estado: aceptada
+Estado: aceptada; el punto 2 lo enmienda `ADR-0103` (en caballero, la EUR es la nacional más tres)
 Amplía: `ADR-0084` (el SKU del proveedor en la variante) y `ADR-0081` (las tallas de cada prenda).
 
 ## Contexto
@@ -47,7 +47,8 @@ Decidida por el negocio el 13 de octubre de 2026.
      bajo la escala de letras—, no dicen el paso: no se cuenta. Contar de 1 en 1 daría una talla 9
      que no existe. Una de cero o negativa tampoco existe.
    - Va de -4 a 4. Más que eso no es una horma, es un error de lectura.
-2. **La talla EUR es la nacional más una.** Es la equivalencia más citada en Colombia, y el
+2. **La talla EUR es la nacional más una.** *(Enmendado por `ADR-0103`, 3 de noviembre de 2026: vale
+   en dama; en caballero es más tres, medido: el EUR 42 de caballero mide 26,5 cm, la 39.)* Es la equivalencia más citada en Colombia, y el
    negocio la eligió. Si un proveedor demuestra otra, se cambia aquí y en su prueba.
 3. **El producto guarda el ajuste, no la talla calculada** (`producto.ajuste_de_talla`, `V115`).
    `AprobarBorrador` copia el del borrador. La talla del proveedor se cuenta al consultar, desde la

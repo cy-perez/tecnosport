@@ -84,12 +84,14 @@ export interface Proveedor {
 
 /**
  * Las tallas que un proveedor de calzado maneja siempre, como él las nombra, y cuántas tallas más
- * arriba las nombra: las EUR son la nacional más una (ADR-0085).
+ * arriba las nombra en cada género: las EUR son la nacional más una en dama y más tres en
+ * caballero (ADR-0085, ADR-0103).
  */
 export interface TallasPorGenero {
   readonly dama: readonly string[];
   readonly caballero: readonly string[];
-  readonly ajuste: number;
+  readonly ajusteDama: number;
+  readonly ajusteCaballero: number;
 }
 
 export interface AjustesDeIngesta {

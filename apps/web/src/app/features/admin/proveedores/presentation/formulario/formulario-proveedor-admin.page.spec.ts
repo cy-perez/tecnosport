@@ -233,7 +233,10 @@ describe('FormularioProveedorAdminPage', () => {
     expect(repositorio.creados[0]).toMatchObject({ local: false });
   });
 
-  /** Tenis Al Pie (ADR-0089): una foto por producto, bajo confirmación, cinco días y tallas EUR. */
+  /**
+   * Tenis Al Pie (ADR-0089): una foto por producto, bajo confirmación, cinco días y tallas EUR, que
+   * en dama son la nacional más una y en caballero más tres (ADR-0103).
+   */
   it('manda los ajustes de ingesta de un proveedor de calzado', async () => {
     const { repositorio, fixture } = await renderPagina();
     vi.spyOn(fixture.debugElement.injector.get(Router), 'navigate').mockResolvedValue(true);
@@ -249,7 +252,8 @@ describe('FormularioProveedorAdminPage', () => {
     escribir(f.diasDeVigencia, '5');
     escribir(f.tallasDama, '36 37 38 39');
     escribir(f.tallasCaballero, '40, 41, 42, 43, 44');
-    escribir(f.ajusteDeTalla, '1');
+    escribir(f.ajusteDama, '1');
+    escribir(f.ajusteCaballero, '3');
     fireEvent.click(screen.getByRole('button', { name: f.crear }));
 
     await vi.waitFor(() => expect(repositorio.creados).toHaveLength(1));
@@ -260,7 +264,8 @@ describe('FormularioProveedorAdminPage', () => {
       tallasPorGenero: {
         dama: ['36', '37', '38', '39'],
         caballero: ['40', '41', '42', '43', '44'],
-        ajuste: 1,
+        ajusteDama: 1,
+        ajusteCaballero: 3,
       },
     });
   });
@@ -277,6 +282,25 @@ describe('FormularioProveedorAdminPage', () => {
     escribir(f.margen, '1,20');
     await screen.findByLabelText(f.tallasDama);
     escribir(f.tallasDama, 'M L');
+    fireEvent.click(screen.getByRole('button', { name: f.crear }));
+
+    expect(await screen.findByText(f.ajustesInvalidos)).toBeTruthy();
+    expect(repositorio.creados).toEqual([]);
+  });
+
+  /** Cada ajuste va de -4 a 4: el de caballero fuera de rango tampoco se manda. */
+  it('no manda un ajuste de caballero fuera de rango', async () => {
+    const { repositorio } = await renderPagina();
+
+    escribir(f.nombre, 'Tenis Al Pie');
+    escribir(f.remitente, 'tenis.alpie');
+    escribir(f.telefono, '573000000000');
+    fireEvent.change(screen.getByLabelText(f.linea), { target: { value: 'CALZADO' } });
+    fireEvent.change(screen.getByLabelText(f.orden), { target: { value: 'FOTOS_PRIMERO' } });
+    escribir(f.margen, '1,20');
+    await screen.findByLabelText(f.tallasDama);
+    escribir(f.tallasCaballero, '40 41 42');
+    escribir(f.ajusteCaballero, '5');
     fireEvent.click(screen.getByRole('button', { name: f.crear }));
 
     expect(await screen.findByText(f.ajustesInvalidos)).toBeTruthy();

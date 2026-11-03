@@ -380,7 +380,8 @@ public final class ResolverBorrador {
     PrendaAcompanante acompanante = set.map(s -> s.armado().acompanante()).orElse(null);
     // Las tallas que el proveedor de calzado maneja siempre, por el género que se vio en la foto:
     // el tenis de dama de Tenis Al Pie va de la 36 a la 39 EUR, el de caballero de la 40 a la 44, y
-    // el unisex con las dos (ADR-0089). Sin género leído, unisex: quien revisa lo corrige.
+    // el unisex con las dos (ADR-0089), o partido en dos si cada género tiene su ajuste (ADR-0103).
+    // Sin género leído, unisex: quien revisa lo corrige.
     Optional<TallasPorGenero> tallasDelProveedor =
         extraido.tipo() == TipoProductoProveedor.TENIS
             ? proveedor.ajustesDeIngesta().tallasPorGeneroOpcional()
@@ -404,6 +405,15 @@ public final class ResolverBorrador {
                         ? GeneroDeCalzado.UNISEX
                         : null)
             : evaluada.generoDePrendaOpcional().orElse(null);
+    // Un unisex que el proveedor nombra con ajustes distintos por género se vende en dos productos:
+    // este queda de dama, con las de dama, y más abajo nace su gemelo de caballero (ADR-0103).
+    boolean unisexPartido =
+        tallasDelProveedor.isPresent()
+            && genero == GeneroDeCalzado.UNISEX
+            && tallasDelProveedor.get().parteElUnisex();
+    if (unisexPartido) {
+      genero = GeneroDeCalzado.DAMA;
+    }
     if (tallasDelProveedor.isPresent()) {
       extraido = extraido.conTallas(Tallas.lista(tallasDelProveedor.get().delProveedor(genero)));
     }
@@ -547,7 +557,29 @@ public final class ResolverBorrador {
     if (tallasDelProveedor.isPresent()) {
       // Las del proveedor ya son las de su género: se corren con su ajuste, y el texto no las
       // vuelve a correr ni las parte.
-      BorradorProducto.conTallasCorridas(borrador, tallasDelProveedor.get().ajuste());
+      TallasPorGenero porGenero = tallasDelProveedor.get();
+      if (unisexPartido) {
+        // El mismo par, dos productos: la de dama con sus tallas y su ajuste, y el gemelo de
+        // caballero con los suyos, como «Horma normal Dama, Aumenta 1 Cab» (ADR-0085, ADR-0103).
+        BorradorProducto caballero =
+            borrador.delOtroGenero(
+                borrador.titulo().orElse(null),
+                porGenero.ajusteDe(GeneroDeCalzado.CABALLERO).orElseThrow(),
+                Tallas.lista(porGenero.delProveedor(GeneroDeCalzado.CABALLERO)),
+                ahora);
+        BorradorProducto.conGeneroDeCalzado(caballero, GeneroDeCalzado.CABALLERO);
+        caballero.describirComoTenis();
+        repositorioBorradores.guardar(caballero);
+        BorradorProducto.conTallasCorridas(
+            borrador, porGenero.ajusteDe(GeneroDeCalzado.DAMA).orElseThrow());
+        borrador.describirComoTenis();
+        repositorioBorradores.guardar(borrador);
+        Set<AlertaBorrador> alertas = EnumSet.noneOf(AlertaBorrador.class);
+        alertas.addAll(borrador.alertas());
+        alertas.addAll(caballero.alertas());
+        return new Resolucion(TipoDeResolucion.NUEVO, alertas, null);
+      }
+      BorradorProducto.conTallasCorridas(borrador, porGenero.ajusteDe(genero).orElseThrow());
       borrador.describirComoTenis();
       repositorioBorradores.guardar(borrador);
       return new Resolucion(TipoDeResolucion.NUEVO, borrador.alertas(), null);

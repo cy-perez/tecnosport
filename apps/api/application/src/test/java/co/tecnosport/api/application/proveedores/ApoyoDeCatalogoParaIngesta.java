@@ -61,6 +61,11 @@ final class ApoyoDeCatalogoParaIngesta {
           .conEscalaDeTallas(
               List.of("34", "35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45"));
 
+  /** La rama unisex, con la misma escala (ADR-0103: un tenis de ajustes distintos no va aquí). */
+  static final Categoria CALZADO_UNISEX =
+      Categoria.crear("Unisex", new Slug("calzado-unisex"), LineaCatalogo.CALZADO)
+          .conEscalaDeTallas(CALZADO_CABALLERO.escalaTallas());
+
   static final Atributo COLOR = Atributo.crear("Color", TipoAtributo.COLOR, List.of());
   static final Atributo TALLA =
       // Sin valores permitidos, como en producción desde V73: la lista la dicta cada prenda.
@@ -558,7 +563,7 @@ final class ApoyoDeCatalogoParaIngesta {
 
     @Override
     public List<Categoria> listarTodas() {
-      return List.of(BOLSOS_DAMA, BOLSOS_DE_MANO, CALZADO_CABALLERO);
+      return List.of(BOLSOS_DAMA, BOLSOS_DE_MANO, CALZADO_CABALLERO, CALZADO_UNISEX);
     }
 
     @Override

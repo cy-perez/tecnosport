@@ -67,6 +67,7 @@ import co.tecnosport.api.application.pedido.PedidoNoEncontradoException;
 import co.tecnosport.api.application.pedido.RetiroEnPuntoNoDisponibleException;
 import co.tecnosport.api.application.pedido.SistecreditoNoDisponibleException;
 import co.tecnosport.api.application.pedido.VarianteNoEncontradaException;
+import co.tecnosport.api.application.proveedores.AjusteDeTallaDeOtroGeneroException;
 import co.tecnosport.api.application.proveedores.AjustesDeTallaDistintosException;
 import co.tecnosport.api.application.proveedores.ArchivoDeIngestaEnUsoException;
 import co.tecnosport.api.application.proveedores.ArchivoDeIngestaNoEncontradoException;
@@ -404,7 +405,8 @@ public class ManejadorDeErrores {
   }
 
   // 409 todos: el borrador existe y la petición está bien; lo que falta es un estado o un dato
-  // que quien revisa arregla en el panel y vuelve. La talla del proveedor, quitando esa talla.
+  // que quien revisa arregla en el panel y vuelve. La talla del proveedor, quitando esa talla; el
+  // ajuste del otro género (ADR-0103), corrigiéndolo.
   @ExceptionHandler({
     BorradorNoEditableException.class,
     BorradorSinFotosException.class,
@@ -412,7 +414,8 @@ public class ManejadorDeErrores {
     BorradorSinTituloException.class,
     BorradorSinDescripcionException.class,
     AtributoDeCatalogoNoDefinidoException.class,
-    TallaDelProveedorDesconocidaException.class
+    TallaDelProveedorDesconocidaException.class,
+    AjusteDeTallaDeOtroGeneroException.class
   })
   public ProblemDetail borradorNoAprobable(RuntimeException excepcion) {
     return problema(HttpStatus.CONFLICT, "El borrador no se puede aprobar así", excepcion);
