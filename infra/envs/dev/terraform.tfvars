@@ -64,8 +64,12 @@ sistecredito_listo = true
 # `meta_listo` sigue la secuencia de siempre: cargar el valor del secreto con gcloud primero.
 #   gcloud secrets create meta-token --project tecnosport-dev --replication-policy automatic
 #   printf %s "<token>" | gcloud secrets versions add meta-token --project tecnosport-dev --data-file=-
+#
+# **Apagada desde el 3 de noviembre de 2026**: con producción en línea, las publicaciones salen de
+# allá. Dos paneles publicando en la misma cuenta dejarían en @tecnosport_co los productos de prueba
+# de dev al lado de los de verdad. El token sigue montado: el botón de dev queda simulado.
 meta_listo              = true
-meta_publicar_de_verdad = true
+meta_publicar_de_verdad = false
 ingesta_lista           = true
 
 # ADR-0087. La primera vez se aplica con `-var "proxy_web_listo=false"` para que exista el
@@ -80,3 +84,8 @@ proxy_web_listo = true
 #   node -e "process.stdout.write(require('crypto').randomBytes(32).toString('base64'))" | gcloud secrets versions add segundo-factor-llave --project tecnosport-dev --data-file=-
 # **Esa llave no se rota ni se pierde**: sin ella ningun factor guardado se puede leer.
 segundo_factor_listo = true
+
+# La cuenta de despliegue de producción, que copia de aquí la imagen del SHA que ya se probó en dev
+# (ADR-0105). Vacía mientras producción no exista; se llena con el output `cuenta_de_despliegue`
+# de envs/prod.
+cuenta_despliegue_prod = ""

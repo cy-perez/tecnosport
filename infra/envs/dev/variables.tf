@@ -174,3 +174,9 @@ variable "frecuencia_del_tick" {
   type        = string
   default     = "*/30 * * * *"
 }
+
+variable "cuenta_despliegue_prod" {
+  description = "El correo de la cuenta de despliegue de producción. Con valor, puede leer el registro de imágenes de dev para promover lo que ya se probó aquí (ADR-0105); solo leer: no sube nada ni despliega en este proyecto."
+  type        = string
+  default     = ""
+}
