@@ -8,20 +8,22 @@ Nada se crea a mano en la consola. Si existe y no está aquí, no existe.
 
 ```
 local/                lo que la máquina de quien programa necesita en GCP (scripts de Node)
-dev/                  arranque en frío del proyecto de desarrollo (scripts de Node)
+estado/               arranque en frío: el bucket del estado de cada ambiente (script de Node)
 modules/cloud-run/    un servicio de Cloud Run
 envs/dev/             el ambiente de desarrollo desplegado, entero
+envs/prod/            producción, tecnosport.co (ADR-0105)
+operacion/            procedimientos a mano que no son infraestructura
 ```
 
-**Un módulo existe cuando hay dos usos, no antes.** `cloud-run` los tiene —la API y la web— y
-tendrá cuatro cuando exista producción. El resto (registro de imágenes, identidades, federación
+**Un módulo existe cuando hay dos usos, no antes.** `cloud-run` tiene cuatro: la API y la web de
+cada ambiente. El resto (registro de imágenes, identidades, federación
 con GitHub, secretos) vive escrito en el entorno, sin envolver: un módulo con un solo llamador es
 una capa de indirección que no compró nada. Esa es la diferencia con lo que este archivo describía
 antes, que era una estructura de cinco módulos que nunca existió.
 
-`envs/prod/` se agrega cuando el proyecto esté listo para lanzarse, reutilizando los mismos
-módulos con otras variables: balanceador, Cloud SQL, `min-instances=1` y Secret Manager con
-valores de verdad. Dev es el ensayo de eso, no un juguete aparte.
+`envs/prod/` reutiliza el mismo módulo con tres diferencias: Cloud SQL con IP privada, las
+migraciones en un Cloud Run Job dentro de esa red, y el dominio mapeado a la web sin balanceador
+(`ADR-0105`). Dev es el ensayo de eso, no un juguete aparte.
 
 ## El arranque en frío
 
@@ -29,12 +31,14 @@ Para guardar el estado hace falta el bucket, y para crear el bucket con Terrafor
 estado. El círculo se rompe una vez, con un script idempotente:
 
 ```
-node infra/dev/bucket-estado.mjs
+node infra/estado/bucket-estado.mjs dev
+node infra/estado/bucket-estado.mjs prod
 ```
 
 ## Estado
 
-Remoto, en `gs://tecnosport-dev-estado-terraform`, con versionado y acceso público bloqueado.
+Remoto, en `gs://tecnosport-<ambiente>-estado-terraform`, cada uno en el proyecto de su ambiente,
+con versionado y acceso público bloqueado.
 Nunca local, nunca versionado en git. El versionado no es comodidad: es lo único que separa un
 `apply` equivocado de perder el estado, y un estado perdido deja la infraestructura viva con
 Terraform convencido de que no existe nada.
@@ -42,7 +46,7 @@ Terraform convencido de que no existe nada.
 ## Uso
 
 ```
-cd envs/dev
+cd envs/dev        # o envs/prod
 terraform init
 terraform plan
 terraform apply
@@ -52,7 +56,8 @@ terraform apply
 
 ## Lo que Terraform no administra, a propósito
 
-- **La base de datos.** En dev es Neon, fuera de GCP, porque Cloud SQL no tiene capa gratuita.
+- **La base de datos de dev.** Es Neon, fuera de GCP, porque Cloud SQL no tiene capa gratuita. La
+  de producción sí está aquí; su usuario y su clave no: los crea una persona con gcloud.
 - **El bucket de imágenes de local y su cuenta**, que crea `local/bucket-imagenes.mjs`. No es
   un ambiente desplegado: es la máquina de quien programa, y cada quien crea el suyo. El del
   ambiente desplegado sí está aquí (`ADR-0058`).
