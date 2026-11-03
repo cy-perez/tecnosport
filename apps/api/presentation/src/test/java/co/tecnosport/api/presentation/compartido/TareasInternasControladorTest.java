@@ -11,6 +11,7 @@ import co.tecnosport.api.presentation.ManejadorDeErrores;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -51,12 +52,12 @@ class TareasInternasControladorTest {
           new BitacoraDeTareas() {
             @Override
             public boolean tomar(
-                String nombre, Duration intervalo, Duration arriendo, Instant ahora) {
+                String nombre, Duration intervalo, Duration arriendo, UUID quien, Instant ahora) {
               return true;
             }
 
             @Override
-            public void terminar(String nombre, Instant terminadaEn, String fallo) {}
+            public void terminar(String nombre, UUID quien, Instant terminadaEn, String fallo) {}
           };
       return new EjecutarTareasVencidas(
           List.of(tarea("buena", () -> {}), tarea("rota", Configuracion::fallar)),

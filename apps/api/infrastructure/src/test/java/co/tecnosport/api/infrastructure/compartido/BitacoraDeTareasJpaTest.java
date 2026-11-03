@@ -47,31 +47,51 @@ class BitacoraDeTareasJpaTest {
   @Autowired private BitacoraDeTareasJpa bitacora;
   @Autowired private JdbcTemplate jdbc;
 
-  private static String nombreNuevo() {
-    return "prueba-" + UUID.randomUUID();
+  /** Vista por primera vez en {@code en}: la anota y no la toma. */
+  private String vistaEn(Instant en) {
+    String nombre = "prueba-" + UUID.randomUUID();
+    assertThat(bitacora.tomar(nombre, INTERVALO, ARRIENDO, UUID.randomUUID(), en)).isFalse();
+    return nombre;
+  }
+
+  private boolean tomar(String nombre, Duration intervalo, Instant ahora) {
+    return bitacora.tomar(nombre, intervalo, ARRIENDO, UUID.randomUUID(), ahora);
   }
 
   @Test
-  void laPrimeraVezLaTomaYMientrasDuraElArriendoNadieMas() {
-    String nombre = nombreNuevo();
+  void laPrimeraVezSoloLaAnotaYCuentaElIntervaloDesdeAhi() {
+    String nombre = vistaEn(AHORA);
 
-    boolean primera = bitacora.tomar(nombre, INTERVALO, ARRIENDO, AHORA);
-    boolean segunda = bitacora.tomar(nombre, INTERVALO, ARRIENDO, AHORA.plusSeconds(60));
+    assertThat(instante(nombre, "tomada_en")).isEqualTo(AHORA);
+    assertThat(instante(nombre, "en_curso_hasta")).isNull();
+    assertThat(tomar(nombre, INTERVALO, AHORA.plusSeconds(1))).isFalse();
+    assertThat(tomar(nombre, INTERVALO, AHORA.plus(INTERVALO))).isTrue();
+  }
+
+  @Test
+  void tomadaNadieMasLaTomaMientrasDuraElArriendo() {
+    String nombre = vistaEn(AHORA.minus(INTERVALO));
+    UUID quien = UUID.randomUUID();
+
+    boolean primera = bitacora.tomar(nombre, INTERVALO, ARRIENDO, quien, AHORA);
+    boolean segunda = tomar(nombre, Duration.ZERO, AHORA.plus(ARRIENDO).minusSeconds(1));
 
     assertThat(primera).isTrue();
     assertThat(segunda).isFalse();
     assertThat(instante(nombre, "en_curso_hasta")).isEqualTo(AHORA.plus(ARRIENDO));
+    assertThat(columna(nombre, "arrendada_por", UUID.class)).isEqualTo(quien);
   }
 
+  /** El intervalo se cuenta desde que se tomó, no desde que terminó: terminar tarde no lo corre. */
   @Test
-  void terminadaNoLeTocaHastaQuePasaSuIntervalo() {
-    String nombre = nombreNuevo();
-    bitacora.tomar(nombre, INTERVALO, ARRIENDO, AHORA);
-    bitacora.terminar(nombre, AHORA, null);
+  void elIntervaloSeCuentaDesdeQueSeTomo() {
+    String nombre = vistaEn(AHORA.minus(INTERVALO));
+    UUID quien = UUID.randomUUID();
+    bitacora.tomar(nombre, INTERVALO, ARRIENDO, quien, AHORA);
+    bitacora.terminar(nombre, quien, AHORA.plusSeconds(40), null);
 
-    boolean antes =
-        bitacora.tomar(nombre, INTERVALO, ARRIENDO, AHORA.plus(INTERVALO).minusSeconds(1));
-    boolean justo = bitacora.tomar(nombre, INTERVALO, ARRIENDO, AHORA.plus(INTERVALO));
+    boolean antes = tomar(nombre, INTERVALO, AHORA.plus(INTERVALO).minusSeconds(1));
+    boolean justo = tomar(nombre, INTERVALO, AHORA.plus(INTERVALO));
 
     assertThat(antes).isFalse();
     assertThat(justo).isTrue();
@@ -79,38 +99,60 @@ class BitacoraDeTareasJpaTest {
 
   @Test
   void unArriendoVencidoLoTomaOtro() {
-    String nombre = nombreNuevo();
-    bitacora.tomar(nombre, INTERVALO, ARRIENDO, AHORA);
+    String nombre = vistaEn(AHORA.minus(INTERVALO));
+    tomar(nombre, INTERVALO, AHORA);
 
     // Quien la tomó murió sin terminarla: nunca llamó a terminar.
-    boolean antesDeVencer =
-        bitacora.tomar(nombre, INTERVALO, ARRIENDO, AHORA.plus(ARRIENDO).minusSeconds(1));
-    boolean alVencer = bitacora.tomar(nombre, INTERVALO, ARRIENDO, AHORA.plus(ARRIENDO));
+    boolean antesDeVencer = tomar(nombre, INTERVALO, AHORA.plus(ARRIENDO).minusSeconds(1));
+    boolean alVencer = tomar(nombre, INTERVALO, AHORA.plus(ARRIENDO));
 
     assertThat(antesDeVencer).isFalse();
     assertThat(alVencer).isTrue();
   }
 
+  /**
+   * La segunda revisión: un hilo congelado más allá de su petición que vuelve y termina no puede
+   * soltar el arriendo de la vuelta que tomó la tarea después.
+   */
+  @Test
+  void quienPerdioSuArriendoNoSueltaElDelQueLaTomoDespues() {
+    String nombre = vistaEn(AHORA.minus(INTERVALO));
+    UUID congelado = UUID.randomUUID();
+    UUID actual = UUID.randomUUID();
+    bitacora.tomar(nombre, INTERVALO, ARRIENDO, congelado, AHORA);
+    Instant vencido = AHORA.plus(ARRIENDO);
+    bitacora.tomar(nombre, INTERVALO, ARRIENDO, actual, vencido);
+
+    bitacora.terminar(nombre, congelado, vencido.plusSeconds(5), null);
+
+    assertThat(columna(nombre, "arrendada_por", UUID.class)).isEqualTo(actual);
+    assertThat(instante(nombre, "en_curso_hasta")).isEqualTo(vencido.plus(ARRIENDO));
+    assertThat(tomar(nombre, Duration.ZERO, vencido.plusSeconds(10))).isFalse();
+  }
+
   @Test
   void terminarSueltaElArriendoYGuardaElFalloHastaLaVueltaBuena() {
-    String nombre = nombreNuevo();
-    bitacora.tomar(nombre, INTERVALO, ARRIENDO, AHORA);
-    bitacora.terminar(nombre, AHORA, "java.lang.IllegalStateException: Wompi no responde");
+    String nombre = vistaEn(AHORA.minus(INTERVALO));
+    UUID quien = UUID.randomUUID();
+    bitacora.tomar(nombre, INTERVALO, ARRIENDO, quien, AHORA);
+    bitacora.terminar(nombre, quien, AHORA, "java.lang.IllegalStateException: Wompi no responde");
 
     assertThat(instante(nombre, "en_curso_hasta")).isNull();
+    assertThat(columna(nombre, "arrendada_por", UUID.class)).isNull();
     assertThat(instante(nombre, "terminada_en")).isEqualTo(AHORA);
     assertThat(columna(nombre, "fallo", String.class)).contains("Wompi no responde");
 
     Instant despues = AHORA.plus(INTERVALO);
-    bitacora.tomar(nombre, INTERVALO, ARRIENDO, despues);
-    bitacora.terminar(nombre, despues, null);
+    UUID otra = UUID.randomUUID();
+    bitacora.tomar(nombre, INTERVALO, ARRIENDO, otra, despues);
+    bitacora.terminar(nombre, otra, despues, null);
 
     assertThat(columna(nombre, "fallo", String.class)).isNull();
   }
 
   @Test
-  void dosTicksALaVezNoTomanDosVecesLaMismaTarea() throws Exception {
-    String nombre = nombreNuevo();
+  void dosVueltasALaVezNoTomanDosVecesLaMismaTarea() throws Exception {
+    String nombre = vistaEn(AHORA.minus(INTERVALO));
     int hilos = 8;
     CountDownLatch salida = new CountDownLatch(1);
     ExecutorService ejecutor = Executors.newFixedThreadPool(hilos);
@@ -121,7 +163,7 @@ class BitacoraDeTareasJpaTest {
             ejecutor.submit(
                 () -> {
                   salida.await();
-                  return bitacora.tomar(nombre, INTERVALO, ARRIENDO, AHORA);
+                  return tomar(nombre, INTERVALO, AHORA);
                 }));
       }
       salida.countDown();
@@ -133,6 +175,31 @@ class BitacoraDeTareasJpaTest {
         }
       }
       assertThat(tomadas).isEqualTo(1);
+    } finally {
+      ejecutor.shutdownNow();
+    }
+  }
+
+  /** Y la primera vez también: ocho vueltas que la ven a la vez no la toman, solo la anotan. */
+  @Test
+  void dosVueltasQueLaVenPorPrimeraVezNoLaToman() throws Exception {
+    String nombre = "prueba-" + UUID.randomUUID();
+    ExecutorService ejecutor = Executors.newFixedThreadPool(8);
+    try {
+      CountDownLatch salida = new CountDownLatch(1);
+      List<Future<Boolean>> intentos = new ArrayList<>();
+      for (int i = 0; i < 8; i++) {
+        intentos.add(
+            ejecutor.submit(
+                () -> {
+                  salida.await();
+                  return tomar(nombre, Duration.ofHours(1), AHORA);
+                }));
+      }
+      salida.countDown();
+      for (Future<Boolean> intento : intentos) {
+        assertThat(intento.get(30, TimeUnit.SECONDS)).isFalse();
+      }
     } finally {
       ejecutor.shutdownNow();
     }

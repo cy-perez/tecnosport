@@ -1,7 +1,7 @@
 package co.tecnosport.api.presentation.compartido;
 
 import co.tecnosport.api.application.compartido.EjecutarTareasVencidas;
-import co.tecnosport.api.application.compartido.ResultadoDelTick;
+import co.tecnosport.api.application.compartido.ResultadoDeLaVuelta;
 import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,12 +35,12 @@ public class TareasInternasControlador {
   }
 
   @PostMapping("/tick")
-  public ResponseEntity<ResultadoDelTick> tick() {
-    ResultadoDelTick resultado = ejecutarTareasVencidas.ejecutar();
+  public ResponseEntity<ResultadoDeLaVuelta> tick() {
+    ResultadoDeLaVuelta resultado = ejecutarTareasVencidas.ejecutar();
     if (!resultado.corridas().isEmpty()) {
       log.info("Tick: corrieron {}", resultado.corridas());
     }
-    for (ResultadoDelTick.Fallo fallo : resultado.fallidas()) {
+    for (ResultadoDeLaVuelta.Fallo fallo : resultado.fallidas()) {
       log.error(
           "Tick: la tarea {} falló y se reintenta cuando pase su intervalo: {}",
           fallo.tarea(),

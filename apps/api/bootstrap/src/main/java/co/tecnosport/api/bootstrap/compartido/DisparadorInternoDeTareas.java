@@ -1,7 +1,7 @@
 package co.tecnosport.api.bootstrap.compartido;
 
 import co.tecnosport.api.application.compartido.EjecutarTareasVencidas;
-import co.tecnosport.api.application.compartido.ResultadoDelTick;
+import co.tecnosport.api.application.compartido.ResultadoDeLaVuelta;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
@@ -36,8 +36,8 @@ public class DisparadorInternoDeTareas {
 
   @Scheduled(fixedDelay = 1, initialDelay = 1, timeUnit = TimeUnit.MINUTES)
   public void tick() {
-    ResultadoDelTick resultado = ejecutarTareasVencidas.ejecutar();
-    for (ResultadoDelTick.Fallo fallo : resultado.fallidas()) {
+    ResultadoDeLaVuelta resultado = ejecutarTareasVencidas.ejecutar();
+    for (ResultadoDeLaVuelta.Fallo fallo : resultado.fallidas()) {
       log.error(
           "Tick: la tarea {} falló y se reintenta cuando pase su intervalo: {}",
           fallo.tarea(),
