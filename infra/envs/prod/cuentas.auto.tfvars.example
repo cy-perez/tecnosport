@@ -1,0 +1,21 @@
+# Copia este archivo como `cuentas.auto.tfvars`, en esta misma carpeta, y pon los datos reales.
+# `cuentas.auto.tfvars` está en .gitignore: el repositorio es público y estos datos no se versionan.
+# Terraform lo carga solo por el sufijo `.auto.tfvars`, sin pasar `-var-file`.
+#
+# El titular es el nombre de quien tiene la cuenta, tal como lo muestra el banco. No va el nombre
+# comercial ni una sigla societaria: el negocio es de una persona natural.
+# Nequi y Daviplata se identifican con el celular; BBVA, con el número de la cuenta de ahorros.
+cuentas_de_transferencia = {
+  nequi = {
+    numero  = "pendiente"
+    titular = "pendiente"
+  }
+  daviplata = {
+    numero  = "pendiente"
+    titular = "pendiente"
+  }
+  bbva = {
+    numero  = "pendiente"
+    titular = "pendiente"
+  }
+}

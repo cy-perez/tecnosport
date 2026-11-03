@@ -1,0 +1,202 @@
+# Despliegue de producción (ADR-0105): **promueve** a tecnosport.co la imagen de un commit que ya
+# corrió en dev. No construye nada: copia las tres imágenes de ese SHA del registro de dev al de
+# producción, corre las migraciones en el job que vive dentro de la red privada, mueve las dos
+# revisiones y comprueba la salud, revirtiendo si no responde, igual que dev.
+#
+# **Solo a demanda, y con aprobación.** El trabajo declara el ambiente `produccion` de GitHub, que
+# exige que una persona apruebe antes de que corra; y la federación de identidad de producción solo
+# entrega credenciales a un token que traiga ese ambiente, desde `main` (`infra/envs/prod/main.tf`).
+#
+# Las imágenes del SHA tienen que seguir en el registro de dev, que borra lo de más de siete días
+# salvo las tres últimas versiones. Se promueve lo reciente; lo viejo se vuelve a desplegar en dev.
+name: desplegar producción
+
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: SHA completo de un commit de main que ya se desplegó en dev
+        required: true
+        type: string
+
+concurrency:
+  group: desplegar-prod
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write # lo exige la federación de identidad
+
+env:
+  REGION: us-east1
+  SERVICIO_API: tecnosport-api
+  SERVICIO_WEB: tecnosport-web
+  JOB_MIGRACIONES: tecnosport-migraciones
+  SHA: ${{ inputs.sha }}
+
+jobs:
+  desplegar:
+    name: promover, migrar y desplegar
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    environment: produccion
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      # Un SHA cualquiera no: tiene que ser de `main`, que es lo único que pasó por la protección
+      # de la rama y por dev. Y completo, porque la etiqueta de la imagen es el SHA completo.
+      - name: Comprobar que el SHA es de main
+        run: |
+          if ! [[ "$SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::El SHA tiene que ser el completo, de 40 caracteres: $SHA"
+            exit 1
+          fi
+          git merge-base --is-ancestor "$SHA" origin/main || {
+            echo "::error::$SHA no está en main"
+            exit 1
+          }
+
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ vars.GCP_PROYECTO_PROD }}
+          workload_identity_provider: ${{ vars.GCP_PROVEEDOR_IDENTIDAD_PROD }}
+          service_account: ${{ vars.GCP_CUENTA_DESPLIEGUE_PROD }}
+
+      - uses: google-github-actions/setup-gcloud@v3
+
+      - name: Autorizar Docker contra Artifact Registry
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+
+      # La cuenta de producción lee el registro de dev y nada más de ese proyecto
+      # (`produccion_lee_las_imagenes` en infra/envs/dev).
+      - name: Copiar las tres imágenes de dev
+        run: |
+          for nombre in tecnosport-api tecnosport-web tecnosport-api-migraciones; do
+            origen="${{ vars.GCP_REGISTRO_IMAGENES }}/$nombre:$SHA"
+            destino="${{ vars.GCP_REGISTRO_IMAGENES_PROD }}/$nombre:$SHA"
+            echo "::group::$nombre"
+            docker pull "$origen" || {
+              echo "::error::No está $origen: ¿se desplegó ese SHA en dev, y hace menos de siete días?"
+              exit 1
+            }
+            docker tag "$origen" "$destino"
+            docker push "$destino"
+            echo "::endgroup::"
+          done
+
+      # Antes de mover las revisiones, como en dev: el esquema nuevo es compatible con el código
+      # que está corriendo, y el código nuevo necesita el esquema nuevo. Si falla, nada se movió.
+      - name: Migrar la base
+        run: |
+          gcloud run jobs update "${{ env.JOB_MIGRACIONES }}" \
+            --image "${{ vars.GCP_REGISTRO_IMAGENES_PROD }}/tecnosport-api-migraciones:$SHA" \
+            --region "${{ env.REGION }}" \
+            --quiet
+          gcloud run jobs execute "${{ env.JOB_MIGRACIONES }}" \
+            --region "${{ env.REGION }}" \
+            --wait
+
+      - name: Desplegar la API
+        run: |
+          gcloud run deploy "${{ env.SERVICIO_API }}" \
+            --image "${{ vars.GCP_REGISTRO_IMAGENES_PROD }}/tecnosport-api:$SHA" \
+            --region "${{ env.REGION }}" \
+            --quiet
+
+      - name: Desplegar la web
+        run: |
+          gcloud run deploy "${{ env.SERVICIO_WEB }}" \
+            --image "${{ vars.GCP_REGISTRO_IMAGENES_PROD }}/tecnosport-web:$SHA" \
+            --region "${{ env.REGION }}" \
+            --quiet
+
+      # Que Cloud Run acepte la revisión no significa que el sitio funcione: el contenedor puede
+      # levantar y la aplicación responder 500 a todo. Esto es lo que separa "desplegado" de
+      # "sirviendo".
+      - name: Comprobar que responden
+        id: salud
+        run: |
+          api=$(gcloud run services describe "${{ env.SERVICIO_API }}" --region "${{ env.REGION }}" --format='value(status.url)')
+          web=$(gcloud run services describe "${{ env.SERVICIO_WEB }}" --region "${{ env.REGION }}" --format='value(status.url)')
+          echo "API en $api"
+          echo "web en $web"
+
+          # Con reintentos y con paciencia: la primera petición paga el arranque en frío de la JVM,
+          # que en este ambiente no tiene instancias en reposo a propósito.
+          for intento in 1 2 3 4 5 6; do
+            estado=$(curl -s -o /dev/null -w '%{http_code}' --max-time 60 "$api/api/v1/salud" || echo 000)
+            [ "$estado" = "200" ] && break
+            echo "salud de la API: $estado (intento $intento)"
+            sleep 10
+          done
+          [ "$estado" = "200" ] || { echo "::error::La API no responde 200 en /api/v1/salud"; exit 1; }
+
+          # La web no se da por sana con un 200, y la razón la aprendió sendik antes que nosotros:
+          # `@angular/ssr` **renuncia al renderizado en servidor** si le llega una cabecera
+          # `x-forwarded-*` que no esté declarada como confiable, y en ese caso entrega la página
+          # de cliente — raíz vacía, sin estado transferido, y estado 200. El sitio queda en blanco
+          # para todo el mundo y esta comprobación lo daba por bueno. `NG_TRUST_PROXY_HEADERS` está
+          # puesto en Terraform; esto es lo que avisa el día que deje de estarlo.
+          #
+          # Se pide por la URL de `run.app` a propósito: es el camino que recorre un visitante, con
+          # el proxy de Google delante y por tanto con esas cabeceras puestas.
+          for intento in 1 2 3 4 5 6; do
+            estado=$(curl -s -o portada.html -D cabeceras.txt -w '%{http_code}' \
+              --compressed --max-time 60 "$web/es" || echo 000)
+            [ "$estado" = "200" ] && break
+            echo "salud de la web: $estado (intento $intento)"
+            sleep 10
+          done
+          [ "$estado" = "200" ] || { echo "::error::La web no responde 200 en /es"; exit 1; }
+
+          if grep -q '<app-root></app-root>' portada.html; then
+            echo "::error::Respondió 200 pero la página llegó SIN renderizar: <app-root> viene vacía."
+            echo "Es la renuncia al SSR de @angular/ssr por cabeceras x-forwarded-* no declaradas."
+            exit 1
+          fi
+
+          # Y la comprobación en positivo, porque «la raíz no está vacía» también lo cumple un
+          # error pintado por el cliente: el estado transferido solo existe si se renderizó en el
+          # servidor de verdad.
+          grep -q 'ng-state' portada.html || {
+            echo "::error::Respondió 200 y con marcado, pero sin estado transferido."
+            exit 1
+          }
+
+          # La compresión no se puede afirmar desde Vitest —montar el motor de Angular exige el
+          # manifiesto que solo existe tras construir— así que se afirma aquí, contra el servicio
+          # ya desplegado, que es donde la afirmación significa algo. Sin esto, la portada vuelve a
+          # pesar 664 KB en vez de 211 KB y nada se pone rojo.
+          #
+          # Cualquier codificación, no `gzip` a secas: `compression` negocia **brotli** cuando el
+          # cliente lo acepta, que es lo que hace todo navegador y lo que hace `curl --compressed`.
+          # Escrita contra `gzip`, esta comprobación fallaba con la compresión funcionando
+          # perfectamente — encontrado al probarla contra el servidor construido, no en revisión.
+          grep -qiE '^content-encoding: (br|gzip|deflate|zstd)' cabeceras.txt || {
+            echo "::error::La web responde sin comprimir: falta el middleware de compresión en server.ts"
+            grep -i '^content-encoding' cabeceras.txt || echo "(no vino ninguna cabecera content-encoding)"
+            exit 1
+          }
+
+          echo "Las dos responden, la web renderizada en servidor y comprimida."
+
+      # Solo si la comprobación falló. Devuelve el tráfico a la revisión anterior, que es la que
+      # estaba sirviendo hace un minuto y de la que sabemos que funcionaba.
+      - name: Revertir si la salud falló
+        if: failure() && steps.salud.outcome == 'failure'
+        run: |
+          for servicio in "${{ env.SERVICIO_API }}" "${{ env.SERVICIO_WEB }}"; do
+            anterior=$(gcloud run revisions list \
+              --service "$servicio" --region "${{ env.REGION }}" \
+              --sort-by '~metadata.creationTimestamp' \
+              --format 'value(metadata.name)' --limit 2 | tail -1)
+            if [ -n "$anterior" ]; then
+              echo "::warning::Revirtiendo $servicio a $anterior"
+              gcloud run services update-traffic "$servicio" \
+                --region "${{ env.REGION }}" --to-revisions "$anterior=100" --quiet
+            else
+              echo "::warning::$servicio no tiene revisión anterior a la cual volver"
+            fi
+          done
