@@ -59,17 +59,24 @@ Terraform, y ese script se niega a tocarlo.
 |---|---|
 | Cloud Run `tecnosport-api` | Backend Spring Boot |
 | Cloud Run `tecnosport-web` | Frontend Angular con SSR |
-| Cloud SQL PostgreSQL 16 | Base de datos, sin IP pública, por conector |
+| Cloud SQL PostgreSQL 16 | Base de datos `db-f1-micro`, sin IP pública: la API llega por Direct VPC egress (`ADR-0105`) |
+| Cloud Run Job `tecnosport-migraciones` | Flyway dentro de la red privada, antes de cada despliegue |
 | Artifact Registry | Imágenes de contenedor |
-| Cloud Storage y CDN | Imágenes de producto y estáticos |
+| Cloud Storage | Imágenes de producto, servidas desde el bucket y sin CDN (`ADR-0105`) |
 | Secret Manager | Llaves de Wompi, las tres credenciales de Sistecrédito, credenciales y secreto de webhook de Skydropx, secreto JWT, credenciales SMTP |
-| Cloud Load Balancing | Dominio, TLS y enrutamiento: `/api` a la API, el resto a la web |
-| Cloud Logging y Monitoring | Registros, métricas, alertas de 5xx y de latencia |
+| Mapeo de dominios de Cloud Run | `tecnosport.co`, `www` y `ensayo` a la web, con certificado de Google; la web reenvía `/api` a la API. Sin balanceador (`ADR-0105`) |
+| Cloud Logging y Monitoring | Registros, una comprobación de la portada cada cinco minutos y un presupuesto con avisos |
 | Cloud Scheduler | Un solo trabajo: el tick de las tareas programadas (`ADR-0104`) |
 
 La API escala a cero también en producción, con CPU solo durante la petición: el sitio arranca con
 poco tráfico y la instancia siempre encendida era la pieza fija más cara (`ADR-0104`). El arranque
 en frío de la JVM lo amortigua el tick de cada minuto; CRaC o imagen nativa si aun así se nota.
+
+Todo eso está escrito en `infra/envs/prod` y se despliega con `desplegar-prod.yml`, que promueve
+la imagen de un SHA que ya corrió en dev. El balanceador quedó fuera por costo, con lo que eso
+acepta —un mapeo de dominios en preview, TLS 1.0 y 1.1 sin poder apagarse, y el certificado de la
+raíz emitido después de mover el DNS—, y el día que haga falta entra sin tocar ni la web ni la API
+(`ADR-0105`).
 
 ### Las tareas programadas las dispara Cloud Scheduler
 
@@ -109,7 +116,59 @@ mientras la anterior todavía procesa.
 
 Las imágenes se suben directo a Cloud Storage con URL firmada desde el panel. No
 pasan por el backend. El bucket de imágenes es
-público de lectura a través del CDN, y de escritura solo con URL firmada.
+público de lectura, servido desde el propio bucket y sin CDN (`ADR-0105`), y de
+escritura solo con URL firmada.
+
+### Arranque de producción
+
+La primera vez, en este orden. Todo lo escribe una persona: las escrituras en GCP
+y en GitHub no las hace el asistente.
+
+1. **Proyecto.** Crear `tecnosport-prod` y vincularlo a la cuenta de facturación.
+   Si ese ID ya lo tiene otro, el elegido se cambia en `variables.tf`, en
+   `infra/estado/bucket-estado.mjs` y en las variables de GitHub.
+2. **Dominio.** Verificar `tecnosport.co` en Google Search Console con la misma
+   cuenta que va a aplicar: sin eso, el mapeo de dominio no se crea.
+3. **Estado.** `node infra/estado/bucket-estado.mjs prod`.
+4. **Primer apply** en `infra/envs/prod` con todas las banderas en false, y
+   `cuentas.auto.tfvars` copiado de la muestra con los datos reales. Crea la red,
+   la base, los recipientes de los secretos y los servicios con la imagen de
+   arranque de Google.
+5. **Usuario de la base**, con la clave que luego va al secreto:
+   `gcloud sql users create tecnosport --instance=tecnosport-principal --password=... --project=tecnosport-prod`.
+6. **Secretos.** Cargar con `gcloud secrets versions add` los once que monta
+   `secretos_cargados`: `db-clave`, `jwt-secreto`, `smtp-clave` (la clave de
+   Resend de producción), `admin-clave`, los dos de Wompi de producción, los tres
+   de Skydropx de producción, `proxy-web-clave` y `segundo-factor-llave`. Los dos
+   últimos se generan como en dev (`infra/envs/dev/terraform.tfvars`), y la llave
+   del segundo factor **no se pierde nunca**. Con la llave pública de Wompi en
+   `wompi_llave_publica`, poner `secretos_cargados = true` y aplicar: el plan se
+   niega si la llave falta o es `pub_test_`.
+7. **Lectura de imágenes desde dev.** El output `cuenta_de_despliegue` va a
+   `cuenta_despliegue_prod` en `infra/envs/dev/terraform.tfvars`, y se aplica dev.
+8. **GitHub, en este orden.** Primero el ambiente `produccion`, con revisores
+   obligatorios y la política de despliegue limitada a `main`: si no existe, la
+   primera corrida lo crea sola **sin revisores**, y la federación solo compara
+   su nombre. Después las cuatro variables `GCP_PROYECTO_PROD`,
+   `GCP_PROVEEDOR_IDENTIDAD_PROD`, `GCP_CUENTA_DESPLIEGUE_PROD` y
+   `GCP_REGISTRO_IMAGENES_PROD`, con los outputs del apply.
+9. **Primer despliegue.** `desplegar-prod.yml` con el SHA completo de un commit
+   que pasó la salud en dev: solo esos tienen la etiqueta `verificado-<sha>`.
+10. **Datos.** Crear la cuenta del panel con su segundo factor y cargar el
+    catálogo con `tools/cargar-catalogo.mjs --api <origen de la web>`.
+11. **Resto de banderas**, cada una con su secreto cargado antes:
+    `sistecredito_listo`, `meta_listo` e `ingesta_lista`.
+12. **Ensayo del dominio.** El CNAME de `ensayo.tecnosport.co` hacia lo que diga
+    `registros_dns`. Comprobar que el certificado se emite y que el sitio sirve.
+13. **La raíz**, con el plan de la sección siguiente. Con el certificado activo,
+    `dominio_activo = true` y aplicar, para encender la comprobación de la
+    portada; medir qué versiones de TLS acepta el dominio.
+
+**Falta decidir cómo se corre SQL a mano**, como
+`infra/operacion/restablecer-segundo-factor.sql`, contra una base sin IP pública
+y sin bastión. Hay que resolverlo antes de abrir: comprobar si Cloud SQL Studio
+llega a esta instancia, o correr `psql` como un job dentro de la red, igual que
+las migraciones.
 
 ## DNS: cuidado con lo que ya existe
 
@@ -143,8 +202,14 @@ Tres lecturas que cambian cómo se toca esto:
 Al apuntar el dominio a GCP **no se tocan los registros MX ni los TXT de SPF,
 DKIM y DMARC**. Se cambian solo A, AAAA de la raíz y el CNAME de www.
 
-Plan: crear el balanceador, verificar con un subdominio de prueba, y solo
-entonces mover la raíz. Bajar el TTL a 300 segundos un día antes.
+Plan (`ADR-0105`): verificar `tecnosport.co` en Google Search Console, aplicar
+`infra/envs/prod`, y poner primero el CNAME de `ensayo.tecnosport.co`, que no
+toca la raíz: ahí se comprueba que el certificado se emite y el sitio sirve. Antes
+de mover la raíz, revisar que ningún subdominio del negocio sirva solo HTTP —el
+HSTS de la web lleva `includeSubDomains`—, bajar el TTL a 300 segundos un día
+antes, y cambiar de madrugada los A y AAAA de la raíz y el CNAME de `www` por lo
+que diga el output `registros_dns`. El certificado de la raíz tarda de 15
+minutos a 24 horas; el sitio se anuncia cuando está activo.
 
 ## Correo saliente
 
@@ -330,7 +395,9 @@ Lo que se cambió, y que no toca componentes:
 
 Lo que **no** se cambió, a propósito: el arranque en frío de la API. En dev se queda tal cual
 (decisión del 14 de septiembre de 2026): ni instancia mínima ni un trabajo que la mantenga
-despierta. Producción ya tiene decidido `min-instances = 1` más arriba en este documento. Con los
+despierta. ~~Producción ya tiene decidido `min-instances = 1` más arriba en este documento.~~
+Producción también escala a cero (`ADR-0104`), pero el tick de cada minuto la mantiene caliente la
+mayor parte del tiempo. Con los
 dos cambios, la primera visita después de un rato de inactividad sigue esperando a la JVM, pero
 espera con la pestaña cargando —el navegador lo enseña— y no con una tienda que parece vacía.
 
@@ -341,7 +408,8 @@ TecnosportApiApplication in N seconds".
 
 ### De qué IP fiarse
 
-Hoy no hay balanceador: la web y la API son dos servicios publicados en `run.app`, y la API
+Hoy no hay balanceador —tampoco en producción, `ADR-0105`—: la web y la API son dos servicios
+publicados en Cloud Run, y la API
 está abierta a internet (por ahí llegan los webhooks y Cloud Tasks). El frente de Cloud Run
 **agrega** al final de `X-Forwarded-For` la IP de quien se le conectó y conserva lo que venía
 antes, que lo escribe cualquiera. Medido el 25 de octubre de 2026: once consultas con un valor
@@ -424,6 +492,11 @@ producción y no está en Terraform, no existe. Estructura en `infra/README.md`.
   documento como el que pedía los filtros. Si algún día molesta la espera, se
   resuelve con un trabajo que decida por ruta y reporte éxito cuando no aplica,
   no con `paths:`. Las pruebas de contrato corren siempre (2026-09-23).
+- **Producción, a demanda y con aprobación:** `desplegar-prod.yml` recibe el SHA
+  de un commit de `main` que pasó la salud en dev —solo esos llevan la etiqueta
+  `verificado-<sha>`—, copia sus imágenes al registro de producción, migra con el
+  job, despliega, comprueba la salud y revierte si falla. El ambiente `produccion` de GitHub pide la aprobación de una persona, y
+  la federación de producción no da credenciales a un token sin ese ambiente.
 - **Autenticación con Workload Identity Federation.** Nunca una llave JSON de
   cuenta de servicio guardada como secreto de GitHub.
 

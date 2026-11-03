@@ -1,14 +1,17 @@
 #!/usr/bin/env node
-// Crea el bucket donde vive el estado de Terraform del ambiente de desarrollo.
+// Crea el bucket donde vive el estado de Terraform de un ambiente.
 //
-//   node infra/dev/bucket-estado.mjs
+//   node infra/estado/bucket-estado.mjs dev
+//   node infra/estado/bucket-estado.mjs prod
 //
 // Es el arranque en frío, y por eso es un script y no Terraform: para guardar el estado hace
 // falta el bucket, y para crear el bucket con Terraform haría falta un estado. El círculo se
 // rompe una vez, aquí, con algo idempotente — correrlo dos veces no cambia nada.
 //
-// Requiere `gcloud` autenticado (`gcloud auth login`) sobre el proyecto de desarrollo. Nada de
-// esto toca producción: el proyecto es otro, y así se queda.
+// Requiere `gcloud` autenticado (`gcloud auth login`) sobre el proyecto del ambiente. Cada ambiente
+// guarda su estado en su propio proyecto: quien lee el estado de dev no lee el de producción.
+// El ambiente es obligatorio y sin valor por omisión, para que nadie cree el de producción por
+// olvidar el argumento.
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -26,17 +29,30 @@ if (existsSync(archivoLocal)) {
 }
 const config = (clave) => process.env[clave] || local[clave];
 
-const PROYECTO = config('GCP_PROYECTO_DEV') ?? 'tecnosport-dev';
-// La misma región que el bucket de imágenes y que los servicios: un solo lugar para todo el
-// ambiente. Tiene que coincidir con `bucket` del bloque backend en infra/envs/dev/backend.tf.
-const REGION = config('GCP_REGION_DEV') ?? 'us-east1';
-const BUCKET = config('GCP_BUCKET_ESTADO') ?? 'tecnosport-dev-estado-terraform';
+const AMBIENTES = {
+  dev: { proyecto: config('GCP_PROYECTO_DEV') ?? 'tecnosport-dev' },
+  prod: { proyecto: config('GCP_PROYECTO_PROD') ?? 'tecnosport-prod' },
+};
+const AMBIENTE = process.argv[2];
+if (!AMBIENTES[AMBIENTE]) {
+  console.error(`Uso: node infra/estado/bucket-estado.mjs <${Object.keys(AMBIENTES).join('|')}>`);
+  process.exit(1);
+}
+
+const PROYECTO = AMBIENTES[AMBIENTE].proyecto;
+// La misma región que los buckets y los servicios: un solo lugar para todo el ambiente.
+const REGION = 'us-east1';
+// Tiene que coincidir con `bucket` del bloque backend en infra/envs/<ambiente>/backend.tf.
+const BUCKET = `tecnosport-${AMBIENTE}-estado-terraform`;
 
 const ESWIN = process.platform === 'win32';
 const BINARIO = ESWIN ? 'gcloud.cmd' : 'gcloud';
 const citar = (a) => (ESWIN && /[ ()&^]/.test(a) ? `"${a}"` : a);
 
-function gcloud(args, { tolerarFallo = false } = {}) {
+// El proyecto va en cada llamada y no con `gcloud config set project`: eso dejaría el gcloud de la
+// máquina apuntando a producción, y el siguiente comando sin `--project` iría a parar allá.
+function gcloud(argumentos, { tolerarFallo = false } = {}) {
+  const args = [...argumentos, `--project=${PROYECTO}`];
   console.log(`\n$ gcloud ${args.join(' ')}`);
   try {
     const salida = execFileSync(BINARIO, args.map(citar), {
@@ -61,7 +77,6 @@ const existe = (args) => gcloud(args, { tolerarFallo: true }).ok;
 
 console.log(`Proyecto ${PROYECTO} · estado en gs://${BUCKET} · región ${REGION}`);
 
-gcloud(['config', 'set', 'project', PROYECTO]);
 gcloud(['services', 'enable', 'storage.googleapis.com']);
 
 // 1. El bucket. Acceso uniforme y acceso público bloqueado: aquí dentro está el mapa entero de la
@@ -89,7 +104,7 @@ if (existe(['storage', 'buckets', 'describe', `gs://${BUCKET}`, '--format=value(
 gcloud(['storage', 'buckets', 'update', `gs://${BUCKET}`, '--versioning']);
 
 console.log(`
-Listo. Ahora, desde infra/envs/dev:
+Listo. Ahora, desde infra/envs/${AMBIENTE}:
 
   terraform init
   terraform plan

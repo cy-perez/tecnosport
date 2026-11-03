@@ -57,6 +57,16 @@ resource "google_artifact_registry_repository" "contenedores" {
   depends_on = [google_project_service.apis]
 }
 
+# Producción no construye: copia de aquí la imagen del SHA que ya corrió en dev (ADR-0105). Lectura
+# sobre este repositorio y nada más.
+resource "google_artifact_registry_repository_iam_member" "produccion_lee_las_imagenes" {
+  count      = var.cuenta_despliegue_prod == "" ? 0 : 1
+  location   = google_artifact_registry_repository.contenedores.location
+  repository = google_artifact_registry_repository.contenedores.name
+  role       = "roles/artifactregistry.reader"
+  member     = "serviceAccount:${var.cuenta_despliegue_prod}"
+}
+
 # ── Identidades ─────────────────────────────────────────────────────────────────────────────────
 # Una cuenta por servicio. La de por omisión del proyecto es editora de todo, y un servicio que
 # solo sirve páginas no tiene por qué poder borrar un bucket.
@@ -146,10 +156,9 @@ resource "google_cloud_scheduler_job" "tick" {
   attempt_deadline = "1800s"
 
   # Sin reintentos: el tick siguiente ya hace lo que haría un reintento, y la tarea que falló está
-  # anotada en la bitácora y vuelve a intentarse cuando pase su intervalo.
-  retry_config {
-    retry_count = 0
-  }
+  # anotada en la bitácora y vuelve a intentarse cuando pase su intervalo. Es lo que Cloud Scheduler
+  # hace por omisión, y por eso no se declara un `retry_config { retry_count = 0 }`: la API no
+  # devuelve el bloque con su valor por omisión, y el plan lo propondría en cada corrida.
 
   http_target {
     http_method = "POST"
