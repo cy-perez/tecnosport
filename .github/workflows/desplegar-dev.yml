@@ -203,6 +203,18 @@ jobs:
 
           echo "Las dos responden, la web renderizada en servidor y comprimida."
 
+      # Producción solo promueve lo que llegó hasta aquí (ADR-0105). Las imágenes se suben antes de
+      # migrar y de desplegar, así que la del SHA existe aunque su migración haya fallado o su
+      # salud se haya revertido: lo que separa una de otra es esta segunda etiqueta.
+      - name: Marcar las imágenes como verificadas en dev
+        run: |
+          for nombre in tecnosport-api tecnosport-web tecnosport-api-migraciones; do
+            gcloud artifacts docker tags add \
+              "${{ vars.GCP_REGISTRO_IMAGENES }}/$nombre:${{ github.sha }}" \
+              "${{ vars.GCP_REGISTRO_IMAGENES }}/$nombre:verificado-${{ github.sha }}" \
+              --quiet
+          done
+
       # Solo si la comprobación falló. Devuelve el tráfico a la revisión anterior, que es la que
       # estaba sirviendo hace un minuto y de la que sabemos que funcionaba.
       - name: Revertir si la salud falló

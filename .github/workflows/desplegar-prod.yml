@@ -7,8 +7,9 @@
 # exige que una persona apruebe antes de que corra; y la federación de identidad de producción solo
 # entrega credenciales a un token que traiga ese ambiente, desde `main` (`infra/envs/prod/main.tf`).
 #
-# Las imágenes del SHA tienen que seguir en el registro de dev, que borra lo de más de siete días
-# salvo las tres últimas versiones. Se promueve lo reciente; lo viejo se vuelve a desplegar en dev.
+# Solo se promueve un SHA que en dev migró, desplegó y pasó la salud: esa corrida le pone la
+# etiqueta `verificado-<sha>` a sus imágenes. Y tienen que seguir en el registro de dev, que borra
+# lo de más de siete días salvo las tres últimas versiones: lo viejo se vuelve a desplegar en dev.
 name: desplegar producción
 
 on:
@@ -70,15 +71,18 @@ jobs:
         run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
 
       # La cuenta de producción lee el registro de dev y nada más de ese proyecto
-      # (`produccion_lee_las_imagenes` en infra/envs/dev).
+      # (`produccion_lee_las_imagenes` en infra/envs/dev). Copia la etiqueta `verificado-`, que dev
+      # solo pone cuando el SHA migró, desplegó y pasó la salud: la del SHA a secas existe también
+      # cuando falló. `docker pull` y `push` conservan el digest, así que lo que llega aquí es
+      # byte a byte lo que corrió allá.
       - name: Copiar las tres imágenes de dev
         run: |
           for nombre in tecnosport-api tecnosport-web tecnosport-api-migraciones; do
-            origen="${{ vars.GCP_REGISTRO_IMAGENES }}/$nombre:$SHA"
+            origen="${{ vars.GCP_REGISTRO_IMAGENES }}/$nombre:verificado-$SHA"
             destino="${{ vars.GCP_REGISTRO_IMAGENES_PROD }}/$nombre:$SHA"
             echo "::group::$nombre"
             docker pull "$origen" || {
-              echo "::error::No está $origen: ¿se desplegó ese SHA en dev, y hace menos de siete días?"
+              echo "::error::No está $origen: ¿ese SHA pasó la salud en dev, hace menos de siete días?"
               exit 1
             }
             docker tag "$origen" "$destino"
