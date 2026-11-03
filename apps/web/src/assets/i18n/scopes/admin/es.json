@@ -72,6 +72,7 @@
     "borrador_con_fotos_subidas": "El otro borrador tiene fotos subidas desde el panel. Súbelas en este antes de unirlos: se irían con el otro.",
     "tallas_de_cada_tono_desconocidas": "Las tallas de los dos no son las mismas y uno no dice sus tonos. Escribe los tonos de los dos antes de unirlos, para que cada color quede con sus tallas.",
     "talla_del_proveedor_desconocida": "El proveedor nombra estas tallas corridas y una de ellas no tiene con qué nombre pedírsela, como la XXXL una talla más arriba. Quítala de las tallas antes de aprobar.",
+    "ajuste_de_talla_de_otro_genero": "El tenis va a la rama de un género con el ajuste de talla del otro, o a Calzado unisex: este proveedor nombra distinto las tallas de dama y de caballero. Corrige la categoría o «Cómo nombra las tallas el proveedor» y las tallas antes de aprobar.",
     "ajustes_de_talla_distintos": "El proveedor nombra distinto las tallas de los dos, como el de dama y el de caballero de un mismo anuncio: unidos, no se sabría qué talla pedirle.",
     "entrega_no_aplica": "Ese no es el camino de entrega de este pedido: una recogida se marca lista y se entrega en el punto, y un envío a domicilio se despacha con guía.",
     "numero_de_pedido_no_coincide": "Ese número no es el de este pedido. Pídele a quien vino que te muestre el número del correo o de la pantalla de su pedido. No lo entregues.",
@@ -1120,9 +1121,11 @@
       "tallasDama": "Tallas de dama del proveedor",
       "tallasCaballero": "Tallas de caballero del proveedor",
       "tallasAyuda": "Como las nombra el proveedor, separadas por espacios: 36 37 38 39. Vacías si las dice cada anuncio.",
-      "ajusteDeTalla": "Cuántas tallas más arriba las nombra",
-      "ajusteDeTallaAyuda": "1 si son tallas EUR: la tienda vende la nacional, que es la EUR menos una. De -4 a 4.",
-      "ajustesInvalidos": "Revisa los ajustes de ingesta: los días van de 1 a 30, las tallas son números separados por espacios y el ajuste va de -4 a 4."
+      "ajusteDama": "Cuántas tallas más arriba nombra las de dama",
+      "ajusteDamaAyuda": "1 si son tallas EUR: en dama, la nacional es la EUR menos una. De -4 a 4.",
+      "ajusteCaballero": "Cuántas tallas más arriba nombra las de caballero",
+      "ajusteCaballeroAyuda": "3 si son tallas EUR: en caballero, la nacional es la EUR menos tres (el EUR 42 es la 39). De -4 a 4.",
+      "ajustesInvalidos": "Revisa los ajustes de ingesta: los días van de 1 a 30, las tallas son números separados por espacios y cada ajuste va de -4 a 4."
     },
     "eliminar": {
       "titulo": "Eliminar proveedor",

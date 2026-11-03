@@ -47,7 +47,12 @@ function aAjustes(dto: ProveedorDto['ajustesDeIngesta'] | undefined): AjustesDeI
     ventaBajoConfirmacion: dto.ventaBajoConfirmacion ?? false,
     diasDeVigencia: dto.diasDeVigencia ?? null,
     tallasPorGenero: tallas
-      ? { dama: [...tallas.dama], caballero: [...tallas.caballero], ajuste: tallas.ajuste }
+      ? {
+          dama: [...tallas.dama],
+          caballero: [...tallas.caballero],
+          ajusteDama: tallas.ajusteDama,
+          ajusteCaballero: tallas.ajusteCaballero,
+        }
       : null,
   };
 }
@@ -75,7 +80,8 @@ export function aProveedorPeticion(datos: DatosProveedor): ProveedorPeticionDto 
         ? {
             dama: [...datos.ajustesDeIngesta.tallasPorGenero.dama],
             caballero: [...datos.ajustesDeIngesta.tallasPorGenero.caballero],
-            ajuste: datos.ajustesDeIngesta.tallasPorGenero.ajuste,
+            ajusteDama: datos.ajustesDeIngesta.tallasPorGenero.ajusteDama,
+            ajusteCaballero: datos.ajustesDeIngesta.tallasPorGenero.ajusteCaballero,
           }
         : undefined,
     },

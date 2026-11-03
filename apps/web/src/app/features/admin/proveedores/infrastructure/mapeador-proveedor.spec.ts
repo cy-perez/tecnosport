@@ -46,7 +46,12 @@ describe('mapeador de proveedores', () => {
         unaFotoUnProducto: true,
         ventaBajoConfirmacion: true,
         diasDeVigencia: 5,
-        tallasPorGenero: { dama: ['36', '37'], caballero: ['40', '41'], ajuste: 1 },
+        tallasPorGenero: {
+          dama: ['36', '37'],
+          caballero: ['40', '41'],
+          ajusteDama: 1,
+          ajusteCaballero: 3,
+        },
       },
     });
 
@@ -54,13 +59,23 @@ describe('mapeador de proveedores', () => {
       unaFotoUnProducto: true,
       ventaBajoConfirmacion: true,
       diasDeVigencia: 5,
-      tallasPorGenero: { dama: ['36', '37'], caballero: ['40', '41'], ajuste: 1 },
+      tallasPorGenero: {
+        dama: ['36', '37'],
+        caballero: ['40', '41'],
+        ajusteDama: 1,
+        ajusteCaballero: 3,
+      },
     });
     expect(aProveedorPeticion(proveedor).ajustesDeIngesta).toEqual({
       unaFotoUnProducto: true,
       ventaBajoConfirmacion: true,
       diasDeVigencia: 5,
-      tallasPorGenero: { dama: ['36', '37'], caballero: ['40', '41'], ajuste: 1 },
+      tallasPorGenero: {
+        dama: ['36', '37'],
+        caballero: ['40', '41'],
+        ajusteDama: 1,
+        ajusteCaballero: 3,
+      },
     });
   });
 
