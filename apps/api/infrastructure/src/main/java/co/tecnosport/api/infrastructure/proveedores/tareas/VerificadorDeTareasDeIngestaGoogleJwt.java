@@ -21,6 +21,9 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
  *
  * <p>La cuenta importa tanto como la firma: cualquier cuenta de Google puede pedir un token con
  * nuestra audiencia, y la API de dev es pública.
+ *
+ * <p>Desde ADR-0104 verifica también el tick de Cloud Scheduler, instanciado con la cuenta de las
+ * tareas programadas: lo que comprueba es lo mismo y solo cambia de quién tiene que ser el token.
  */
 public final class VerificadorDeTareasDeIngestaGoogleJwt implements VerificadorDeTareasDeIngesta {
 

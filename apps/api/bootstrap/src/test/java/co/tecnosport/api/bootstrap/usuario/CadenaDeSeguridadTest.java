@@ -190,4 +190,28 @@ class CadenaDeSeguridadTest {
         .perform(post(ruta).header("Authorization", "Bearer " + tokenDe(Rol.ADMIN)))
         .andExpect(status().isForbidden());
   }
+
+  /**
+   * El tick (ADR-0104), igual: lo dispara la conciliación de pagos y el vencimiento de reservas, y
+   * en una API pública no puede abrirlo nadie más que Cloud Scheduler. Con el disparador interno
+   * —como aquí— no lo abre nada.
+   */
+  @Test
+  void elTickNoLoAbreNiUnaSesionDeAdministrador() throws Exception {
+    String ruta = "/api/v1/internal/tareas/tick";
+    mockMvc.perform(post(ruta)).andExpect(status().isUnauthorized());
+    mockMvc
+        .perform(post(ruta).header("Authorization", "Bearer " + tokenDe(Rol.ADMIN)))
+        .andExpect(status().isForbidden());
+  }
+
+  /** Una ruta interna que no es de nadie no cae en el permitAll del final. */
+  @Test
+  void unaRutaInternaSinDuenoNoLaAbreNadie() throws Exception {
+    String ruta = "/api/v1/internal/otra-cosa";
+    mockMvc.perform(post(ruta)).andExpect(status().isUnauthorized());
+    mockMvc
+        .perform(post(ruta).header("Authorization", "Bearer " + tokenDe(Rol.ADMIN)))
+        .andExpect(status().isForbidden());
+  }
 }

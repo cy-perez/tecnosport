@@ -635,6 +635,18 @@ tecnosport:
     # vive en application-local.yml.
     correo: ${ADMIN_CORREO:admin@tecnosport.co}
     clave: ${ADMIN_CLAVE}
+  tareas:
+    # ADR-0104. Quien dispara el tick de las tareas programadas. INTERNO en local: un @Scheduled de
+    # un minuto dentro de la API. EXTERNO en los ambientes desplegados, donde la API tiene CPU solo
+    # durante una peticion: lo llama Cloud Scheduler, y las tres de abajo son obligatorias y las fija
+    # Terraform. Ninguna URL real por omision (regla dura #5) salvo la de las llaves de Google.
+    disparador: ${TAREAS_DISPARADOR:interno}
+    cuenta-de-servicio: ${TAREAS_CUENTA_DE_SERVICIO:}
+    audiencia: ${TAREAS_AUDIENCIA:}
+    url-llaves: ${TAREAS_URL_LLAVES:https://www.googleapis.com/oauth2/v3/certs}
+    # Mas que el tiempo maximo de una peticion de la API (30 minutos en dev): una tarea no dura mas
+    # que la peticion que la corre, y una vecina no la toma mientras todavia corre.
+    arriendo: ${TAREAS_ARRIENDO:PT35M}
   idempotencia:
     purga:
       # Cada cuánto se borran las respuestas vencidas (24 horas) y las reclamaciones abandonadas.
