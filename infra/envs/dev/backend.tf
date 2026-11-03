@@ -2,8 +2,8 @@
 # —o la misma en dos máquinas— aplicando sobre estados distintos es la forma más rápida de
 # duplicar infraestructura o borrar la que existe.
 #
-# El bucket lo crea `infra/dev/bucket-estado.mjs` y no Terraform, por el arranque en frío: para
-# guardar el estado hace falta el bucket, y para crear el bucket con Terraform haría falta un
+# El bucket lo crea `infra/estado/bucket-estado.mjs dev` y no Terraform, por el arranque en frío:
+# para guardar el estado hace falta el bucket, y para crear el bucket con Terraform haría falta un
 # estado. Se rompe el círculo una vez, con un script idempotente.
 terraform {
   required_version = ">= 1.9"
