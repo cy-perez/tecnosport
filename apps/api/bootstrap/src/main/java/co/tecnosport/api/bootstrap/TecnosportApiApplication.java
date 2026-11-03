@@ -5,9 +5,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.security.autoconfigure.UserDetailsServiceAutoConfiguration;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-// @EnableScheduling aquí, no en ConfiguracionWompi: es una capacidad transversal del backend
-// (docs/02-modelo-datos.md ya anticipa otro candidato, el vencimiento del carrito), no algo propio
-// de Wompi. Primer uso: TareaConciliacionWompi.
+// @EnableScheduling solo para DisparadorInternoDeTareas, el tick de local (ADR-0104). Las tareas no
+// se programan solas: se registran en CatalogoDeTareasProgramadas, y en los ambientes desplegados
+// las corre el tick que llama Cloud Scheduler.
 //
 // UserDetailsServiceAutoConfiguration excluida: sin ella, Boot crea un usuario en memoria con
 // contraseña generada al azar en cada arranque (log "Using generated security password") que

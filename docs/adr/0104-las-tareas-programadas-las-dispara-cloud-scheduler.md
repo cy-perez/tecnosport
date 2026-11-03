@@ -67,5 +67,5 @@ instancia tiene CPU; cuando responde, puede apagarse. La API de producción qued
   bandeja de salida, que manda hasta cien correos por vuelta.
 - Lo que hagan las tareas tiene que terminar antes de que el tick responda. Un hilo que una tarea
   dejara corriendo se congelaría sin CPU, igual que la ingesta antes de `ADR-0080`.
-- Una tarea nueva se registra implementando `TareaProgramada`; un `@Scheduled` nuevo en un
-  ambiente desplegado no correría nunca.
+- Una tarea nueva se registra en `CatalogoDeTareasProgramadas`, con su nombre y su intervalo. Un
+  `@Scheduled` nuevo en un ambiente desplegado no correría nunca, y `ArquitecturaTest` lo impide.

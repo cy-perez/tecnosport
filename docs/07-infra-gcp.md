@@ -83,8 +83,9 @@ Desde `ADR-0104` un trabajo de Cloud Scheduler llama a `POST /api/v1/internal/ta
 minuto en producción, cada 30 en dev— y la API corre ahí dentro cada tarea a la que le tocaba,
 según la tabla `ejecucion_de_tarea`. Lo que eso cambia al operar:
 
-- **Una tarea nueva implementa `TareaProgramada`.** Un `@Scheduled` nuevo no corre en ningún
-  ambiente desplegado, porque allá `TAREAS_DISPARADOR=externo` y no se programa nada dentro.
+- **Una tarea nueva se registra en `CatalogoDeTareasProgramadas`.** Un `@Scheduled` nuevo no
+  corre en ningún ambiente desplegado, porque allá `TAREAS_DISPARADOR=externo` y no se programa
+  nada dentro; `ArquitecturaTest` no lo deja pasar.
 - **Cuándo corrió cada tarea se lee en la base**: `select * from ejecucion_de_tarea`. Si
   `en_curso_hasta` está en el futuro, alguna instancia la tiene ahora.
 - **En dev una tarea corre como mucho cada 30 minutos.** Para probar una ya, se llama al tick a

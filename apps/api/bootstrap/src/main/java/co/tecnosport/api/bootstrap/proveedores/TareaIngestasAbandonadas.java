@@ -5,10 +5,8 @@ import co.tecnosport.api.application.proveedores.EjecutorDeIngestas;
 import co.tecnosport.api.application.proveedores.RecuperarIngestasAbandonadas;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /**
@@ -18,10 +16,10 @@ import org.springframework.stereotype.Component;
  *
  * <p>Es la red de seguridad, no el camino: el tramo siguiente lo encola quien termina el anterior;
  * si la tarea falla, Cloud Tasks la reintenta; y el tramo que encuentra el lote abandonado lo
- * retoma él mismo. Como las demás tareas programadas, solo corre mientras la instancia tiene CPU
- * ({@code docs/07}): en dev, mientras alguien usa el sitio o una tarea de la cola está en curso.
- * Con varias instancias corre en cada una y no importa: relee cada lote bloqueado antes de tocarlo,
- * y encolar dos veces el mismo lote no hace daño.
+ * retoma él mismo. La corre el tick (ADR-0104): cada minuto en producción, cada 30 en dev, que es
+ * lo que se acepta allá para no mantener despierta a la base. Con varias instancias la toma una
+ * sola, y si no fuera así tampoco importaría: relee cada lote bloqueado antes de tocarlo, y encolar
+ * dos veces el mismo lote no hace daño.
  */
 @Component
 public class TareaIngestasAbandonadas {
@@ -41,7 +39,6 @@ public class TareaIngestasAbandonadas {
     this.enTransaccionPropia = Objects.requireNonNull(enTransaccionPropia);
   }
 
-  @Scheduled(fixedDelay = 1, initialDelay = 1, timeUnit = TimeUnit.MINUTES)
   public void recuperarAbandonadas() {
     RecuperarIngestasAbandonadas.Resultado resultado =
         enTransaccionPropia.ejecutar(recuperar::ejecutar);

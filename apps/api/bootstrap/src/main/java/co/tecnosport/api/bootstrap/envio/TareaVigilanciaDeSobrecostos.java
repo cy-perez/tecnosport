@@ -3,10 +3,8 @@ package co.tecnosport.api.bootstrap.envio;
 import co.tecnosport.api.application.envio.AvisarSobrecostoDeEnvio;
 import co.tecnosport.api.application.envio.ResultadoVigilanciaSobrecostos;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /**
@@ -34,10 +32,6 @@ public class TareaVigilanciaDeSobrecostos {
     this.avisarSobrecostoDeEnvio = Objects.requireNonNull(avisarSobrecostoDeEnvio);
   }
 
-  @Scheduled(
-      fixedDelayString = "${tecnosport.sobrecostos-envios.intervalo-minutos}",
-      initialDelayString = "${tecnosport.sobrecostos-envios.retraso-inicial-minutos}",
-      timeUnit = TimeUnit.MINUTES)
   public void vigilar() {
     ResultadoVigilanciaSobrecostos resultado = avisarSobrecostoDeEnvio.ejecutar();
     if (!resultado.seSupo()) {

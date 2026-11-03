@@ -3,10 +3,8 @@ package co.tecnosport.api.bootstrap.pedido;
 import co.tecnosport.api.application.pedido.EnviarComprobantesDeCompra;
 import co.tecnosport.api.application.pedido.ResultadoComprobantes;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /**
@@ -31,10 +29,6 @@ public class TareaComprobantesDeCompra {
     this.enviarComprobantesDeCompra = Objects.requireNonNull(enviarComprobantesDeCompra);
   }
 
-  @Scheduled(
-      fixedDelayString = "${tecnosport.pedido.comprobantes.intervalo-minutos}",
-      initialDelayString = "${tecnosport.pedido.comprobantes.retraso-inicial-minutos}",
-      timeUnit = TimeUnit.MINUTES)
   public void enviar() {
     ResultadoComprobantes resultado = enviarComprobantesDeCompra.ejecutar();
     if (resultado.fallidos() > 0) {

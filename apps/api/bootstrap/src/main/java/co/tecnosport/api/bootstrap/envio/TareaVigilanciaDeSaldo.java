@@ -3,10 +3,8 @@ package co.tecnosport.api.bootstrap.envio;
 import co.tecnosport.api.application.envio.AvisarSaldoBajo;
 import co.tecnosport.api.application.envio.ResultadoVigilanciaSaldo;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /**
@@ -34,10 +32,6 @@ public class TareaVigilanciaDeSaldo {
     this.avisarSaldoBajo = Objects.requireNonNull(avisarSaldoBajo);
   }
 
-  @Scheduled(
-      fixedDelayString = "${tecnosport.saldo-envios.intervalo-minutos}",
-      initialDelayString = "${tecnosport.saldo-envios.retraso-inicial-minutos}",
-      timeUnit = TimeUnit.MINUTES)
   public void vigilar() {
     ResultadoVigilanciaSaldo resultado = avisarSaldoBajo.ejecutar();
     if (resultado.saldo().isEmpty()) {

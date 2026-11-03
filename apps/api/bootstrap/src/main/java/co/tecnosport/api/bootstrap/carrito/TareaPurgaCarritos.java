@@ -2,10 +2,8 @@ package co.tecnosport.api.bootstrap.carrito;
 
 import co.tecnosport.api.application.carrito.PurgarCarritosVencidos;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -34,10 +32,6 @@ public class TareaPurgaCarritos {
     this.transaccion = new TransactionTemplate(Objects.requireNonNull(transactionManager));
   }
 
-  @Scheduled(
-      fixedDelayString = "${tecnosport.carrito.purga.intervalo-minutos}",
-      initialDelayString = "${tecnosport.carrito.purga.intervalo-minutos}",
-      timeUnit = TimeUnit.MINUTES)
   public void purgar() {
     int borrados = transaccion.execute(estado -> purgarCarritosVencidos.ejecutar());
     if (borrados > 0) {

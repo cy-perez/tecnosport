@@ -6,7 +6,7 @@ import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.compartido.TareaProgramada;
 import co.tecnosport.api.application.compartido.VerificadorDeTareasProgramadas;
 import co.tecnosport.api.infrastructure.proveedores.tareas.VerificadorDeTareasDeIngestaGoogleJwt;
-import org.springframework.beans.factory.ObjectProvider;
+import java.util.List;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,18 +16,14 @@ import org.springframework.context.annotation.Configuration;
 @EnableConfigurationProperties(PropiedadesTareasProgramadas.class)
 public class ConfiguracionTareasProgramadas {
 
-  /**
-   * Todas las {@link TareaProgramada} del contexto, en el orden en que Spring las entrega. Que sea
-   * el contexto quien las reúne es lo que hace que registrar una tarea nueva sea solo escribirla.
-   */
+  /** Las de {@link CatalogoDeTareasProgramadas}, en el orden de sus {@code @Order}. */
   @Bean
   public EjecutarTareasVencidas ejecutarTareasVencidas(
-      ObjectProvider<TareaProgramada> tareas,
+      List<TareaProgramada> tareas,
       BitacoraDeTareas bitacora,
       Reloj reloj,
       PropiedadesTareasProgramadas propiedades) {
-    return new EjecutarTareasVencidas(
-        tareas.orderedStream().toList(), bitacora, reloj, propiedades.arriendo());
+    return new EjecutarTareasVencidas(tareas, bitacora, reloj, propiedades.arriendo());
   }
 
   /**

@@ -143,6 +143,28 @@ class EjecutarTareasVencidasTest {
         () -> new EjecutarTareasVencidas(List.of(), bitacora, reloj, Duration.ZERO));
   }
 
+  @Test
+  void laFabricaCorreElTrabajoQueRecibe() {
+    int[] veces = {0};
+    TareaProgramada tarea =
+        TareaProgramada.de("conciliar", Duration.ofMinutes(1), () -> veces[0]++);
+
+    tick(tarea);
+
+    assertEquals(1, veces[0]);
+    assertEquals("conciliar", tarea.nombre());
+  }
+
+  @Test
+  void laFabricaNoAceptaUnIntervaloCeroNiUnNombreVacio() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> TareaProgramada.de("conciliar", Duration.ZERO, () -> {}));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> TareaProgramada.de(" ", Duration.ofMinutes(1), () -> {}));
+  }
+
   private ResultadoDelTick tick(TareaProgramada... tareas) {
     return casoDeUso(tareas).ejecutar();
   }

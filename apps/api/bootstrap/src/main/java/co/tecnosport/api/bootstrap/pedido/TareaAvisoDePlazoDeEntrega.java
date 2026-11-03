@@ -3,10 +3,8 @@ package co.tecnosport.api.bootstrap.pedido;
 import co.tecnosport.api.application.pedido.AvisarPlazosDeEntregaVencidos;
 import co.tecnosport.api.application.pedido.ResultadoVigilanciaPlazos;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /**
@@ -34,10 +32,6 @@ public class TareaAvisoDePlazoDeEntrega {
     this.avisarPlazosDeEntregaVencidos = Objects.requireNonNull(avisarPlazosDeEntregaVencidos);
   }
 
-  @Scheduled(
-      fixedDelayString = "${tecnosport.pedido.vigilancia-plazo.intervalo-minutos}",
-      initialDelayString = "${tecnosport.pedido.vigilancia-plazo.retraso-inicial-minutos}",
-      timeUnit = TimeUnit.MINUTES)
   public void vigilar() {
     ResultadoVigilanciaPlazos resultado = avisarPlazosDeEntregaVencidos.ejecutar();
     if (resultado.avisados() > 0) {

@@ -6,16 +6,14 @@ import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /**
  * Oculta cada cierto tiempo lo que el proveedor lleva demasiado sin anunciar.
  *
- * <p>Dentro de la aplicación y no en Cloud Scheduler, como las otras once tareas ({@code
- * docs/07-infra-gcp.md}, 23 de septiembre de 2026): en producción la API lleva la CPU siempre
- * asignada y eso es lo que hace fiable a {@code @Scheduled}. Con varias instancias corre en cada
- * una, y no pasa nada: el caso de uso es idempotente y ocultar dos veces es ocultar una.
+ * <p>La corre el tick, como a las otras dieciséis ({@code CatalogoDeTareasProgramadas}, ADR-0104),
+ * y con varias instancias corre en una sola: la bitácora la reserva. Aunque no la reservara daría
+ * igual, porque el caso de uso es idempotente y ocultar dos veces es ocultar una.
  *
  * <p>El intervalo y la ventana son duraciones ISO-8601 ({@code PT24H}, {@code P3D}) y se acortan
  * por variable de entorno para probar con minutos. La bandera {@code habilitado} existe para
@@ -39,9 +37,6 @@ public class TareaExpiracionDisponibilidad {
     this.enTransaccionPropia = Objects.requireNonNull(enTransaccionPropia);
   }
 
-  @Scheduled(
-      fixedDelayString = "${tecnosport.proveedores.job-expiracion.intervalo}",
-      initialDelayString = "${tecnosport.proveedores.job-expiracion.retraso-inicial}")
   public void ocultarVencidos() {
     ExpirarDisponibilidadDeProductos.Resultado resultado =
         enTransaccionPropia.ejecutar(expirar::ejecutar);
