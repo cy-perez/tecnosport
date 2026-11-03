@@ -116,7 +116,59 @@ mientras la anterior todavía procesa.
 
 Las imágenes se suben directo a Cloud Storage con URL firmada desde el panel. No
 pasan por el backend. El bucket de imágenes es
-público de lectura a través del CDN, y de escritura solo con URL firmada.
+público de lectura, servido desde el propio bucket y sin CDN (`ADR-0105`), y de
+escritura solo con URL firmada.
+
+### Arranque de producción
+
+La primera vez, en este orden. Todo lo escribe una persona: las escrituras en GCP
+y en GitHub no las hace el asistente.
+
+1. **Proyecto.** Crear `tecnosport-prod` y vincularlo a la cuenta de facturación.
+   Si ese ID ya lo tiene otro, el elegido se cambia en `variables.tf`, en
+   `infra/estado/bucket-estado.mjs` y en las variables de GitHub.
+2. **Dominio.** Verificar `tecnosport.co` en Google Search Console con la misma
+   cuenta que va a aplicar: sin eso, el mapeo de dominio no se crea.
+3. **Estado.** `node infra/estado/bucket-estado.mjs prod`.
+4. **Primer apply** en `infra/envs/prod` con todas las banderas en false, y
+   `cuentas.auto.tfvars` copiado de la muestra con los datos reales. Crea la red,
+   la base, los recipientes de los secretos y los servicios con la imagen de
+   arranque de Google.
+5. **Usuario de la base**, con la clave que luego va al secreto:
+   `gcloud sql users create tecnosport --instance=tecnosport-principal --password=... --project=tecnosport-prod`.
+6. **Secretos.** Cargar con `gcloud secrets versions add` los once que monta
+   `secretos_cargados`: `db-clave`, `jwt-secreto`, `smtp-clave` (la clave de
+   Resend de producción), `admin-clave`, los dos de Wompi de producción, los tres
+   de Skydropx de producción, `proxy-web-clave` y `segundo-factor-llave`. Los dos
+   últimos se generan como en dev (`infra/envs/dev/terraform.tfvars`), y la llave
+   del segundo factor **no se pierde nunca**. Con la llave pública de Wompi en
+   `wompi_llave_publica`, poner `secretos_cargados = true` y aplicar: el plan se
+   niega si la llave falta o es `pub_test_`.
+7. **Lectura de imágenes desde dev.** El output `cuenta_de_despliegue` va a
+   `cuenta_despliegue_prod` en `infra/envs/dev/terraform.tfvars`, y se aplica dev.
+8. **GitHub, en este orden.** Primero el ambiente `produccion`, con revisores
+   obligatorios y la política de despliegue limitada a `main`: si no existe, la
+   primera corrida lo crea sola **sin revisores**, y la federación solo compara
+   su nombre. Después las cuatro variables `GCP_PROYECTO_PROD`,
+   `GCP_PROVEEDOR_IDENTIDAD_PROD`, `GCP_CUENTA_DESPLIEGUE_PROD` y
+   `GCP_REGISTRO_IMAGENES_PROD`, con los outputs del apply.
+9. **Primer despliegue.** `desplegar-prod.yml` con el SHA completo de un commit
+   que pasó la salud en dev: solo esos tienen la etiqueta `verificado-<sha>`.
+10. **Datos.** Crear la cuenta del panel con su segundo factor y cargar el
+    catálogo con `tools/cargar-catalogo.mjs --api <origen de la web>`.
+11. **Resto de banderas**, cada una con su secreto cargado antes:
+    `sistecredito_listo`, `meta_listo` e `ingesta_lista`.
+12. **Ensayo del dominio.** El CNAME de `ensayo.tecnosport.co` hacia lo que diga
+    `registros_dns`. Comprobar que el certificado se emite y que el sitio sirve.
+13. **La raíz**, con el plan de la sección siguiente. Con el certificado activo,
+    `dominio_activo = true` y aplicar, para encender la comprobación de la
+    portada; medir qué versiones de TLS acepta el dominio.
+
+**Falta decidir cómo se corre SQL a mano**, como
+`infra/operacion/restablecer-segundo-factor.sql`, contra una base sin IP pública
+y sin bastión. Hay que resolverlo antes de abrir: comprobar si Cloud SQL Studio
+llega a esta instancia, o correr `psql` como un job dentro de la red, igual que
+las migraciones.
 
 ## DNS: cuidado con lo que ya existe
 
@@ -441,9 +493,9 @@ producción y no está en Terraform, no existe. Estructura en `infra/README.md`.
   resuelve con un trabajo que decida por ruta y reporte éxito cuando no aplica,
   no con `paths:`. Las pruebas de contrato corren siempre (2026-09-23).
 - **Producción, a demanda y con aprobación:** `desplegar-prod.yml` recibe el SHA
-  de un commit de `main` que ya corrió en dev, copia sus imágenes al registro de
-  producción, migra con el job, despliega, comprueba la salud y revierte si
-  falla. El ambiente `produccion` de GitHub pide la aprobación de una persona, y
+  de un commit de `main` que pasó la salud en dev —solo esos llevan la etiqueta
+  `verificado-<sha>`—, copia sus imágenes al registro de producción, migra con el
+  job, despliega, comprueba la salud y revierte si falla. El ambiente `produccion` de GitHub pide la aprobación de una persona, y
   la federación de producción no da credenciales a un token sin ese ambiente.
 - **Autenticación con Workload Identity Federation.** Nunca una llave JSON de
   cuenta de servicio guardada como secreto de GitHub.

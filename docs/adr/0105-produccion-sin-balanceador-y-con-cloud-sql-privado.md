@@ -41,9 +41,15 @@ Firebase Hosting se descartó primero: delante de Cloud Run solo deja pasar la c
    producción, migra, despliega y comprueba la salud, revirtiendo si falla. Copia y no lee del
    registro de dev porque allá se borra lo de más de siete días, y una revisión sin imagen no se
    restaura.
+   - **Copia la etiqueta `verificado-<sha>`**, que dev solo pone cuando el SHA migró, desplegó y
+     pasó la salud. Dev sube las imágenes antes de todo eso, así que la del SHA a secas existe
+     también cuando falló. Lo encontró la revisión de la rama.
 6. **El despliegue exige aprobación.** El trabajo declara el ambiente `produccion` de GitHub, y la
    federación de identidad de producción solo entrega credenciales a un token de `main` que traiga
-   ese ambiente.
+   ese ambiente. **La aprobación la pone GitHub, no Terraform**: la federación compara el nombre
+   del ambiente, y un ambiente que no existe lo crea la primera corrida, sin revisores. Por eso se
+   crea con sus revisores antes de cargar las variables del flujo (`docs/07`, Arranque de
+   producción).
 7. **Las imágenes de producto se sirven desde el bucket, sin CDN.**
 
 Decisiones de negocio del mismo día que el Terraform fija: contraentrega apagada, recogida en el
