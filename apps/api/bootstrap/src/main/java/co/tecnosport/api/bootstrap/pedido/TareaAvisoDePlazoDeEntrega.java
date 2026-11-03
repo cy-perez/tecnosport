@@ -16,10 +16,9 @@ import org.springframework.stereotype.Component;
  * un fallo al comprometer revertía las marcas de todos los pedidos a los que ya se les había
  * escrito, y el vigilante les mandaba el mismo correo otra vez doce horas después.
  *
- * <p>El retraso inicial es corto y el intervalo largo, y esa asimetría también tiene motivo: con un
- * retraso inicial igual al intervalo, cada despliegue reinicia la cuenta, y desplegando más de una
- * vez al día el vigilante no correría <b>nunca</b>. Es un plazo de treinta días: lo que importa es
- * que corra, no cuándo.
+ * <p>Es un plazo de treinta días: lo que importa es que corra, no cuándo. Hasta ADR-0104 eso pedía
+ * un retraso inicial corto, porque cada despliegue reiniciaba la cuenta y desplegando a diario el
+ * vigilante no corría <b>nunca</b>; ahora la cuenta la lleva la bitácora.
  */
 @Component
 public class TareaAvisoDePlazoDeEntrega {

@@ -27,7 +27,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  */
 @ConfigurationProperties(prefix = "tecnosport.sobrecostos-envios")
 public record PropiedadesSobrecostosEnvios(
-    int diasAtras, int intervaloMinutos, int retrasoInicialMinutos, String destinatario) {
+    int diasAtras, int intervaloMinutos, String destinatario) {
 
   public PropiedadesSobrecostosEnvios {
     if (diasAtras <= 0) {
@@ -38,12 +38,6 @@ public record PropiedadesSobrecostosEnvios(
     if (intervaloMinutos <= 0) {
       throw new IllegalStateException(
           "tecnosport.sobrecostos-envios.intervalo-minutos debe ser mayor que cero.");
-    }
-    if (retrasoInicialMinutos <= 0 || retrasoInicialMinutos >= intervaloMinutos) {
-      throw new IllegalStateException(
-          "tecnosport.sobrecostos-envios.retraso-inicial-minutos debe ser mayor que cero y menor que"
-              + " el intervalo: si lo iguala, cada despliegue reinicia la cuenta y la tarea puede no"
-              + " correr nunca.");
     }
     if (destinatario == null || destinatario.isBlank()) {
       throw new IllegalStateException(
