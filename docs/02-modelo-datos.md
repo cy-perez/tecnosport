@@ -771,8 +771,9 @@ Tenis Al Pie: `proveedor.una_foto_un_producto` parte la tanda en un borrador por
 uno por tenis, con las fotos que el lector dice que son el mismo (`ADR-0090`)—;
 `proveedor.venta_bajo_confirmacion` hace nacer por confirmar las variantes que se aprueban;
 `proveedor.dias_de_vigencia` (nulo es la ventana general, de 1 a 30) es su ventana propia; y
-`proveedor.tallas_dama`, `tallas_caballero` —separadas por coma, como las nombra el proveedor— y
-`ajuste_de_talla` son las tallas que maneja siempre, las tres nulas o las tres puestas.
+`proveedor.tallas_dama`, `tallas_caballero` —separadas por coma, como las nombra el proveedor—,
+`ajuste_dama` y `ajuste_caballero` (`V153`, `ADR-0103`: la EUR es la nacional más una en dama y
+más tres en caballero) son las tallas que maneja siempre, las cuatro nulas o las cuatro puestas.
 `borrador_producto.genero_de_calzado` (`V119`: `DAMA`, `CABALLERO`, `UNISEX` o nulo) es para quién
 es el tenis, y decide la categoría que el panel propone.
 
