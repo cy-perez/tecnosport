@@ -56,11 +56,15 @@ jobs:
 
       # La etiqueta es el SHA del commit y no `latest`: así una revisión de Cloud Run dice de qué
       # código salió, y revertir es apuntar a una imagen concreta en vez de adivinar cuál era.
-      - name: Construir y subir las dos imágenes
+      #
+      # La de las migraciones no la usa dev, que migra desde aquí mismo: se construye para que
+      # producción tenga la del mismo SHA que promover (ADR-0105).
+      - name: Construir y subir las tres imágenes
         run: |
-          for app in api web; do
-            imagen="${{ vars.GCP_REGISTRO_IMAGENES }}/tecnosport-$app:${{ github.sha }}"
-            echo "::group::$app"
+          for app in api web api/migraciones; do
+            nombre="tecnosport-${app//\//-}"
+            imagen="${{ vars.GCP_REGISTRO_IMAGENES }}/$nombre:${{ github.sha }}"
+            echo "::group::$nombre"
             docker build -f "apps/$app/Dockerfile" -t "$imagen" .
             docker push "$imagen"
             echo "::endgroup::"
