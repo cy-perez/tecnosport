@@ -68,7 +68,16 @@ variable "tiempo_maximo_de_peticion" {
 }
 
 variable "cpu_siempre_asignada" {
-  description = "Si la instancia conserva CPU entre peticiones. `false` —lo de dev— es CPU solo mientras atiende, que es lo que mantiene el ambiente dentro de la capa gratuita; el precio es que **las tareas `@Scheduled` solo avanzan mientras alguien usa el sitio**. En producción la API va en `true`: allí `min-instances = 1` ya paga la instancia, y sin CPU entre peticiones la conciliación de pagos no sería de fiar (decidido el 23 de septiembre de 2026, `docs/07-infra-gcp.md`)."
+  description = "Si la instancia conserva CPU entre peticiones. `false` —lo de dev y lo de producción— es CPU solo mientras atiende, que es lo que deja escalar a cero; las tareas programadas no lo necesitan porque las dispara el tick de Cloud Scheduler dentro de una petición (ADR-0104)."
   type        = bool
   default     = false
+}
+
+variable "red_privada" {
+  description = "La subred por la que el servicio sale a rangos privados, con Direct VPC egress: es como la API de producción llega a Cloud SQL, que no tiene IP pública. `null` —lo de dev, que habla con Neon por internet— no le pone red."
+  type = object({
+    red    = string
+    subred = string
+  })
+  default = null
 }

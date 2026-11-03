@@ -26,6 +26,19 @@ resource "google_cloud_run_v2_service" "este" {
     # abierta, y eso es lo que le da CPU a la instancia.
     timeout = var.tiempo_maximo_de_peticion
 
+    # Solo el tráfico a rangos privados entra a la red: lo demás —Wompi, Skydropx, la API de
+    # Claude— sigue saliendo directo, sin NAT que pagar.
+    dynamic "vpc_access" {
+      for_each = var.red_privada == null ? [] : [var.red_privada]
+      content {
+        egress = "PRIVATE_RANGES_ONLY"
+        network_interfaces {
+          network    = vpc_access.value.red
+          subnetwork = vpc_access.value.subred
+        }
+      }
+    }
+
     # Cero instancias en reposo. No es una preferencia: una instancia siempre encendida son ~2,59
     # millones de vCPU-segundos al mes contra los 180.000 de la capa gratuita. En dev se paga con
     # arranque en frío; en producción, con dinero.
