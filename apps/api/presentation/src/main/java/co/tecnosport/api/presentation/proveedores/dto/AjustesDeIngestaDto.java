@@ -24,17 +24,22 @@ public record AjustesDeIngestaDto(
   /**
    * @param dama como las nombra el proveedor; vacía si no maneja de dama
    * @param caballero como las nombra el proveedor; vacía si no maneja de caballero
-   * @param ajuste cuántas tallas más arriba las nombra: 1 si son EUR
+   * @param ajusteDama cuántas tallas más arriba nombra las de dama: 1 si son EUR
+   * @param ajusteCaballero cuántas tallas más arriba nombra las de caballero: 3 si son EUR
+   *     (ADR-0103)
    */
   public record TallasPorGeneroDto(
       @Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<String> dama,
       @Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<String> caballero,
-      @Schema(requiredMode = Schema.RequiredMode.REQUIRED) Integer ajuste) {
+      @Schema(requiredMode = Schema.RequiredMode.REQUIRED) Integer ajusteDama,
+      @Schema(requiredMode = Schema.RequiredMode.REQUIRED) Integer ajusteCaballero) {
 
     public TallasPorGeneroDto {
       dama = dama == null ? List.of() : List.copyOf(dama);
       caballero = caballero == null ? List.of() : List.copyOf(caballero);
-      Objects.requireNonNull(ajuste, "El ajuste de talla es obligatorio con las tallas.");
+      Objects.requireNonNull(ajusteDama, "El ajuste de dama es obligatorio con las tallas.");
+      Objects.requireNonNull(
+          ajusteCaballero, "El ajuste de caballero es obligatorio con las tallas.");
     }
   }
 
@@ -48,7 +53,8 @@ public record AjustesDeIngestaDto(
             : new TallasPorGenero(
                 tallasPorGenero.dama(),
                 tallasPorGenero.caballero(),
-                new AjusteDeTalla(tallasPorGenero.ajuste())));
+                new AjusteDeTalla(tallasPorGenero.ajusteDama()),
+                new AjusteDeTalla(tallasPorGenero.ajusteCaballero())));
   }
 
   public static AjustesDeIngestaDto de(AjustesDeIngesta ajustes) {
@@ -58,7 +64,13 @@ public record AjustesDeIngestaDto(
         ajustes.diasDeVigencia(),
         ajustes
             .tallasPorGeneroOpcional()
-            .map(t -> new TallasPorGeneroDto(t.dama(), t.caballero(), t.ajuste().tallas()))
+            .map(
+                t ->
+                    new TallasPorGeneroDto(
+                        t.dama(),
+                        t.caballero(),
+                        t.ajusteDama().tallas(),
+                        t.ajusteCaballero().tallas()))
             .orElse(null));
   }
 }

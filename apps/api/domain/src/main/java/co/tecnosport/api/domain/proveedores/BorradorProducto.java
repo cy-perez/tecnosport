@@ -452,6 +452,33 @@ public final class BorradorProducto {
    * @param titulo el suyo, con su género
    */
   public BorradorProducto delOtroGenero(String titulo, AjusteDeTalla ajuste, Instant ahora) {
+    return delOtroGenero(titulo, ajuste, tallas, tallasPorTono, ahora);
+  }
+
+  /**
+   * Como {@link #delOtroGenero(String, AjusteDeTalla, Instant)}, con las tallas propias del otro
+   * género: el tenis unisex de un proveedor que maneja una lista por género y la nombra con ajustes
+   * distintos (Tenis Al Pie: dama EUR 36–39 con ajuste 1, caballero EUR 40–44 con ajuste 3;
+   * ADR-0103). Las de cada tono no se copian: eran las de este género.
+   *
+   * @param suyas las del otro género como las nombra el proveedor, sin correr
+   */
+  public BorradorProducto delOtroGenero(
+      String titulo, AjusteDeTalla ajuste, Tallas suyas, Instant ahora) {
+    return delOtroGenero(
+        titulo,
+        ajuste,
+        Objects.requireNonNull(suyas, "Las tallas del otro género no son nulas."),
+        TallasPorTono.ninguna(),
+        ahora);
+  }
+
+  private BorradorProducto delOtroGenero(
+      String titulo,
+      AjusteDeTalla ajuste,
+      Tallas tallasDelOtro,
+      TallasPorTono tallasPorTonoDelOtro,
+      Instant ahora) {
     exigirEnRevision("partir por género");
     Objects.requireNonNull(ajuste, "El ajuste de talla no es nulo.");
     Set<AlertaBorrador> alertasDelNuevo = EnumSet.noneOf(AlertaBorrador.class);
@@ -467,7 +494,7 @@ public final class BorradorProducto {
             tipo,
             precioProveedor,
             precioVentaSugerido,
-            tallas,
+            tallasDelOtro,
             cantidadTonos,
             tonosNombrados,
             material,
@@ -478,7 +505,7 @@ public final class BorradorProducto {
             alertasDelNuevo,
             fotosDescartadas,
             List.of(),
-            tallasPorTono,
+            tallasPorTonoDelOtro,
             preciosAdicionales,
             tonosSugeridos,
             lecturaDeFotos,

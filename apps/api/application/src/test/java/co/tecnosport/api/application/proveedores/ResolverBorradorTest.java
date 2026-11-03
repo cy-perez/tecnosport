@@ -2144,8 +2144,13 @@ class ResolverBorradorTest {
 
   /**
    * Tenis Al Pie (ADR-0089): calzado, una foto por producto, tallas EUR por género y factor 1,20.
+   * La EUR es la nacional más una en dama y más tres en caballero (ADR-0103).
    */
   private void tenisAlPie() {
+    tenisAlPie(3);
+  }
+
+  private void tenisAlPie(int ajusteCaballero) {
     proveedor =
         Proveedor.crear(
             "Tenis Al Pie",
@@ -2162,7 +2167,8 @@ class ResolverBorradorTest {
             new TallasPorGenero(
                 List.of("36", "37", "38", "39"),
                 List.of("40", "41", "42", "43", "44"),
-                new AjusteDeTalla(1))));
+                new AjusteDeTalla(1),
+                new AjusteDeTalla(ajusteCaballero))));
     lote = LoteIngesta.recibirExportacion(proveedor.id(), "p/exportaciones/b.zip", AHORA);
   }
 
@@ -2231,19 +2237,69 @@ class ResolverBorradorTest {
         borrador.descripcion());
   }
 
-  /** Sin género leído, el tenis es unisex y lleva las dos escalas. */
+  /**
+   * El de caballero se vende tres tallas abajo de la EUR: el EUR 42 mide 26,5 cm, la 39 colombiana
+   * (ADR-0103). Con el ajuste de dama saldría de la 39 a la 43, dos números grande.
+   */
   @Test
-  void elTenisSinGeneroEsUnisexConLasDosEscalas() {
+  void elTenisDeCaballeroDeLaTandaNaceTresTallasAbajoDeLaEur() {
     tenisAlPie();
+    PublicacionProveedor publicacion =
+        publicacion("Detal :$180.000 \nX mayor 💰135", "foto-af1-negro");
+
+    resolver(publicacion, tenisDeLaFoto(GeneroDeCalzado.CABALLERO));
+
+    BorradorProducto borrador = borradores.enEstado(EstadoBorrador.EN_REVISION).getFirst();
+    assertEquals(Tallas.lista(List.of("37", "38", "39", "40", "41")), borrador.tallas());
+    assertEquals(new AjusteDeTalla(3), borrador.ajusteDeTalla());
+    assertEquals(Optional.of(GeneroDeCalzado.CABALLERO), borrador.generoDeCalzado());
+  }
+
+  /**
+   * Sin género leído, el tenis es unisex; con un ajuste por género el mismo par se llamaría de dos
+   * maneras, y nace partido: dama con las suyas y caballero con las suyas, gemelos (ADR-0103).
+   */
+  @Test
+  void elTenisSinGeneroDeAjustesDistintosNacePartidoEnDamaYCaballero() {
+    tenisAlPie();
+    PublicacionProveedor publicacion = publicacion("Detal :$180.000 \nX mayor 💰135", "foto-af1");
+
+    Resolucion resolucion = resolver(publicacion, tenisDeLaFoto(null));
+
+    assertEquals(TipoDeResolucion.NUEVO, resolucion.tipo());
+    List<BorradorProducto> enRevision = borradores.enEstado(EstadoBorrador.EN_REVISION);
+    assertEquals(2, enRevision.size());
+    BorradorProducto dama =
+        enRevision.stream()
+            .filter(b -> b.generoDeCalzado().equals(Optional.of(GeneroDeCalzado.DAMA)))
+            .findFirst()
+            .orElseThrow();
+    BorradorProducto caballero =
+        enRevision.stream()
+            .filter(b -> b.generoDeCalzado().equals(Optional.of(GeneroDeCalzado.CABALLERO)))
+            .findFirst()
+            .orElseThrow();
+    assertEquals(Tallas.lista(List.of("35", "36", "37", "38")), dama.tallas());
+    assertEquals(new AjusteDeTalla(1), dama.ajusteDeTalla());
+    assertEquals(Tallas.lista(List.of("37", "38", "39", "40", "41")), caballero.tallas());
+    assertEquals(new AjusteDeTalla(3), caballero.ajusteDeTalla());
+    assertTrue(caballero.esGemeloDe(dama), "se renuevan y se agotan juntos");
+  }
+
+  /** Con el mismo ajuste en los dos géneros, el unisex sigue siendo uno, con las dos escalas. */
+  @Test
+  void elTenisSinGeneroDeUnSoloAjusteEsUnisexConLasDosEscalas() {
+    tenisAlPie(1);
     PublicacionProveedor publicacion = publicacion("Detal :$180.000 \nX mayor 💰135", "foto-af1");
 
     resolver(publicacion, tenisDeLaFoto(null));
 
-    BorradorProducto borrador = borradores.enEstado(EstadoBorrador.EN_REVISION).getFirst();
+    List<BorradorProducto> enRevision = borradores.enEstado(EstadoBorrador.EN_REVISION);
+    assertEquals(1, enRevision.size());
     assertEquals(
         Tallas.lista(List.of("35", "36", "37", "38", "39", "40", "41", "42", "43")),
-        borrador.tallas());
-    assertEquals(Optional.of(GeneroDeCalzado.UNISEX), borrador.generoDeCalzado());
+        enRevision.getFirst().tallas());
+    assertEquals(Optional.of(GeneroDeCalzado.UNISEX), enRevision.getFirst().generoDeCalzado());
   }
 
   // --- La descripción del tenis y el calzado que no es un tenis (ADR-0092) ---

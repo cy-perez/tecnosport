@@ -158,18 +158,23 @@ public class RepositorioProveedoresJpa implements RepositorioProveedores {
                 .orElse(null),
             p.ajustesDeIngesta()
                 .tallasPorGeneroOpcional()
-                .map(t -> (short) t.ajuste().tallas())
+                .map(t -> (short) t.ajusteDama().tallas())
+                .orElse(null),
+            p.ajustesDeIngesta()
+                .tallasPorGeneroOpcional()
+                .map(t -> (short) t.ajusteCaballero().tallas())
                 .orElse(null));
   }
 
   private static AjustesDeIngesta ajustesDe(ProveedorJpaEntity fila) {
     TallasPorGenero tallas =
-        fila.getAjusteDeTalla() == null
+        fila.getAjusteDama() == null
             ? null
             : new TallasPorGenero(
                 listaDe(fila.getTallasDama()),
                 listaDe(fila.getTallasCaballero()),
-                new AjusteDeTalla(fila.getAjusteDeTalla()));
+                new AjusteDeTalla(fila.getAjusteDama()),
+                new AjusteDeTalla(fila.getAjusteCaballero()));
     return new AjustesDeIngesta(
         fila.isUnaFotoUnProducto(),
         fila.isVentaBajoConfirmacion(),

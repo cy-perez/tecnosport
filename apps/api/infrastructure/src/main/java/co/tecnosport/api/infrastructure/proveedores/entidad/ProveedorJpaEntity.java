@@ -65,15 +65,19 @@ public class ProveedorJpaEntity {
   @Column(name = "dias_de_vigencia")
   private Short diasDeVigencia;
 
-  /** Separadas por coma; nulas con las otras dos si las dice cada anuncio. */
+  /** Separadas por coma; nulas con las otras tres si las dice cada anuncio. */
   @Column(name = "tallas_dama")
   private String tallasDama;
 
   @Column(name = "tallas_caballero")
   private String tallasCaballero;
 
-  @Column(name = "ajuste_de_talla")
-  private Short ajusteDeTalla;
+  /** Uno por género (V153): la EUR de dama es la nacional más una; la de caballero, más tres. */
+  @Column(name = "ajuste_dama")
+  private Short ajusteDama;
+
+  @Column(name = "ajuste_caballero")
+  private Short ajusteCaballero;
 
   @ElementCollection(fetch = FetchType.EAGER)
   @CollectionTable(
@@ -206,13 +210,15 @@ public class ProveedorJpaEntity {
       Short diasDeVigencia,
       String tallasDama,
       String tallasCaballero,
-      Short ajusteDeTalla) {
+      Short ajusteDama,
+      Short ajusteCaballero) {
     this.unaFotoUnProducto = unaFotoUnProducto;
     this.ventaBajoConfirmacion = ventaBajoConfirmacion;
     this.diasDeVigencia = diasDeVigencia;
     this.tallasDama = tallasDama;
     this.tallasCaballero = tallasCaballero;
-    this.ajusteDeTalla = ajusteDeTalla;
+    this.ajusteDama = ajusteDama;
+    this.ajusteCaballero = ajusteCaballero;
     return this;
   }
 
@@ -236,8 +242,12 @@ public class ProveedorJpaEntity {
     return tallasCaballero;
   }
 
-  public Short getAjusteDeTalla() {
-    return ajusteDeTalla;
+  public Short getAjusteDama() {
+    return ajusteDama;
+  }
+
+  public Short getAjusteCaballero() {
+    return ajusteCaballero;
   }
 
   public Instant getCreadoEn() {

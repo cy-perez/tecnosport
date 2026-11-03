@@ -4232,7 +4232,9 @@ export interface components {
         };
         TallasPorGeneroDto: {
             /** Format: int32 */
-            ajuste: number;
+            ajusteCaballero: number;
+            /** Format: int32 */
+            ajusteDama: number;
             caballero: string[];
             dama: string[];
         };

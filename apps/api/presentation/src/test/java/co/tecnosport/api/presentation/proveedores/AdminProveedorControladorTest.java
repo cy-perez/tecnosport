@@ -296,7 +296,8 @@ class AdminProveedorControladorTest {
     String ajustes =
         ",\"ajustesDeIngesta\":{\"unaFotoUnProducto\":true,\"ventaBajoConfirmacion\":true,"
             + "\"diasDeVigencia\":5,\"tallasPorGenero\":{\"dama\":[\"36\",\"37\",\"38\",\"39\"],"
-            + "\"caballero\":[\"40\",\"41\",\"42\",\"43\",\"44\"],\"ajuste\":1}}";
+            + "\"caballero\":[\"40\",\"41\",\"42\",\"43\",\"44\"],"
+            + "\"ajusteDama\":1,\"ajusteCaballero\":3}}";
     mockMvc
         .perform(
             post("/api/v1/admin/proveedores")
@@ -306,7 +307,8 @@ class AdminProveedorControladorTest {
         .andExpect(jsonPath("$.ajustesDeIngesta.unaFotoUnProducto").value(true))
         .andExpect(jsonPath("$.ajustesDeIngesta.diasDeVigencia").value(5))
         .andExpect(jsonPath("$.ajustesDeIngesta.tallasPorGenero.caballero[4]").value("44"))
-        .andExpect(jsonPath("$.ajustesDeIngesta.tallasPorGenero.ajuste").value(1));
+        .andExpect(jsonPath("$.ajustesDeIngesta.tallasPorGenero.ajusteDama").value(1))
+        .andExpect(jsonPath("$.ajustesDeIngesta.tallasPorGenero.ajusteCaballero").value(3));
     UUID id = proveedores.porId.keySet().iterator().next();
 
     mockMvc

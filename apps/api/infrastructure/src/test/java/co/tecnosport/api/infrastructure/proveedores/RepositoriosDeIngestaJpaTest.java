@@ -269,7 +269,8 @@ class RepositoriosDeIngestaJpaTest {
             new TallasPorGenero(
                 List.of("36", "37", "38", "39"),
                 List.of("40", "41", "42", "43", "44"),
-                new AjusteDeTalla(1)));
+                new AjusteDeTalla(1),
+                new AjusteDeTalla(3)));
     alPie.definirAjustesDeIngesta(ajustes);
     proveedores.guardar(alPie);
     entityManager.flush();

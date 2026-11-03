@@ -5236,7 +5236,11 @@
       },
       "TallasPorGeneroDto" : {
         "properties" : {
-          "ajuste" : {
+          "ajusteCaballero" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "ajusteDama" : {
             "format" : "int32",
             "type" : "integer"
           },
@@ -5254,7 +5258,8 @@
           }
         },
         "required" : [
-          "ajuste",
+          "ajusteCaballero",
+          "ajusteDama",
           "caballero",
           "dama"
         ],
