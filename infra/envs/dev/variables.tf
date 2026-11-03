@@ -168,3 +168,9 @@ variable "cuentas_de_transferencia" {
     error_message = "Cada cuenta necesita número y titular reales: ni vacíos ni con los placeholders de cuentas.auto.tfvars.example."
   }
 }
+
+variable "frecuencia_del_tick" {
+  description = "Cada cuánto llama Cloud Scheduler al tick de las tareas programadas, en formato cron (ADR-0104). Cada 30 minutos en dev: ensaya la cadena entera sin mantener despierta a Neon, cuyo plan gratuito no alcanza para tener el cómputo encendido todo el mes. En producción es cada minuto. Una tarea de un minuto corre aquí, entonces, cada 30."
+  type        = string
+  default     = "*/30 * * * *"
+}
