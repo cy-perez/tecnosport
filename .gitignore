@@ -23,6 +23,8 @@ infra/**/*.tfstate.*
 infra/**/.terraform.lock.hcl
 # Las cuentas de transferencia: el repo es público (ver cuentas.auto.tfvars.example)
 infra/**/cuentas.auto.tfvars
+# Un plan guardado lleva dentro esas cuentas y la configuración completa
+infra/**/*.tfplan
 
 # Generador de marca (Python)
 __pycache__/
