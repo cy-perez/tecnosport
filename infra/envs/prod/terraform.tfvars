@@ -18,9 +18,9 @@ wompi_llave_publica = "pub_prod_cOy5b1dUHRoyL5iX2ny3ZGquC3the5xa"
 google_client_id = "110733132502-iktjhuu18vm9ncc2j0fiqcoe4le69kdn.apps.googleusercontent.com"
 
 secretos_cargados  = true
-sistecredito_listo = false
-meta_listo         = false
-ingesta_lista      = false
+sistecredito_listo = true
+meta_listo         = true
+ingesta_lista      = true
 
 # Se enciende cuando el DNS de la raíz apunta aquí y el certificado está emitido.
 dominio_activo = false
