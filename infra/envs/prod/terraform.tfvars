@@ -8,8 +8,8 @@
 
 # La cuenta de facturación, para el presupuesto. Vacía no lo crea. El monto va en la moneda de
 # esa cuenta: unos US$30, o su equivalente en pesos si factura en COP.
-cuenta_de_facturacion = ""
-presupuesto_mensual   = 0
+cuenta_de_facturacion = "01D7F1-6B28DD-E50C88"
+presupuesto_mensual   = 100000
 
 # `pub_prod_...`, del panel de Wompi de producción.
 wompi_llave_publica = ""
