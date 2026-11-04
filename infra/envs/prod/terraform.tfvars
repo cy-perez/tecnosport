@@ -12,12 +12,12 @@ cuenta_de_facturacion = "01D7F1-6B28DD-E50C88"
 presupuesto_mensual   = 100000
 
 # `pub_prod_...`, del panel de Wompi de producción.
-wompi_llave_publica = ""
+wompi_llave_publica = "pub_prod_cOy5b1dUHRoyL5iX2ny3ZGquC3the5xa"
 
 # El cliente de OAuth para entrar con Google, con `https://tecnosport.co` entre sus orígenes.
 google_client_id = ""
 
-secretos_cargados  = false
+secretos_cargados  = true
 sistecredito_listo = false
 meta_listo         = false
 ingesta_lista      = false
