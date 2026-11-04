@@ -15,7 +15,7 @@ presupuesto_mensual   = 100000
 wompi_llave_publica = "pub_prod_cOy5b1dUHRoyL5iX2ny3ZGquC3the5xa"
 
 # El cliente de OAuth para entrar con Google, con `https://tecnosport.co` entre sus orígenes.
-google_client_id = ""
+google_client_id = "110733132502-iktjhuu18vm9ncc2j0fiqcoe4le69kdn.apps.googleusercontent.com"
 
 secretos_cargados  = true
 sistecredito_listo = false
