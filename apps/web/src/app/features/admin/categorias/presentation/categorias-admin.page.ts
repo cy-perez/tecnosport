@@ -157,6 +157,7 @@ export class CategoriasAdminPage {
     linea: new FormControl('', { nonNullable: true }),
     padreId: new FormControl('', { nonNullable: true }),
     hashtags: new FormControl('', { nonNullable: true }),
+    emoji: new FormControl('', { nonNullable: true }),
   });
 
   protected editar(categoria: Categoria): void {
@@ -169,6 +170,7 @@ export class CategoriasAdminPage {
       linea: categoria.padreId === null ? categoria.linea : '',
       padreId: categoria.padreId ?? '',
       hashtags: categoria.hashtags.join(' '),
+      emoji: categoria.emoji ?? '',
     });
   }
 
@@ -215,6 +217,9 @@ export class CategoriasAdminPage {
           linea,
           padreId,
           hashtags: etiquetasDe(valores.hashtags),
+          // Se manda siempre, como las etiquetas: vacío es "quítalo" y deja el de la rama. Que sea
+          // un emoji y no una palabra lo valida el dominio en el backend.
+          emoji: valores.emoji.trim(),
         },
         {
           onSuccess: (resultado) => this.alResponder(resultado, 'editada'),

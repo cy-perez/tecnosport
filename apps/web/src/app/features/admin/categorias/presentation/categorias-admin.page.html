@@ -49,6 +49,16 @@
         [ayuda]="'admin.categorias.hashtagsAyuda' | transloco"
         formControlName="hashtags"
       />
+
+      <!-- El mismo criterio que las etiquetas: solo al editar. El tope es el del backend
+           (`Categoria.LARGO_MAXIMO_DEL_EMOJI`) y cabe un emoji compuesto, no una palabra. -->
+      <ts-campo
+        idCampo="categoria-emoji"
+        [label]="'admin.categorias.emoji' | transloco"
+        [ayuda]="'admin.categorias.emojiAyuda' | transloco"
+        [maximo]="16"
+        formControlName="emoji"
+      />
     }
 
     <ts-select
