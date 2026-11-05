@@ -14,6 +14,9 @@ import java.util.UUID;
  * "no las toques" y la lista vacía significa "bórralas todas". Jackson 3 deja en nulo un componente
  * de tipo referencia que falte —no revienta, a diferencia de un primitivo—, así que el nulo llega
  * aquí tal cual y el caso de uso lo lee como la intención de no tocarlas.
+ *
+ * <p>{@code emoji}, igual: ausente es "no lo toques" y la cadena vacía es "quítalo", que deja la
+ * categoría usando el de su rama.
  */
 public record EditarCategoriaPeticion(
-    String nombre, String slug, String linea, UUID padreId, List<String> hashtags) {}
+    String nombre, String slug, String linea, UUID padreId, List<String> hashtags, String emoji) {}

@@ -6,7 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.domain.catalogo.Categoria;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
+import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.compartido.Slug;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
@@ -220,5 +222,82 @@ class EditarCategoriaTest {
         () ->
             editar.ejecutar(
                 new EditarCategoriaComando(UUID.randomUUID(), "Nada", null, null, null)));
+  }
+
+  @Test
+  void ponerleEmojiAUnaCategoria() {
+    Categoria gorras = Categoria.crear("Gorras", new Slug("gorras"), LineaCatalogo.ROPA);
+    repositorio.conCategorias(gorras);
+
+    editar.ejecutar(
+        new EditarCategoriaComando(gorras.id(), "Gorras", null, null, null, null, "🧢"));
+
+    assertEquals(Optional.of("🧢"), repositorio.buscarPorId(gorras.id()).orElseThrow().emoji());
+  }
+
+  /**
+   * Nulo es "no lo toques": quien solo renombra no manda el campo y no tiene por qué perder el
+   * emoji por eso. Es la misma trampa que con las etiquetas.
+   */
+  @Test
+  void sinElCampoElEmojiSeQuedaComoEstaba() {
+    Categoria gorras =
+        Categoria.crear("Gorras", new Slug("gorras"), LineaCatalogo.ROPA).conEmoji("🧢");
+    repositorio.conCategorias(gorras);
+
+    editar.ejecutar(new EditarCategoriaComando(gorras.id(), "Gorras y viseras", null, null, null));
+
+    Categoria guardada = repositorio.buscarPorId(gorras.id()).orElseThrow();
+    assertEquals("Gorras y viseras", guardada.nombre());
+    assertEquals(Optional.of("🧢"), guardada.emoji());
+  }
+
+  /** Vacío es "quítalo": la categoría vuelve a usar el de su rama. */
+  @Test
+  void elEmojiVacioLoQuita() {
+    Categoria gorras =
+        Categoria.crear("Gorras", new Slug("gorras"), LineaCatalogo.ROPA).conEmoji("🧢");
+    repositorio.conCategorias(gorras);
+
+    editar.ejecutar(new EditarCategoriaComando(gorras.id(), "Gorras", null, null, null, null, ""));
+
+    assertEquals(Optional.empty(), repositorio.buscarPorId(gorras.id()).orElseThrow().emoji());
+  }
+
+  /** Una palabra no es un emoji: el dominio la rechaza y no se guarda nada. */
+  @Test
+  void unaPalabraEnLugarDelEmojiSeRechazaSinGuardar() {
+    Categoria gorras =
+        Categoria.crear("Gorras", new Slug("gorras"), LineaCatalogo.ROPA).conEmoji("🧢");
+    repositorio.conCategorias(gorras);
+
+    assertThrows(
+        ExcepcionDeDominio.class,
+        () ->
+            editar.ejecutar(
+                new EditarCategoriaComando(
+                    gorras.id(), "Gorras nuevas", null, null, null, null, "gorra")));
+
+    Categoria guardada = repositorio.buscarPorId(gorras.id()).orElseThrow();
+    assertEquals("Gorras", guardada.nombre());
+    assertEquals(Optional.of("🧢"), guardada.emoji());
+  }
+
+  /** Mover una categoría de sitio no le cambia el emoji. */
+  @Test
+  void moverLaCategoriaConservaElEmoji() {
+    Categoria dama = Categoria.crear("Dama", new Slug("bolsos-dama"), LineaCatalogo.BOLSOS);
+    Categoria caballero =
+        Categoria.crear("Caballero", new Slug("bolsos-caballero"), LineaCatalogo.BOLSOS);
+    Categoria morrales =
+        Categoria.crearBajo(dama, "Morrales", new Slug("bolsos-dama-morrales")).conEmoji("🎒");
+    repositorio.conCategorias(dama, caballero, morrales);
+
+    Categoria movida =
+        editar.ejecutar(
+            new EditarCategoriaComando(morrales.id(), "Morrales", null, null, caballero.id()));
+
+    assertEquals(Optional.of(caballero.id()), movida.padreId());
+    assertEquals(Optional.of("🎒"), movida.emoji());
   }
 }

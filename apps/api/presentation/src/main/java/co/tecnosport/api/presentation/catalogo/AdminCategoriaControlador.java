@@ -96,7 +96,8 @@ public class AdminCategoriaControlador {
                 cuerpo.slug(),
                 linea(cuerpo.linea()),
                 cuerpo.padreId(),
-                cuerpo.hashtags()));
+                cuerpo.hashtags(),
+                cuerpo.emoji()));
     log.info("Categoría editada: {} ({})", categoria.slug().valor(), categoria.id());
     return mapeador.aRespuesta(categoria);
   }
