@@ -444,7 +444,7 @@ class ArmadorDePieDeFotoTest {
 
   @Test
   void laCategoriaConEmojiAbreElPie() {
-    Categoria tenis = categoria("Tenis", LineaCatalogo.CALZADO, null).conEmoji("👟");
+    Categoria tenis = categoria("Morrales", "bolsos-dama-morrales", null).conEmoji("👟");
 
     String pie =
         ARMADOR.armar(
@@ -459,8 +459,8 @@ class ArmadorDePieDeFotoTest {
    */
   @Test
   void sinEmojiPropioUsaElDeLaRama() {
-    Categoria calzado = categoria("Calzado", LineaCatalogo.CALZADO, null).conEmoji("👟");
-    Categoria tenis = categoria("Tenis", LineaCatalogo.CALZADO, calzado.id());
+    Categoria calzado = categoria("Dama", "bolsos-dama", null).conEmoji("👟");
+    Categoria tenis = categoria("Morrales", "bolsos-dama-morrales", calzado.id());
     ArmadorDePieDeFoto armador =
         ApoyoDeDifusion.armador(
             "https://www.tecnosport.co",
@@ -478,8 +478,8 @@ class ArmadorDePieDeFotoTest {
 
   @Test
   void sinEmojiEnLaRamaUsaElGenerico() {
-    Categoria calzado = categoria("Calzado", LineaCatalogo.CALZADO, null);
-    Categoria tenis = categoria("Tenis", LineaCatalogo.CALZADO, calzado.id());
+    Categoria calzado = categoria("Dama", "bolsos-dama", null);
+    Categoria tenis = categoria("Morrales", "bolsos-dama-morrales", calzado.id());
     ArmadorDePieDeFoto armador =
         ApoyoDeDifusion.armador(
             "https://www.tecnosport.co",
@@ -497,15 +497,18 @@ class ArmadorDePieDeFotoTest {
 
   // --- los hashtags ---
 
-  /** La de la marca solo en tecnología: en ropa y calzado no se publica (decisión del negocio). */
+  /**
+   * La de la marca solo en tecnología: en ropa, calzado y bolsos no se publica (decisión del
+   * negocio).
+   */
   @Test
   void fueraDeTecnologiaNoVaLaEtiquetaDeLaMarca() {
     Categoria tenis =
         new Categoria(
             UUID.randomUUID(),
-            "Tenis",
-            new Slug("tenis"),
-            LineaCatalogo.CALZADO,
+            "Morrales",
+            new Slug("bolsos-dama-morrales"),
+            LineaCatalogo.BOLSOS,
             null,
             List.of(new Hashtag("Tenis")));
 
@@ -529,14 +532,9 @@ class ArmadorDePieDeFotoTest {
         id -> Optional.empty());
   }
 
-  private static Categoria categoria(String nombre, LineaCatalogo linea, UUID padreId) {
+  private static Categoria categoria(String nombre, String slug, UUID padreId) {
     return new Categoria(
-        UUID.randomUUID(),
-        nombre,
-        new Slug(nombre.toLowerCase(java.util.Locale.ROOT)),
-        linea,
-        padreId,
-        List.of());
+        UUID.randomUUID(), nombre, new Slug(slug), LineaCatalogo.BOLSOS, padreId, List.of());
   }
 
   private static Producto productoEn(

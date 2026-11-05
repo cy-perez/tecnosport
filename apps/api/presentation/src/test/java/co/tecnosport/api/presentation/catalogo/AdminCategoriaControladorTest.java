@@ -124,12 +124,13 @@ class AdminCategoriaControladorTest {
 
   @Test
   void editarLlevaElEmojiYLoDevuelve() throws Exception {
-    Categoria gorras = Categoria.crear("Gorras", new Slug("gorras"), LineaCatalogo.ROPA);
-    repositorio.conCategorias(gorras);
+    Categoria morrales =
+        Categoria.crear("Morrales", new Slug("bolsos-dama-morrales"), LineaCatalogo.BOLSOS);
+    repositorio.conCategorias(morrales);
 
     mockMvc
         .perform(
-            put("/api/v1/admin/categorias/" + gorras.id())
+            put("/api/v1/admin/categorias/" + morrales.id())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"nombre\":\"Gorras\",\"emoji\":\"🧢\"}"))
         .andExpect(status().isOk())
@@ -143,13 +144,14 @@ class AdminCategoriaControladorTest {
   /** Sin el campo, el emoji se queda; con la cadena vacía, se va. */
   @Test
   void sinElCampoElEmojiSeQuedaYVacioLoQuita() throws Exception {
-    Categoria gorras =
-        Categoria.crear("Gorras", new Slug("gorras"), LineaCatalogo.ROPA).conEmoji("🧢");
-    repositorio.conCategorias(gorras);
+    Categoria morrales =
+        Categoria.crear("Morrales", new Slug("bolsos-dama-morrales"), LineaCatalogo.BOLSOS)
+            .conEmoji("🧢");
+    repositorio.conCategorias(morrales);
 
     mockMvc
         .perform(
-            put("/api/v1/admin/categorias/" + gorras.id())
+            put("/api/v1/admin/categorias/" + morrales.id())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"nombre\":\"Gorras y viseras\"}"))
         .andExpect(status().isOk())
@@ -157,7 +159,7 @@ class AdminCategoriaControladorTest {
 
     mockMvc
         .perform(
-            put("/api/v1/admin/categorias/" + gorras.id())
+            put("/api/v1/admin/categorias/" + morrales.id())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"nombre\":\"Gorras y viseras\",\"emoji\":\"\"}"))
         .andExpect(status().isOk())
@@ -167,12 +169,13 @@ class AdminCategoriaControladorTest {
   /** Una palabra no es un emoji: el rechazo del dominio, no un 500. */
   @Test
   void unaPalabraComoEmojiSeRechaza() throws Exception {
-    Categoria gorras = Categoria.crear("Gorras", new Slug("gorras"), LineaCatalogo.ROPA);
-    repositorio.conCategorias(gorras);
+    Categoria morrales =
+        Categoria.crear("Morrales", new Slug("bolsos-dama-morrales"), LineaCatalogo.BOLSOS);
+    repositorio.conCategorias(morrales);
 
     mockMvc
         .perform(
-            put("/api/v1/admin/categorias/" + gorras.id())
+            put("/api/v1/admin/categorias/" + morrales.id())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"nombre\":\"Gorras\",\"emoji\":\"gorra\"}"))
         .andExpect(status().isUnprocessableContent());

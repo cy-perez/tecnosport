@@ -118,9 +118,10 @@ class CategoriaTest {
 
   @Test
   void naceSinEmojiYUsaElDeSuRama() {
-    Categoria tenis = Categoria.crear("Tenis", new Slug("calzado-tenis"), LineaCatalogo.CALZADO);
+    Categoria tenis =
+        Categoria.crear("Morrales", new Slug("bolsos-dama-morrales"), LineaCatalogo.BOLSOS);
     Categoria calzado =
-        Categoria.crear("Calzado", new Slug("calzado"), LineaCatalogo.CALZADO).conEmoji("👟");
+        Categoria.crear("Dama", new Slug("bolsos-dama"), LineaCatalogo.BOLSOS).conEmoji("👟");
 
     assertEquals(Optional.empty(), tenis.emoji());
     assertEquals(Optional.of("👟"), tenis.emojiEfectivo(Optional.of(calzado)));
@@ -129,9 +130,9 @@ class CategoriaTest {
   @Test
   void elEmojiPropioManda() {
     Categoria padre =
-        Categoria.crear("Bolsos", new Slug("bolsos"), LineaCatalogo.BOLSOS).conEmoji("👜");
+        Categoria.crear("Dama", new Slug("bolsos-dama"), LineaCatalogo.BOLSOS).conEmoji("👜");
     Categoria morrales =
-        Categoria.crear("Morrales", new Slug("bolsos-morrales"), LineaCatalogo.BOLSOS)
+        Categoria.crear("Morrales", new Slug("bolsos-dama-morrales"), LineaCatalogo.BOLSOS)
             .conEmoji("🎒");
 
     assertEquals(Optional.of("🎒"), morrales.emojiEfectivo(Optional.of(padre)));
@@ -150,7 +151,7 @@ class CategoriaTest {
   @Test
   void vacioVuelveAlDeLaRama() {
     Categoria categoria =
-        Categoria.crear("Tenis", new Slug("tenis"), LineaCatalogo.CALZADO)
+        Categoria.crear("Morrales", new Slug("bolsos-dama-morrales"), LineaCatalogo.BOLSOS)
             .conEmoji("👟")
             .conEmoji(" ");
 
@@ -160,7 +161,8 @@ class CategoriaTest {
   /** Una palabra no es un emoji: se publicaría delante del nombre de cada producto. */
   @Test
   void rechazaLetrasYEspacios() {
-    Categoria tenis = Categoria.crear("Tenis", new Slug("tenis"), LineaCatalogo.CALZADO);
+    Categoria tenis =
+        Categoria.crear("Morrales", new Slug("bolsos-dama-morrales"), LineaCatalogo.BOLSOS);
 
     assertThrows(ExcepcionDeDominio.class, () -> tenis.conEmoji("Tenis"));
     assertThrows(ExcepcionDeDominio.class, () -> tenis.conEmoji("👟 👟"));
@@ -169,9 +171,11 @@ class CategoriaTest {
   @Test
   void elEmojiSobreviveAlRenombrarYAMoverla() {
     Categoria tenis =
-        Categoria.crear("Tenis", new Slug("tenis"), LineaCatalogo.CALZADO).conEmoji("👟");
+        Categoria.crear("Morrales", new Slug("bolsos-dama-morrales"), LineaCatalogo.BOLSOS)
+            .conEmoji("👟");
 
-    assertEquals(Optional.of("👟"), tenis.renombrada("Zapatillas", new Slug("zapatillas")).emoji());
+    assertEquals(
+        Optional.of("👟"), tenis.renombrada("Morrales", new Slug("bolsos-dama-morrales")).emoji());
     assertEquals(Optional.of("👟"), tenis.conHashtags(List.of(new Hashtag("Tenis"))).emoji());
     assertEquals(
         Optional.of("👟"), tenis.movidaBajo(Optional.empty(), LineaCatalogo.CALZADO).emoji());

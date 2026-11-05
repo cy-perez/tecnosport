@@ -26,29 +26,19 @@ comment on column categoria.emoji is
 -- Las ramas de calzado y de bolsos llevan el suyo y sus hojas lo heredan; Morrales lo reemplaza.
 -- Ropa no lleva uno en la rama: una camiseta y una blusa no se anuncian con el mismo, y lo que no
 -- tiene hoja propia sale con el de reserva hasta que alguien lo elija en el panel.
-update categoria c set emoji = e.emoji
-from (values
-    ('calzado-dama',              '👟'),
-    ('calzado-caballero',         '👟'),
-    ('calzado-unisex',            '👟'),
-    ('bolsos-dama',               '👜'),
-    ('bolsos-caballero',          '👜'),
-    ('bolsos-dama-morrales',      '🎒'),
-    ('bolsos-caballero-morrales', '🎒'),
-    ('celulares',                 '📱'),
-    ('relojes',                   '⌚'),
-    ('audifonos',                 '🎧'),
-    ('consolas',                  '🎮'),
-    ('parlantes',                 '🔊'),
-    ('computadores',              '💻'),
-    ('tablets',                   '📱'),
-    ('proyectores',               '📽️'),
-    ('ropa-caballero-camisetas',  '👕'),
-    ('ropa-dama-camisas',         '👔'),
-    ('ropa-dama-blusas',          '👚'),
-    ('ropa-dama-jeans',           '👖'),
-    ('ropa-caballero-jeans',      '👖'),
-    ('ropa-dama-pantalones',      '👖')
-) as e (slug, emoji)
-where c.slug = e.slug
-  and c.emoji is null;
+-- Una sentencia por emoji y sin alias: `npm run categorias` lee las migraciones para derivar el
+-- arbol y solo entiende `update categoria set ... where slug ...`.
+update categoria set emoji = '👟' where slug in ('calzado-dama', 'calzado-caballero', 'calzado-unisex') and emoji is null;
+update categoria set emoji = '👜' where slug in ('bolsos-dama', 'bolsos-caballero') and emoji is null;
+update categoria set emoji = '🎒' where slug in ('bolsos-dama-morrales', 'bolsos-caballero-morrales') and emoji is null;
+update categoria set emoji = '📱' where slug in ('celulares', 'tablets') and emoji is null;
+update categoria set emoji = '⌚' where slug in ('relojes') and emoji is null;
+update categoria set emoji = '🎧' where slug in ('audifonos') and emoji is null;
+update categoria set emoji = '🎮' where slug in ('consolas') and emoji is null;
+update categoria set emoji = '🔊' where slug in ('parlantes') and emoji is null;
+update categoria set emoji = '💻' where slug in ('computadores') and emoji is null;
+update categoria set emoji = '📽️' where slug in ('proyectores') and emoji is null;
+update categoria set emoji = '👕' where slug in ('ropa-caballero-camisetas') and emoji is null;
+update categoria set emoji = '👔' where slug in ('ropa-dama-camisas') and emoji is null;
+update categoria set emoji = '👚' where slug in ('ropa-dama-blusas') and emoji is null;
+update categoria set emoji = '👖' where slug in ('ropa-dama-jeans', 'ropa-caballero-jeans', 'ropa-dama-pantalones') and emoji is null;

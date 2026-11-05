@@ -226,13 +226,14 @@ class EditarCategoriaTest {
 
   @Test
   void ponerleEmojiAUnaCategoria() {
-    Categoria gorras = Categoria.crear("Gorras", new Slug("gorras"), LineaCatalogo.ROPA);
-    repositorio.conCategorias(gorras);
+    Categoria morrales =
+        Categoria.crear("Morrales", new Slug("bolsos-dama-morrales"), LineaCatalogo.BOLSOS);
+    repositorio.conCategorias(morrales);
 
     editar.ejecutar(
-        new EditarCategoriaComando(gorras.id(), "Gorras", null, null, null, null, "🧢"));
+        new EditarCategoriaComando(morrales.id(), "Morrales", null, null, null, null, "🧢"));
 
-    assertEquals(Optional.of("🧢"), repositorio.buscarPorId(gorras.id()).orElseThrow().emoji());
+    assertEquals(Optional.of("🧢"), repositorio.buscarPorId(morrales.id()).orElseThrow().emoji());
   }
 
   /**
@@ -241,45 +242,50 @@ class EditarCategoriaTest {
    */
   @Test
   void sinElCampoElEmojiSeQuedaComoEstaba() {
-    Categoria gorras =
-        Categoria.crear("Gorras", new Slug("gorras"), LineaCatalogo.ROPA).conEmoji("🧢");
-    repositorio.conCategorias(gorras);
+    Categoria morrales =
+        Categoria.crear("Morrales", new Slug("bolsos-dama-morrales"), LineaCatalogo.BOLSOS)
+            .conEmoji("🧢");
+    repositorio.conCategorias(morrales);
 
-    editar.ejecutar(new EditarCategoriaComando(gorras.id(), "Gorras y viseras", null, null, null));
+    editar.ejecutar(
+        new EditarCategoriaComando(morrales.id(), "Morrales y maletines", null, null, null));
 
-    Categoria guardada = repositorio.buscarPorId(gorras.id()).orElseThrow();
-    assertEquals("Gorras y viseras", guardada.nombre());
+    Categoria guardada = repositorio.buscarPorId(morrales.id()).orElseThrow();
+    assertEquals("Morrales y maletines", guardada.nombre());
     assertEquals(Optional.of("🧢"), guardada.emoji());
   }
 
   /** Vacío es "quítalo": la categoría vuelve a usar el de su rama. */
   @Test
   void elEmojiVacioLoQuita() {
-    Categoria gorras =
-        Categoria.crear("Gorras", new Slug("gorras"), LineaCatalogo.ROPA).conEmoji("🧢");
-    repositorio.conCategorias(gorras);
+    Categoria morrales =
+        Categoria.crear("Morrales", new Slug("bolsos-dama-morrales"), LineaCatalogo.BOLSOS)
+            .conEmoji("🧢");
+    repositorio.conCategorias(morrales);
 
-    editar.ejecutar(new EditarCategoriaComando(gorras.id(), "Gorras", null, null, null, null, ""));
+    editar.ejecutar(
+        new EditarCategoriaComando(morrales.id(), "Morrales", null, null, null, null, ""));
 
-    assertEquals(Optional.empty(), repositorio.buscarPorId(gorras.id()).orElseThrow().emoji());
+    assertEquals(Optional.empty(), repositorio.buscarPorId(morrales.id()).orElseThrow().emoji());
   }
 
   /** Una palabra no es un emoji: el dominio la rechaza y no se guarda nada. */
   @Test
   void unaPalabraEnLugarDelEmojiSeRechazaSinGuardar() {
-    Categoria gorras =
-        Categoria.crear("Gorras", new Slug("gorras"), LineaCatalogo.ROPA).conEmoji("🧢");
-    repositorio.conCategorias(gorras);
+    Categoria morrales =
+        Categoria.crear("Morrales", new Slug("bolsos-dama-morrales"), LineaCatalogo.BOLSOS)
+            .conEmoji("🧢");
+    repositorio.conCategorias(morrales);
 
     assertThrows(
         ExcepcionDeDominio.class,
         () ->
             editar.ejecutar(
                 new EditarCategoriaComando(
-                    gorras.id(), "Gorras nuevas", null, null, null, null, "gorra")));
+                    morrales.id(), "Morrales nuevos", null, null, null, null, "gorra")));
 
-    Categoria guardada = repositorio.buscarPorId(gorras.id()).orElseThrow();
-    assertEquals("Gorras", guardada.nombre());
+    Categoria guardada = repositorio.buscarPorId(morrales.id()).orElseThrow();
+    assertEquals("Morrales", guardada.nombre());
     assertEquals(Optional.of("🧢"), guardada.emoji());
   }
 
