@@ -383,6 +383,26 @@ class Equivalencias(unittest.TestCase):
         [p] = parsear(" *SAMSUNG*\n🎃A27 5G (8+256)$870 *1 SIM* \n", eq)["productos"]
         self.assertEqual(("samsung-galaxy-a27-5g-8gb-ram-256gb-dual-sim", ["Dual SIM"]), (p["id"], p["atributos"]))
 
+    def test_la_ram_que_corrige_la_equivalencia_corrige_tambien_el_atributo(self):
+        # 27/10/2026: el POCO X8 Pro vino «12+256» y es el 8GB+256GB. La API lee la RAM del
+        # campo: sin esto salía titulado 8GB y vendido con 12GB.
+        eq = {"xiaomi-poco-x8-pro-5g-12gb-ram-256gb": equivalencia(
+            "xiaomi-poco-x8-pro-5g-8gb-ram-256gb", "Xiaomi POCO X8 Pro 5G 8GB RAM 256GB", "2026-10-28")}
+        [p] = parsear(" *XIAOMI*\n🎄POCO X8 PRO 5G(12+256)$1.350\n", eq)["productos"]
+        self.assertEqual(("8GB", "256GB"), (p["ram"], p["almacenamiento"]))
+
+    def test_el_almacenamiento_que_corrige_la_equivalencia_corrige_tambien_el_atributo(self):
+        eq = {"xiaomi-poco-x8-pro-5g-12gb-ram-256gb": equivalencia(
+            "xiaomi-poco-x8-pro-5g-12gb-ram-512gb", "Xiaomi POCO X8 Pro 5G 12GB RAM 512GB")}
+        [p] = parsear(" *XIAOMI*\n🎄POCO X8 PRO 5G(12+256)$1.350\n", eq)["productos"]
+        self.assertEqual(("12GB", "512GB"), (p["ram"], p["almacenamiento"]))
+
+    def test_una_equivalencia_sin_ram_en_el_titulo_no_toca_la_ram(self):
+        eq = {"xiaomi-poco-x8-pro-5g-12gb-ram-256gb": equivalencia(
+            "xiaomi-poco-x8-pro-5g-256gb", "Xiaomi POCO X8 Pro 5G 256GB")}
+        [p] = parsear(" *XIAOMI*\n🎄POCO X8 PRO 5G(12+256)$1.350\n", eq)["productos"]
+        self.assertEqual(("12GB", "256GB"), (p["ram"], p["almacenamiento"]))
+
     def test_una_equivalencia_sin_sim_en_el_titulo_no_toca_la_sim(self):
         eq = {"samsung-galaxy-a27-5g-8gb-ram-256gb-1-sim": equivalencia(
             "samsung-galaxy-a27-5g-8gb-ram-256gb", "Samsung Galaxy A27 5G 8GB RAM 256GB", "2026-10-15")}

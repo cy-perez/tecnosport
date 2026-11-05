@@ -441,6 +441,17 @@ def sim_del_titulo(titulo: str):
     return m.group(1) if m else None
 
 
+def memoria_del_titulo(titulo: str):
+    """(ram, almacenamiento) que dice un título definitivo; None en lo que no diga.
+
+    `armar_titulo` escribe la RAM como «8GB RAM» y el almacenamiento justo después,
+    así que el almacenamiento es la capacidad que no va seguida de RAM.
+    """
+    ram = re.search(r"\b(\d+GB) RAM\b", titulo)
+    capacidades = re.findall(r"\b(\d+(?:GB|TB))\b(?! RAM)", titulo)
+    return (ram.group(1) if ram else None), (capacidades[-1] if capacidades else None)
+
+
 def plano(texto: str) -> str:
     """La línea sin emojis ni marcas de WhatsApp, en mayúsculas."""
     return normalizar(sin_emojis(texto).replace("*", " ").replace("_", " "))
@@ -1346,6 +1357,14 @@ def aplicar_equivalencias(productos, equivalencias, descartados=(), duplicados=N
         sim = sim_del_titulo(e["titulo"])
         if sim:
             p["atributos"] = [a for a in p.get("atributos") or [] if not atributo_sim(a)] + [sim]
+        # Lo mismo con la memoria: `exportar_lista.py` manda `ram` y `almacenamiento` a la
+        # API como atributos de la variante. El 27/10/2026 el POCO X8 Pro vino «12+256», la
+        # equivalencia lo dejó titulado «8GB RAM 256GB» y se exportó con 12GB de RAM.
+        ram, almacenamiento = memoria_del_titulo(e["titulo"])
+        if ram:
+            p["ram"] = ram
+        if almacenamiento:
+            p["almacenamiento"] = almacenamiento
         p["revisar"] = [r for r in p["revisar"] if r not in ALERTAS_DE_NOMBRE]
         # Una persona miró esta línea exacta: comparar_lista.py no le vuelve a
         # preguntar si es la misma referencia que un conocido con otra SIM.
