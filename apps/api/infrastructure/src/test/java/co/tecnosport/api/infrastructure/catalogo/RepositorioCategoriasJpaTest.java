@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import co.tecnosport.api.domain.catalogo.Categoria;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
+import co.tecnosport.api.domain.compartido.Hashtag;
 import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.infrastructure.catalogo.entidad.CategoriaJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.MarcaJpaEntity;
@@ -115,6 +116,62 @@ class RepositorioCategoriasJpaTest {
     assertThat(repositorio.buscarPorId(jeans.id()).orElseThrow().escalaTallas())
         .containsExactly("26", "28", "30");
     assertThat(repositorio.buscarPorId(sinEscala.id()).orElseThrow().escalaTallas()).isEmpty();
+  }
+
+  /**
+   * El emoji va y vuelve, y una categoría sin el suyo vuelve sin él: nulo es "usa el de tu rama",
+   * no la cadena vacía.
+   */
+  @Test
+  void elEmojiVaYVuelve() {
+    Categoria conEmoji =
+        Categoria.crear("Gorras TC", new Slug("gorras-tc-emoji"), LineaCatalogo.ROPA)
+            .conEmoji("🧢");
+    Categoria sinEmoji =
+        Categoria.crear("Medias TC", new Slug("medias-tc-emoji"), LineaCatalogo.ROPA);
+    repositorio.guardar(conEmoji);
+    repositorio.guardar(sinEmoji);
+
+    assertThat(repositorio.buscarPorId(conEmoji.id()).orElseThrow().emoji()).contains("🧢");
+    assertThat(repositorio.buscarPorId(sinEmoji.id()).orElseThrow().emoji()).isEmpty();
+  }
+
+  /**
+   * Las etiquetas también vuelven al leer por este repositorio. No volvían: el mapeador pasaba una
+   * lista vacía, y como {@code EditarCategoria} guarda lo que lee, cualquier edición desde el panel
+   * las borraba aunque el comando dijera que no se tocaran.
+   */
+  @Test
+  void lasEtiquetasVuelvenAlLeerYSobrevivenAUnRenombrado() {
+    Categoria camisas =
+        Categoria.crear("Camisas TC", new Slug("camisas-tc-hashtags"), LineaCatalogo.ROPA)
+            .conHashtags(List.of(new Hashtag("#Camisas"), new Hashtag("#Moda")));
+    repositorio.guardar(camisas);
+
+    Categoria leida = repositorio.buscarPorId(camisas.id()).orElseThrow();
+    assertThat(leida.hashtags()).extracting(Hashtag::valor).containsExactly("#Camisas", "#Moda");
+
+    repositorio.guardar(leida.renombrada("Camisas TC2", leida.slug()));
+    assertThat(repositorio.buscarPorId(camisas.id()).orElseThrow().hashtags())
+        .extracting(Hashtag::valor)
+        .containsExactly("#Camisas", "#Moda");
+  }
+
+  /**
+   * V155 siembra los emojis por slug: la rama de calzado lleva el suyo y Morrales reemplaza el de
+   * bolsos.
+   */
+  @Test
+  void laMigracionSiembraLosEmojisIniciales() {
+    assertThat(repositorio.buscarPorSlug(new Slug("calzado-unisex")).orElseThrow().emoji())
+        .contains("👟");
+    assertThat(repositorio.buscarPorSlug(new Slug("bolsos-dama")).orElseThrow().emoji())
+        .contains("👜");
+    assertThat(repositorio.buscarPorSlug(new Slug("bolsos-dama-morrales")).orElseThrow().emoji())
+        .contains("🎒");
+    assertThat(repositorio.buscarPorSlug(new Slug("proyectores")).orElseThrow().emoji())
+        .contains("📽️");
+    assertThat(repositorio.buscarPorSlug(new Slug("ropa-dama")).orElseThrow().emoji()).isEmpty();
   }
 
   /**

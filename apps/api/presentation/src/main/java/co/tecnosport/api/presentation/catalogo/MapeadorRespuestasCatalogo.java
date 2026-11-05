@@ -115,7 +115,8 @@ public class MapeadorRespuestasCatalogo {
         categoria.linea().name(),
         categoria.padreId().orElse(null),
         categoria.hashtags().stream().map(Hashtag::valor).toList(),
-        categoria.escalaTallas());
+        categoria.escalaTallas(),
+        categoria.emoji().orElse(null));
   }
 
   public ResultadoPaginadoRespuesta<AtributoRespuesta> aRespuestaDeAtributos(

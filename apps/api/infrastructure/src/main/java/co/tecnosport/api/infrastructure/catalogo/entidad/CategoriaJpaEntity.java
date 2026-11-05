@@ -41,6 +41,10 @@ public class CategoriaJpaEntity {
   @Column(name = "escala_tallas")
   private String escalaTallas;
 
+  /** El emoji de las publicaciones; nulo si usa el de su rama (V155). */
+  @Column(name = "emoji", length = 16)
+  private String emoji;
+
   @Column(name = "creado_en", nullable = false)
   private Instant creadoEn;
 
@@ -113,6 +117,14 @@ public class CategoriaJpaEntity {
 
   public void setEscalaTallas(String escalaTallas) {
     this.escalaTallas = escalaTallas;
+  }
+
+  public String getEmoji() {
+    return emoji;
+  }
+
+  public void setEmoji(String emoji) {
+    this.emoji = emoji;
   }
 
   /** Nunca nula: una categoría sin etiquetas tiene la lista vacía, no un nulo. */

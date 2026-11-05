@@ -30,4 +30,9 @@ public record CategoriaRespuesta(
     UUID padreId,
     List<String> hashtags,
     /** Las tallas propias, en su orden; vacía si usa las de su rama o no talla. */
-    List<String> escalaTallas) {}
+    List<String> escalaTallas,
+    /**
+     * El emoji propio de las publicaciones, nulo si usa el de su rama. Viaja también en la pública
+     * por lo mismo que los hashtags: es un dato que existe para publicarse.
+     */
+    String emoji) {}

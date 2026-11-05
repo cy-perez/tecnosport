@@ -25,6 +25,11 @@ export interface CambioDeCategoria {
    * no manda el campo y no pierde las etiquetas por eso.
    */
   readonly hashtags?: readonly string[];
+  /**
+   * El emoji de las publicaciones, con la misma regla: `undefined` no lo toca y la cadena vacía lo
+   * quita, que deja la categoría usando el de su rama.
+   */
+  readonly emoji?: string;
 }
 
 /**

@@ -330,7 +330,8 @@ public class MapeadorCatalogo {
         LineaCatalogo.valueOf(c.getLinea()),
         c.getPadreId(),
         c.getHashtags().stream().map(Hashtag::new).toList(),
-        EscalaDeTallasEnTexto.partir(c.getEscalaTallas()));
+        EscalaDeTallasEnTexto.partir(c.getEscalaTallas()),
+        c.getEmoji());
   }
 
   private Atributo aAtributo(AtributoJpaEntity a) {

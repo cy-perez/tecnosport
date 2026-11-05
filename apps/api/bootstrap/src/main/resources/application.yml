@@ -420,7 +420,14 @@ tecnosport:
     # 2026; el certificado todavia no cubre el subdominio y hay que arreglarlo en produccion.
     url-base-del-sitio: ${META_URL_BASE_DEL_SITIO:https://www.tecnosport.co}
     # Las que van en todo lo que se publique. Las de cada categoria viven en la categoria.
-    hashtags-de-marca: ${META_HASHTAGS_DE_MARCA:}
+    # #tecnosport va en todas por decision del 5 de noviembre de 2026 (ADR-0107).
+    hashtags-de-marca: ${META_HASHTAGS_DE_MARCA:#tecnosport}
+    # Addi en el pie de las publicaciones (ADR-0107). APAGADO hasta que Addi este en el checkout:
+    # anunciar un medio de pago que el checkout no ofrece es publicidad enganosa (Ley 1480). El
+    # minimo lo define Addi y no lo tenemos todavia -- TODO(dato de negocio): el monto minimo del
+    # credito de Addi. Encenderlo sin el no arranca.
+    anunciar-addi: ${META_ANUNCIAR_ADDI:false}
+    addi-monto-minimo: ${META_ADDI_MONTO_MINIMO:}
     # FALSE POR OMISION A PROPOSITO. No hay sandbox de la Graph API: la unica cuenta que existe es
     # la real del negocio, asi que bootRun en una maquina de desarrollo apunta a ella. Encenderlo
     # es un acto deliberado de quien despliega, no un descuido de quien prueba.

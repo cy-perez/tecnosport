@@ -27,8 +27,10 @@ public final class TextosDeDifusionMessageSource implements TextosDeDifusion {
 
   static final Locale[] IDIOMAS_QUE_DEBEN_EXISTIR = {Locale.of("es"), Locale.of("en")};
 
-  /** Dos son los que pide el texto que más lleva: el atributo, con su nombre y sus valores. */
-  private static final Object[] RELLENO = {"x", "x"};
+  /**
+   * Tres son los que pide el texto que más lleva: la entrada, con el emoji, el nombre y el precio.
+   */
+  private static final Object[] RELLENO = {"x", "x", "x"};
 
   private final MessageSource mensajes;
 

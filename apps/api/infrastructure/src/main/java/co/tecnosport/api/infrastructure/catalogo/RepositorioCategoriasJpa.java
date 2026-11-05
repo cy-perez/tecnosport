@@ -85,6 +85,7 @@ public class RepositorioCategoriasJpa implements RepositorioCategorias {
             creadoEn,
             categoria.hashtags().stream().map(Hashtag::valor).toList());
     fila.setEscalaTallas(EscalaDeTallasEnTexto.unir(categoria.escalaTallas()));
+    fila.setEmoji(categoria.emoji().orElse(null));
     try {
       categoriaJpaRepository.saveAndFlush(fila);
     } catch (DataIntegrityViolationException e) {
@@ -102,6 +103,14 @@ public class RepositorioCategoriasJpa implements RepositorioCategorias {
     return categoriaJpaRepository.existeProductoEnCategoria(categoriaId);
   }
 
+  /**
+   * Las etiquetas se leen de la fila, y hasta el 5 de noviembre de 2026 no se leían: este mapeador
+   * pasaba una lista vacía desde que la escala de tallas lo obligó a usar el constructor largo. El
+   * listado del panel las mostraba vacías y {@code EditarCategoria} —que parte de lo que devuelve
+   * {@link #buscarPorId}— guardaba esa lista vacía encima de las de verdad aunque el comando dijera
+   * "no las toques". {@code MapeadorCatalogo} sí las leía, así que el pie de foto salía bien hasta
+   * el primer guardado desde el panel.
+   */
   static Categoria aCategoria(CategoriaJpaEntity c) {
     return new Categoria(
         c.getId(),
@@ -109,7 +118,8 @@ public class RepositorioCategoriasJpa implements RepositorioCategorias {
         new Slug(c.getSlug()),
         LineaCatalogo.valueOf(c.getLinea()),
         c.getPadreId(),
-        List.of(),
-        EscalaDeTallasEnTexto.partir(c.getEscalaTallas()));
+        c.getHashtags().stream().map(Hashtag::new).toList(),
+        EscalaDeTallasEnTexto.partir(c.getEscalaTallas()),
+        c.getEmoji());
   }
 }

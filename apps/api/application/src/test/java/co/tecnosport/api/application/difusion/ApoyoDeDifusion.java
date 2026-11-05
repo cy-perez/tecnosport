@@ -23,29 +23,28 @@ import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Hashtag;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
-import co.tecnosport.api.domain.pedido.CriteriosContraentrega;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 
 /** Escenarios compartidos por las pruebas de difusión. */
 final class ApoyoDeDifusion {
 
   private ApoyoDeDifusion() {}
 
-  /** Contraentrega encendida, sin líneas excluidas y con un tope que nada de estas pruebas pasa. */
-  static final CriteriosContraentrega CONTRAENTREGA_ABIERTA =
-      new CriteriosContraentrega(true, Dinero.deCop(20_000), Dinero.deCop(5_000_000), Set.of());
-
   static ArmadorDePieDeFoto armador(String urlBase, List<Hashtag> hashtags) {
-    return armador(urlBase, hashtags, CONTRAENTREGA_ABIERTA);
+    return armador(urlBase, hashtags, MinimosDeCredito.ninguno(), id -> Optional.empty());
   }
 
   static ArmadorDePieDeFoto armador(
-      String urlBase, List<Hashtag> hashtags, CriteriosContraentrega contraentrega) {
-    return new ArmadorDePieDeFoto(urlBase, hashtags, new TextosDeDifusionFalso(), contraentrega);
+      String urlBase,
+      List<Hashtag> hashtags,
+      MinimosDeCredito creditos,
+      Function<UUID, Optional<Categoria>> categoriaPorId) {
+    return new ArmadorDePieDeFoto(
+        urlBase, hashtags, new TextosDeDifusionFalso(), creditos, categoriaPorId);
   }
 
   /**

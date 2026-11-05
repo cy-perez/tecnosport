@@ -144,6 +144,12 @@ export interface Categoria {
    * necesita la que vale —la propia o la heredada— la pide a `escalaDeTallasDe`.
    */
   readonly escalaTallas: readonly string[];
+  /**
+   * El emoji propio con que abre el texto de cada publicación en redes de sus productos, o `null`
+   * si usa el de su rama. Opcional para que un fixture que no habla de redes no tenga que
+   * inventarlo: ausente vale lo mismo que `null`.
+   */
+  readonly emoji?: string | null;
 }
 
 /**

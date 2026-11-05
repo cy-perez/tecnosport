@@ -40,7 +40,6 @@ import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.domain.difusion.PublicacionEnRed;
 import co.tecnosport.api.domain.difusion.RedSocial;
-import co.tecnosport.api.domain.pedido.CriteriosContraentrega;
 import co.tecnosport.api.presentation.ManejadorDeErrores;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -491,8 +490,8 @@ class AdminDifusionControladorTest {
                       .format(valor.valor());
                 }
               },
-              new CriteriosContraentrega(
-                  true, Dinero.deCop(20_000), Dinero.deCop(5_000_000), java.util.Set.of())),
+              co.tecnosport.api.application.difusion.MinimosDeCredito.ninguno(),
+              id -> Optional.empty()),
           (producto, principal) -> Optional.of(new ImagenAPublicar(PORTADA, 1080, 1350)),
           new EnTransaccionPropia() {
             @Override

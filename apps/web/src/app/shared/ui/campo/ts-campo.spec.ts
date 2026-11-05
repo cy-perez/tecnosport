@@ -235,3 +235,23 @@ describe('TsCampo con autocompletar y modo de entrada', () => {
     expect(campo.hasAttribute('inputmode')).toBe(false);
   });
 });
+
+@Component({
+  imports: [ReactiveFormsModule, TsCampo],
+  template: `
+    <ts-campo idCampo="corto" label="Corto" [maximo]="16" [formControl]="control" />
+    <ts-campo idCampo="libre" label="Libre" [formControl]="control" />
+  `,
+})
+class AnfitrionConTopeDePrueba {
+  readonly control = new FormControl('');
+}
+
+describe('TsCampo con tope', () => {
+  it('pone el maxlength solo cuando le dan un máximo', async () => {
+    await render(AnfitrionConTopeDePrueba);
+
+    expect(screen.getByLabelText('Corto').getAttribute('maxlength')).toBe('16');
+    expect(screen.getByLabelText('Libre').getAttribute('maxlength')).toBeNull();
+  });
+});
