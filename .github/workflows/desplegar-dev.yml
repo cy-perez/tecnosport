@@ -1,23 +1,28 @@
 # Despliegue del ambiente de desarrollo: construye las dos imágenes, las sube al registro y mueve
 # las revisiones de Cloud Run.
 #
-# Cuando se enganche a `main` será al mezclar y no después de que `verificar` termine, porque
-# `main` está protegida: nada llega ahí sin los tres trabajos de integración continua en verde, así
-# que lo que se despliegue ya pasó por ellos. Lo que este flujo agrega es comprobar la salud del
-# servicio después de mover el tráfico y **revertir a la revisión anterior si no responde** — que
-# es la protección que importa cuando algo pasa las pruebas y se cae igual.
+# Corre al mezclar a `develop` y no después de que `verificar` termine, porque `develop` está
+# protegida: nada llega ahí sin los trabajos de integración continua en verde, así que lo que se
+# despliegue ya pasó por ellos. Lo que este flujo agrega es comprobar la salud del servicio después
+# de mover el tráfico y **revertir a la revisión anterior si no responde** — que es la protección
+# que importa cuando algo pasa las pruebas y se cae igual.
+#
+# Y desde ADR-0106 es la puerta de producción: el nombre del trabajo `construir, subir y desplegar`
+# es una comprobación obligatoria de `main`, así que el PR de liberación no se puede fusionar si la
+# punta de `develop` no quedó sana en dev. Renombrar el trabajo deja `main` esperando para siempre
+# una comprobación que ya no existe.
 #
 # **Sin llaves JSON.** Se autentica con federación de identidad: GitHub presenta un token firmado
 # de esta ejecución y GCP lo cambia por credenciales de minutos, solo para este repositorio (la
 # condición está en `infra/envs/dev/main.tf`).
 name: desplegar dev
 
-# Al mezclar a `main`, y también a demanda. Estuvo solo a demanda hasta que hubo base de datos y
-# hasta que dos corridas manuales demostraron que el flujo entero funciona —construir, migrar,
-# desplegar y comprobar salud— porque engancharlo antes solo habría producido despliegues rojos.
+# Al mezclar a `develop`, y también a demanda desde esa rama: la federación de dev solo entrega
+# credenciales a `refs/heads/develop` (`infra/envs/dev/main.tf`). Fue `main` hasta ADR-0106, cuando
+# `main` pasó a ser lo que está en producción.
 on:
   push:
-    branches: [main]
+    branches: [develop]
   workflow_dispatch:
 
 # Un despliegue a la vez, y **sin cancelar el que va**: matar un `gcloud run deploy` a mitad deja
@@ -233,3 +238,52 @@ jobs:
               echo "::warning::$servicio no tiene revisión anterior a la cual volver"
             fi
           done
+
+  # Lo que quedó sano en dev queda listo para producción en un PR `develop → main` que se abre solo
+  # y se actualiza en cada despliegue; fusionarlo es la decisión humana de publicar (ADR-0106).
+  #
+  # Con `TOKEN_FUSION` y no con el token del flujo: un PR abierto con `GITHUB_TOKEN` no dispara
+  # ningún flujo de `pull_request`, y entonces `origen-de-main` nunca corre y la comprobación
+  # obligatoria se queda pendiente para siempre.
+  liberacion:
+    name: abrir o actualizar el PR de liberación
+    needs: desplegar
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Abrir o actualizar el PR develop → main
+        env:
+          GH_TOKEN: ${{ secrets.TOKEN_FUSION }}
+        run: |
+          # `--first-parent` lista lo que se fusionó en develop —un renglón por PR— y no cada
+          # commit de cada rama.
+          cambios=$(git log --first-parent --format='- %s (%h)' origin/main..origin/develop)
+          if [ -z "$cambios" ]; then
+            echo "develop no tiene nada que main no tenga"
+            exit 0
+          fi
+
+          {
+            echo "Liberación a producción de lo que ya quedó sano en dev."
+            echo
+            echo "Al fusionar, \`desplegar producción\` promueve las imágenes de \`${{ github.sha }}\`,"
+            echo "las mismas que corren en dev, sin reconstruirlas. **Fusionar con commit de fusión**,"
+            echo "nunca con squash ni rebase (ADR-0106)."
+            echo
+            echo "## Cambios"
+            echo
+            echo "$cambios"
+          } > cuerpo.md
+
+          pr=$(gh pr list --base main --head develop --state open --json number --jq '.[0].number // empty')
+          if [ -n "$pr" ]; then
+            gh pr edit "$pr" --body-file cuerpo.md
+            echo "PR #$pr actualizado"
+          else
+            gh pr create --base main --head develop \
+              --title "Liberación a producción" --body-file cuerpo.md
+          fi

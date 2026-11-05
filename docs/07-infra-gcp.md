@@ -73,7 +73,8 @@ poco tráfico y la instancia siempre encendida era la pieza fija más cara (`ADR
 en frío de la JVM lo amortigua el tick de cada minuto; CRaC o imagen nativa si aun así se nota.
 
 Todo eso está escrito en `infra/envs/prod` y se despliega con `desplegar-prod.yml`, que promueve
-la imagen de un SHA que ya corrió en dev. El balanceador quedó fuera por costo, con lo que eso
+la imagen de un SHA que ya corrió en dev, al fusionar el PR de liberación `develop → main`
+(`ADR-0106`). El balanceador quedó fuera por costo, con lo que eso
 acepta —un mapeo de dominios en preview, TLS 1.0 y 1.1 sin poder apagarse, y el certificado de la
 raíz emitido después de mover el DNS—, y el día que haga falta entra sin tocar ni la web ni la API
 (`ADR-0105`).
@@ -147,7 +148,8 @@ y en GitHub no las hace el asistente.
 7. **Lectura de imágenes desde dev.** El output `cuenta_de_despliegue` va a
    `cuenta_despliegue_prod` en `infra/envs/dev/terraform.tfvars`, y se aplica dev.
 8. **GitHub, en este orden.** Primero el ambiente `produccion`, con revisores
-   obligatorios y la política de despliegue limitada a `main`: si no existe, la
+   obligatorios —desde `ADR-0106`, sin revisores: la fusión a `main` es la
+   aprobación— y la política de despliegue limitada a `main`: si no existe, la
    primera corrida lo crea sola **sin revisores**, y la federación solo compara
    su nombre. Después las cuatro variables `GCP_PROYECTO_PROD`,
    `GCP_PROVEEDOR_IDENTIDAD_PROD`, `GCP_CUENTA_DESPLIEGUE_PROD` y
@@ -441,7 +443,9 @@ mueve las revisiones de Cloud Run. Decisiones que quedaron dentro:
   servicio en un estado que nadie pidió. Los otros flujos sí se cancelan entre sí; este espera.
 
 ~~**Todavía se dispara solo a demanda**~~ **Corre al mezclar a `main` desde el 9 de septiembre de
-2026** (`1d085f2`), y también a demanda. Estuvo solo a demanda mientras no hubo base de datos
+2026** (`1d085f2`), y también a demanda. ~~`main`~~ **`develop` desde el 5 de noviembre de 2026**
+(`ADR-0106`), cuando `main` pasó a ser lo que está en producción; la federación de dev solo da
+credenciales a `refs/heads/develop`. Estuvo solo a demanda mientras no hubo base de datos
 —engancharlo antes habría producido un despliegue rojo en cada merge— y pasó a `push` cuando la
 hubo y dos corridas manuales demostraron el flujo entero.
 
@@ -479,9 +483,21 @@ producción y no está en Terraform, no existe. Estructura en `infra/README.md`.
   la ve quien corre el `plan` a mano, y por eso una etiqueta puesta con `gcloud`
   en el servicio de la API sobrevivió once despliegues sin que nada avisara
   (2026-09-23).
-- **Al mezclar a `main`:** construir imágenes, publicar en Artifact Registry,
-  aplicar migraciones Flyway como paso propio, desplegar Cloud Run, verificar
-  salud y revertir a la revisión anterior si falla.
+- **Dos ramas, un ambiente cada una (`ADR-0106`).** `develop` es dev y es la rama
+  por omisión; `main` es producción. Las ramas `feat/`, `fix/`, `refactor/`,
+  `docs/` y `chore/` van a `develop` y se fusionan solas cuando `web` y `api`
+  quedan en verde (`fusion-automatica.yml`, con commit de fusión). A `main` solo
+  se llega por el PR de liberación desde `develop`, que se abre solo y se fusiona
+  a mano con commit de fusión, nunca squash ni rebase.
+- **Al mezclar a `develop`:** `verificar` otra vez, los `recorridos`, y construir
+  imágenes, publicar en Artifact Registry, aplicar migraciones Flyway como paso
+  propio, desplegar Cloud Run, verificar salud y revertir a la revisión anterior
+  si falla. Si quedó sano, marca las imágenes `verificado-<sha>` y abre o
+  actualiza el PR `develop → main`.
+- **Lo que exige `main`** sobre la punta de `develop`: `web`, `api`,
+  `construir, subir y desplegar`, `recorridos` y `origen · el PR a main viene de
+  develop`. Renombrar uno de esos trabajos deja `main` esperando una comprobación
+  que ya no existe: se cambia la protección en el mismo PR.
 - ~~**Detección por ruta:** un cambio que solo toca `apps/web` no reconstruye el
   backend.~~ **No hay filtros por ruta, y es deliberado**: con `paths:`, el
   trabajo que no aplica no se salta —se queda *pendiente para siempre*— y una
@@ -492,11 +508,19 @@ producción y no está en Terraform, no existe. Estructura en `infra/README.md`.
   documento como el que pedía los filtros. Si algún día molesta la espera, se
   resuelve con un trabajo que decida por ruta y reporte éxito cuando no aplica,
   no con `paths:`. Las pruebas de contrato corren siempre (2026-09-23).
-- **Producción, a demanda y con aprobación:** `desplegar-prod.yml` recibe el SHA
-  de un commit de `main` que pasó la salud en dev —solo esos llevan la etiqueta
-  `verificado-<sha>`—, copia sus imágenes al registro de producción, migra con el
-  job, despliega, comprueba la salud y revierte si falla. El ambiente `produccion` de GitHub pide la aprobación de una persona, y
-  la federación de producción no da credenciales a un token sin ese ambiente.
+- **Producción, al mezclar a `main`:** ~~a demanda y con aprobación~~ desde
+  `ADR-0106`. `desplegar-prod.yml` no reconstruye: toma el segundo padre del
+  commit de fusión —la punta de `develop` que entró—, comprueba que el árbol de
+  `main` sea idéntico al suyo, copia sus imágenes `verificado-<sha>` al registro
+  de producción, migra con el job, despliega, comprueba la salud y revierte si
+  falla. A demanda sirve para volver a un SHA de `develop` que ya llegó a `main`.
+  El ambiente `produccion` de GitHub ya no pide aprobación —la fusión lo es—
+  pero sigue limitado a `main`, y la federación de producción no da credenciales
+  a un token sin ese ambiente.
+- **Las migraciones conviven con el código anterior.** Dev migra al entrar a
+  `develop` y producción al liberar, quizá días después: toda migración tiene que
+  funcionar con la versión que sigue corriendo. Primero se agrega; lo que sobra
+  se quita en una liberación posterior.
 - **Autenticación con Workload Identity Federation.** Nunca una llave JSON de
   cuenta de servicio guardada como secreto de GitHub.
 
