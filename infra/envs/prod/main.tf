@@ -546,8 +546,8 @@ module "api" {
     ADMIN_CORREO     = var.correo_admin
 
     WOMPI_AMBIENTE = "produccion"
-    # La tarifa de dev, leída en el portal el 26 de octubre de 2026. TODO(negocio):
-    # WOMPI_COMISION_PRODUCCION. Confirmar el plan de la cuenta de producción antes de abrir.
+    # El plan de la cuenta de producción, leído en el portal el 4 de noviembre de 2026: el mismo que
+    # dev. El código QR de Bancolombia tiene tarifa especial del 1 %, y aquí paga la general.
     WOMPI_COMISION_VARIABLE = "0.0265"
     WOMPI_COMISION_FIJA     = "700"
     WOMPI_COMISION_IVA      = "0.19"

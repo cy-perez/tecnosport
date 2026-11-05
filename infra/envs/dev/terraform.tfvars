@@ -88,4 +88,4 @@ segundo_factor_listo = true
 # La cuenta de despliegue de producción, que copia de aquí la imagen del SHA que ya se probó en dev
 # (ADR-0105). Vacía mientras producción no exista; se llena con el output `cuenta_de_despliegue`
 # de envs/prod.
-cuenta_despliegue_prod = ""
+cuenta_despliegue_prod = "tecnosport-despliegue@tecnosport-prod.iam.gserviceaccount.com"

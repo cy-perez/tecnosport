@@ -8,19 +8,19 @@
 
 # La cuenta de facturación, para el presupuesto. Vacía no lo crea. El monto va en la moneda de
 # esa cuenta: unos US$30, o su equivalente en pesos si factura en COP.
-cuenta_de_facturacion = ""
-presupuesto_mensual   = 0
+cuenta_de_facturacion = "01D7F1-6B28DD-E50C88"
+presupuesto_mensual   = 100000
 
 # `pub_prod_...`, del panel de Wompi de producción.
-wompi_llave_publica = ""
+wompi_llave_publica = "pub_prod_cOy5b1dUHRoyL5iX2ny3ZGquC3the5xa"
 
 # El cliente de OAuth para entrar con Google, con `https://tecnosport.co` entre sus orígenes.
-google_client_id = ""
+google_client_id = "110733132502-iktjhuu18vm9ncc2j0fiqcoe4le69kdn.apps.googleusercontent.com"
 
-secretos_cargados  = false
-sistecredito_listo = false
-meta_listo         = false
-ingesta_lista      = false
+secretos_cargados  = true
+sistecredito_listo = true
+meta_listo         = true
+ingesta_lista      = true
 
 # Se enciende cuando el DNS de la raíz apunta aquí y el certificado está emitido.
-dominio_activo = false
+dominio_activo = true
