@@ -2,13 +2,17 @@
 #
 # **Fuera de los pull requests a propósito.** Necesitan PostgreSQL, la API y el servidor de
 # desarrollo levantados de verdad, y eso son varios minutos por corrida para dos recorridos.
-# Corren al mezclar a `main` —donde importa saber que el sitio entero sigue caminando— y a
+# Corren al mezclar a `develop` —donde importa saber que el sitio entero sigue caminando— y a
 # demanda desde la pestaña de Actions cuando se toque el checkout.
+#
+# Desde ADR-0106 son una comprobación obligatoria de `main`: el PR de liberación no se fusiona si
+# la punta de `develop` no los pasó. Por eso no corren en `main`, que recibe ese mismo árbol, y por
+# eso el nombre del trabajo no se cambia sin cambiar la protección de `main`.
 name: recorridos
 
 on:
   push:
-    branches: [main]
+    branches: [develop]
   workflow_dispatch:
 
 concurrency:

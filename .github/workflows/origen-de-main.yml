@@ -1,0 +1,31 @@
+# `main` es lo que está en producción, y solo se llega a ella desde `develop` (ADR-0106): todo lo
+# que se publica pasó antes por dev. Un PR a `main` desde otra rama —también una corrección
+# urgente— falla aquí, y como este trabajo es una comprobación obligatoria de `main`, no se puede
+# fusionar. La corrección urgente va a `develop` y se libera enseguida.
+#
+# `edited` porque cambiar la base de un PR abierto a `main` no es ni `opened` ni `synchronize`.
+name: origen de main
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, edited, reopened, synchronize]
+
+permissions: {}
+
+jobs:
+  origen:
+    name: origen · el PR a main viene de develop
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Comprobar la rama de origen
+        env:
+          ORIGEN: ${{ github.head_ref }}
+          REPO_ORIGEN: ${{ github.event.pull_request.head.repo.full_name }}
+        run: |
+          if [ "$ORIGEN" != "develop" ] || [ "$REPO_ORIGEN" != "$GITHUB_REPOSITORY" ]; then
+            echo "::error::A main solo se llega desde develop de este repositorio, y este PR viene de $REPO_ORIGEN:$ORIGEN. Ábrelo contra develop."
+            exit 1
+          fi
+          echo "Viene de develop."

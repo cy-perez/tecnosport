@@ -1,0 +1,40 @@
+# Un PR a `develop` se fusiona solo cuando sus comprobaciones obligatorias quedan en verde
+# (ADR-0106): este flujo no fusiona nada, le pide a GitHub que lo haga cuando la protección de
+# `develop` lo permita. Si una comprobación falla, el PR se queda abierto esperando el arreglo.
+#
+# **Con `TOKEN_FUSION` y no con `GITHUB_TOKEN`.** Lo que fusiona un token del propio flujo no
+# dispara ningún otro flujo, así que el push a `develop` no lanzaría `desplegar dev` y el ambiente
+# se quedaría quieto sin avisar. `TOKEN_FUSION` es un token de acceso de grano fino, acotado a este
+# repositorio, con Contenido y Pull requests en escritura.
+#
+# Con commit de fusión y no squash: un PR lleva varios commits, uno por unidad coherente, y squash
+# los aplastaría en uno.
+#
+# Solo ramas con los prefijos de la convención y del propio repositorio: un PR desde un fork no
+# recibe el secreto, y no tiene por qué fusionarse solo. Los borradores esperan a estar listos.
+name: fusión automática
+
+on:
+  pull_request:
+    branches: [develop]
+    types: [opened, reopened, ready_for_review]
+
+permissions: {}
+
+jobs:
+  habilitar:
+    name: habilitar la fusión automática
+    if: >-
+      !github.event.pull_request.draft &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      (startsWith(github.head_ref, 'feat/') || startsWith(github.head_ref, 'fix/') ||
+       startsWith(github.head_ref, 'refactor/') || startsWith(github.head_ref, 'docs/') ||
+       startsWith(github.head_ref, 'chore/'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Pedir la fusión cuando la CI quede en verde
+        env:
+          GH_TOKEN: ${{ secrets.TOKEN_FUSION }}
+          PR: ${{ github.event.pull_request.html_url }}
+        run: gh pr merge --auto --merge "$PR"
