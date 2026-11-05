@@ -181,7 +181,15 @@ Windows: `gradlew.bat`, rutas con `/` en configuración, scripts en Node o Gradl
   `feat(web/catalogo): filtrar por marca en la rejilla`
 - Un commit por unidad coherente. Nada de commits que mezclan una migración, un
   componente y un cambio de estilos.
-- Nunca `--force` sobre `main`. Nunca commits con secretos, ni de prueba.
+- **`develop` es dev y `main` es producción** (`ADR-0106`). Los PR van a
+  `develop` —la rama por omisión— y se fusionan solos cuando la CI queda en
+  verde; dev se despliega al fusionar. A `main` solo se llega por el PR de
+  liberación `develop → main`, que se abre solo y **lo fusiono yo**, con commit
+  de fusión: al fusionarlo se publica tecnosport.co.
+- Toda migración convive con el código anterior: producción migra al liberar,
+  días después que dev.
+- Nunca `--force` sobre `main` ni sobre `develop`. Nunca commits con secretos, ni
+  de prueba.
 
 ## Cómo quiero que trabajes conmigo
 

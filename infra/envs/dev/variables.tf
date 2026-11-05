@@ -17,9 +17,9 @@ variable "repositorio_github" {
 }
 
 variable "rama_que_despliega" {
-  description = "Solo esta referencia puede desplegar. Un pull request de un desconocido no toca la infraestructura."
+  description = "Solo esta referencia puede desplegar en dev. Un pull request de un desconocido no toca la infraestructura. Es develop desde ADR-0106: main es lo que está en producción."
   type        = string
-  default     = "refs/heads/main"
+  default     = "refs/heads/develop"
 }
 
 variable "bucket_imagenes" {

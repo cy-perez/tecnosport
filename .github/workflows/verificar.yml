@@ -8,9 +8,11 @@ name: verificar
 
 on:
   pull_request:
-  # También al mezclar: dos pull requests verdes por separado pueden romper juntas.
+  # También al mezclar: dos pull requests verdes por separado pueden romper juntas. En `develop`
+  # es donde eso pasa (ADR-0106); en `main` repite el árbol de `develop`, y se deja porque cuesta
+  # minutos que no se cobran y es la rama que está en producción.
   push:
-    branches: [main]
+    branches: [develop, main]
 
 # Una corrida por rama. Si llegan dos empujones seguidos, la vieja se cancela en vez de gastar
 # ejecutores compitiendo por un resultado que ya no le importa a nadie.

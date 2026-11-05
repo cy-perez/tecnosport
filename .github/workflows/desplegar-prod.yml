@@ -1,22 +1,34 @@
-# Despliegue de producción (ADR-0105): **promueve** a tecnosport.co la imagen de un commit que ya
-# corrió en dev. No construye nada: copia las tres imágenes de ese SHA del registro de dev al de
-# producción, corre las migraciones en el job que vive dentro de la red privada, mueve las dos
+# Despliegue de producción (ADR-0105, ADR-0106): **promueve** a tecnosport.co la imagen de un commit
+# que ya corrió en dev. No construye nada: copia las tres imágenes de ese SHA del registro de dev al
+# de producción, corre las migraciones en el job que vive dentro de la red privada, mueve las dos
 # revisiones y comprueba la salud, revirtiendo si no responde, igual que dev.
 #
-# **Solo a demanda, y con aprobación.** El trabajo declara el ambiente `produccion` de GitHub, que
-# exige que una persona apruebe antes de que corra; y la federación de identidad de producción solo
-# entrega credenciales a un token que traiga ese ambiente, desde `main` (`infra/envs/prod/main.tf`).
+# **Corre al fusionar el PR de liberación `develop → main`**, y esa fusión es la decisión humana:
+# `main` es lo que está en producción y solo recibe PR desde `develop` (`origen-de-main.yml`). El
+# ambiente `produccion` de GitHub ya no pide aprobación —serían dos clics por liberación— pero sigue
+# limitado a `main`, y la federación de producción solo entrega credenciales a un token que traiga
+# ese ambiente desde `main` (`infra/envs/prod/main.tf`).
+#
+# **Lo que se promueve no es el SHA de `main`.** Fusionar crea un commit nuevo que dev nunca vio;
+# reconstruirlo publicaría una imagen que nadie probó. Se promueve el segundo padre —la punta de
+# `develop` que entró—, y solo si el árbol de `main` es idéntico al suyo: si `main` tuviera algo
+# que `develop` no tiene, lo publicado no sería lo probado, y el flujo se niega.
 #
 # Solo se promueve un SHA que en dev migró, desplegó y pasó la salud: esa corrida le pone la
 # etiqueta `verificado-<sha>` a sus imágenes. Y tienen que seguir en el registro de dev, que borra
 # lo de más de siete días salvo las tres últimas versiones: lo viejo se vuelve a desplegar en dev.
+#
+# A demanda sirve para volver a una versión anterior: recibe el SHA de `develop` que se quiere
+# poner, que tiene que haber llegado ya a `main`.
 name: desplegar producción
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
     inputs:
       sha:
-        description: SHA completo de un commit de main que ya se desplegó en dev
+        description: SHA completo de un commit de develop que ya llegó a main y pasó la salud en dev
         required: true
         type: string
 
@@ -33,7 +45,6 @@ env:
   SERVICIO_API: tecnosport-api
   SERVICIO_WEB: tecnosport-web
   JOB_MIGRACIONES: tecnosport-migraciones
-  SHA: ${{ inputs.sha }}
 
 jobs:
   desplegar:
@@ -46,18 +57,45 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Un SHA cualquiera no: tiene que ser de `main`, que es lo único que pasó por la protección
-      # de la rama y por dev. Y completo, porque la etiqueta de la imagen es el SHA completo.
-      - name: Comprobar que el SHA es de main
+      # Deja en `SHA` el commit de `develop` cuyas imágenes se promueven.
+      - name: Resolver qué se promueve
+        env:
+          EVENTO: ${{ github.event_name }}
+          SHA_PEDIDO: ${{ inputs.sha }}
         run: |
-          if ! [[ "$SHA" =~ ^[0-9a-f]{40}$ ]]; then
-            echo "::error::El SHA tiene que ser el completo, de 40 caracteres: $SHA"
-            exit 1
+          if [ "$EVENTO" = "push" ]; then
+            if ! origen=$(git rev-parse --verify --quiet "$GITHUB_SHA^2"); then
+              echo "::error::$GITHUB_SHA no es una fusión: a main solo se llega fusionando el PR de liberación desde develop, con commit de fusión (ni squash ni rebase)."
+              exit 1
+            fi
+            git merge-base --is-ancestor "$origen" origin/develop || {
+              echo "::error::Lo fusionado ($origen) no viene de develop"
+              exit 1
+            }
+            arbol_main=$(git rev-parse "$GITHUB_SHA^{tree}")
+            arbol_origen=$(git rev-parse "$origen^{tree}")
+            if [ "$arbol_main" != "$arbol_origen" ]; then
+              echo "::error::main y la punta de develop que entró no tienen el mismo contenido: main tiene algo que develop no. Lo que se publicaría no es lo que se probó en dev. Fusiona main en develop y vuelve a liberar."
+              git diff --stat "$origen" "$GITHUB_SHA"
+              exit 1
+            fi
+            sha="$origen"
+          else
+            # Un SHA cualquiera no: tiene que haber llegado a `main`, que es lo único que pasó por
+            # dev y por la protección de las dos ramas. Y completo, porque la etiqueta de la
+            # imagen es el SHA completo.
+            if ! [[ "$SHA_PEDIDO" =~ ^[0-9a-f]{40}$ ]]; then
+              echo "::error::El SHA tiene que ser el completo, de 40 caracteres: $SHA_PEDIDO"
+              exit 1
+            fi
+            git merge-base --is-ancestor "$SHA_PEDIDO" origin/main || {
+              echo "::error::$SHA_PEDIDO no está en main"
+              exit 1
+            }
+            sha="$SHA_PEDIDO"
           fi
-          git merge-base --is-ancestor "$SHA" origin/main || {
-            echo "::error::$SHA no está en main"
-            exit 1
-          }
+          echo "Se promueve $sha"
+          echo "SHA=$sha" >> "$GITHUB_ENV"
 
       - uses: google-github-actions/auth@v3
         with:
