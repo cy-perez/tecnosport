@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.application.difusion.ArmadorDePieDeFoto;
+import co.tecnosport.api.application.difusion.MinimosDeCredito;
 import co.tecnosport.api.domain.catalogo.Categoria;
 import co.tecnosport.api.domain.catalogo.EstadoProducto;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
@@ -18,10 +19,9 @@ import co.tecnosport.api.domain.compartido.Hashtag;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.domain.difusion.RedSocial;
-import co.tecnosport.api.domain.pedido.CriteriosContraentrega;
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Set;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.support.StaticMessageSource;
@@ -34,48 +34,117 @@ class TextosDeDifusionMessageSourceTest {
 
   private static final TextosDeDifusionMessageSource TEXTOS = new TextosDeDifusionMessageSource();
 
-  private static final CriteriosContraentrega CONTRAENTREGA =
-      new CriteriosContraentrega(true, Dinero.deCop(20_000), Dinero.deCop(5_000_000), Set.of());
-
   @Test
   void elPieDeFacebookSaleAsi() {
-    ArmadorDePieDeFoto armador =
-        new ArmadorDePieDeFoto(
-            "https://www.tecnosport.co",
-            List.of(new Hashtag("TecnoSport"), new Hashtag("Medellín")),
-            TEXTOS,
-            CONTRAENTREGA);
-
-    String pie = armador.armar(jblGrip(), RedSocial.FACEBOOK);
+    String pie = armador(MinimosDeCredito.ninguno()).armar(jblGrip(), RedSocial.FACEBOOK);
 
     assertEquals(
         """
-        ✨ JBL Grip · $299.900
+        📦 JBL Grip · $299.900
 
         Un parlante portátil de 385 gramos.
+        ✔️ Certificación IP68.
+        ✔️ Hasta 12 horas de batería.
 
-        ✔️ Certificación IP68
-        ✔️ Hasta 12 horas de batería
+        💰 Diferentes opciones de pago:
+        💳 Tarjeta débito o crédito y PSE.
+        💵 Pago contraentrega.
+        📲 Transferencia.
+        📍 Opción de recogida en nuestro punto físico.
+        🚚 Envíos a toda Colombia.
 
-        🚚 Envío a todo Colombia
-        💳 Paga en línea, o contra entrega si tu ciudad tiene cobertura
-        💬 ¿Dudas? Escríbenos por WhatsApp al 313 881 6711
+        👉 ¿Te interesa este producto?. Míralo y cómpralo aquí:
+        https://www.tecnosport.co/es/productos/jbl-grip
 
-        👉 Míralo y cómpralo aquí: https://www.tecnosport.co/es/productos/jbl-grip
+        💬 ¿Dudas?. Escríbenos por WhatsApp:
+        https://wa.me/573138816711
 
-        #Parlantes #JBL #TecnoSport #Medellín""",
+        Síguenos en Instagram:
+        https://www.instagram.com/tecnosport_co/
+
+        Visita nuestro sitio web para ver más productos:
+        https://www.tecnosport.co/
+
+        #Parlantes #JBL #tecnosport""",
         pie);
   }
 
   @Test
-  void enInstagramRemiteALaBio() {
-    ArmadorDePieDeFoto armador =
-        new ArmadorDePieDeFoto("https://www.tecnosport.co", List.of(), TEXTOS, CONTRAENTREGA);
+  void elPieDeInstagramSaleAsi() {
+    MinimosDeCredito creditos =
+        new MinimosDeCredito(
+            Optional.of(Dinero.deCop(200_000)), Optional.of(Dinero.deCop(100_000)));
 
-    String pie = armador.armar(jblGrip(), RedSocial.INSTAGRAM);
+    String pie = armador(creditos).armar(jblGrip(), RedSocial.INSTAGRAM);
 
-    assertTrue(pie.contains("👉 Cómpralo desde el enlace de nuestra bio"), pie);
-    assertFalse(pie.contains("https://"), pie);
+    assertEquals(
+        """
+        📦 JBL Grip · $299.900
+
+        Un parlante portátil de 385 gramos.
+        ✔️ Certificación IP68.
+        ✔️ Hasta 12 horas de batería.
+
+        💰 Diferentes opciones de pago:
+        💳 Tarjeta débito o crédito y PSE.
+        💵 Pago contraentrega.
+        📲 Transferencia.
+        🏦 Addi o Sistecrédito.
+        📍 Opción de recogida en nuestro punto físico.
+        🚚 Envíos a toda Colombia.
+
+        👉 ¿Te interesa este producto?. Cómpralo desde el enlace de nuestra bio 🔗.
+
+        💬 ¿Dudas?. Escríbenos por WhatsApp al 313 881 6711.
+
+        Síguenos en Facebook:
+        https://www.facebook.com/tecnosport.co
+
+        Visita nuestro sitio web para ver más productos:
+        https://www.tecnosport.co/
+
+        #Parlantes #JBL #tecnosport""",
+        pie);
+  }
+
+  /**
+   * Un punto pegado a una URL puede quedar dentro del enlace en Facebook, y el enlace dejaría de
+   * abrir. Todo renglón que acaba en URL va sin punto, en las dos redes y en los dos idiomas.
+   */
+  @Test
+  void ningunaUrlLlevaPuntoFinal() {
+    for (RedSocial red : RedSocial.values()) {
+      String pie = armador(MinimosDeCredito.ninguno()).armar(jblGrip(), red);
+
+      assertFalse(pie.matches("(?s).*https://\\S*\\.(\\s.*|$)"), pie);
+    }
+  }
+
+  /**
+   * Cada renglón de texto acaba en punto, salvo los que la plantilla exceptúa: la entrada, los que
+   * abren una URL con dos puntos, las URL y los hashtags.
+   */
+  @Test
+  void cadaRenglonDeTextoAcabaEnPunto() {
+    for (RedSocial red : RedSocial.values()) {
+      String pie = armador(MinimosDeCredito.ninguno()).armar(jblGrip(), red);
+
+      pie.lines()
+          .filter(l -> !l.isBlank())
+          .filter(l -> !l.startsWith("📦 "))
+          .filter(l -> !l.startsWith("https://"))
+          .filter(l -> !l.startsWith("#"))
+          .forEach(l -> assertTrue(l.endsWith(".") || l.endsWith(":"), "Sin punto: " + l));
+    }
+  }
+
+  private static ArmadorDePieDeFoto armador(MinimosDeCredito creditos) {
+    return new ArmadorDePieDeFoto(
+        "https://www.tecnosport.co",
+        List.of(new Hashtag("tecnosport")),
+        TEXTOS,
+        creditos,
+        id -> Optional.empty());
   }
 
   /** El agrupamiento de miles es el colombiano: un punto, y sin decimales. */

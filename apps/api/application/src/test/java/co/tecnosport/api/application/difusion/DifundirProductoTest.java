@@ -109,7 +109,8 @@ class DifundirProductoTest {
     caso.ejecutar(new DifundirProductoComando(producto.id(), List.of(RedSocial.FACEBOOK), "   "));
 
     assertTrue(
-        publicador.ultimoPie.startsWith("[entrada|JBL Grip|[precio.unico|299900]]"),
+        publicador.ultimoPie.startsWith(
+            "[entrada|[emoji.por_omision]|JBL Grip|[precio.unico|299900]]"),
         publicador.ultimoPie);
   }
 
@@ -220,7 +221,7 @@ class DifundirProductoTest {
     assertTrue(
         casoDeUso(deProveedor)
             .proponerPie(deProveedor.id(), RedSocial.INSTAGRAM)
-            .startsWith("[entrada|JBL Grip"));
+            .startsWith("[entrada|[emoji.por_omision]|JBL Grip"));
   }
 
   /** El post es el carrusel de la ficha: la principal primero y detrás la galería, en su orden. */

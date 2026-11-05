@@ -1,5 +1,8 @@
 package co.tecnosport.api.bootstrap.difusion;
 
+import co.tecnosport.api.domain.compartido.Dinero;
+import java.math.BigDecimal;
+import java.util.Optional;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
@@ -44,7 +47,9 @@ public record PropiedadesMeta(
     boolean publicarDeVerdad,
     int timeoutSegundos,
     int sondeosDelContenedor,
-    int esperaEntreSondeosSegundos) {
+    int esperaEntreSondeosSegundos,
+    boolean anunciarAddi,
+    BigDecimal addiMontoMinimo) {
 
   public PropiedadesMeta {
     exigir(urlBase, "tecnosport.meta.url-base");
@@ -60,10 +65,26 @@ public record PropiedadesMeta(
           "tecnosport.meta.sondeos-del-contenedor debe ser mayor que cero: sin sondear, publicar un"
               + " contenedor a medias devuelve un error que parece de permisos y no lo es.");
     }
+    if (anunciarAddi && (addiMontoMinimo == null || addiMontoMinimo.signum() <= 0)) {
+      throw new IllegalStateException(
+          "tecnosport.meta.addi-monto-minimo hace falta para anunciar Addi: es el mínimo del"
+              + " crédito y lo define Addi, no nosotros.");
+    }
     if (esperaEntreSondeosSegundos <= 0) {
       throw new IllegalStateException(
           "tecnosport.meta.espera-entre-sondeos-segundos debe ser mayor que cero.");
     }
+  }
+
+  /**
+   * El mínimo desde el que el pie anuncia Addi, o vacío si no se anuncia ({@code ADR-0107}).
+   *
+   * <p>Addi no está en el checkout: salió en la V61 y vuelve cuando se integre. Por eso arranca
+   * apagado y el día que llegue se enciende sin tocar código. Encenderlo sin mínimo no arranca, por
+   * lo mismo que Sistecrédito: el crédito lo niega Addi por debajo de un monto que define Addi.
+   */
+  public Optional<Dinero> minimoDeAddi() {
+    return anunciarAddi ? Optional.of(Dinero.deCop(addiMontoMinimo)) : Optional.empty();
   }
 
   private static void exigir(String valor, String clave) {
