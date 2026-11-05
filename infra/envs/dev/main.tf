@@ -341,10 +341,10 @@ resource "google_iam_workload_identity_pool_provider" "github" {
   #
   # Y la rama, desde el 27 de octubre de 2026: con solo el repositorio, cualquier rama —también una
   # que nadie revisó— podía cambiar su flujo, pedir el token y desplegar o leer los secretos. El
-  # único flujo que se autentica es `desplegar-dev.yml`, que corre al mezclar a `main` y a demanda;
-  # a demanda desde otra rama deja de autenticar, y es lo que se busca: lo que se despliega pasó por
-  # la protección de `main`.
-  attribute_condition = "assertion.repository == \"${var.repositorio_github}\" && assertion.ref == \"refs/heads/main\""
+  # único flujo que se autentica es `desplegar-dev.yml`, que corre al mezclar a `develop` y a
+  # demanda; a demanda desde otra rama deja de autenticar, y es lo que se busca: lo que se despliega
+  # pasó por la protección de `develop`. Fue `main` hasta ADR-0106, que dejó `main` para producción.
+  attribute_condition = "assertion.repository == \"${var.repositorio_github}\" && assertion.ref == \"${var.rama_que_despliega}\""
 
   oidc {
     issuer_uri = "https://token.actions.githubusercontent.com"
