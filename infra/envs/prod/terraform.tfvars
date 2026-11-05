@@ -23,4 +23,4 @@ meta_listo         = true
 ingesta_lista      = true
 
 # Se enciende cuando el DNS de la raíz apunta aquí y el certificado está emitido.
-dominio_activo = false
+dominio_activo = true
