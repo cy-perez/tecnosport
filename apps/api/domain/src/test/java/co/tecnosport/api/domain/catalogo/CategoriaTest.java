@@ -113,4 +113,67 @@ class CategoriaTest {
     assertFalse(dama.esPrefijoDe(new Slug("ropa-damasco")));
     assertFalse(dama.esPrefijoDe(new Slug("ropa-dama")));
   }
+
+  // --- el emoji del pie de las publicaciones (ADR-0107) ---
+
+  @Test
+  void naceSinEmojiYUsaElDeSuRama() {
+    Categoria tenis = Categoria.crear("Tenis", new Slug("calzado-tenis"), LineaCatalogo.CALZADO);
+    Categoria calzado =
+        Categoria.crear("Calzado", new Slug("calzado"), LineaCatalogo.CALZADO).conEmoji("👟");
+
+    assertEquals(Optional.empty(), tenis.emoji());
+    assertEquals(Optional.of("👟"), tenis.emojiEfectivo(Optional.of(calzado)));
+  }
+
+  @Test
+  void elEmojiPropioManda() {
+    Categoria padre =
+        Categoria.crear("Bolsos", new Slug("bolsos"), LineaCatalogo.BOLSOS).conEmoji("👜");
+    Categoria morrales =
+        Categoria.crear("Morrales", new Slug("bolsos-morrales"), LineaCatalogo.BOLSOS)
+            .conEmoji("🎒");
+
+    assertEquals(Optional.of("🎒"), morrales.emojiEfectivo(Optional.of(padre)));
+  }
+
+  /** Los compuestos llevan uniones y selectores de variante, y siguen siendo un solo emoji. */
+  @Test
+  void admiteUnEmojiCompuesto() {
+    Categoria categoria =
+        Categoria.crear("Celulares", new Slug("celulares"), LineaCatalogo.TECNOLOGIA)
+            .conEmoji(" 🧑‍💻 ");
+
+    assertEquals(Optional.of("🧑‍💻"), categoria.emoji());
+  }
+
+  @Test
+  void vacioVuelveAlDeLaRama() {
+    Categoria categoria =
+        Categoria.crear("Tenis", new Slug("tenis"), LineaCatalogo.CALZADO)
+            .conEmoji("👟")
+            .conEmoji(" ");
+
+    assertEquals(Optional.empty(), categoria.emoji());
+  }
+
+  /** Una palabra no es un emoji: se publicaría delante del nombre de cada producto. */
+  @Test
+  void rechazaLetrasYEspacios() {
+    Categoria tenis = Categoria.crear("Tenis", new Slug("tenis"), LineaCatalogo.CALZADO);
+
+    assertThrows(ExcepcionDeDominio.class, () -> tenis.conEmoji("Tenis"));
+    assertThrows(ExcepcionDeDominio.class, () -> tenis.conEmoji("👟 👟"));
+  }
+
+  @Test
+  void elEmojiSobreviveAlRenombrarYAMoverla() {
+    Categoria tenis =
+        Categoria.crear("Tenis", new Slug("tenis"), LineaCatalogo.CALZADO).conEmoji("👟");
+
+    assertEquals(Optional.of("👟"), tenis.renombrada("Zapatillas", new Slug("zapatillas")).emoji());
+    assertEquals(Optional.of("👟"), tenis.conHashtags(List.of(new Hashtag("Tenis"))).emoji());
+    assertEquals(
+        Optional.of("👟"), tenis.movidaBajo(Optional.empty(), LineaCatalogo.CALZADO).emoji());
+  }
 }

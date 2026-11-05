@@ -36,6 +36,10 @@ public final class Categoria {
   private final UUID padreId;
   private final List<Hashtag> hashtags;
   private final List<String> escalaTallas;
+  private final String emoji;
+
+  /** Lo más largo que mide un emoji compuesto con sus uniones —familia, bandera, tono de piel—. */
+  public static final int LARGO_MAXIMO_DEL_EMOJI = 16;
 
   /**
    * El constructor de toda la vida, sin etiquetas. Delega en el de abajo con la lista vacía y sigue
@@ -69,6 +73,22 @@ public final class Categoria {
       UUID padreId,
       List<Hashtag> hashtags,
       List<String> escalaTallas) {
+    this(id, nombre, slug, linea, padreId, hashtags, escalaTallas, null);
+  }
+
+  /**
+   * @param emoji el que abre el pie de cada publicación de sus productos ({@code ADR-0107}), o nulo
+   *     si usa el de su rama
+   */
+  public Categoria(
+      UUID id,
+      String nombre,
+      Slug slug,
+      LineaCatalogo linea,
+      UUID padreId,
+      List<Hashtag> hashtags,
+      List<String> escalaTallas,
+      String emoji) {
     this.id = Objects.requireNonNull(id, "El id de la categoría no puede ser nulo.");
     if (nombre == null || nombre.isBlank()) {
       throw new ExcepcionDeDominio("El nombre de la categoría no puede estar vacío.");
@@ -82,6 +102,26 @@ public final class Categoria {
     this.padreId = padreId;
     this.hashtags = sinRepetirYEnOrden(hashtags);
     this.escalaTallas = tallasLimpias(escalaTallas);
+    this.emoji = emojiLimpio(emoji);
+  }
+
+  /**
+   * Vacío es nulo: borrar el campo en el panel es volver al de la rama. Lo que no se admite es una
+   * letra o un número, porque entonces no es un emoji sino una palabra que se publicaría delante
+   * del nombre del producto.
+   */
+  private static String emojiLimpio(String emoji) {
+    if (emoji == null || emoji.isBlank()) {
+      return null;
+    }
+    String limpio = emoji.strip();
+    if (limpio.length() > LARGO_MAXIMO_DEL_EMOJI
+        || limpio
+            .codePoints()
+            .anyMatch(c -> Character.isLetterOrDigit(c) || Character.isWhitespace(c))) {
+      throw new ExcepcionDeDominio("El emoji de la categoría tiene que ser un solo emoji.");
+    }
+    return limpio;
   }
 
   private static List<String> tallasLimpias(List<String> tallas) {
@@ -129,7 +169,7 @@ public final class Categoria {
    * mueven — renombrar "Camisas" no tiene por qué borrar lo que se publicaba con ellas.
    */
   public Categoria renombrada(String nuevoNombre, Slug nuevoSlug) {
-    return new Categoria(id, nuevoNombre, nuevoSlug, linea, padreId, hashtags, escalaTallas);
+    return new Categoria(id, nuevoNombre, nuevoSlug, linea, padreId, hashtags, escalaTallas, emoji);
   }
 
   /**
@@ -138,12 +178,27 @@ public final class Categoria {
    * polizón en {@link #renombrada}.
    */
   public Categoria conHashtags(List<Hashtag> nuevos) {
-    return new Categoria(id, nombre, slug, linea, padreId, nuevos, escalaTallas);
+    return new Categoria(id, nombre, slug, linea, padreId, nuevos, escalaTallas, emoji);
   }
 
   /** La misma categoría con otra escala de tallas. */
   public Categoria conEscalaDeTallas(List<String> nuevas) {
-    return new Categoria(id, nombre, slug, linea, padreId, hashtags, nuevas);
+    return new Categoria(id, nombre, slug, linea, padreId, hashtags, nuevas, emoji);
+  }
+
+  /** La misma categoría con otro emoji; nulo o vacío la deja usando el de su rama. */
+  public Categoria conEmoji(String nuevo) {
+    return new Categoria(id, nombre, slug, linea, padreId, hashtags, escalaTallas, nuevo);
+  }
+
+  /** El propio, sin heredar; vacío si usa el de su rama. */
+  public Optional<String> emoji() {
+    return Optional.ofNullable(emoji);
+  }
+
+  /** El que vale para esta categoría: el suyo o, si no tiene, el de su rama. Como la escala. */
+  public Optional<String> emojiEfectivo(Optional<Categoria> padre) {
+    return emoji().or(() -> padre.flatMap(Categoria::emoji));
   }
 
   /**
@@ -183,9 +238,12 @@ public final class Categoria {
     return nuevoPadre
         .map(
             padre ->
-                new Categoria(id, nombre, slug, padre.linea(), padre.id(), hashtags, escalaTallas))
+                new Categoria(
+                    id, nombre, slug, padre.linea(), padre.id(), hashtags, escalaTallas, emoji))
         .orElseGet(
-            () -> new Categoria(id, nombre, slug, lineaSiEsRaiz, null, hashtags, escalaTallas));
+            () ->
+                new Categoria(
+                    id, nombre, slug, lineaSiEsRaiz, null, hashtags, escalaTallas, emoji));
   }
 
   public UUID id() {
