@@ -1,7 +1,8 @@
 # ADR-0102: lo que se publica en redes sale con plantilla de marca, en el texto y en la portada
 
 Fecha: 2026-10-30
-Estado: aceptada.
+Estado: aceptada. El punto 1 y el punto 2, en lo que toca a la contraentrega y al envío, los
+reemplaza `adr/0107` (5 de noviembre de 2026).
 Relacionados: `adr/0069` (el carrusel entero), `adr/0098` (la plantilla de los correos),
 `adr/0025` (los textos fuera del código), `docs/04-ui-marca.md`, `packages/marca/tokens.json`.
 
