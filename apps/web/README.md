@@ -73,7 +73,7 @@ npm run e2e --workspace=apps/web        Playwright, los recorridos completos
 `e2e` no corre en seco: necesita `docker compose up -d`, `gradlew.bat bootRun` y
 `npm run dev` levantados, por eso está fuera de `npm run verificar`
 (`docs/06-testing.md`). En integración continua lo hace el flujo `recorridos`,
-que levanta los tres servicios él mismo — al mezclar a `main` y a demanda desde
+que levanta los tres servicios él mismo — al mezclar a `develop` y a demanda desde
 la pestaña de Actions.
 
 ## Estructura
