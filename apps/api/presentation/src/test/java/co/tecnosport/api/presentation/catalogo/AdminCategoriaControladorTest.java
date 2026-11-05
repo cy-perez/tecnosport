@@ -123,6 +123,65 @@ class AdminCategoriaControladorTest {
   }
 
   @Test
+  void editarLlevaElEmojiYLoDevuelve() throws Exception {
+    Categoria morrales =
+        Categoria.crear("Morrales", new Slug("bolsos-dama-morrales"), LineaCatalogo.BOLSOS);
+    repositorio.conCategorias(morrales);
+
+    mockMvc
+        .perform(
+            put("/api/v1/admin/categorias/" + morrales.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"nombre\":\"Gorras\",\"emoji\":\"🧢\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.emoji").value("🧢"));
+
+    mockMvc
+        .perform(get("/api/v1/admin/categorias"))
+        .andExpect(jsonPath("$.items[0].emoji").value("🧢"));
+  }
+
+  /** Sin el campo, el emoji se queda; con la cadena vacía, se va. */
+  @Test
+  void sinElCampoElEmojiSeQuedaYVacioLoQuita() throws Exception {
+    Categoria morrales =
+        Categoria.crear("Morrales", new Slug("bolsos-dama-morrales"), LineaCatalogo.BOLSOS)
+            .conEmoji("🧢");
+    repositorio.conCategorias(morrales);
+
+    mockMvc
+        .perform(
+            put("/api/v1/admin/categorias/" + morrales.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"nombre\":\"Gorras y viseras\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.emoji").value("🧢"));
+
+    mockMvc
+        .perform(
+            put("/api/v1/admin/categorias/" + morrales.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"nombre\":\"Gorras y viseras\",\"emoji\":\"\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.emoji").isEmpty());
+  }
+
+  /** Una palabra no es un emoji: el rechazo del dominio, no un 500. */
+  @Test
+  void unaPalabraComoEmojiSeRechaza() throws Exception {
+    Categoria morrales =
+        Categoria.crear("Morrales", new Slug("bolsos-dama-morrales"), LineaCatalogo.BOLSOS);
+    repositorio.conCategorias(morrales);
+
+    mockMvc
+        .perform(
+            put("/api/v1/admin/categorias/" + morrales.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"nombre\":\"Gorras\",\"emoji\":\"gorra\"}"))
+        .andExpect(status().isUnprocessableContent());
+  }
+
+  @Test
   void borraUnaCategoriaVacia() throws Exception {
     Categoria proyectores =
         Categoria.crear("Proyectores", new Slug("proyectores"), LineaCatalogo.TECNOLOGIA);

@@ -1018,6 +1018,8 @@
     "slugAyuda": "Opcional. Si lo dejas vacío se deriva del nombre, con el de su rama delante; si lo escribes para una subcategoría, tiene que empezar por el de su rama. Al editar, vacío significa «déjalo como está»: el slug está en enlaces que ya se compartieron.",
     "hashtags": "Etiquetas de redes",
     "hashtagsAyuda": "Las que se publican con cada producto de esta categoría. Separadas por espacios o comas; la almohadilla se pone sola. Vacío las borra todas.",
+    "emoji": "Emoji de las publicaciones",
+    "emojiAyuda": "Abre el texto de cada publicación en redes. Vacío usa el de la categoría padre, o 📦.",
     "padre": "Cuelga de",
     "padreAyuda": "Vacío la deja en el primer nivel, colgando directamente de la línea.",
     "sinPadre": "De la línea (primer nivel)",

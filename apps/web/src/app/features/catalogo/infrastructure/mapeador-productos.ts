@@ -68,6 +68,7 @@ export function aCategoria(dto?: CategoriaDto): Categoria {
     padreId: dto?.padreId ?? null,
     hashtags: dto?.hashtags ?? [],
     escalaTallas: dto?.escalaTallas ?? [],
+    emoji: dto?.emoji ?? null,
   };
 }
 

@@ -200,6 +200,32 @@ for (const ruta of CORREOS) {
   }
 }
 
+// Y las del pie de las publicaciones (adr/0107), que desde el 5 de noviembre de 2026 llevan el
+// enlace de WhatsApp y los de las dos redes. Un post publicado no se corrige solo.
+for (const ruta of DIFUSION) {
+  const propiedades = Object.fromEntries(
+    readFileSync(ruta, "utf8")
+      .split("\n")
+      .filter((linea) => linea.startsWith("url."))
+      .map((linea) => [
+        linea.slice(0, linea.indexOf("=")),
+        linea.slice(linea.indexOf("=") + 1).trim(),
+      ]),
+  );
+  const esperadas = {
+    "url.facebook": es.pie.facebook_url,
+    "url.instagram": es.pie.instagram_url,
+    "url.whatsapp": `https://wa.me/${es.pie.whatsapp_numero}`,
+  };
+  for (const [clave, esperada] of Object.entries(esperadas)) {
+    if (propiedades[clave] !== esperada) {
+      problemas.push(
+        `${relative(RAIZ, ruta)}: ${clave} es ${JSON.stringify(propiedades[clave])} y el pie dice ${JSON.stringify(esperada)}`,
+      );
+    }
+  }
+}
+
 // --- 3. La versión de los legales, en los cuatro sitios donde vive.
 const legalesEs = leer(join(TEXTOS, "scopes/legales/es.json"));
 const legalesEn = leer(join(TEXTOS, "scopes/legales/en.json"));

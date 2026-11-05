@@ -85,6 +85,8 @@ export class CategoriasAdminHttpRepositorio
         // se manda y las borra. Convertirlo aquí a `[]` habría hecho que renombrar una categoría
         // le vaciara las etiquetas en silencio.
         hashtags: cambio.hashtags === undefined ? undefined : [...cambio.hashtags],
+        // Igual: `undefined` no viaja y lo deja como está; `''` sí viaja y lo quita.
+        emoji: cambio.emoji,
       },
     });
 

@@ -123,6 +123,14 @@ export class TsCampo implements ControlValueAccessor {
   readonly filas = input(6);
 
   /**
+   * El `maxlength` del control, si lo hay. Impide pasarse al escribir y nada más: no pinta contador
+   * —para eso está `ts-area-texto`— ni sustituye la validación del servidor, que es la que manda.
+   * Cuenta unidades UTF-16, igual que el `length()` de Java, así que el tope de aquí y el de allá
+   * miden lo mismo aunque lo escrito sea un emoji.
+   */
+  readonly maximo = input<number | null>(null);
+
+  /**
    * Texto de apoyo debajo de la etiqueta, atado al control con `aria-describedby`.
    *
    * Entró porque escribirlo como un `<p>` suelto antes del componente lo deja visualmente pegado al

@@ -46,11 +46,13 @@ public final class EditarCategoria {
     exigirPrefijoSiLoEscribieron(comando, slug, nuevoPadre);
 
     Categoria editada =
-        conHashtagsDe(
+        conEmojiDe(
             comando,
-            actual
-                .renombrada(comando.nombre(), slug)
-                .movidaBajo(nuevoPadre, lineaDe(comando, nuevoPadre, actual)));
+            conHashtagsDe(
+                comando,
+                actual
+                    .renombrada(comando.nombre(), slug)
+                    .movidaBajo(nuevoPadre, lineaDe(comando, nuevoPadre, actual))));
 
     repositorioCategorias.guardar(editada);
     return editada;
@@ -70,6 +72,18 @@ public final class EditarCategoria {
       return categoria;
     }
     return categoria.conHashtags(comando.hashtags().stream().map(Hashtag::new).toList());
+  }
+
+  /**
+   * Nulo es "no lo toques", como las etiquetas; vacío es "quítalo", y eso ya lo entiende {@link
+   * Categoria#conEmoji}, que lo deja usando el de su rama. Que sea un emoji y no una palabra lo
+   * valida el dominio.
+   */
+  private static Categoria conEmojiDe(EditarCategoriaComando comando, Categoria categoria) {
+    if (comando.emoji() == null) {
+      return categoria;
+    }
+    return categoria.conEmoji(comando.emoji());
   }
 
   private static Slug slugDe(EditarCategoriaComando comando, Categoria actual) {

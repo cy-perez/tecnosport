@@ -60,6 +60,9 @@ const SINTETICOS = new Map([
   ["tenis-tc-marcas", "RepositorioMarcasJpaTest: las líneas que surte una marca"],
   ["morrales-tc-marcas", "RepositorioMarcasJpaTest: las líneas que surte una marca"],
   ["busos-tc-marcas", "RepositorioMarcasJpaTest: las líneas que surte una marca"],
+  ["gorras-tc-emoji", "RepositorioCategoriasJpaTest: el emoji vuelve al leer"],
+  ["medias-tc-emoji", "RepositorioCategoriasJpaTest: una categoría sin emoji"],
+  ["camisas-tc-hashtags", "RepositorioCategoriasJpaTest: las etiquetas vuelven al leer"],
 ]);
 
 /**

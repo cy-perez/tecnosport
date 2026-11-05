@@ -26,6 +26,7 @@ const ARBOL: Categoria[] = [
     padreId: null,
     hashtags: [],
     escalaTallas: [],
+    emoji: '📱',
   },
   {
     id: 'd0',
@@ -191,6 +192,74 @@ describe('CategoriasAdminPage', () => {
     expect(repositorio.editadas).toHaveLength(1);
     expect(repositorio.editadas[0].nombre).toBe('Consolas de videojuegos');
     expect(repositorio.editadas[0].slug).toBeTruthy();
+  });
+
+  /**
+   * El emoji se carga con el que tiene la categoría y viaja al guardar. Sin esto, un formulario
+   * que no lo mandara lo dejaría quieto —el backend lee el campo ausente como "no lo toques"— y
+   * nadie podría cambiarlo desde el panel.
+   */
+  it('al editar, carga el emoji actual y manda el que se escriba', async () => {
+    const { fixture, repositorio } = await renderPagina();
+    await screen.findByRole('heading', { name: 'Tecnología' });
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Editar' })[0]);
+    await fixture.whenStable();
+
+    const campo = (await screen.findByLabelText('Emoji de las publicaciones')) as HTMLInputElement;
+    expect(campo.value).toBe('📱');
+    expect(campo.getAttribute('maxlength')).toBe('16');
+
+    await escribir('Emoji de las publicaciones', ' 🤳 ');
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+    await fixture.whenStable();
+
+    expect(repositorio.editadas).toHaveLength(1);
+    expect(repositorio.editadas[0].emoji).toBe('🤳');
+  });
+
+  /**
+   * Vaciar el campo es "quítalo", y por eso viaja la cadena vacía y no `undefined`: el segundo lo
+   * dejaría como estaba, y quien borró el emoji vería que vuelve.
+   */
+  it('vaciar el emoji manda la cadena vacía para quitarlo', async () => {
+    const { fixture, repositorio } = await renderPagina();
+    await screen.findByRole('heading', { name: 'Tecnología' });
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Editar' })[0]);
+    await fixture.whenStable();
+
+    await escribir('Emoji de las publicaciones', '');
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+    await fixture.whenStable();
+
+    expect(repositorio.editadas[0].emoji).toBe('');
+  });
+
+  /** Una categoría sin emoji propio abre el formulario con el campo vacío, no con "null". */
+  it('una categoría sin emoji lo carga vacío y lo manda vacío', async () => {
+    const { fixture, repositorio } = await renderPagina();
+    await screen.findByRole('heading', { name: 'Ropa' });
+
+    // La segunda es Dama, que no trae emoji en el fixture.
+    fireEvent.click(screen.getAllByRole('button', { name: 'Editar' })[1]);
+    await fixture.whenStable();
+
+    const campo = (await screen.findByLabelText('Emoji de las publicaciones')) as HTMLInputElement;
+    expect(campo.value).toBe('');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+    await fixture.whenStable();
+
+    expect(repositorio.editadas[0].emoji).toBe('');
+  });
+
+  /** Como las etiquetas, el emoji solo se edita sobre una categoría que ya existe. */
+  it('al crear no pinta el campo de emoji', async () => {
+    await renderPagina();
+    await screen.findByRole('heading', { name: 'Tecnología' });
+
+    expect(screen.queryByLabelText('Emoji de las publicaciones')).toBeNull();
   });
 
   /**

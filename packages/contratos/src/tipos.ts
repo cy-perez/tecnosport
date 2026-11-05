@@ -2776,6 +2776,7 @@ export interface components {
             rama?: string;
         };
         CategoriaRespuesta: {
+            emoji?: string;
             escalaTallas?: string[];
             hashtags?: string[];
             /** Format: uuid */
@@ -2993,6 +2994,7 @@ export interface components {
             tonosNombrados?: string[];
         };
         EditarCategoriaPeticion: {
+            emoji?: string;
             hashtags?: string[];
             linea?: string;
             nombre?: string;
