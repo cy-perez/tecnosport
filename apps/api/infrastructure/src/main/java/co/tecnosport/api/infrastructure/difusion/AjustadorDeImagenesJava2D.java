@@ -65,7 +65,12 @@ public final class AjustadorDeImagenesJava2D implements AjustadorDeImagenes {
     if (proporcionObjetivo <= 0) {
       throw new IllegalArgumentException("La proporcion objetivo tiene que ser mayor que cero.");
     }
-    if (Math.abs(imagen.proporcion() - proporcionObjetivo) <= TOLERANCIA) {
+    // Cerca no basta: tiene que estar ademas del lado del cuadrado. Una de 1279x1600 (0,7994) esta
+    // a
+    // menos de la tolerancia de 0,8 y aun asi por debajo de 4:5, y devolverla tal cual era
+    // dejarsela al filtro de la red para que la descartara. Paso el 6 de noviembre de 2026.
+    if (Math.abs(imagen.proporcion() - proporcionObjetivo) <= TOLERANCIA
+        && delLadoDelCuadrado(imagen.proporcion(), proporcionObjetivo)) {
       return Optional.of(imagen);
     }
 
@@ -108,17 +113,28 @@ public final class AjustadorDeImagenesJava2D implements AjustadorDeImagenes {
    * de octubre de 2026 — el ajustador subio las dos fotos al bucket y el filtro las descarto igual,
    * sin un solo registro que lo explicara.
    *
-   * <p>Con `ceil` el resultado cae siempre <b>dentro</b>: ensanchando, el ancho queda en {@code >=
-   * alto * proporcion}, y estirando el alto queda en {@code >= ancho / proporcion}, que es lo mismo
-   * por el otro lado. Un pixel de mas no lo ve nadie; uno de menos cuesta el post.
+   * <p><b>Y `ceil` a secas tampoco servia: arreglaba una rama y rompia la otra.</b> Ensanchando,
+   * {@code ceil} sube la proporcion; estirando el alto, la baja. Una de 1355x1600 (0,847) encajada
+   * a 0,8 salia de 1355x1694 — 0,79988, otra vez por debajo —, y el 6 de noviembre de 2026 el
+   * carrusel del bolso baul salio en Instagram con dos fotos de cinco por eso.
+   *
+   * <p>La regla que vale en las dos ramas es <b>redondear hacia el cuadrado</b>: con la proporcion
+   * pedida a un lado de 1 y el resultado entre ella y 1, el resultado cae dentro de cualquier rango
+   * que contenga a la pedida y al cuadrado — el de Instagram, de 0,8 a 1,91, los contiene. Y sin
+   * que este adaptador tenga que saber cual es ese rango, que es cosa de {@code MetaGraphClient}.
    */
   private static BufferedImage conLienzoDe(BufferedImage fuente, double proporcion) {
     int ancho = fuente.getWidth();
     int alto = fuente.getHeight();
+    boolean vertical = proporcion <= 1;
     if ((double) ancho / alto < proporcion) {
-      ancho = (int) Math.ceil(alto * proporcion);
+      // Ensanchar sube la proporcion: hacia el cuadrado es hacia arriba si la pedida es vertical.
+      double exacto = alto * proporcion;
+      ancho = (int) (vertical ? Math.ceil(exacto) : Math.max(ancho, Math.floor(exacto)));
     } else {
-      alto = (int) Math.ceil(fuente.getWidth() / proporcion);
+      // Estirar el alto la baja: hacia el cuadrado es quedarse corto si la pedida es vertical.
+      double exacto = ancho / proporcion;
+      alto = (int) (vertical ? Math.max(alto, Math.floor(exacto)) : Math.ceil(exacto));
     }
 
     BufferedImage lienzo = new BufferedImage(ancho, alto, BufferedImage.TYPE_INT_RGB);
@@ -132,6 +148,11 @@ public final class AjustadorDeImagenesJava2D implements AjustadorDeImagenes {
       pincel.dispose();
     }
     return lienzo;
+  }
+
+  /** Si {@code real} queda entre la pedida y el cuadrado, o justo en la pedida. */
+  private static boolean delLadoDelCuadrado(double real, double pedida) {
+    return pedida <= 1 ? real >= pedida : real <= pedida;
   }
 
   /**
