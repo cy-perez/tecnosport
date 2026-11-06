@@ -11,6 +11,7 @@ import { crearClienteContratos } from '@tecnosport/contratos';
 import { baseUrl } from './app/core/http/base-url';
 import { origenPublico } from './app/core/seo/origen-publico';
 import { cabeceraDeCache } from './cache-estaticos';
+import { destinoSinWww } from './host-canonico';
 import { POLITICA_DE_CONTENIDO, POLITICA_DE_PERMISOS } from './cabeceras-seguridad';
 import { crearProxyApi } from './proxy-api';
 import { construirRobots, construirSitemap, PaginaDelSitio } from './sitemap/constructor';
@@ -47,6 +48,20 @@ app.use((_req, res, next) => {
   res.setHeader('referrer-policy', 'strict-origin-when-cross-origin');
   res.setHeader('permissions-policy', POLITICA_DE_PERMISOS);
   res.setHeader('content-security-policy-report-only', POLITICA_DE_CONTENIDO);
+  next();
+});
+
+/**
+ * `www.` al dominio sin `www`, con un 301 (`host-canonico.ts`). Después de las cabeceras de
+ * seguridad, para que la redirección también lleve HSTS, y antes de todo lo demás: ni el proxy ni
+ * los estáticos ni el SSR deben responder por `www`.
+ */
+app.use((req, res, next) => {
+  const destino = destinoSinWww(req.hostname, req.originalUrl, origenPublico());
+  if (destino) {
+    res.redirect(301, destino);
+    return;
+  }
   next();
 });
 
