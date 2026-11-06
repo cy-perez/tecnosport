@@ -166,11 +166,16 @@ y en GitHub no las hace el asistente.
     `dominio_activo = true` y aplicar, para encender la comprobación de la
     portada; medir qué versiones de TLS acepta el dominio.
 
-**Falta decidir cómo se corre SQL a mano**, como
-`infra/operacion/restablecer-segundo-factor.sql`, contra una base sin IP pública
-y sin bastión. Hay que resolverlo antes de abrir: comprobar si Cloud SQL Studio
-llega a esta instancia, o correr `psql` como un job dentro de la red, igual que
-las migraciones.
+**El SQL a mano se corre en Cloud SQL Studio**, como
+`infra/operacion/restablecer-segundo-factor.sql`: la base no tiene IP pública ni
+bastión, y aun así Studio llega a la instancia (comprobado el 5 de noviembre de
+2026). Se entra desde la consola —Cloud SQL → `tecnosport-principal` → Cloud SQL
+Studio— con el usuario `tecnosport` y la clave del secreto `db-clave`, que se
+lee con `gcloud secrets versions access latest --secret=db-clave` en una
+terminal propia, nunca dentro de una conversación con un asistente. Desde el
+equipo, `psql` o el Auth Proxy no conectan: la IP es privada. Lo que se pueda
+hacer por la API del panel va por la API, que valida; Studio es para lo que la
+API no expone.
 
 ## DNS: cuidado con lo que ya existe
 
