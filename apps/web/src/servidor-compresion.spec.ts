@@ -32,6 +32,14 @@ describe('orden de los middleware del servidor', () => {
     );
   });
 
+  // Si el SSR o los estáticos responden antes, `www` vuelve a servir el sitio entero con un 200.
+  it('la redirección de www va antes de todo lo que responde', () => {
+    const redireccion = posicion(/destinoSinWww\(req\.hostname/);
+    expect(redireccion).toBeGreaterThan(-1);
+    expect(redireccion).toBeLessThan(posicion(/^app\.use\(compression\(\)\);$/m));
+    expect(redireccion).toBeLessThan(posicion(/express\.static\(browserDistFolder/));
+  });
+
   // Los estáticos son la mayor parte del peso: 243 kB de `main.js` contra 73 kB comprimido.
   it('la compresión va antes de los estáticos', () => {
     expect(posicion(/^app\.use\(compression\(\)\);$/m)).toBeLessThan(
