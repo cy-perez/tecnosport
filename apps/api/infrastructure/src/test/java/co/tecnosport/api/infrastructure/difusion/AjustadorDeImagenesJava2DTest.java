@@ -55,6 +55,63 @@ class AjustadorDeImagenesJava2DTest {
     assertTrue(encajada.proporcion() >= 0.8, "proporción: " + encajada.proporcion());
   }
 
+  /**
+   * <b>Y estirando el alto, el redondeo va al revés.</b> Una foto más ancha que 4:5 crece de alto
+   * para llegar a 0,8, y con {@code ceil} 1355x1600 salía a 1355x1694 — 0,79988, por debajo. Son
+   * las medidas reales del bolso baúl, que el 6 de noviembre de 2026 salió en Instagram con dos
+   * fotos de cinco.
+   */
+  @Test
+  void estirarElAltoTampocoSeQuedaPorDebajoDelMinimo() {
+    for (int[] medidas : new int[][] {{1355, 1600}, {1411, 1585}}) {
+      ImagenAPublicar original = sembrar("ancha.jpg", medidas[0], medidas[1], Color.WHITE);
+
+      ImagenAPublicar encajada = ajustador.ajustarA(PRODUCTO, original, 0.8).orElseThrow();
+
+      assertEquals(medidas[0], encajada.ancho(), "el ancho no se toca");
+      assertTrue(encajada.proporcion() >= 0.8, "proporción: " + encajada.proporcion());
+      assertEquals(0.8, encajada.proporcion(), 0.001);
+    }
+  }
+
+  /**
+   * Una foto a un pelo de la pedida pero del lado equivocado no se devuelve tal cual: 1279x1600 es
+   * 0,7994, dentro de la tolerancia y fuera de 4:5. La otra foto del bolso baúl que se quedó fuera.
+   */
+  @Test
+  void laQueEstaCercaPeroPorDebajoSeEncajaIgual() {
+    ImagenAPublicar original = sembrar("casi.jpg", 1279, 1600, Color.WHITE);
+
+    ImagenAPublicar encajada = ajustador.ajustarA(PRODUCTO, original, 0.8).orElseThrow();
+
+    assertNotEquals(original, encajada);
+    assertEquals(1280, encajada.ancho());
+    assertEquals(1600, encajada.alto());
+  }
+
+  /** Cerca y del lado del cuadrado sí se queda como está: no vale la pena subir otra copia. */
+  @Test
+  void laQueEstaCercaYPorEncimaNoSeVuelveASubir() {
+    ImagenAPublicar original = sembrar("casi.jpg", 1282, 1600, Color.WHITE);
+
+    assertEquals(original, ajustador.ajustarA(PRODUCTO, original, 0.8).orElseThrow());
+  }
+
+  /**
+   * Del otro lado del cuadrado la regla se invierte: pedida 1,91, una más estrecha se ensancha sin
+   * pasarse de 1,91, que también sería quedar fuera.
+   */
+  @Test
+  void ensancharHaciaUnaApaisadaNoSePasaDelMaximo() {
+    ImagenAPublicar original = sembrar("media.jpg", 1500, 1001, Color.WHITE);
+
+    ImagenAPublicar encajada = ajustador.ajustarA(PRODUCTO, original, 1.91).orElseThrow();
+
+    assertEquals(1001, encajada.alto());
+    assertTrue(encajada.proporcion() <= 1.91, "proporción: " + encajada.proporcion());
+    assertEquals(1.91, encajada.proporcion(), 0.002);
+  }
+
   /** Y al revés: una apaisada de más crece de alto, tampoco se recorta. */
   @Test
   void unaFotoDemasiadoAnchaCreceDeAlto() {
